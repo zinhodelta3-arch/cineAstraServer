@@ -881,8 +881,6 @@ export default function CineAstraApp() {
       {isCartOpen && (
         <CartDrawer items={cartItems} onRemove={handleRemoveFromCart} onClose={() => setIsCartOpen(false)} />
       )}
-
-      <Footer />
     </div>
   );
 }
