@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { MOVIES, CINEMAS } from "./movies";
 import styles from "./filmes.module.css";
-import "./cineastra-theme.css";
 
 const SECTIONS = [
   { value: "em-cartaz", label: "Em cartaz" },

@@ -7,11 +7,9 @@ import {
   Plus_Jakarta_Sans,
 } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/header";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import AppearanceInitializer from "@/components/providers/appearance-initializer";
 import { DEFAULT_APPEARANCE } from "@/lib/themes";
-import Footer from "@/components/Footer";
 import { CartProvider } from "@/components/cart/cart-provider";
 
 const geistSans = Geist({
@@ -62,9 +60,7 @@ export default function RootLayout({ children }) {
         <AppearanceInitializer />
         <ThemeProvider>
           <CartProvider>
-            <Header />
             {children}
-            <Footer />
           </CartProvider>
         </ThemeProvider>
       </body>
