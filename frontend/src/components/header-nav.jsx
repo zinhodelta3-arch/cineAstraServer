@@ -19,7 +19,7 @@ const navigation = [
   { label: "Cinemas", href: "/cinema/localizacoes", icon: MapPin },
   { label: "AstraSnack", href: "/cinema/astrasnack", icon: Popcorn },
   { label: "Experiências", href: "/cinema/experiencias", icon: Sparkles },
-  { label: "Planos", href: "/planos", icon: Crown },
+  { label: "Planos", href: "/cinema/planos", icon: Crown },
   { label: "Suporte", href: "/cinema/suporte", icon: CircleHelp },
 ]
 

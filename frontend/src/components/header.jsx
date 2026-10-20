@@ -13,6 +13,7 @@ const LOGO_CONFIG = [
   { keywords: ["catp", "catppuccin", "latte", "frappe", "macchiato"], src: "/Catp.png" },
   { keywords: ["mocha"], src: "/Mocha.png" },
   { keywords: ["violet"], src: "/Violet.png" },
+  { keywords: ["doomsday"], src: "/DOOMastra.png" },
 ]
 
 const DEFAULT_LOGO = "/CineAstras.png"

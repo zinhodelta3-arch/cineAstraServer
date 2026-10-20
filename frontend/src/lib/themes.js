@@ -28,7 +28,7 @@ export const appearances = [
   },
   {
     value: "doomsday",
-    label: "doomsday",
+    label: "Doomsday",
     description: "tweakcn",
     preview: ["#15803d", "#121a16", "#cbd5e1"],
   },
