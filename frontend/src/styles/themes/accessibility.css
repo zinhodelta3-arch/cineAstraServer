@@ -1,0 +1,388 @@
+/* Importar no globals.css depois dos imports de temas. Tailwind CSS v4.
+   Regras sem @layer sobrescrevem utilitários somente no componente abaixo.
+   !important é reservado aos ajustes globais escolhidos pelo usuário. */
+
+.ca-a11y-trigger {
+  position: fixed;
+  top: 50%;
+  right: 1rem;
+  z-index: 60;
+  transform: translateY(-50%);
+  width: 3rem;
+  height: 3rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl, 1rem);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 6px 18px color-mix(in oklab, var(--foreground) 15%, transparent);
+  cursor: pointer;
+  font-family: var(--font-sans, sans-serif);
+}
+
+.ca-a11y-trigger:hover { background: var(--primary); opacity: .92; }
+.ca-a11y-trigger:focus-visible,
+.ca-a11y-panel button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.ca-a11y-count {
+  position: absolute;
+  top: -.35rem;
+  right: -.35rem;
+  display: grid;
+  place-items: center;
+  min-width: 1.25rem;
+  min-height: 1.25rem;
+  padding: .125rem;
+  border-radius: 999px;
+  border: 2px solid var(--background);
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-size: .625rem;
+  font-weight: 800;
+}
+
+.ca-a11y-panel {
+  z-index: 70;
+  width: min(21rem, calc(100vw - 1.5rem));
+  max-height: min(44rem, calc(100dvh - 2rem), var(--available-height, 100dvh));
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl, 1rem);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  font-family: var(--font-sans, sans-serif);
+  box-shadow: 0 16px 48px color-mix(in oklab, var(--foreground) 16%, transparent);
+}
+
+.ca-a11y-panel ::selection { background: var(--primary); color: var(--primary-foreground); }
+.ca-a11y-header {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .65rem .75rem .65rem 1rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.ca-a11y-heading {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  font-family: var(--theme-font-sans, var(--font-sans, sans-serif));
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.ca-a11y-close {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.ca-a11y-close:hover { background: color-mix(in oklab, currentColor 12%, transparent); color: inherit; }
+.ca-a11y-close:focus-visible { outline-color: var(--primary-foreground); }
+/* O Positioner do shadcn/Base UI pode criar seu próprio contexto de empilhamento. */
+:where(div):has(> .ca-a11y-panel) { z-index: 70; }
+
+.ca-a11y-body { position: relative; padding: 1rem 1rem 1rem 1.65rem; }
+/* Perfurações de película: detalhe já presente na página de referência. */
+.ca-a11y-body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: .35rem;
+  width: .4rem;
+  background: repeating-linear-gradient(
+    180deg, var(--border) 0 .4rem, transparent .4rem .8rem
+  );
+  pointer-events: none;
+}
+.ca-a11y-intro { margin: 0 0 1rem; font-size: .8125rem; font-weight: 700; line-height: 1.5; }
+.ca-a11y-intro > span {
+  display: block;
+  margin-top: .25rem;
+  color: var(--muted-foreground);
+  font-size: .75rem;
+  font-weight: 400;
+}
+.ca-a11y-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.ca-a11y-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  height: auto;
+  min-height: 7.6rem;
+  padding: .875rem .75rem .625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, .75rem);
+  background: var(--card);
+  color: var(--card-foreground);
+  white-space: normal;
+  text-align: left;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+}
+.ca-a11y-option:hover { background: var(--accent); color: var(--accent-foreground); border-color: var(--ring); }
+.ca-a11y-option[data-active="true"] {
+  border-color: var(--primary);
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.ca-a11y-option-top { display: flex; justify-content: space-between; align-items: flex-start; min-height: 1.75rem; }
+.ca-a11y-option-label { display: block; margin-top: .5rem; font-size: .75rem; font-weight: 750; line-height: 1.4; overflow-wrap: anywhere; }
+.ca-a11y-option-value { display: block; margin-top: .125rem; font-size: .6875rem; font-weight: 400; line-height: 1.4; overflow-wrap: anywhere; }
+.ca-a11y-steps { display: flex; flex-wrap: wrap; gap: .2rem; margin-top: auto; padding-top: .65rem; }
+.ca-a11y-steps > span { width: .3rem; height: .3rem; border: 1px solid currentColor; border-radius: 999px; }
+.ca-a11y-steps > span[data-current="true"] { background: currentColor; }
+.ca-a11y-note { margin: .75rem 0 0; font-size: .75rem; line-height: 1.5; color: var(--popover-foreground); }
+.ca-a11y-footer { margin-top: 1rem; padding-top: .875rem; border-top: 1px dashed var(--border); }
+.ca-a11y-reset {
+  display: flex;
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  padding: .65rem .75rem;
+  gap: .5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  white-space: normal;
+  font-size: .75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ca-a11y-reset:hover { background: var(--accent); color: var(--accent-foreground); }
+.ca-a11y-save { margin: .65rem 0 0; text-align: center; font-size: .6875rem; line-height: 1.5; color: var(--muted-foreground); }
+.ca-a11y-panel button:disabled { opacity: .65; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .ca-a11y-trigger { top: auto; bottom: calc(1rem + env(safe-area-inset-bottom)); right: 1rem; transform: none; }
+}
+/* Com fonte muito ampliada, mais largura por ajuste e rolagem no próprio painel. */
+@media (max-width: 480px) {
+  :root[data-ca-font="3"] .ca-a11y-grid,
+  :root[data-ca-font="4"] .ca-a11y-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Texto maior: aumenta a raiz, preservando a proporção de rem do Tailwind. */
+:root[data-ca-font="1"] { font-size: 112.5% !important; }
+:root[data-ca-font="2"] { font-size: 125% !important; }
+:root[data-ca-font="3"] { font-size: 150% !important; }
+:root[data-ca-font="4"] { font-size: 200% !important; }
+
+/* Tipografia: sem altura fixa, sem cortar textos; não altera SVGs. */
+:root[data-ca-line="1"] { --ca-a11y-line-height: 1.5; }
+:root[data-ca-line="2"] { --ca-a11y-line-height: 1.75; }
+:root[data-ca-line="3"] { --ca-a11y-line-height: 2; }
+:root:is([data-ca-line="1"], [data-ca-line="2"], [data-ca-line="3"]) body :where(
+  p, li, a, button, label, input, textarea, select, h1, h2, h3, h4, h5, h6,
+  blockquote, dt, dd, td, th, figcaption, span
+) { line-height: var(--ca-a11y-line-height) !important; }
+
+:root[data-ca-spacing="1"] { --ca-a11y-letter-spacing: .04em; --ca-a11y-word-spacing: .08em; }
+:root[data-ca-spacing="2"] { --ca-a11y-letter-spacing: .08em; --ca-a11y-word-spacing: .12em; }
+:root[data-ca-spacing="3"] { --ca-a11y-letter-spacing: .12em; --ca-a11y-word-spacing: .16em; }
+:root:is([data-ca-spacing="1"], [data-ca-spacing="2"], [data-ca-spacing="3"]) body :where(
+  p, li, a, button, label, input, textarea, select, h1, h2, h3, h4, h5, h6,
+  blockquote, dt, dd, td, th, figcaption, span
+) {
+  letter-spacing: var(--ca-a11y-letter-spacing) !important;
+  word-spacing: var(--ca-a11y-word-spacing) !important;
+}
+
+/* Paletas alternativas, não simulações da visão nem correção médica.
+   Mudam somente tokens semânticos da interface, sem filter no html/body.
+   Tokens de superfície permanecem sob controle do tema ativo. */
+:root:is([data-ca-color="protanopia"], [data-ca-color="deuteranopia"]) {
+  --primary: #075985 !important;
+  --primary-foreground: #ffffff !important;
+  --secondary: #7c2d12 !important;
+  --secondary-foreground: #ffffff !important;
+  --accent: #e0f2fe !important;
+  --accent-foreground: #082f49 !important;
+  --destructive: #6b21a8 !important;
+  --destructive-foreground: #ffffff !important;
+  --ring: #075985 !important;
+  --sidebar-primary: #075985 !important;
+  --sidebar-primary-foreground: #ffffff !important;
+  --sidebar-accent: #e0f2fe !important;
+  --sidebar-accent-foreground: #082f49 !important;
+  --sidebar-ring: #075985 !important;
+  --chart-1: #075985 !important;
+  --chart-2: #c2410c !important;
+  --chart-3: #6b21a8 !important;
+  --chart-4: #475569 !important;
+  --chart-5: #854d0e !important;
+}
+:root:is([data-ca-color="protanopia"], [data-ca-color="deuteranopia"]).dark {
+  --primary: #7dd3fc !important;
+  --primary-foreground: #082f49 !important;
+  --secondary: #fdba74 !important;
+  --secondary-foreground: #431407 !important;
+  --accent: #082f49 !important;
+  --accent-foreground: #e0f2fe !important;
+  --destructive: #d8b4fe !important;
+  --destructive-foreground: #3b0764 !important;
+  --ring: #7dd3fc !important;
+  --sidebar-primary: #7dd3fc !important;
+  --sidebar-primary-foreground: #082f49 !important;
+  --sidebar-accent: #082f49 !important;
+  --sidebar-accent-foreground: #e0f2fe !important;
+  --sidebar-ring: #7dd3fc !important;
+}
+:root[data-ca-color="tritanopia"] {
+  --primary: #9f1239 !important;
+  --primary-foreground: #ffffff !important;
+  --secondary: #115e59 !important;
+  --secondary-foreground: #ffffff !important;
+  --accent: #ffe4e6 !important;
+  --accent-foreground: #4c0519 !important;
+  --destructive: #374151 !important;
+  --destructive-foreground: #ffffff !important;
+  --ring: #9f1239 !important;
+  --sidebar-primary: #9f1239 !important;
+  --sidebar-primary-foreground: #ffffff !important;
+  --sidebar-accent: #ffe4e6 !important;
+  --sidebar-accent-foreground: #4c0519 !important;
+  --sidebar-ring: #9f1239 !important;
+  --chart-1: #9f1239 !important;
+  --chart-2: #0f766e !important;
+  --chart-3: #374151 !important;
+  --chart-4: #fb7185 !important;
+  --chart-5: #5eead4 !important;
+}
+:root[data-ca-color="tritanopia"].dark {
+  --primary: #fda4af !important;
+  --primary-foreground: #4c0519 !important;
+  --secondary: #5eead4 !important;
+  --secondary-foreground: #042f2e !important;
+  --accent: #4c0519 !important;
+  --accent-foreground: #ffe4e6 !important;
+  --destructive: #e5e7eb !important;
+  --destructive-foreground: #111827 !important;
+  --ring: #fda4af !important;
+  --sidebar-primary: #fda4af !important;
+  --sidebar-primary-foreground: #4c0519 !important;
+  --sidebar-accent: #4c0519 !important;
+  --sidebar-accent-foreground: #ffe4e6 !important;
+  --sidebar-ring: #fda4af !important;
+}
+:root[data-ca-color="mono"] {
+  --primary: #262626 !important;
+  --primary-foreground: #ffffff !important;
+  --secondary: #e5e5e5 !important;
+  --secondary-foreground: #171717 !important;
+  --accent: #f5f5f5 !important;
+  --accent-foreground: #171717 !important;
+  --destructive: #404040 !important;
+  --destructive-foreground: #ffffff !important;
+  --ring: #525252 !important;
+  --sidebar-primary: #262626 !important;
+  --sidebar-primary-foreground: #ffffff !important;
+  --sidebar-accent: #f5f5f5 !important;
+  --sidebar-accent-foreground: #171717 !important;
+  --sidebar-ring: #525252 !important;
+  --chart-1: #171717 !important;
+  --chart-2: #404040 !important;
+  --chart-3: #737373 !important;
+  --chart-4: #a3a3a3 !important;
+  --chart-5: #d4d4d4 !important;
+}
+:root[data-ca-color="mono"].dark {
+  --primary: #fafafa !important;
+  --primary-foreground: #171717 !important;
+  --secondary: #404040 !important;
+  --secondary-foreground: #fafafa !important;
+  --accent: #262626 !important;
+  --accent-foreground: #fafafa !important;
+  --destructive: #d4d4d4 !important;
+  --destructive-foreground: #171717 !important;
+  --ring: #d4d4d4 !important;
+  --sidebar-primary: #fafafa !important;
+  --sidebar-primary-foreground: #171717 !important;
+  --sidebar-accent: #262626 !important;
+  --sidebar-accent-foreground: #fafafa !important;
+  --sidebar-ring: #d4d4d4 !important;
+}
+
+/* Alto contraste prevalece sobre TODAS as paletas acima, inclusive .dark. */
+:root[data-ca-contrast="1"],
+:root[data-ca-contrast="1"].dark {
+  --background: #000000 !important;
+  --foreground: #ffffff !important;
+  --card: #000000 !important;
+  --card-foreground: #ffffff !important;
+  --popover: #000000 !important;
+  --popover-foreground: #ffffff !important;
+  --primary: #fff000 !important;
+  --primary-foreground: #000000 !important;
+  --secondary: #ffffff !important;
+  --secondary-foreground: #000000 !important;
+  --muted: #171717 !important;
+  --muted-foreground: #eeeeee !important;
+  --accent: #262626 !important;
+  --accent-foreground: #ffffff !important;
+  --destructive: #ffb4b4 !important;
+  --destructive-foreground: #000000 !important;
+  --border: #ffffff !important;
+  --input: #ffffff !important;
+  --ring: #fff000 !important;
+  --sidebar: #000000 !important;
+  --sidebar-foreground: #ffffff !important;
+  --sidebar-primary: #fff000 !important;
+  --sidebar-primary-foreground: #000000 !important;
+  --sidebar-accent: #262626 !important;
+  --sidebar-accent-foreground: #ffffff !important;
+  --sidebar-border: #ffffff !important;
+  --sidebar-ring: #fff000 !important;
+  --chart-1: #fff000 !important;
+  --chart-2: #ffffff !important;
+  --chart-3: #7dd3fc !important;
+  --chart-4: #fda4af !important;
+  --chart-5: #5eead4 !important;
+}
+
+/* Mantém eventos de finalização de animação, importantes para overlays. */
+:root[data-ca-motion="reduce"],
+:root[data-ca-motion="reduce"] *,
+:root[data-ca-motion="reduce"] *::before,
+:root[data-ca-motion="reduce"] *::after {
+  animation-duration: .01ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root, :root *, :root *::before, :root *::after {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

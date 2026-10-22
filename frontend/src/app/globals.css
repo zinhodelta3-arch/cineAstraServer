@@ -10,6 +10,8 @@
 @import "../styles/themes/noir.css";
 @import "../styles/themes/noir-grafico.css";
 
+@import "../styles/themes/accessibility.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
