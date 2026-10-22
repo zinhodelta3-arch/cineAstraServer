@@ -1,11 +1,12 @@
-import { loadEnvironment, validateEnv } from '../src/config/env.js';
+import { loadEnvironment } from '../src/config/env.js';
+import { runtimeConfig } from '../src/config/runtime.js';
 import { createDatabase } from '../src/config/database.js';
 import { createLogModel } from '../src/models/logModel.js';
 
 loadEnvironment();
 let database;
 try {
-    const config = validateEnv();
+    const config = runtimeConfig();
     if (config.production || process.env.DB_INSPECT_CONFIRMED_NON_PRODUCTION !== 'true') throw new Error('Alvo não confirmado');
     database = createDatabase(config.db);
     const [[version]] = await database.execute('SELECT VERSION() AS version, @@session.time_zone AS timezone');

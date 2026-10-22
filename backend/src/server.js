@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
-import { loadEnvironment, validateEnv } from './config/env.js';
+import { EnvironmentValidationError, loadEnvironment } from './config/env.js';
+import { runtimeConfig } from './config/runtime.js';
 import { createDatabase } from './config/database.js';
 import { createApp } from './app.js';
 import { createLogModel } from './models/logModel.js';
@@ -61,7 +62,7 @@ async function main() {
     let runtime;
     try {
         loadEnvironment();
-        const config = validateEnv();
+        const config = runtimeConfig();
         runtime = await startServer(config);
         console.info('CineAstra API iniciada; consulte /ready para prontidão.');
         const stop = () => {
@@ -70,6 +71,13 @@ async function main() {
         };
         process.once('SIGINT', stop);
         process.once('SIGTERM', stop);
-    } catch { report('startup_failed_check_environment'); process.exitCode = 1; }
+    } catch (error) {
+        if (error instanceof EnvironmentValidationError) {
+            console.error(JSON.stringify({ event: 'startup_failed_check_environment', fields: error.fields }));
+        } else {
+            report('startup_failed_check_environment');
+        }
+        process.exitCode = 1;
+    }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

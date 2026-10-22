@@ -9,7 +9,10 @@ test('startup sem env falha seguro sem ouvir HTTP nem imprimir valores', () => {
     const child = spawnSync(process.execPath, ['src/server.js'], { cwd: new URL('../', import.meta.url), env: { ...process.env, JWT_SECRET: '', DB_HOST: '', DB_PASSWORD: '' }, encoding: 'utf8' });
     assert.equal(child.status, 1);
     assert.match(child.stderr, /startup_failed_check_environment/);
-    assert.ok(!child.stderr.includes('DB_PASSWORD'));
+    const diagnostic = JSON.parse(child.stderr.trim());
+    assert.ok(diagnostic.fields.includes('DB_PASSWORD'));
+    assert.ok(diagnostic.fields.includes('DB_HOST'));
+    assert.deepEqual(Object.keys(diagnostic).sort(), ['event', 'fields']);
 });
 test('server HTTP inicializa, configura timeouts e fecha HTTP/worker/fila/pool uma vez', async () => {
     const order = [];

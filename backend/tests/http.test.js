@@ -27,17 +27,15 @@ test('readiness real dependência: falha de banco, retenção ou shutdown retorn
         assert.ok(!res.text.includes('SQL'));
     }
 });
-test('health legado preserva o contrato e verifica banco e retenção', async () => {
+test('health legado verifica conexão; ready continua verificando retenção e schema', async () => {
     const response = await request(fixture().app).get('/api/health').expect(200);
     assert.equal(response.body.status, 'ok');
     assert.equal(response.body.database, 'connected');
     assert.ok(Number.isFinite(Date.parse(response.body.timestamp)));
-    for (const overrides of [
-        { database: { async ping() { throw new Error('banco indisponível'); } } },
-        { retention: { async check() { return false; } } }
-    ]) {
-        await request(fixture(overrides).app).get('/api/health').expect(503);
-    }
+    await request(fixture({ database: { async ping() { throw new Error('banco indisponível'); } } }).app).get('/api/health').expect(503);
+    const pendingSchema = fixture({ retention: { async check() { return false; } } });
+    await request(pendingSchema.app).get('/api/health').expect(200);
+    await request(pendingSchema.app).get('/ready').expect(503);
 });
 test('404/erro assíncrono/validação não expõem URL, SQL, stack ou detalhes arbitrários', async () => {
     const { app } = fixture({ registerRoutes(app) {

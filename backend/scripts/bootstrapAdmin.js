@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { loadEnvironment, validateEnv } from '../src/config/env.js';
+import { loadEnvironment } from '../src/config/env.js';
+import { runtimeConfig } from '../src/config/runtime.js';
 import { createDatabase } from '../src/config/database.js';
 import { createIdentityModel } from '../src/models/identityModel.js';
 import { recordAuditEvent } from '../src/models/auditModel.js';
@@ -26,7 +27,7 @@ async function main() {
     try {
         loadEnvironment();
         if (!process.argv.includes('--apply') || process.env.BOOTSTRAP_ADMIN_CONFIRMED !== 'true') throw new Error('Confirmação local ausente');
-        const config = validateEnv();
+        const config = runtimeConfig();
         let body = '';
         for await (const chunk of process.stdin) { body += chunk; if (Buffer.byteLength(body) > 8192) throw new Error('Entrada excessiva'); }
         const input = JSON.parse(body);

@@ -13,7 +13,7 @@ import { recordAuditEvent } from '../src/models/auditModel.js';
 import { migrationPlan, splitSql } from '../scripts/migrationPlan.js';
 import { applyPlan } from '../scripts/migrate.js';
 
-test('env valida sem expor valores; produção sem docs, HTTPS e store compatível', () => {
+test('env valida sem expor valores; produção sem docs e store compatível', () => {
     const env = testEnvironment();
     assert.equal(validateEnv(env).port, 8080);
     for (const changes of [{ JWT_SECRET: '' }, { DB_HOST: '' }, { PORT: 'NaN' }, { DB_QUEUE_LIMIT: '0' }, { CORS_ORIGINS: '*' }, { TRUST_PROXY: 'true' }, { TRUST_PROXY: '0.0.0.0/0' }, { INSTANCE_COUNT: '2' }, { DOCS_ENABLED: 'TRUE' }, { CAPTCHA_PROVIDER: 'fake-success' }]) assert.throws(() => validateEnv({ ...env, ...changes }), /Configuração inválida/);
@@ -21,6 +21,26 @@ test('env valida sem expor valores; produção sem docs, HTTPS e store compatív
     const production = validateEnv({ ...env, NODE_ENV: 'production', PUBLIC_ORIGIN: 'https://api.invalid.example', CORS_ORIGINS: 'https://web.invalid.example' });
     assert.equal(production.docsEnabled, false);
     assert.throws(() => validateEnv({ ...env, DB_PASSWORD: '' }), error => !error.message.includes(env.JWT_SECRET));
+});
+test('configuração anterior do Coolify aceita origem HTTP explícita e defaults da aplicação', () => {
+    const env = testEnvironment({ NODE_ENV: 'production', FRONTEND_URL: 'http://frontend.cineastra.10.189.87.231.sslip.io', PORT: '8080' });
+    delete env.JWT_ISSUER;
+    delete env.JWT_AUDIENCE;
+    const config = validateEnv(env);
+    assert.deepEqual(config.origins, [env.FRONTEND_URL]);
+    assert.equal(config.publicOrigin, 'http://localhost:8080');
+    assert.equal(config.host, '0.0.0.0');
+    assert.equal(config.port, 8080);
+    assert.equal(config.jwt.issuer, 'cineastra');
+    assert.equal(config.jwt.audience, 'cineastra-web');
+    assert.equal(config.logging.retentionMode, 'worker');
+    assert.equal(config.docsEnabled, false);
+    const explicit = validateEnv({ ...env, CORS_ORIGINS: 'https://frontend.example.com', PUBLIC_ORIGIN: 'http://backend.cineastra.10.189.87.231.sslip.io', LOG_RETENTION_MODE: 'event' });
+    assert.deepEqual(explicit.origins, ['https://frontend.example.com']);
+    assert.equal(explicit.logging.retentionMode, 'event');
+    for (const origin of ['*', 'ftp://example.com', 'https://user:password@example.com', 'https://example.com/path']) {
+        assert.throws(() => validateEnv({ ...env, FRONTEND_URL: origin }));
+    }
 });
 test('IDs >2^53 e DECIMAL permanecem strings; rejeita Number arredondado e dinheiro float', () => {
     assert.equal(idString('9007199254740993'), '9007199254740993');

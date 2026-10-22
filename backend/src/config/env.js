@@ -7,6 +7,14 @@ export function loadEnvironment() {
     dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)), quiet: true });
 }
 
+export class EnvironmentValidationError extends Error {
+    constructor(fields) {
+        const names = [...fields].sort();
+        super(`Configuração inválida: ${names.join(', ')}`);
+        this.fields = names;
+    }
+}
+
 export function validateEnv(env = process.env) {
     const errors = new Set();
     const required = (key) => {
@@ -30,7 +38,7 @@ export function validateEnv(env = process.env) {
     const production = mode === 'production';
     const origins = (env.CORS_ORIGINS ?? env.FRONTEND_URL ?? (production ? '' : 'http://localhost:3000')).split(',').map(s => s.trim()).filter(Boolean);
     const validOrigin = value => {
-        try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) && !u.username && !u.password && u.origin === value && (!production || u.protocol === 'https:'); }
+        try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) && !u.username && !u.password && u.origin === value; }
         catch { return false; }
     };
     if (!origins.length || origins.some(o => !validOrigin(o))) errors.add('CORS_ORIGINS');
@@ -48,9 +56,9 @@ export function validateEnv(env = process.env) {
     const instances = integer('INSTANCE_COUNT', 1, 1, 1000);
     const rateLimitStore = env.RATE_LIMIT_STORE ?? 'memory';
     if (!['memory', 'external'].includes(rateLimitStore) || (instances > 1 && rateLimitStore === 'memory')) errors.add('RATE_LIMIT_STORE');
-    const retentionMode = env.LOG_RETENTION_MODE ?? 'event';
+    const retentionMode = env.LOG_RETENTION_MODE ?? 'worker';
     if (!['event', 'worker'].includes(retentionMode)) errors.add('LOG_RETENTION_MODE');
-    const publicOrigin = env.PUBLIC_ORIGIN ?? 'http://localhost:8080';
+    const publicOrigin = env.PUBLIC_ORIGIN ?? `http://localhost:${env.PORT ?? 8080}`;
     if (!validOrigin(publicOrigin)) errors.add('PUBLIC_ORIGIN');
     const sampleRate = Number(env.LOG_SUCCESS_SAMPLE_RATE ?? 0.05);
     if (!Number.isFinite(sampleRate) || sampleRate < 0 || sampleRate > 1) errors.add('LOG_SUCCESS_SAMPLE_RATE');
@@ -68,7 +76,7 @@ export function validateEnv(env = process.env) {
         bodyLimit: integer('BODY_LIMIT_BYTES', 65536, 1024, 1048576),
         httpTimeout: integer('HTTP_TIMEOUT_MS', 10000, 100, 10000),
         shutdownTimeout: integer('SHUTDOWN_TIMEOUT_MS', 10000, 100, 30000),
-        jwt: { secret, issuer: required('JWT_ISSUER'), audience: required('JWT_AUDIENCE'), ttl: integer('JWT_TTL_SECONDS', 900, 60, 900) },
+        jwt: { secret, issuer: env.JWT_ISSUER ?? 'cineastra', audience: env.JWT_AUDIENCE ?? 'cineastra-web', ttl: integer('JWT_TTL_SECONDS', 900, 60, 900) },
         identity: { encryptionKey, bcryptCost: integer('BCRYPT_COST', 12, 10, 14), termsVersion: env.TERMS_VERSION || null, privacyVersion: env.PRIVACY_VERSION || null, legalBasis: env.IDENTITY_LEGAL_BASIS || null },
         db: { host: required('DB_HOST'), port: integer('DB_PORT', 3306, 1, 65535), user: required('DB_USER'), password: required('DB_PASSWORD'), database: required('DB_NAME'),
             connectionLimit: integer('DB_CONNECTION_LIMIT', 10, 1, 100), queueLimit: integer('DB_QUEUE_LIMIT', 100, 1, 1000), timeout: integer('DB_TIMEOUT_MS', 3000, 100, 5000) },
@@ -76,6 +84,8 @@ export function validateEnv(env = process.env) {
         logging: { queueLimit: integer('LOG_QUEUE_LIMIT', 200, 1, 10000), sampleRate, retentionMode, purgeInterval: integer('LOG_PURGE_INTERVAL_MS', 900000, 60000, 3600000) }
     };
     if (config.db.database && !/^[a-zA-Z0-9_]+$/.test(config.db.database)) errors.add('DB_NAME');
+    if (typeof config.jwt.issuer !== 'string' || !config.jwt.issuer.trim()) errors.add('JWT_ISSUER');
+    if (typeof config.jwt.audience !== 'string' || !config.jwt.audience.trim()) errors.add('JWT_AUDIENCE');
     if (config.imageUpload.directory && !isAbsolute(config.imageUpload.directory)) errors.add('IMAGE_STAGING_DIR');
     if (config.gallery.directory && !isAbsolute(config.gallery.directory)) errors.add('IMAGE_GALLERY_DIR');
     if (config.gallery.directory && config.imageUpload.directory && config.gallery.directory === config.imageUpload.directory) errors.add('IMAGE_GALLERY_DIR');
@@ -85,6 +95,6 @@ export function validateEnv(env = process.env) {
     for (const [key, value, max] of [['TERMS_VERSION', config.identity.termsVersion, 50], ['PRIVACY_VERSION', config.identity.privacyVersion, 50], ['IDENTITY_LEGAL_BASIS', config.identity.legalBasis, 100]]) {
         if (value && (!value.trim() || value.length > max)) errors.add(key);
     }
-    if (errors.size) throw new Error(`Configuração inválida: ${[...errors].sort().join(', ')}`);
+    if (errors.size) throw new EnvironmentValidationError(errors);
     return Object.freeze(config);
 }

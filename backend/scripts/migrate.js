@@ -1,5 +1,6 @@
 import { pathToFileURL } from 'node:url';
-import { loadEnvironment, validateEnv } from '../src/config/env.js';
+import { loadEnvironment } from '../src/config/env.js';
+import { runtimeConfig } from '../src/config/runtime.js';
 import { createDatabase } from '../src/config/database.js';
 import { migrationPlan } from './migrationPlan.js';
 
@@ -76,7 +77,7 @@ async function main() {
         return;
     }
     loadEnvironment();
-    const config = validateEnv();
+    const config = runtimeConfig();
     if (config.production || !['development', 'test', 'staging'].includes(config.mode) || process.env.MIGRATION_CONFIRMED_NON_PRODUCTION !== 'true' || process.env.MIGRATION_TARGET !== config.db.database) throw new Error('Migration exige alvo não produtivo confirmado explicitamente');
     // Runner de implantação tem prazo total distinto do pool HTTP; mantém limites finitos.
     const database = createDatabase({ ...config.db, timeout: 30000 });
