@@ -1,5 +1,5 @@
 // Troque esta rota se a home do streaming estiver em outro endereço.
-export const STREAMING_PATH = "/streaming";
+export const STREAMING_PATH = "/streaming/home";
 export const PROFILE_STORAGE_KEY = "cineastra.streaming.profiles.v1";
 export const ACTIVE_PROFILE_KEY = "cineastra.streaming.active-profile.v1";
 export const MAX_PROFILES = 5;
