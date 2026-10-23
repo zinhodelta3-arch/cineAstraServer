@@ -5,7 +5,7 @@ import { createLogQueue } from '../src/services/logService.js';
 
 export function testEnvironment(overrides = {}) {
     // Credenciais fictícias SOMENTE teste isolado; nenhum banco conectado por esta fixture.
-    return { NODE_ENV: 'test', JWT_SECRET: randomBytes(48).toString('hex'), JWT_ISSUER: 'cineastra-test', JWT_AUDIENCE: 'test-client',
+    return { CAPTCHA_ENABLED: 'true', TWO_FACTOR_ENABLED: 'true', NODE_ENV: 'test', JWT_SECRET: randomBytes(48).toString('hex'), JWT_ISSUER: 'cineastra-test', JWT_AUDIENCE: 'test-client',
         DB_HOST: '127.0.0.1', DB_USER: 'unit_fixture', DB_PASSWORD: 'unit_fixture_only', DB_NAME: 'unit_fixture_test', ...overrides };
 }
 export function fixture(options = {}) {

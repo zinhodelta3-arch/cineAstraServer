@@ -14,6 +14,10 @@ const conflict = () => new ApiError('Cadastro ou operação em conflito', 409, n
 export function createIdentityService({ database, model, config, tokens, providers }) {
     let dummyHash;
     const settings = config.identity;
+    const twoFactorEnabled = config.security?.twoFactorEnabled === true;
+    const requireTwoFactorEnabled = () => {
+        if (!twoFactorEnabled) throw new ApiError('2FA temporariamente desativado', 404, null, 'FEATURE_DISABLED');
+    };
     const audit = (c, type, id, context = {}) => recordAuditEvent(c, { eventId: randomUUID(), requestId: context.requestId ?? randomUUID(), aggregateId: id, actorId: context.actor?.id ?? null, type, version: 1, occurredAt: new Date().toISOString() });
     const transaction = async (fn, context = {}) => {
         try { return await database.transaction(fn, { signal: context.signal }); }
@@ -28,7 +32,7 @@ export function createIdentityService({ database, model, config, tokens, provide
         const u = await activeUser(c, context.actor.id);
         const s = await model.activeSession(c, context.actor.id, context.actor.sessionId);
         if (!s || s.revogada_em || !(instant(s.expiracao) > Date.now())) throw ApiError.naoAutorizado();
-        if (['ADMIN', 'SUPERVISOR'].includes(u.tipo_usuario) && !s.two_factor_verified) throw ApiError.acessoNegado();
+        if (twoFactorEnabled && !s.two_factor_verified && (['ADMIN', 'SUPERVISOR'].includes(u.tipo_usuario) || (await model.factors(c, u.id_usuario)).length)) throw ApiError.acessoNegado();
         return u;
     }
     async function credential(email, password) {
@@ -63,6 +67,7 @@ export function createIdentityService({ database, model, config, tokens, provide
         return step !== null && (factor.ultimo_passo === null || BigInt(step) > BigInt(factor.ultimo_passo)) ? step : null;
     }
     async function proveFactor(c, user, code) {
+        if (!twoFactorEnabled) return true;
         const factors = await model.factors(c, user.id_usuario);
         if (!factors.length) {
             if (['ADMIN', 'SUPERVISOR'].includes(user.tipo_usuario)) throw ApiError.acessoNegado();
@@ -95,6 +100,7 @@ export function createIdentityService({ database, model, config, tokens, provide
             async verifyActive({ userId, sessionId, jti, signal }) {
                 const row = await model.session(sessionId, userId, tokenHash(jti), { signal });
                 if (!row) return null;
+                if (twoFactorEnabled && !row.two_factor_verified && (await transaction(c => model.factors(c, userId), { signal })).length) return null;
                 return { userId: idString(row.id_usuario), expiresAt: new Date(instant(row.expiracao)).toISOString(), revoked: Boolean(row.revogada_em), twoFactorVerified: row.two_factor_verified === 1 || row.two_factor_verified === true };
             }
         },
@@ -121,13 +127,13 @@ export function createIdentityService({ database, model, config, tokens, provide
             const snapshot = await credential(input.email, input.password);
             return transaction(async c => {
                 const user = await activeUser(c, snapshot.id_usuario); sameCredential(user, snapshot);
-                const factors = await model.factors(c, user.id_usuario);
+                const factors = twoFactorEnabled ? await model.factors(c, user.id_usuario) : [];
                 if (factors.length) {
                     const factor = factors.find(f => f.metodo === 'APP') ?? factors[0];
                     if (factor.metodo !== 'APP') throw ApiError.indisponivel();
                     return challenge(c, user.id_usuario, 'LOGIN', factor.metodo);
                 }
-                if (['ADMIN', 'SUPERVISOR'].includes(user.tipo_usuario)) return challenge(c, user.id_usuario, 'ENROLLMENT');
+                if (twoFactorEnabled && ['ADMIN', 'SUPERVISOR'].includes(user.tipo_usuario)) return challenge(c, user.id_usuario, 'ENROLLMENT');
                 await audit(c, 'IDENTITY.LOGIN', user.id_usuario, context);
                 return session(c, user, false);
             }, context);
@@ -152,6 +158,7 @@ export function createIdentityService({ database, model, config, tokens, provide
             }, context);
         },
         async enroll(input, context = {}) {
+            requireTwoFactorEnabled();
             if (input.method !== 'APP') throw ApiError.indisponivel();
             // Falha de chave antes de alterar desafio; segredo entregue somente em enrollment autorizado.
             const totp = newTotp(context.actor?.id ?? 'pending');
@@ -175,6 +182,7 @@ export function createIdentityService({ database, model, config, tokens, provide
             }, context);
         },
         async verify(input, context = {}) {
+            requireTwoFactorEnabled();
             const hash = tokenHash(input.challengeToken);
             const lookup = await model.challenge(hash);
             if (!lookup) throw ApiError.naoAutorizado();
@@ -244,6 +252,7 @@ export function createIdentityService({ database, model, config, tokens, provide
             }, context);
         },
         async disableFactor(input, context) {
+            requireTwoFactorEnabled();
             const snapshot = await passwordSnapshot(context.actor.id, input.password);
             return transaction(async c => {
                 const user = await activeActor(c, context); sameCredential(user, snapshot);

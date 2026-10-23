@@ -7,9 +7,9 @@ const file = new URL('../src/docs/openapi.json', import.meta.url);
 const spec = JSON.parse(await readFile(file, 'utf8'));
 spec.info.title = 'CineAstra API';
 spec.info.version = '1.1.0';
-spec.info.description = 'Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. Cadastro requer CAPTCHA, termos aprovados e prova de idade; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva.';
+spec.info.description = 'Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. CAPTCHA e 2FA ficam em standby por padrão (CAPTCHA_ENABLED=false, TWO_FACTOR_ENABLED=false). Cadastro requer termos aprovados e prova de idade; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva.';
 spec.tags = [{ name: 'Infraestrutura' }, { name: 'Documentação' }, { name: 'Identidade' }];
-spec.components.securitySchemes.bearerAuth.description = 'JWT HS256 curto com sub/sid/jti, issuer/audience. Sessão persistida, não revogada, usuário ativo e perfil atual. ADMIN/SUPERVISOR e usuários com fator ativo completam 2FA antes de receber acesso.';
+spec.components.securitySchemes.bearerAuth.description = 'JWT HS256 curto com sub/sid/jti, issuer/audience. Sessão persistida, não revogada, usuário ativo e perfil atual. Quando TWO_FACTOR_ENABLED=true, ADMIN/SUPERVISOR e usuários com fator ativo completam 2FA antes de receber acesso.';
 spec.paths['/api-docs'].get.description = 'UI e assets locais. Login e desafio 2FA retornam accessToken somente após autenticação completa; informar token em Authorize. Não persistir autorização. Produção desativada.';
 const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const obj = (properties, required = Object.keys(properties)) => ({ type: 'object', additionalProperties: false, required, properties });
@@ -19,6 +19,7 @@ for (const [name, schema] of Object.entries(schemas)) {
         json.properties[field].format = 'password'; json.properties[field].writeOnly = true;
         json.properties[field].description = 'Máximo 72 bytes UTF-8; senha nova mínimo 12 caracteres, maiúscula, minúscula, número e símbolo. Confirmação idêntica. Sem truncamento bcrypt.';
     }
+    if (json.properties?.captchaToken) json.properties.captchaToken.description = 'Obrigatório somente quando CAPTCHA_ENABLED=true; omitido em standby.';
     if (json.properties?.cpf) json.properties.cpf.description = 'CPF normalizado para 11 dígitos e dígitos verificadores válidos; UNIQUE também no banco.';
     if (json.properties?.dateOfBirth) json.properties.dateOfBirth.description = 'Data civil real, não futura. Cadastro exige prova do provider vinculada a CPF/e-mail/data; autodeclaração não comprova idade.';
     if (name === 'enroll') json.description = 'Exatamente um: challengeToken restrito recebido no login OU password com Bearer. Rotação exige code atual. APP implementado. SMS/EMAIL retornam 503 até integração real de destino verificado e entrega.';
@@ -75,6 +76,8 @@ for (const r of identityOperations) {
         : obj({ section: str, data: { type: 'object', nullable: true, additionalProperties: true }, scope: { type: 'string', enum: ['IDENTITY_MODULE'] } });
     const scope = r.access === 'admin' ? 'ADMIN autenticado e 2FA completo.' : r.access === 'private' ? 'Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN.' : r.access === 'enrollment' ? 'Bearer+senha OU desafio restrito de enrollment.' : 'Público; sem bearer obrigatório.';
     const op = { operationId: r.operationId, tags: ['Identidade'], summary: descriptions[r.operationId]?.split('. ')[0] ?? r.operationId.replaceAll('_', ' '), description: `${scope} ${descriptions[r.operationId] ?? 'Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas.'} Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.`, security: r.access === 'enrollment' ? [{}, { bearerAuth: [] }] : ['public'].includes(r.access) ? [] : [{ bearerAuth: [] }], responses: {} };
+    op.description = 'As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ' + op.description;
+    if (r.path.startsWith('/api/auth/2fa/')) op.description = 'Em standby retorna 404 FEATURE_DISABLED sem alterar fatores ou desafios. ' + op.description;
     if (r.path.includes('{id}')) op.parameters = [...r.path.matchAll(/\{(\w+)\}/g)].map(m => ({ name: m[1], in: 'path', required: true, schema: ref('Id') }));
     if (r.operationId.startsWith('list_') || r.operationId === 'export') op.parameters = [...(op.parameters ?? []), ...params];
     if (r.operationId === 'export') op.parameters.push({ name: 'section', in: 'query', schema: { type: 'string', enum: ['profile', 'addresses', 'contacts', 'preferences', 'consents', 'age', 'privacy', 'guardians', 'authorizations', 'sessions', 'factors', 'recoveries', 'controls'], default: 'profile' } });

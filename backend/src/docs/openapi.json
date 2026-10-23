@@ -3,7 +3,7 @@
   "info": {
     "title": "CineAstra API",
     "version": "1.32.0",
-    "description": "Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. Cadastro requer CAPTCHA, termos aprovados e prova de idade; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva. Tarefa14: catálogo administrativo e consultas públicas de filmes/gêneros ativos; uploads/galerias ficam15/16. Tarefa34: checkout transacional com TTL de 15 minutos, pagamento separado e aprovação autenticada; tickets por unidade emitidos na aprovação e consumidos por equipe vinculada."
+    "description": "CAPTCHA e 2FA ficam em standby por padrão (CAPTCHA_ENABLED=false, TWO_FACTOR_ENABLED=false). Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. Cadastro requer CAPTCHA, termos aprovados e prova de idade; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva. Tarefa14: catálogo administrativo e consultas públicas de filmes/gêneros ativos; uploads/galerias ficam15/16. Tarefa34: checkout transacional com TTL de 15 minutos, pagamento separado e aprovação autenticada; tickets por unidade emitidos na aprovação e consumidos por equipe vinculada."
   },
   "servers": [
     {
@@ -414,7 +414,7 @@
           "Identidade"
         ],
         "summary": "Cadastro público somente CLIENTE",
-        "description": "Público; sem bearer obrigatório. Cadastro público somente CLIENTE. Exige CAPTCHA, termos/privacidade atuais e provider confiável de idade; até 16 anos exige prova de responsável. Nenhum JWT emitido no cadastro. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Cadastro público somente CLIENTE. Exige CAPTCHA, termos/privacidade atuais e provider confiável de idade; até 16 anos exige prova de responsável. Nenhum JWT emitido no cadastro. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [],
         "responses": {
           "201": {
@@ -520,7 +520,7 @@
           "Identidade"
         ],
         "summary": "Alias compatível de POST /api/auth/register.",
-        "description": "Público; sem bearer obrigatório. Alias compatível de POST /api/auth/register. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Alias compatível de POST /api/auth/register. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [],
         "responses": {
           "201": {
@@ -626,7 +626,7 @@
           "Identidade"
         ],
         "summary": "Credenciais inválidas/inativas retornam mesma resposta 401",
-        "description": "Público; sem bearer obrigatório. Credenciais inválidas/inativas retornam mesma resposta 401. Conta com fator ativo exige prova; ADMIN/SUPERVISOR sem fator recebem somente desafio restrito para enrollment. Desafio: 5 minutos, máximo 5 tentativas persistidas. Fator APP usa TOTP com proteção contra replay. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Credenciais inválidas/inativas retornam mesma resposta 401. Conta com fator ativo exige prova; ADMIN/SUPERVISOR sem fator recebem somente desafio restrito para enrollment. Desafio: 5 minutos, máximo 5 tentativas persistidas. Fator APP usa TOTP com proteção contra replay. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [],
         "responses": {
           "200": {
@@ -733,7 +733,7 @@
           "Identidade"
         ],
         "summary": "Revoga a sessão atual persistentemente.",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Revoga a sessão atual persistentemente. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Revoga a sessão atual persistentemente. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -799,7 +799,7 @@
           "Identidade"
         ],
         "summary": "Resposta genérica para e-mail existente/ausente/inativo",
-        "description": "Público; sem bearer obrigatório. Resposta genérica para e-mail existente/ausente/inativo. Token aleatório armazenado somente como hash, expira em 30 minutos. E-mail fora da transação. Falha de entrega não informa existência. Provider global ausente retorna 503. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Resposta genérica para e-mail existente/ausente/inativo. Token aleatório armazenado somente como hash, expira em 30 minutos. E-mail fora da transação. Falha de entrega não informa existência. Provider global ausente retorna 503. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [],
         "responses": {
           "200": {
@@ -908,7 +908,7 @@
           "Identidade"
         ],
         "summary": "Token de uso único",
-        "description": "Público; sem bearer obrigatório. Token de uso único. Invalida todos os resets/desafios e revoga todas as sessões. 2FA permanece ativo; reset de senha não recupera fator perdido. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Token de uso único. Invalida todos os resets/desafios e revoga todas as sessões. 2FA permanece ativo; reset de senha não recupera fator perdido. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [],
         "responses": {
           "204": {
@@ -980,7 +980,7 @@
           "Identidade"
         ],
         "summary": "Ativa somente após verify",
-        "description": "Bearer+senha OU desafio restrito de enrollment. Ativa somente após verify. Informar challengeToken de enrollment obrigatório, OU Bearer + password. Rotação exige também code do fator atual; antigo permanece ativo até confirmação. Chave AES separada obrigatória. SMS/e-mail indisponíveis sem provider integrado. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "Em standby retorna 404 FEATURE_DISABLED sem alterar fatores ou desafios. As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Bearer+senha OU desafio restrito de enrollment. Ativa somente após verify. Informar challengeToken de enrollment obrigatório, OU Bearer + password. Rotação exige também code do fator atual; antigo permanece ativo até confirmação. Chave AES separada obrigatória. SMS/e-mail indisponíveis sem provider integrado. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {},
           {
@@ -1085,7 +1085,7 @@
           "Identidade"
         ],
         "summary": "Verifica desafio de login ou enrollment, expiração, 5 tentativas, consumo único e passo TOTP crescente",
-        "description": "Público; sem bearer obrigatório. Verifica desafio de login ou enrollment, expiração, 5 tentativas, consumo único e passo TOTP crescente. Concluído, emite JWT. GET não consome tokens. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "Em standby retorna 404 FEATURE_DISABLED sem alterar fatores ou desafios. As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Verifica desafio de login ou enrollment, expiração, 5 tentativas, consumo único e passo TOTP crescente. Concluído, emite JWT. GET não consome tokens. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [],
         "responses": {
           "200": {
@@ -1185,7 +1185,7 @@
           "Identidade"
         ],
         "summary": "Reautenticação com senha e TOTP atual",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Reautenticação com senha e TOTP atual. ADMIN/SUPERVISOR não podem desativar 2FA obrigatório. Revoga sessões e desafios. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "Em standby retorna 404 FEATURE_DISABLED sem alterar fatores ou desafios. As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Reautenticação com senha e TOTP atual. ADMIN/SUPERVISOR não podem desativar 2FA obrigatório. Revoga sessões e desafios. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -1261,7 +1261,7 @@
           "Identidade"
         ],
         "summary": "me",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -1353,7 +1353,7 @@
           "Identidade"
         ],
         "summary": "Campos permitidos apenas",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos permitidos apenas. E-mail exige currentPassword, code se 2FA ativo e emailProof verificada pelo provider. Senha exige confirmação, currentPassword e code se aplicável. Alterações sensíveis revogam todas as sessões. CPF, idade, role e status não são autoatribuíveis. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos permitidos apenas. E-mail exige currentPassword, code se 2FA ativo e emailProof verificada pelo provider. Senha exige confirmação, currentPassword e code se aplicável. Alterações sensíveis revogam todas as sessões. CPF, idade, role e status não são autoatribuíveis. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -1455,7 +1455,7 @@
           "Identidade"
         ],
         "summary": "Desativa conta e revoga autenticação; registra solicitação durável",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Desativa conta e revoga autenticação; registra solicitação durável. 202 confirma recebimento, NÃO exclusão/anonimização concluída. Retenção financeira e política de anonimização exigem decisão de privacidade. Location aponta consulta administrativa; guardar id para atendimento. Último ADMIN ativo não é desativado. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Desativa conta e revoga autenticação; registra solicitação durável. 202 confirma recebimento, NÃO exclusão/anonimização concluída. Retenção financeira e política de anonimização exigem decisão de privacidade. Location aponta consulta administrativa; guardar id para atendimento. Último ADMIN ativo não é desativado. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -1565,7 +1565,7 @@
           "Identidade"
         ],
         "summary": "Portabilidade paginada do módulo identidade, própria conta, senha e fator se ativo",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Portabilidade paginada do módulo identidade, própria conta, senha e fator se ativo. Seções explícitas; sem hash, segredo, token ou referência interna de prova. CPF só aparece nesta exportação privada. Outros módulos devem acrescentar seus exports. Novo TOTP necessário em cada página sensível. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Portabilidade paginada do módulo identidade, própria conta, senha e fator se ativo. Seções explícitas; sem hash, segredo, token ou referência interna de prova. CPF só aparece nesta exportação privada. Outros módulos devem acrescentar seus exports. Novo TOTP necessário em cada página sensível. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -1735,7 +1735,7 @@
           "Identidade"
         ],
         "summary": "getPreferences",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -1827,7 +1827,7 @@
           "Identidade"
         ],
         "summary": "patchPreferences",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -1931,7 +1931,7 @@
           "Identidade"
         ],
         "summary": "Somente ADMIN com 2FA",
-        "description": "ADMIN autenticado e 2FA completo. Somente ADMIN com 2FA. Cria contas internas; CPF/e-mail únicos. Novo ADMIN/SUPERVISOR passa por enrollment obrigatório. Primeiro ADMIN via CLI seguro bootstrap:admin. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Somente ADMIN com 2FA. Cria contas internas; CPF/e-mail únicos. Novo ADMIN/SUPERVISOR passa por enrollment obrigatório. Primeiro ADMIN via CLI seguro bootstrap:admin. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2041,7 +2041,7 @@
           "Identidade"
         ],
         "summary": "Somente ADMIN com 2FA",
-        "description": "ADMIN autenticado e 2FA completo. Somente ADMIN com 2FA. Revoga sessões/desafios/resets ao alterar perfil/status. Preserva último ADMIN ativo. Reativação de conta inativa/bloqueada exige revisão, retorna 409. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Somente ADMIN com 2FA. Revoga sessões/desafios/resets ao alterar perfil/status. Preserva último ADMIN ativo. Reativação de conta inativa/bloqueada exige revisão, retorna 409. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2155,7 +2155,7 @@
           "Identidade"
         ],
         "summary": "privacyStatus",
-        "description": "ADMIN autenticado e 2FA completo. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2259,7 +2259,7 @@
           "Identidade"
         ],
         "summary": "getParental",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2361,7 +2361,7 @@
           "Identidade"
         ],
         "summary": "patchParental",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2475,7 +2475,7 @@
           "Identidade"
         ],
         "summary": "Somente responsável com vínculo legal comprovado e ativo",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Somente responsável com vínculo legal comprovado e ativo. Controle parental deve permitir finalidade; prova de idade vigente. Autorização por operação, prazo de até 24 horas e UNIQUE. Checkout/assinaturas futuros devem consultar requireAge na sua transação. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Somente responsável com vínculo legal comprovado e ativo. Controle parental deve permitir finalidade; prova de idade vigente. Autorização por operação, prazo de até 24 horas e UNIQUE. Checkout/assinaturas futuros devem consultar requireAge na sua transação. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2595,7 +2595,7 @@
           "Identidade"
         ],
         "summary": "list addresses",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2708,7 +2708,7 @@
           "Identidade"
         ],
         "summary": "add addresses",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2818,7 +2818,7 @@
           "Identidade"
         ],
         "summary": "get addresses",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -2920,7 +2920,7 @@
           "Identidade"
         ],
         "summary": "patch addresses",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3032,7 +3032,7 @@
           "Identidade"
         ],
         "summary": "delete addresses",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3108,7 +3108,7 @@
           "Identidade"
         ],
         "summary": "list contacts",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3221,7 +3221,7 @@
           "Identidade"
         ],
         "summary": "add contacts",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3331,7 +3331,7 @@
           "Identidade"
         ],
         "summary": "get contacts",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3433,7 +3433,7 @@
           "Identidade"
         ],
         "summary": "patch contacts",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3545,7 +3545,7 @@
           "Identidade"
         ],
         "summary": "delete contacts",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3621,7 +3621,7 @@
           "Identidade"
         ],
         "summary": "Renova prova de idade pelo provider real, vinculada aos dados já persistidos; atualiza histórico e aceite dos documentos vigentes",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Renova prova de idade pelo provider real, vinculada aos dados já persistidos; atualiza histórico e aceite dos documentos vigentes. Sem autodeclaração. Troca de responsável exige revisão separada do vínculo (409). Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Renova prova de idade pelo provider real, vinculada aos dados já persistidos; atualiza histórico e aceite dos documentos vigentes. Sem autodeclaração. Troca de responsável exige revisão separada do vínculo (409). Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3743,7 +3743,7 @@
           "Identidade"
         ],
         "summary": "adminGet",
-        "description": "ADMIN autenticado e 2FA completo. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -3847,7 +3847,7 @@
           "Identidade"
         ],
         "summary": "authorization",
-        "description": "Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -33813,7 +33813,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "JWT HS256 curto com sub/sid/jti, issuer/audience. Sessão persistida, não revogada, usuário ativo e perfil atual. ADMIN/SUPERVISOR e usuários com fator ativo completam 2FA antes de receber acesso."
+        "description": "As exigências de 2FA se aplicam somente quando TWO_FACTOR_ENABLED=true. JWT HS256 curto com sub/sid/jti, issuer/audience. Sessão persistida, não revogada, usuário ativo e perfil atual. ADMIN/SUPERVISOR e usuários com fator ativo completam 2FA antes de receber acesso."
       }
     },
     "headers": {
@@ -34040,7 +34040,8 @@
           "captchaToken": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 4096
+            "maxLength": 4096,
+            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
           }
         },
         "required": [
@@ -34054,8 +34055,7 @@
           "privacyVersion",
           "acceptTerms",
           "acceptPrivacy",
-          "ageProof",
-          "captchaToken"
+          "ageProof"
         ],
         "additionalProperties": false
       },
@@ -34079,13 +34079,13 @@
           "captchaToken": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 4096
+            "maxLength": 4096,
+            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
           }
         },
         "required": [
           "email",
-          "password",
-          "captchaToken"
+          "password"
         ],
         "additionalProperties": false
       },
@@ -34101,12 +34101,12 @@
           "captchaToken": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 4096
+            "maxLength": 4096,
+            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
           }
         },
         "required": [
-          "email",
-          "captchaToken"
+          "email"
         ],
         "additionalProperties": false
       },
@@ -34136,14 +34136,14 @@
           "captchaToken": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 4096
+            "maxLength": 4096,
+            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
           }
         },
         "required": [
           "token",
           "password",
-          "passwordConfirmation",
-          "captchaToken"
+          "passwordConfirmation"
         ],
         "additionalProperties": false
       },

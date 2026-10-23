@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { ApiError } from '../utils/ApiError.js';
 import { schemas, validateBody, validateId } from '../validators/identityValidators.js';
 import { allowRoles } from '../middlewares/authMiddleware.js';
 import { requireCaptcha } from '../providers/captchaProvider.js';
@@ -38,18 +39,21 @@ export const identityOperations = [
     ])
 ].map(([method, path, operationId, schema, access, flow, captcha, status = 200, action = operationId]) => ({ method, path, operationId, schema, access, flow, captcha, status, action }));
 
-export function identityRoutes(controller, { auth, limits, captcha }) {
+export function identityRoutes(controller, { auth, limits, captcha, security = {} }) {
     const router = Router();
     router.use((req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
     for (const r of identityOperations) {
         const middleware = [];
+        if (r.path.startsWith('/api/auth/2fa/') && security.twoFactorEnabled !== true) {
+            middleware.push(() => { throw new ApiError('2FA temporariamente desativado', 404, null, 'FEATURE_DISABLED'); });
+        }
         if (r.access === 'private' || r.access === 'admin') middleware.push(auth);
         if (r.access === 'admin') middleware.push(allowRoles('ADMIN'));
         if (r.flow) middleware.push(...limits[r.flow]);
         if (r.path.includes('{id}')) middleware.push(validateId);
         if (r.schema) middleware.push(validateBody(schemas[r.schema]));
         if (r.access === 'enrollment') middleware.push((req, res, next) => req.input.password ? auth(req, res, next) : next());
-        if (r.captcha) middleware.push(requireCaptcha(captcha));
+        if (r.captcha && security.captchaEnabled === true) middleware.push(requireCaptcha(captcha));
         const handler = Array.isArray(r.action) ? controller[r.action[0]](r.action[1]) : controller[r.action];
         router[r.method](r.path.replace(/\{(\w+)\}/g, ':$1'), ...middleware, handler);
     }

@@ -28,7 +28,7 @@ O código de execução está em `src/`, incluindo `src/docs/openapi.json`, para
 
 As demais respostas usam `{success:true,data,requestId}` ou `{success:false,code,message,requestId,details?}`. IDs BIGINT e valores DECIMAL são strings. Consulte `src/docs/openapi.json` para URLs, autenticação e DTOs; não deduza rotas apenas pelos nomes dos módulos.
 
-O primeiro administrador pode ser criado com `npm run bootstrap:admin -- --apply`, `BOOTSTRAP_ADMIN_CONFIRMED=true` e JSON pela entrada padrão segura conforme `schemas.adminUser` em `src/validators/identityValidators.js`. O comando recusa administrador preexistente e exige enrollment/2FA no login. Nenhuma conta de administrador foi criada na integração.
+O primeiro administrador pode ser criado com `npm run bootstrap:admin -- --apply`, `BOOTSTRAP_ADMIN_CONFIRMED=true` e JSON pela entrada padrão segura conforme `schemas.adminUser` em `src/validators/identityValidators.js`. O comando recusa administrador preexistente e exige enrollment/2FA no login somente quando `TWO_FACTOR_ENABLED=true`. Nenhuma conta de administrador foi criada na integração.
 
 ## Testes
 
@@ -59,3 +59,13 @@ Uma reinicialização que preserve o arquivo mantém a chave. Uma recriação do
 `/api/health` confirma somente a conexão MySQL, mantendo o comportamento anterior. `/ready` também verifica a tabela de logs e a retenção: um health check básico aprovado não prova que as migrations do domínio foram aplicadas. O schema do Coolify precisa ser preparado separadamente; o código não aplica DDL automaticamente no startup.
 
 Validação da compatibilidade Coolify: testes de origens HTTP em produção, contrato legado de health, diagnósticos sem valores, persistência/rotação da chave e inicialização concorrente. Nenhum deploy remoto é executado por esses testes.
+
+## CAPTCHA e 2FA em standby
+
+`CAPTCHA_ENABLED=false` e `TWO_FACTOR_ENABLED=false` são os padrões, inclusive sem novas variáveis no deployment. Cadastro, login, recuperação e reset deixam de exigir `captchaToken`; o provedor de CAPTCHA não é chamado. Senha, sessão, permissões e validações dos demais campos continuam ativas.
+
+Com 2FA desligado, ADMIN, SUPERVISOR e contas com fatores cadastrados recebem acesso após autenticação por senha, sem enrollment, desafio ou código TOTP. Operações sensíveis continuam exigindo a senha atual quando aplicável. As sessões são registradas com `two_factor_verified=false`, sem fingir uma verificação. Os fatores/chaves anteriores não são apagados. `/api/auth/2fa/enroll`, `/verify` e `/disable` retornam `404 FEATURE_DISABLED` nesse modo.
+
+Para reativar, defina `CAPTCHA_ENABLED=true` e/ou `TWO_FACTOR_ENABLED=true` no ambiente do processo e reinicie o backend. CAPTCHA também precisa de um provedor real injetado em `createApp`/`startServer` (o padrão continua indisponível). Para 2FA APP, configure a chave persistente `TWO_FACTOR_ENCRYPTION_KEY` e preserve a chave usada nos fatores já cadastrados. Ao reativar, sessões emitidas sem 2FA de ADMIN/SUPERVISOR ou de usuários com fator ativo são recusadas; é necessário novo login com 2FA.
+
+Este modo não simula comprovação de idade, vínculo de responsável, consentimentos ou envio de e-mail. Cadastro público ainda depende dessas configurações/provedores e recuperação ainda depende de e-mail. Não há alteração nas migrations, dados, arquivos Docker ou YAML.

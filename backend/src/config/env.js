@@ -71,6 +71,7 @@ export function validateEnv(env = process.env) {
         imageUpload: { directory: env.IMAGE_STAGING_DIR || (!production ? fileURLToPath(new URL('../../.storage/images', import.meta.url)) : null) },
         gallery: { directory: env.IMAGE_GALLERY_DIR || (!production ? fileURLToPath(new URL('../../.storage/gallery', import.meta.url)) : null) },
         catalog: { mediaHosts },
+        security: { captchaEnabled: boolean('CAPTCHA_ENABLED', false), twoFactorEnabled: boolean('TWO_FACTOR_ENABLED', false) },
         mode, production, docsEnabled, origins, trustProxy, publicOrigin, instances, rateLimitStore,
         host: env.HOST ?? '0.0.0.0', port: integer('PORT', 8080, 1, 65535),
         bodyLimit: integer('BODY_LIMIT_BYTES', 65536, 1024, 1048576),

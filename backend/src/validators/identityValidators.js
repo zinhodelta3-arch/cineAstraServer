@@ -22,10 +22,10 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => Number.isFinite
 const strict = shape => z.object(shape).strict();
 const nonEmpty = schema => schema.refine(o => Object.keys(o).length > 0);
 export const schemas = {
-    register: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, termsVersion: z.string().min(1).max(50), privacyVersion: z.string().min(1).max(50), acceptTerms: z.literal(true), acceptPrivacy: z.literal(true), ageProof: z.string().min(1).max(512), guardianProof: z.string().min(1).max(512).optional(), captchaToken: z.string().min(1).max(4096) }),
-    login: strict({ email, password, captchaToken: z.string().min(1).max(4096) }),
-    forgot: strict({ email, captchaToken: z.string().min(1).max(4096) }),
-    reset: strict({ token, password, passwordConfirmation: password, captchaToken: z.string().min(1).max(4096) }),
+    register: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, termsVersion: z.string().min(1).max(50), privacyVersion: z.string().min(1).max(50), acceptTerms: z.literal(true), acceptPrivacy: z.literal(true), ageProof: z.string().min(1).max(512), guardianProof: z.string().min(1).max(512).optional(), captchaToken: z.string().min(1).max(4096).optional() }),
+    login: strict({ email, password, captchaToken: z.string().min(1).max(4096).optional() }),
+    forgot: strict({ email, captchaToken: z.string().min(1).max(4096).optional() }),
+    reset: strict({ token, password, passwordConfirmation: password, captchaToken: z.string().min(1).max(4096).optional() }),
     verify: strict({ challengeToken: token, code: z.string().regex(/^\d{6}$/) }),
     enroll: strict({ password: password.optional(), code: z.string().regex(/^\d{6}$/).optional(), challengeToken: token.optional(), method: z.enum(['APP', 'SMS', 'EMAIL']) }).refine(o => Boolean(o.password) !== Boolean(o.challengeToken)),
     factorDisable: strict({ password, code: z.string().regex(/^\d{6}$/) }),

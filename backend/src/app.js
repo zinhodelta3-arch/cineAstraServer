@@ -162,8 +162,8 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     const tokens = createJwt(config.jwt);
     const identity = createIdentityService({ database, model: identityModel ?? createIdentityModel(database), config, tokens, providers: identityProviders });
     const profile = createProfileService({ identity, config, providers: identityProviders });
-    const auth = createAuthMiddleware(tokens, createAccessService(createUserAccessModel(database), sessionProvider ?? identity.sessionProvider));
-    const dependencies = { auth, limits: limits.flows, captcha: captchaProvider };
+    const auth = createAuthMiddleware(tokens, createAccessService(createUserAccessModel(database), sessionProvider ?? identity.sessionProvider, config.security));
+    const dependencies = { auth, limits: limits.flows, captcha: captchaProvider, security: config.security };
     app.locals.close = () => limits.close();
     app.use(requestId);
     app.use(logMiddleware(logQueue, { sampleRate: config.logging.sampleRate }));

@@ -88,7 +88,7 @@ export async function identityFixture(overrides = {}) {
     const tokens = createJwt(config.jwt);
     const identity = createIdentityService({ database, model, config, tokens, providers });
     const profile = createProfileService({ identity, config, providers });
-    const app = createApp({ config, database, logQueue, retention: { async check() { return true; } }, identityModel: model, identityProviders: providers, captchaProvider: { async verify() { return true; } } });
+    const app = createApp({ config, database, logQueue, retention: { async check() { return true; } }, identityModel: model, identityProviders: providers, captchaProvider: overrides.captchaProvider ?? { async verify() { return true; } } });
     async function addUser(role = 'CLIENTE', data = {}) {
         const id = next(); state.users.push({ id_usuario: id, nome: 'Fixture User', email: `fixture-${id}@example.invalid`, cpf: `fixture-${id}`, data_nascimento: '2000-01-01', senha: await hashPassword(PASSWORD, 10), tipo_usuario: role, status: 'ATIVO', ...data }); return state.users.at(-1);
     }
