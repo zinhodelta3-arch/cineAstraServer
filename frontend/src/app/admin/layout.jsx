@@ -1,71 +1,10 @@
-import {
-  DM_Sans,
-  Geist,
-  Geist_Mono,
-  IBM_Plex_Mono,
-  Lora,
-  Plus_Jakarta_Sans,
-} from "next/font/google";
-import "../globals.css";
-import { ThemeProvider } from "@/components/providers/theme-provider";
-import AppearanceInitializer from "@/components/providers/appearance-initializer";
-import { DEFAULT_APPEARANCE } from "@/lib/themes";
-import { CartProvider } from "@/components/cart/cart-provider";
-import { AppSidebar } from "@/components/app-sidebar";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
-  subsets: ["latin"],
-});
-
-const lora = Lora({
-  variable: "--font-lora",
-  subsets: ["latin"],
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-});
+import AdminShell from "./admin-shell";
 
 export const metadata = {
-  title: "CineAstra",
-  description: "Sua experiência de cinema começa aqui.",
+  title: "Dashboard | CineAstra",
+  description: "Visão geral do cinema CineAstra.",
 };
 
-export default function RootLayout({ children }) {
-  return (
-    <html
-      lang="pt-BR"
-      data-theme={DEFAULT_APPEARANCE}
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${plusJakartaSans.variable} ${lora.variable} ${ibmPlexMono.variable} ${dmSans.variable} h-full antialiased`}
-    >
-      <body className="flex min-h-full flex-col">
-        <AppearanceInitializer />
-        <ThemeProvider>
-          <CartProvider>
-            <AppSidebar/>
-            {children}
-          </CartProvider>
-        </ThemeProvider>
-      </body>
-    </html>
-  );
+export default function AdminLayout({ children }) {
+  return <AdminShell>{children}</AdminShell>;
 }

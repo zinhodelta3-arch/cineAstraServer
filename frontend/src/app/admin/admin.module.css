@@ -1,0 +1,13 @@
+.shell { display: flex; min-height: 100dvh; background: var(--background); color: var(--foreground); }
+.desktop { position: sticky; top: 0; height: 100dvh; flex-shrink: 0; }
+.content { min-width: 0; flex: 1; }
+.mobileBar { display: none; }
+.menu, .close { display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; border-radius: 8px; }
+.close { position: absolute; top: 2px; right: 8px; z-index: 2; background: var(--card); }
+.skip { position: fixed; top: 8px; left: 8px; z-index: 100; padding: 12px; background: var(--primary); color: var(--primary-foreground); transform: translateY(-160%); }
+.skip:focus { transform: translateY(0); }
+.shell :focus-visible, .close:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+@media (max-width: 1050px) {
+  .desktop { display: none; }
+  .mobileBar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid var(--border); font-size: 13px; }
+}
