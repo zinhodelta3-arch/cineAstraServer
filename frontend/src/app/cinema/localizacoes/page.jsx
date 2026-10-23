@@ -267,7 +267,7 @@ function Timetable({ loc, day, now }) {
           const m = MOVIES[id];
           if (!m) return null;
           const dur = parseInt(m.duration, 10);
-          const href = (t) => `/ingressos?cinema=${loc.id}&filme=${id}&sessao=${t}&dia=${day}`;
+          const href = (t) => `/cinema/sessao/ingressos?cinema=${loc.id}&filme=${id}&sessao=${t}&dia=${day}`;
           return (
             <article key={`${day}-${id}`} className="grid md:grid-cols-[210px_1fr] gap-x-3 gap-y-2 items-center border border-border bg-background/40 rounded-lg p-3 transition-colors hover:border-primary/40">
               <div className="flex items-center gap-3 min-w-0">
