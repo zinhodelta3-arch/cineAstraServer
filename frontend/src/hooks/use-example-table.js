@@ -9,7 +9,7 @@ export function useExampleTable() {
   const [movies, setMovies] = useState(initialMovies);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("Todos");
-  const [creating, setCreating] = useState(false);
+  const [modal, setModal] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const filteredMovies = movies.filter((movie) =>
@@ -17,7 +17,7 @@ export function useExampleTable() {
     normalize(`${movie.title} ${movie.genre}`).includes(normalize(query.trim()))
   );
 
-  function createMovie(event) {
+  function saveMovie(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const title = String(form.get("title") || "").trim();
@@ -28,22 +28,40 @@ export function useExampleTable() {
       setError("Confira o título, o gênero, o status e a duração (de 1 a 600 minutos).");
       return;
     }
-    setMovies((current) => [{ id: crypto.randomUUID(), title, genre, duration, status: movieStatus }, ...current]);
+    const values = { title, genre, duration, status: movieStatus };
+    const editing = modal?.type === "edit";
+    if (editing) {
+      setMovies((current) => current.map((movie) => movie.id === modal.movie.id ? { ...movie, ...values } : movie));
+    } else {
+      setMovies((current) => [{ id: crypto.randomUUID(), ...values }, ...current]);
+    }
     setQuery("");
     setStatus("Todos");
-    setCreating(false);
+    setModal(null);
     setError("");
-    setMessage(`${title} foi adicionado à demonstração. O registro será removido ao recarregar a página.`);
+    setMessage(`${title} foi ${editing ? "atualizado" : "adicionado"} na demonstração. As alterações não são salvas ao recarregar a página.`);
   }
 
-  function toggleCreating() {
-    setCreating((current) => !current);
+  function openModal(type, movie = null) {
+    setModal({ type, movie });
     setError("");
+  }
+
+  function closeModal() {
+    setModal(null);
+    setError("");
+  }
+
+  function removeMovie() {
+    if (modal?.type !== "remove") return;
+    setMovies((current) => current.filter((movie) => movie.id !== modal.movie.id));
+    setMessage(`${modal.movie.title} foi removido da demonstração.`);
+    closeModal();
   }
 
   return {
     movies, filteredMovies, query, setQuery, status, setStatus,
-    creating, toggleCreating, createMovie, message, error,
+    modal, openModal, closeModal, saveMovie, removeMovie, message, error,
     showing: movies.filter((movie) => movie.status === "Em cartaz").length,
     upcoming: movies.filter((movie) => movie.status === "Em breve").length,
     clearFilters() { setQuery(""); setStatus("Todos"); },

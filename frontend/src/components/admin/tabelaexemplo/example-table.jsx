@@ -1,31 +1,25 @@
 "use client";
 
 import { useRef } from "react";
-import { CalendarDays, Film, Plus, Search, Ticket, X } from "lucide-react";
+import { CalendarDays, Film, Plus, Search, Ticket, Pencil, Trash2 } from "lucide-react";
 import { useExampleTable } from "@/hooks/use-example-table";
-import { genres, statuses } from "./data";
+import { statuses } from "./data";
+import MovieDialogs from "./movie-dialogs";
 import styles from "./example-table.module.css";
 
 export default function ExampleTable() {
   const table = useExampleTable();
   const createButton = useRef(null);
+  const returnFocus = useRef(null);
   const metrics = [
     { label: "Filmes cadastrados", value: table.movies.length, note: "Todos os registros da demonstração", icon: Film },
     { label: "Em cartaz", value: table.showing, note: "Filmes na programação atual", icon: Ticket },
     { label: "Em breve", value: table.upcoming, note: "As próximas histórias nas telas", icon: CalendarDays },
   ];
 
-  function closeForm() {
-    table.toggleCreating();
-    createButton.current?.focus();
-  }
-
-  function submit(event) {
-    table.createMovie(event);
-    // Keep keyboard focus on a stable control after the form is removed.
-    if (event.currentTarget.checkValidity() && String(new FormData(event.currentTarget).get("title")).trim()) {
-      createButton.current?.focus();
-    }
+  function openModal(type, movie, event) {
+    returnFocus.current = event.currentTarget;
+    table.openModal(type, movie);
   }
 
   return (
@@ -35,9 +29,8 @@ export default function ExampleTable() {
           <h1>Tabela <em>exemplo.</em></h1>
           <p>O catálogo do seu cinema, organizado em um só lugar.</p>
         </div>
-        <button ref={createButton} type="button" className={styles.primary} onClick={table.toggleCreating} aria-expanded={table.creating} aria-controls="create-movie">
-          {table.creating ? <X size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
-          {table.creating ? "Fechar cadastro" : "Criar filme"}
+        <button ref={createButton} type="button" className={styles.primary} onClick={(event) => openModal("create", null, event)} aria-haspopup="dialog">
+          <Plus size={18} aria-hidden="true" />Criar filme
         </button>
       </header>
       <div className={styles.filmStrip} aria-hidden="true" />
@@ -52,18 +45,7 @@ export default function ExampleTable() {
         ))}
       </section>
 
-      {table.creating && <section id="create-movie" className={styles.formPanel} aria-labelledby="create-title">
-        <h2 id="create-title">Novo filme</h2>
-        <p>Preencha os dados para adicionar um registro à tabela de exemplo.</p>
-        <form onSubmit={submit} className={styles.form}>
-          <label className={styles.titleField}>Título do filme<input name="title" required maxLength={100} placeholder="Ex.: Cinema Paradiso" autoFocus /></label>
-          <label>Gênero<select name="genre" defaultValue="Drama">{genres.map((genre) => <option key={genre}>{genre}</option>)}</select></label>
-          <label>Duração em minutos<input name="duration" type="number" min="1" max="600" step="1" required placeholder="120" /></label>
-          <label>Status<select name="status">{statuses.map((status) => <option key={status}>{status}</option>)}</select></label>
-          {table.error && <p className={styles.error} role="alert">{table.error}</p>}
-          <div className={styles.formActions}><button type="button" className={styles.secondary} onClick={closeForm}>Cancelar</button><button className={styles.primary} type="submit">Adicionar filme</button></div>
-        </form>
-      </section>}
+      <MovieDialogs table={table} returnFocus={returnFocus} fallbackFocus={createButton} />
       <p role="status" className={table.message ? styles.notice : "sr-only"}>{table.message}</p>
 
       <section className={styles.tablePanel} aria-labelledby="catalog-title">
@@ -75,10 +57,14 @@ export default function ExampleTable() {
         <div className={styles.scroll} role="region" aria-label="Tabela de filmes, role horizontalmente em telas pequenas" tabIndex={0}>
           <table className={styles.table}>
             <caption className="sr-only">Filmes demonstrativos com gênero, duração e status</caption>
-            <thead><tr><th scope="col">Filme</th><th scope="col">Gênero</th><th scope="col">Duração</th><th scope="col">Status</th></tr></thead>
+            <thead><tr><th scope="col">Filme</th><th scope="col">Gênero</th><th scope="col">Duração</th><th scope="col">Status</th><th scope="col">Ações</th></tr></thead>
             <tbody>{table.filteredMovies.map((movie) => <tr key={movie.id}>
               <th scope="row"><span className={styles.movie}><span className={styles.movieIcon}><Film size={20} aria-hidden="true" /></span>{movie.title}</span></th>
               <td>{movie.genre}</td><td>{movie.duration} min</td><td><span className={movie.status === "Em cartaz" ? styles.showing : styles.upcoming}>{movie.status}</span></td>
+              <td><div className={styles.actions}>
+                <button type="button" className={styles.secondary} aria-label={`Editar ${movie.title}`} aria-haspopup="dialog" onClick={(event) => openModal("edit", movie, event)}><Pencil size={16} aria-hidden="true" />Editar</button>
+                <button type="button" className={styles.removeAction} aria-label={`Remover ${movie.title}`} aria-haspopup="dialog" onClick={(event) => openModal("remove", movie, event)}><Trash2 size={16} aria-hidden="true" />Remover</button>
+              </div></td>
             </tr>)}</tbody>
           </table>
         </div>
