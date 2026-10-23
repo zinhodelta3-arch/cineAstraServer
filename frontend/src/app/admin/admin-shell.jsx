@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Film, Home, LayoutDashboard, Menu, Popcorn, X } from "lucide-react";
+import { Film, Home, LayoutDashboard, Menu, Popcorn, Table2, X } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Sheet, SheetTrigger, SheetContent, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import styles from "./admin.module.css";
 
 const items = [
+  { label: "Tabela exemplo", href: "/admin/tabelaexemplo", icon: Table2 },
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Página do cinema", href: "/cinema/home", icon: Home },
   { label: "Filmes em cartaz", href: "/cinema/filmes", icon: Film },
@@ -17,7 +18,7 @@ export default function AdminShell({ children }) {
   const [open, setOpen] = useState(false);
   return (
     <div className={styles.shell}>
-      <a className={styles.skip} href="#dashboard">Pular para o conteúdo</a>
+      <a className={styles.skip} href="#admin-content">Pular para o conteúdo</a>
       <div className={styles.desktop}><AppSidebar items={items} /></div>
       <div className={styles.content}>
         <div className={styles.mobileBar}>
