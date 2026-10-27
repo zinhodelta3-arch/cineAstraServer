@@ -1,35 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import useSeatMap from "@/hooks/cinema/sessao/use-seat-map";
 import { Accessibility, Check, Minus, Plus, X } from "lucide-react";
 import { COLUMNS, ROWS, SEATS } from "./seat-state.mjs";
 import styles from "./seat-selection.module.css";
 
 export default function SeatMap({ selection }) {
-  const [activeSeat, setActiveSeat] = useState(selection.selected[0] || "A1");
-  const buttons = useRef(new Map());
-
-  function navigate(event, index) {
-    const increments = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -COLUMNS, ArrowDown: COLUMNS };
-    let next = index;
-    if (event.key === "Home") next = Math.floor(index / COLUMNS) * COLUMNS;
-    else if (event.key === "End") next = Math.floor(index / COLUMNS) * COLUMNS + COLUMNS - 1;
-    else if (event.key in increments) next += increments[event.key];
-    else return;
-    event.preventDefault();
-    const direction = event.key === "End" ? -1 : (increments[event.key] || 1);
-    while (next >= 0 && next < SEATS.length && SEATS[next].occupied) next += direction;
-    if (next >= 0 && next < SEATS.length) buttons.current.get(SEATS[next].id)?.focus();
-  }
+  const { activeSeat, setActiveSeat, registerSeat, navigate } = useSeatMap(selection);
 
   return (
     <section className={styles.mapSection} aria-label="Mapa de assentos">
       <div className={styles.mapToolbar}>
         <span>Fundo da sala</span>
         <div className={styles.zoom}>
-          <button type="button" aria-label="Diminuir mapa" disabled={selection.zoom <= 80} onClick={() => selection.setZoom((value) => value - 10)}><Minus size={16} /></button>
-          <label><span className="sr-only">Zoom do mapa</span><input type="range" min="80" max="150" step="10" value={selection.zoom} onChange={(event) => selection.setZoom(Number(event.target.value))} /></label>
-          <button type="button" aria-label="Ampliar mapa" disabled={selection.zoom >= 150} onClick={() => selection.setZoom((value) => value + 10)}><Plus size={16} /></button>
+          <button type="button" aria-label="Diminuir mapa" disabled={selection.zoom <= 80} onClick={selection.zoomOut}><Minus size={16} /></button>
+          <label><span className="sr-only">Zoom do mapa</span><input type="range" min="80" max="150" step="10" value={selection.zoom} onChange={selection.changeZoom} /></label>
+          <button type="button" aria-label="Ampliar mapa" disabled={selection.zoom >= 150} onClick={selection.zoomIn}><Plus size={16} /></button>
           <output>{selection.zoom}%</output>
         </div>
       </div>
@@ -44,7 +30,7 @@ export default function SeatMap({ selection }) {
                 const selected = selection.selected.includes(seat.id);
                 return <button
                   key={seat.id}
-                  ref={(element) => { if (element) buttons.current.set(seat.id, element); else buttons.current.delete(seat.id); }}
+                  ref={(element) => registerSeat(seat.id, element)}
                   type="button"
                   className={`${styles.seat} ${seat.number === 11 ? styles.afterAisle : ""} ${seat.accessible ? styles.accessible : ""} ${selected ? styles.selected : ""}`}
                   disabled={seat.occupied || selection.continuing}

@@ -27,7 +27,12 @@ for (const r of comboOperations) {
     if (r.path.includes('{id}')) op.parameters.push({ name: 'id', in: 'path', required: true, schema: id });
     if (r.action === 'list') op.parameters.push({ name: 'localId', in: 'query', required: true, schema: id }, { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: id });
     if (bodies[r.action]) op.requestBody = { required: true, content: { 'application/json': { schema: bodies[r.action] } } };
-    if (r.action === 'archive') op.responses['204'] = { description: 'Arquivado logicamente.' };
+    if (r.action === 'adminList') {
+        op.description='Somente ADMIN com sessão ativa. Lista todos os combos, inclusive arquivados, sem composição, com insumos/local indisponíveis ou legado sem local. Filtros combinados por AND: localId opcional, active true/false e q por trecho literal do nome. Sem active retorna ambos. Cursor exclusivo, ID decrescente; itemCount é quantidade de linhas da composição, não unidades. Não representa elegibilidade de venda; detalhe/composição no GET administrativo por ID. Não modifica o catálogo público.';
+        op.parameters=[{name:'localId',in:'query',schema:id},{name:'active',in:'query',schema:{type:'boolean'}},{name:'q',in:'query',schema:{type:'string',minLength:1,maxLength:150}},{name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:id}];
+        const summary=structuredClone(spec.components.schemas.Combo);delete summary.properties.items;summary.required=summary.required.filter(k=>k!=='items');summary.properties.itemCount={type:'integer',minimum:0};summary.required.push('itemCount');summary.properties.data_cadastro.nullable=true;
+        op.responses['200']=response(obj({items:{type:'array',items:summary},pagination:obj({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...id,nullable:true}})}));
+    } else if (r.action === 'archive') op.responses['204'] = { description: 'Arquivado logicamente.' };
     else if (r.action === 'list') op.responses['200'] = response(obj({ items: { type: 'array', items: ref('Combo') }, pagination: ref('Pagination') }));
     else op.responses[r.action === 'create' ? '201' : '200'] = response(ref('Combo'));
     for (const [code, name] of Object.entries(errors)) op.responses[code] = { $ref: `#/components/responses/${name}` };

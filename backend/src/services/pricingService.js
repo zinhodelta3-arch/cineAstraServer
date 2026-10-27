@@ -47,7 +47,7 @@ export function createPricingService({model,identity}){
         for(const line of input.lines){
             const p=found(await model.parameter(line.category,c));
             const row=found(await model.product(line.category,line.id,c,lockCoupon));
-            if(!available(line.category,row))throw conflict('Item indisponível');
+            if(!available(line.category,row)||(line.category==='INPUT'&&actor.tipo_usuario!=='ADMIN'&&!row.venda_avulsa))throw conflict('Item indisponível');
             const parts=line.category==='COMBO'?await model.comboParts(line.id,c):null;
             if(parts?.some(x=>x.status!=='DISPONIVEL'))throw conflict('Componente indisponível');
             const cost=costFor(line.category,row,parts,p,line.period);

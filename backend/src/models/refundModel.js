@@ -5,7 +5,17 @@ export function createRefundModel(database){
     const one=async(c,sql,args=[])=> (await rows(c,sql,args))[0]??null;
     const paymentSql='SELECT p.id_pagamento,p.id_pedido,p.id_cobranca,p.id_metodo,p.valor,p.status,p.transacao_id,COALESCE(i.id_usuario,o.id_usuario,ac.id_usuario) AS id_usuario,i.provider,i.provider_ref,o.data_pedido,a.inicio AS assinatura_inicio,a.periodicidade,a.status AS assinatura_status FROM pagamentos p LEFT JOIN pagamento_intencoes i ON i.id_intencao=p.id_intencao LEFT JOIN pedidos o ON o.id_pedido=p.id_pedido LEFT JOIN assinatura_cobrancas ac ON ac.id_cobranca=p.id_cobranca LEFT JOIN assinaturas a ON a.id_assinatura=ac.id_assinatura WHERE p.id_pagamento=?';
     const refundSql='SELECT r.id_reembolso,r.id_pagamento,r.id_usuario,r.chave_idempotencia,r.motivo,r.detalhes,r.dentro_prazo,r.termos_versao,r.valor_solicitado,r.valor_confirmado,r.status,r.provider_ref,r.compensacao_status,r.solicitado_em,r.prazo_resposta_em,r.respondido_em,p.valor AS pagamento_valor,p.status AS pagamento_status,p.transacao_id,p.id_pedido,p.id_cobranca,i.provider AS pagamento_provider,i.provider_ref AS pagamento_provider_ref FROM reembolso_solicitacoes r JOIN pagamentos p ON p.id_pagamento=r.id_pagamento LEFT JOIN pagamento_intencoes i ON i.id_intencao=p.id_intencao WHERE r.id_reembolso=?';
+    const adminFields='r.id_reembolso,r.id_pagamento,r.id_usuario,r.motivo,r.dentro_prazo,r.valor_solicitado,r.valor_confirmado,r.status,r.compensacao_status,r.solicitado_em,r.prazo_resposta_em,r.respondido_em,p.id_pedido,p.id_cobranca,p.valor AS pagamento_valor,p.status AS pagamento_status';
+    const adminFrom=' FROM reembolso_solicitacoes r JOIN pagamentos p ON p.id_pagamento=r.id_pagamento';
     return {
+        async adminList(c,q){
+            const where=[],args=[];
+            if(q.cursor){where.push('r.id_reembolso<?');args.push(q.cursor);}
+            for(const [key,column] of Object.entries({status:'r.status',reason:'r.motivo',compensation:'r.compensacao_status',userId:'r.id_usuario',paymentId:'r.id_pagamento',orderId:'p.id_pedido',chargeId:'p.id_cobranca'}))if(q[key]){where.push(`${column}=?`);args.push(q[key]);}
+            args.push(q.limit+1);
+            return rows(c,`SELECT ${adminFields}${adminFrom} ${where.length?'WHERE '+where.join(' AND '):''} ORDER BY r.id_reembolso DESC LIMIT ?`,args);
+        },
+        adminGet:(c,id)=>one(c,`SELECT ${adminFields},r.detalhes,r.termos_versao,r.decisao_fundamento${adminFrom} WHERE r.id_reembolso=?`,[id]),
         async payment(id,c=database,lock=false){if(lock&&!await one(c,'SELECT id_pagamento FROM pagamentos WHERE id_pagamento=? FOR UPDATE',[id]))return null;return one(c,paymentSql,[id]);},
         async refund(id,c=database,lock=false){if(lock&&!await one(c,'SELECT id_reembolso FROM reembolso_solicitacoes WHERE id_reembolso=? FOR UPDATE',[id]))return null;return one(c,refundSql,[id]);},
         byKey:(owner,key,c)=>one(c,'SELECT id_reembolso FROM reembolso_solicitacoes WHERE id_usuario=? AND chave_idempotencia=?',[owner,key]),

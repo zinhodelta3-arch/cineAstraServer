@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {ApiError} from '../utils/ApiError.js';
-const big=z.string().regex(/^[1-9]\d{0,19}$/).refine(v=>BigInt(v)<=18446744073709551615n);
-const small=z.string().regex(/^[1-9]\d{0,9}$/).refine(v=>BigInt(v)<=4294967295n);
+const big=z.string().regex(/^[1-9]\d{0,19}$/).refine(v=>/^[1-9]\d{0,19}$/.test(v)&&BigInt(v)<=18446744073709551615n);
+const small=z.string().regex(/^[1-9]\d{0,9}$/).refine(v=>/^[1-9]\d{0,9}$/.test(v)&&BigInt(v)<=4294967295n);
 const price=z.string().regex(/^(0|[1-9]\d{0,7})\.\d{2}$/).refine(v=>v!=='0.00');
 export const refundSchemas={
     request:z.object({reason:z.enum(['ARREPENDIMENTO','DEFEITO','OUTRO','CANCELAMENTO_PLANO']),details:z.string().trim().min(1).max(1000).optional()}).strict(),
@@ -9,3 +9,12 @@ export const refundSchemas={
 };
 export function refundId(req,res,next){if(!big.safeParse(req.params.id).success)throw ApiError.validacao('ID inválido');next();}
 export function subscriptionId(req,res,next){if(!small.safeParse(req.params.id).success)throw ApiError.validacao('ID inválido');next();}
+
+const adminRefundQuery=z.object({
+    limit:z.string().regex(/^[1-9]\d{0,2}$/).transform(Number).pipe(z.number().max(100)).default(20),cursor:big.optional(),
+    status:z.enum(['RECEBIDA','EM_ANALISE','ENVIADA','CONFIRMADA','NEGADA','FALHOU']).optional(),
+    reason:z.enum(['ARREPENDIMENTO','DEFEITO','OUTRO','CANCELAMENTO_PLANO']).optional(),
+    compensation:z.enum(['NAO_APLICAVEL','PENDENTE','CONCLUIDA']).optional(),
+    userId:small.optional(),paymentId:big.optional(),orderId:big.optional(),chargeId:big.optional()
+}).strict();
+export function adminRefundPage(req,res,next){const p=adminRefundQuery.safeParse(req.query);if(!p.success)throw ApiError.validacao('Filtros ou paginação inválidos');req.adminRefundQuery=p.data;next();}

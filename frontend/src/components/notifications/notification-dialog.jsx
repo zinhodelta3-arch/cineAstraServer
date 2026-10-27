@@ -1,22 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import useNotificationDialog from "@/hooks/cinema/notificacao/use-notification-dialog";
 import { Ticket, MessageCircle, X, Check } from "lucide-react";
 import styles from "./notifications.module.css";
 
 const fullDateFormatter = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short", timeZone: "America/Sao_Paulo" });
 
 export default function NotificationDialog({ item, onClose }) {
-  const dialogRef = useRef(null);
-  const id = useId();
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    dialog.showModal();
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { dialog.close(); document.body.style.overflow = previousOverflow; };
-  }, []);
-  return <dialog ref={dialogRef} className={styles.dialog} aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose(); } }}>
+  const { dialogRef, id, handleBackdropClick } = useNotificationDialog(onClose);
+  return <dialog ref={dialogRef} className={styles.dialog} aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} onCancel={onClose} onClick={handleBackdropClick}>
     <div className={styles.filmstrip} aria-hidden="true" />
     <div className={styles.dialogBody}>
       <div className={styles.dialogTop}><span className={styles.eyebrow}>{item.type === "ticket" ? <Ticket size={16} aria-hidden="true" /> : <MessageCircle size={16} aria-hidden="true" />}{item.label}</span><button autoFocus type="button" className={styles.closeButton} onClick={onClose} aria-label="Fechar detalhes"><X size={20} /></button></div>

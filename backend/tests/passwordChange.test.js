@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import request from 'supertest';
+import {identityFixture,PASSWORD} from './identityFixture.js';
+import {verifyPassword} from '../src/utils/identityCrypto.js';
+const NEW='NewSecure!Password123';
+const fixture=()=>identityFixture({env:{CAPTCHA_ENABLED:'false',TWO_FACTOR_ENABLED:'false'}});
+const payload={currentPassword:PASSWORD,password:NEW,passwordConfirmation:NEW};
+const patch=(f,token,body)=>request(f.app).patch('/api/users/me').set('Authorization','Bearer '+token).send(body);
+test('troca autenticada funciona em standby, revoga todas as sessões e invalida recuperações/desafios só do titular',async t=>{
+ const f=await fixture();t.after(()=>f.close());const user=await f.addUser(),other=await f.addUser();
+ const first=await f.login(user),second=await f.login(user),otherAuth=await f.login(other);
+ await f.identity.forgot({email:user.email});await f.identity.forgot({email:other.email});
+ f.state.challenges.push({id_usuario:user.id_usuario,consumido_em:null,chave_pendente:'secret'});
+ f.state.challenges.push({id_usuario:other.id_usuario,consumido_em:null,chave_pendente:'other'});
+ const res=await patch(f,first.accessToken,payload).expect(200);
+ assert.ok(!/senha|password|accessToken|hash|cpf/.test(res.text));
+ for(const token of [first.accessToken,second.accessToken])await request(f.app).get('/api/users/me').set('Authorization','Bearer '+token).expect(401);
+ await request(f.app).get('/api/users/me').set('Authorization','Bearer '+otherAuth.accessToken).expect(200);
+ assert.ok(f.state.recoveries.filter(r=>r.id_usuario===user.id_usuario).every(r=>r.utilizado));assert.ok(f.state.recoveries.filter(r=>r.id_usuario===other.id_usuario).every(r=>!r.utilizado));
+ assert.ok(f.state.challenges.find(r=>r.id_usuario===user.id_usuario).consumido_em);assert.equal(f.state.challenges.find(r=>r.id_usuario===other.id_usuario).consumido_em,null);
+ await assert.rejects(f.identity.login({email:user.email,password:PASSWORD}),{statusCode:401});assert.ok((await f.identity.login({email:user.email,password:NEW})).accessToken);
+ await f.logQueue.drain();assert.ok(!JSON.stringify(f.logs).includes(NEW));assert.ok(!JSON.stringify(f.logs).includes(PASSWORD));
+});
+test('senha atual ausente/incorreta, política, confirmação e campos de outro usuário são rejeitados sem mudar credenciais',async t=>{
+ const f=await fixture();t.after(()=>f.close());const u=await f.addUser(),auth=await f.login(u);const hash=u.senha;
+ await request(f.app).patch('/api/users/me').send(payload).expect(401);
+ await patch(f,auth.accessToken,{...payload,currentPassword:'wrong'}).expect(401);
+ const {currentPassword,...missing}=payload;await patch(f,auth.accessToken,missing).expect(401);
+ for(const body of [{...payload,passwordConfirmation:'Mismatch!Password123'},{...payload,password:'short',passwordConfirmation:'short'},{...payload,password:'a'.repeat(73),passwordConfirmation:'a'.repeat(73)},{...payload,userId:'999'}])await patch(f,auth.accessToken,body).expect(422);
+ assert.equal(f.state.users.find(r=>r.id_usuario===u.id_usuario).senha,hash);assert.ok(await verifyPassword(PASSWORD,hash));
+ await request(f.app).get('/api/users/me').set('Authorization','Bearer '+auth.accessToken).expect(200);
+});
+test('falha durante invalidação reverte senha e revogação na mesma transação',async t=>{
+ const f=await fixture();t.after(()=>f.close());const u=await f.addUser(),auth=await f.login(u);const hash=u.senha;
+ f.model.invalidateRecovery=async()=>{throw new Error('fixture transaction failure');};
+ await patch(f,auth.accessToken,payload).expect(500);
+ assert.equal(f.state.users.find(r=>r.id_usuario===u.id_usuario).senha,hash);
+ await request(f.app).get('/api/users/me').set('Authorization','Bearer '+auth.accessToken).expect(200);
+});

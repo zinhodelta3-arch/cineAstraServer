@@ -27,6 +27,6 @@ export function sessionQuery(schema) { return (req, res, next) => {
     req.sessionQuery = parsed.data; next();
 }; }
 export function sessionParams(req, res, next) {
-    if (req.params.id && !catalogId.safeParse(req.params.id).success) throw ApiError.validacao('Identificador inválido');
+    if (req.params.id && (!/^[1-9]\d{0,9}$/.test(req.params.id) || !catalogId.safeParse(req.params.id).success)) throw ApiError.validacao('Identificador inválido');
     next();
 }

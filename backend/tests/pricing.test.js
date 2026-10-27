@@ -28,12 +28,12 @@ test('C100: markup 60%, descontos 25%, alerta sobre custo e meia legal',()=>{
     assert.equal(pricingSchemas.quote.safeParse({lines:[{category:'INPUT',id:'1',quantity:1,halfPreview:true}]}).success,false);
 });
 
-function fixture(){
+function fixture(published = true){
     let state={usage:[],snapshots:[],published:[],audit:[],orderStatus:'EM_ANDAMENTO'},chain=Promise.resolve();
     const params={categoria:'INPUT',markup_bps:6000,margem_alerta_bps:2000,teto_desconto_bps:2500,ocupacao_referencia:20,meia_projecao_bps:5000,combo_passo_bps:500,atualizado_em:'2026-10-09'};
     const model={
         async activePlan(){return null;},async parameter(category){return {...params,categoria:category};},
-        async product(category){return category==='SESSION'?{id:'11',custo_local_dia:'0.00',custo_exibicao:'2000.00',horario_inicio:'10:00:00',horario_fim:'12:00:00',status:'AGENDADA',capacidade:20,published:'160.00'}:category==='COMBO'?{id:'30',custo_operacional:'10.00',published:'336.00',ativo:1}:{id:'10',custo_receita:'80.00',custo_parceria:'20.00',published:'160.00',status:'DISPONIVEL'};},
+        async product(category){return category==='SESSION'?{id:'11',custo_local_dia:'0.00',custo_exibicao:'2000.00',horario_inicio:'10:00:00',horario_fim:'12:00:00',status:'AGENDADA',capacidade:20,published:'160.00'}:category==='COMBO'?{id:'30',custo_operacional:'10.00',published:'336.00',ativo:1}:{id:'10',custo_receita:'80.00',custo_parceria:'20.00',published:'160.00',status:'DISPONIVEL',venda_avulsa:published};},
         async comboParts(){return [{id_insumo:'10',quantidade:2,custo_receita:'80.00',custo_parceria:'20.00',status:'DISPONIVEL'}];},
         async activePromotions(){return [];},
         async referenced(){return null;},async publishPrice(c,category,id,price,annual){state.published.push({category,id,price,annual});},
@@ -129,4 +129,14 @@ test('reserva de cupom só confirma com pedido pago e pode ser liberada',async()
     await released.identity.transaction(c=>released.service.commit(c,{orderId:'101',input,context:released.context}));
     await released.identity.transaction(c=>released.service.settleCoupon(c,{orderId:'101',action:'LIBERAR'}));
     assert.equal(released.state.usage[0].status,'LIBERADO');
+});
+
+
+test('cotação pública rejeita ingrediente interno; ADMIN calcula preço e combo preserva composição', async () => {
+    const f=fixture(false),input={lines:[{category:'INPUT',id:'10',quantity:1}]};
+    await assert.rejects(f.service.quote(input,f.context));
+    const admin=await f.service.quote(input,{actor:{id:'1',tipo:'ADMIN'}});
+    assert.equal(admin.total,'160.00');
+    const combo=await f.service.quote({lines:[{category:'COMBO',id:'30',quantity:1}]},f.context);
+    assert.ok(Number(combo.total)>0);
 });

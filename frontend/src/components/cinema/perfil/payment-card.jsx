@@ -1,0 +1,9 @@
+import { Check, CreditCard, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DialogClose } from "@/components/ui/dialog";
+import { actionClass } from "./profile-utils";
+import Modal from "./modal";
+
+export default function PaymentCard({ card, onDefault, onRemove }) {
+  return <article className="rounded-xl border border-border bg-background p-4"><div className="flex items-start justify-between gap-2"><CreditCard className="size-5 text-primary" /><strong className="text-xs">{card.brand}</strong></div><p className="mt-5 font-mono text-sm tracking-widest">•••• •••• •••• {card.last4}</p><div className="mt-3 flex justify-between gap-2 text-[10px] text-muted-foreground"><span className="truncate">{card.nickname}</span><span>{card.expiry}</span></div><div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3"><Button variant="ghost" size="sm" aria-pressed={card.isDefault} onClick={() => onDefault(card.id)} className={`h-7 rounded-full px-2 text-[10px] ${card.isDefault ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>{card.isDefault ? <Check className="size-3" /> : null}{card.isDefault ? "Padrão" : "Usar como padrão"}</Button><Modal trigger={<Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground hover:text-destructive" aria-label={`Remover cartão ${card.brand} final ${card.last4}`}><Trash2 className="size-3.5" /></Button>} title="Remover cartão?" description={`O cartão ${card.brand} com final ${card.last4} será removido desta demonstração.`}><div className="mt-2 flex justify-end gap-2"><DialogClose render={<Button variant="outline" className={actionClass}>Voltar</Button>} /><DialogClose render={<Button variant="destructive" className={actionClass} onClick={() => onRemove(card.id)}>Remover cartão</Button>} /></div></Modal></div></article>;
+}

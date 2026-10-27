@@ -1,5 +1,7 @@
 "use client"
 
+import SessionControls from "@/components/auth/session-controls"
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
@@ -144,24 +146,7 @@ export function MobileNavigation() {
 
           <TearLine />
 
-          <div className="space-y-2 p-5">
-            <Link
-              href="/auth/login"
-              onClick={() => setOpen(false)}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            >
-              <UserRound className="size-4" aria-hidden="true" />
-              Entrar
-            </Link>
-            <Link
-              href="/auth/cadastro"
-              onClick={() => setOpen(false)}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            >
-              <UserPlus className="size-4" aria-hidden="true" />
-              Criar conta
-            </Link>
-          </div>
+          <div className="space-y-2 p-5"><SessionControls /></div>
 
           <TearLine />
 

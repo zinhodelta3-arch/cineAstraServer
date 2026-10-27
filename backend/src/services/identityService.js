@@ -106,7 +106,14 @@ export function createIdentityService({ database, model, config, tokens, provide
         },
         async register(input, context = {}) {
             passwordPolicy(input.password, input.passwordConfirmation);
-            const { age, guardian } = await verifyProof(input, context);
+            let age, guardian;
+            if (input.ageProof) ({ age, guardian } = await verifyProof(input, context));
+            else {
+                if (!settings.allowSelfDeclaredAge) throw ApiError.validacao('Verificação de idade obrigatória');
+                if (input.guardianProof) throw ApiError.validacao('Comprovação de responsável exige verificação de idade');
+                if (!settings.termsVersion || !settings.privacyVersion || !settings.legalBasis) throw ApiError.indisponivel();
+                if (input.termsVersion !== settings.termsVersion || input.privacyVersion !== settings.privacyVersion || input.acceptTerms !== true || input.acceptPrivacy !== true) throw ApiError.validacao('Aceite as versões atuais dos termos e da privacidade');
+            }
             const hash = await hashPassword(input.password, settings.bcryptCost);
             return transaction(async c => {
                 if (guardian) {
@@ -117,10 +124,10 @@ export function createIdentityService({ database, model, config, tokens, provide
                 const id = await model.createUser(c, { ...input, hash, role: 'CLIENTE', status: 'ATIVO' });
                 await model.consent(c, id, 'TERMOS', input.termsVersion, settings.legalBasis);
                 await model.consent(c, id, 'PRIVACIDADE', input.privacyVersion, settings.legalBasis);
-                await model.age(c, id, age);
+                if (age) await model.age(c, id, age);
                 if (guardian) await model.guardian(c, id, guardian);
-                await audit(c, 'IDENTITY.REGISTERED', id, context);
-                return userDto(await model.user(id, c));
+                await audit(c, age ? 'IDENTITY.REGISTERED' : 'IDENTITY.REGISTERED_UNVERIFIED', id, context);
+                return { ...userDto(await model.user(id, c)), ageVerified: Boolean(age) };
             }, context);
         },
         async login(input, context = {}) {

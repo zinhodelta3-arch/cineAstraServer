@@ -4,6 +4,7 @@ import { validateBody } from '../validators/identityValidators.js';
 import { sessionSchemas, sessionQuery, sessionParams } from '../validators/sessionValidators.js';
 
 export const sessionOperations = [
+    { method: 'get', path: '/api/sessions/{id}/seats', operationId: 'session_seat_availability', action: 'seats', admin: false },
     { method: 'get', path: '/api/sessions', operationId: 'list_sessions', action: 'list', admin: false },
     { method: 'get', path: '/api/sessions/{id}', operationId: 'get_session', action: 'get', admin: false },
     { method: 'get', path: '/api/admin/sessions', operationId: 'admin_list_sessions', action: 'list', admin: true },

@@ -2,6 +2,14 @@ import {idString} from '../utils/dto.js';
 import {ApiError} from '../utils/ApiError.js';
 const one=async(c,sql,args=[])=> (await c.execute(sql,args))[0][0]??null;
 export function createOrderModel(){return {
+    async listOwn(c,userId,limit,cursor){
+        const args=[userId];
+        const before=cursor ? ' AND id_pedido<?' : '';
+        if(cursor)args.push(cursor);
+        args.push(limit+1);
+        return (await c.execute(`SELECT id_pedido,status,valor_total,data_pedido FROM pedidos
+            WHERE id_usuario=?${before} ORDER BY id_pedido DESC LIMIT ?`,args))[0];
+    },
     ownStatus:(c,id,userId)=>one(c,'SELECT id_pedido,status,valor_total FROM pedidos WHERE id_pedido=? AND id_usuario=?',[id,userId]),
     operationalRows:async(c,id)=>(await c.execute(`SELECT ip.id_item,ip.id_insumo,ip.id_combo,ip.id_sessao,s.data,s.horario_inicio,s.horario_fim,
         t.id_ticket,t.status AS ticket_status,
@@ -34,9 +42,9 @@ export function createOrderModel(){return {
         FROM sessoes s JOIN filmes f ON f.id_filme=s.id_filme JOIN salas sa ON sa.id_sala=s.id_sala JOIN locais l ON l.id_local=sa.id_local WHERE s.id_sessao=?`,[id]),
     seat:(c,id)=>one(c,'SELECT id_sala,status FROM assentos WHERE id_assento=?',[id]),
     occupiedSeat:(c,sessionId,seatId)=>one(c,"SELECT id_ocupacao FROM assento_ocupacoes WHERE id_sessao=? AND id_assento=? AND (estado='CONFIRMADA' OR expira_em>UTC_TIMESTAMP(3)) LIMIT 1",[sessionId,seatId]),
-    input:(c,id)=>one(c,`SELECT i.id_local,i.status,l.status AS local_status,f.status AS fornecedor_status,u.status AS usuario_status,fl.status AS vinculo_status
+    input:(c,id)=>one(c,`SELECT i.id_local,i.status,i.venda_avulsa,l.status AS local_status,f.status AS fornecedor_status,u.status AS usuario_status,fl.status AS vinculo_status
         FROM insumos i JOIN locais l ON l.id_local=i.id_local JOIN fornecedores f ON f.id_fornecedor=i.id_fornecedor JOIN usuarios u ON u.id_usuario=f.id_usuario
-        JOIN fornecedor_locais fl ON fl.id_fornecedor=f.id_fornecedor AND fl.id_local=i.id_local WHERE i.id_insumo=?`,[id]),
+        JOIN fornecedor_locais fl ON fl.id_fornecedor=f.id_fornecedor AND fl.id_local=i.id_local WHERE i.id_insumo=? FOR UPDATE`,[id]),
     combo:(c,id)=>one(c,'SELECT co.id_local,co.ativo,l.status AS local_status FROM combos co JOIN locais l ON l.id_local=co.id_local WHERE co.id_combo=?',[id]),
     comboParts:async(c,id)=>(await c.execute('SELECT id_insumo,quantidade FROM combo_itens WHERE id_combo=? ORDER BY id_insumo',[id]))[0],
     stock:(c,id)=>one(c,`SELECT i.quantidade,i.quantidade_reservada,i.status,i.id_local,l.status AS local_status,f.status AS fornecedor_status,u.status AS usuario_status,fl.status AS vinculo_status

@@ -42,7 +42,7 @@ test('cotação valida sala, cadeira e idade; preço vem do motor 28',async()=>{
 
 test('insumo e combo somam demanda do mesmo estoque; menor não recebe cotação finalizável',async()=>{
     const user={id_usuario:'1',tipo_usuario:'CLIENTE',data_nascimento:'2015-01-01'};
-    const operational={id_local:'7',status:'DISPONIVEL',local_status:'ATIVO',fornecedor_status:'ATIVO',usuario_status:'ATIVO',vinculo_status:'ATIVO'};
+    const operational={venda_avulsa:1,id_local:'7',status:'DISPONIVEL',local_status:'ATIVO',fornecedor_status:'ATIVO',usuario_status:'ATIVO',vinculo_status:'ATIVO'};
     const model={age:async()=>({faixa_etaria:'ATE_16'}),input:async()=>operational,combo:async()=>({id_local:'7',ativo:1,local_status:'ATIVO'}),comboParts:async()=>[{id_insumo:'2',quantidade:2}],stock:async()=>({...operational,quantidade:3,quantidade_reservada:0})};
     const identity={transaction:async fn=>fn({execute:async()=>[]}),activeActor:async()=>user};
     const pricing={quoteOnConnection:async()=>({lines:[],total:'1.00',finalizable:true})};
@@ -51,4 +51,17 @@ test('insumo e combo somam demanda do mesmo estoque; menor não recebe cotação
     await assert.rejects(service.quote({localId:'7',lines},{actor:{id:'1'}}),{code:'ORDER_CONFLICT'});
     const quote=await service.quote({localId:'7',lines:[{kind:'INPUT',id:'2',quantity:1}]},{actor:{id:'1'}});
     assert.equal(quote.finalizable,false);assert.equal(quote.guardianAuthorizationRequired,true);assert.equal(quote.fees,'0.00');
+});
+
+
+test('insumo interno não pode ser comprado avulso mas continua compondo combo', async () => {
+    const row={venda_avulsa:0,id_local:'7',status:'DISPONIVEL',local_status:'ATIVO',fornecedor_status:'ATIVO',usuario_status:'ATIVO',vinculo_status:'ATIVO'};
+    const model={age:async()=>({faixa_etaria:'ADULTO'}),input:async()=>row,combo:async()=>({id_local:'7',ativo:1,local_status:'ATIVO'}),comboParts:async()=>[{id_insumo:'2',quantidade:2}],stock:async()=>({...row,quantidade:10,quantidade_reservada:0})};
+    const identity={transaction:async fn=>fn({}),activeActor:async()=>({id_usuario:'1',tipo_usuario:'CLIENTE',data_nascimento:'1990-01-01'})};
+    const service=createOrderService({model,identity,pricing:{quoteOnConnection:async()=>({lines:[],total:'1.00',finalizable:true})}});
+    const quote=kind=>service.quote({localId:'7',lines:[{kind,id:'2',quantity:1}]},{actor:{id:'1'}});
+    await assert.rejects(quote('INPUT'),{code:'ORDER_CONFLICT'});
+    await quote('COMBO');
+    row.venda_avulsa=1;
+    await quote('INPUT');
 });

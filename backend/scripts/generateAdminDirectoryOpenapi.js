@@ -1,0 +1,15 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {adminDirectoryOperations} from '../src/routes/adminDirectoryRoutes.js';
+const file=new URL('../src/docs/openapi.json',import.meta.url),spec=JSON.parse(await readFile(file,'utf8'));
+const obj=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)}),str={type:'string'},id={type:'string',pattern:'^[1-9][0-9]{0,9}$'},big={type:'string',pattern:'^[1-9][0-9]{0,19}$'},date={type:'string',format:'date-time',nullable:true};
+const roles=['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR','CLIENTE'],userStates=['ATIVO','INATIVO','BLOQUEADO','PENDENTE_VERIFICACAO'],privacyStates=['RECEBIDA','EM_ANALISE','CONCLUIDA','RECUSADA'];
+const user=obj({id,name:str,email:{type:'string',format:'email'},role:{type:'string',enum:roles},status:{type:'string',enum:userStates},createdAt:date});
+const privacy=obj({id:big,user:obj({id,name:str,email:{type:'string',format:'email'}}),type:{type:'string',enum:['EXCLUSAO']},status:{type:'string',enum:privacyStates},createdAt:date,closedAt:date});
+const tag='Admin: usuários e privacidade';spec.tags=[...spec.tags.filter(t=>t.name!==tag),{name:tag}];
+for(const r of adminDirectoryOperations){
+ const isUsers=r.action==='users',cursor=isUsers?id:big;
+ const op={operationId:r.operationId,tags:[tag],summary:isUsers?'Listar e pesquisar usuários':'Listar solicitações de privacidade',description:'Somente ADMIN com sessão ativa. Consulta paginada por ID decrescente, cursor exclusivo. Filtros combinados por AND; q procura trecho literal em nome ou e-mail, respeitando collation do banco. Não retorna senha/hash, CPF, tokens ou dados de autenticação. Não muda permissões, status de conta nem decide solicitações. Manter filtros ao paginar; trocar filtros exige reiniciar cursor.',security:[{bearerAuth:[]}],parameters:[{name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:cursor},{name:'q',in:'query',schema:{type:'string',minLength:1,maxLength:150}},{name:'userId',in:'query',schema:id},{name:'status',in:'query',schema:{type:'string',enum:isUsers?userStates:privacyStates}},{name:isUsers?'role':'type',in:'query',schema:{type:'string',enum:isUsers?roles:['EXCLUSAO']}}],responses:{'200':{description:'Página, inclusive vazia. nextCursor null indica fim.',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data:obj({items:{type:'array',items:isUsers?user:privacy},pagination:obj({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...cursor,nullable:true}})}),requestId:{type:'string',format:'uuid'}})}}}}};
+ for(const [code,name] of Object.entries({400:'BadRequest',401:'Unauthorized',403:'Forbidden',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'}))op.responses[code]={$ref:`#/components/responses/${name}`};
+ (spec.paths[r.path]??={})[r.method]=op;
+}
+await writeFile(file,JSON.stringify(spec,null,2)+'\n');console.info('Admin usuários/privacidade: 2 operações documentadas.');

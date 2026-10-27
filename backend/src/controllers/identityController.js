@@ -24,6 +24,7 @@ export function createIdentityController(identity, profile) {
         adminGet: json((r, c) => profile.adminGet(r.params.id, c)),
         authorization: json((r, c) => profile.authorization(r.params.id, r.params.authorizationId, c)),
         privacyStatus: json((r, c) => profile.privacyStatus(r.params.id, c)),
+        children: json((r,c)=>profile.children(r.childrenQuery,c)),
         parental: json((r, c) => profile.parental(r.params.id, r.method === 'GET' ? null : r.input, false, c)),
         authorizeMinor: async (req, res) => { const data = await profile.parental(req.params.id, req.input, true, context(req)); res.location(`/api/users/me/children/${req.params.id}/authorizations/${data.id}`); success(res, data, 201); },
         list: kind => json((r, c) => profile.list(kind, r.query, c)),

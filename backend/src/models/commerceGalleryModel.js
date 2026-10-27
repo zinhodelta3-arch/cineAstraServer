@@ -13,7 +13,7 @@ export function createCommerceGalleryModel(database) {
         parent(type, id) { const s = spec(type); return one(database, `SELECT ${s.id} FROM ${s.parent} WHERE ${s.id} = ?`, [id]); },
         lockParent(type, c, id) { const s = spec(type); return one(c, `SELECT ${s.id}${type === 'inputs' ? ',id_fornecedor,id_local,status' : ',id_local,ativo'} FROM ${s.parent} WHERE ${s.id} = ? FOR UPDATE`, [id]); },
         async publicParent(type, id) {
-            if (type === 'inputs') return one(database, "SELECT i.id_insumo FROM insumos i JOIN fornecedores f ON f.id_fornecedor = i.id_fornecedor JOIN usuarios u ON u.id_usuario = f.id_usuario JOIN locais l ON l.id_local = i.id_local JOIN fornecedor_locais fl ON fl.id_fornecedor = i.id_fornecedor AND fl.id_local = i.id_local WHERE i.id_insumo = ? AND i.status = 'DISPONIVEL' AND f.status = 'ATIVO' AND u.status = 'ATIVO' AND u.tipo_usuario = 'FORNECEDOR' AND l.status = 'ATIVO' AND fl.status = 'ATIVO'", [id]);
+            if (type === 'inputs') return one(database, "SELECT i.id_insumo FROM insumos i JOIN fornecedores f ON f.id_fornecedor = i.id_fornecedor JOIN usuarios u ON u.id_usuario = f.id_usuario JOIN locais l ON l.id_local = i.id_local JOIN fornecedor_locais fl ON fl.id_fornecedor = i.id_fornecedor AND fl.id_local = i.id_local WHERE i.id_insumo = ? AND i.status = 'DISPONIVEL' AND i.venda_avulsa = TRUE AND f.status = 'ATIVO' AND u.status = 'ATIVO' AND u.tipo_usuario = 'FORNECEDOR' AND l.status = 'ATIVO' AND fl.status = 'ATIVO'", [id]);
             const row = await comboModel.combo(id);
             if (!row?.ativo || row.id_local === null) return null;
             const visible = await comboModel.list({ localId: idString(row.id_local), cursor: String(BigInt(id) - 1n), limit: 1 });

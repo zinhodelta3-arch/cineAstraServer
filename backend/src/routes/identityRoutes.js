@@ -1,3 +1,4 @@
+import {childrenQuery} from '../validators/childrenValidators.js';
 import { Router } from 'express';
 import { ApiError } from '../utils/ApiError.js';
 import { schemas, validateBody, validateId } from '../validators/identityValidators.js';
@@ -26,6 +27,7 @@ export const identityOperations = [
     ['get', '/api/admin/users/{id}', 'adminGet', null, 'admin'],
     ['patch', '/api/admin/users/{id}/access', 'adminAccess', 'accessChange', 'admin', 'twoFactor'],
     ['get', '/api/admin/privacy-requests/{id}', 'privacyStatus', null, 'admin'],
+    ['get', '/api/users/me/children', 'list_own_children', null, 'private', null, false, 200, 'children'],
     ['get', '/api/users/me/children/{id}/controls', 'getParental', null, 'private', null, false, 200, 'parental'],
     ['patch', '/api/users/me/children/{id}/controls', 'patchParental', 'parental', 'private', 'twoFactor', false, 200, 'parental'],
     ['post', '/api/users/me/children/{id}/authorizations', 'authorizeMinor', 'authorizeMinor', 'private', 'twoFactor', false, 201],
@@ -50,6 +52,7 @@ export function identityRoutes(controller, { auth, limits, captcha, security = {
         if (r.access === 'private' || r.access === 'admin') middleware.push(auth);
         if (r.access === 'admin') middleware.push(allowRoles('ADMIN'));
         if (r.flow) middleware.push(...limits[r.flow]);
+        if (r.action === 'children') middleware.push(childrenQuery);
         if (r.path.includes('{id}')) middleware.push(validateId);
         if (r.schema) middleware.push(validateBody(schemas[r.schema]));
         if (r.access === 'enrollment') middleware.push((req, res, next) => req.input.password ? auth(req, res, next) : next());

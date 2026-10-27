@@ -5,6 +5,8 @@ const respond=(service,req,res,result,status=200,refund=result)=>{
     return success(res,result,status);
 };
 export function createRefundController(service){return {
+    adminList:async(req,res)=>success(res,await service.adminList(req.adminRefundQuery,context(req))),
+    adminGet:async(req,res)=>success(res,await service.adminGet(req.params.id,context(req))),
     request:async(req,res)=>respond(service,req,res,await service.request(req.params.id,req.input,req.paymentKey,context(req)),202),
     get:async(req,res)=>success(res,await service.get(req.params.id,context(req))),
     reconcile:async(req,res)=>success(res,await service.reconcile(req.params.id,context(req))),

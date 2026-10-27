@@ -22,7 +22,7 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => Number.isFinite
 const strict = shape => z.object(shape).strict();
 const nonEmpty = schema => schema.refine(o => Object.keys(o).length > 0);
 export const schemas = {
-    register: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, termsVersion: z.string().min(1).max(50), privacyVersion: z.string().min(1).max(50), acceptTerms: z.literal(true), acceptPrivacy: z.literal(true), ageProof: z.string().min(1).max(512), guardianProof: z.string().min(1).max(512).optional(), captchaToken: z.string().min(1).max(4096).optional() }),
+    register: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, termsVersion: z.string().min(1).max(50), privacyVersion: z.string().min(1).max(50), acceptTerms: z.literal(true), acceptPrivacy: z.literal(true), ageProof: z.string().min(1).max(512).optional(), guardianProof: z.string().min(1).max(512).optional(), captchaToken: z.string().min(1).max(4096).optional() }),
     login: strict({ email, password, captchaToken: z.string().min(1).max(4096).optional() }),
     forgot: strict({ email, captchaToken: z.string().min(1).max(4096).optional() }),
     reset: strict({ token, password, passwordConfirmation: password, captchaToken: z.string().min(1).max(4096).optional() }),
@@ -41,7 +41,7 @@ export const schemas = {
     params: strict({ id })
 };
 schemas.addressPatch = nonEmpty(schemas.address.partial());
-schemas.ageVerification = schemas.register.pick({ termsVersion: true, privacyVersion: true, acceptTerms: true, acceptPrivacy: true, ageProof: true, guardianProof: true });
+schemas.ageVerification = schemas.register.pick({ termsVersion: true, privacyVersion: true, acceptTerms: true, acceptPrivacy: true, ageProof: true, guardianProof: true }).extend({ ageProof: z.string().min(1).max(512) });
 schemas.contactPatch = nonEmpty(strict({ valor: z.string().trim().min(3).max(150).optional(), principal: z.boolean().optional() }));
 export function validateBody(schema) {
     return (req, res, next) => {

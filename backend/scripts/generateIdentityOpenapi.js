@@ -7,7 +7,7 @@ const file = new URL('../src/docs/openapi.json', import.meta.url);
 const spec = JSON.parse(await readFile(file, 'utf8'));
 spec.info.title = 'CineAstra API';
 spec.info.version = '1.1.0';
-spec.info.description = 'Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. CAPTCHA e 2FA ficam em standby por padrão (CAPTCHA_ENABLED=false, TWO_FACTOR_ENABLED=false). Cadastro requer termos aprovados e prova de idade; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva.';
+spec.info.description = 'Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. CAPTCHA e 2FA ficam em standby por padrão (CAPTCHA_ENABLED=false, TWO_FACTOR_ENABLED=false). Cadastro requer termos aprovados; sem ageProof, ALLOW_SELF_DECLARED_AGE=true permite idade não verificada; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva.';
 spec.tags = [{ name: 'Infraestrutura' }, { name: 'Documentação' }, { name: 'Identidade' }];
 spec.components.securitySchemes.bearerAuth.description = 'JWT HS256 curto com sub/sid/jti, issuer/audience. Sessão persistida, não revogada, usuário ativo e perfil atual. Quando TWO_FACTOR_ENABLED=true, ADMIN/SUPERVISOR e usuários com fator ativo completam 2FA antes de receber acesso.';
 spec.paths['/api-docs'].get.description = 'UI e assets locais. Login e desafio 2FA retornam accessToken somente após autenticação completa; informar token em Authorize. Não persistir autorização. Produção desativada.';
@@ -27,6 +27,7 @@ for (const [name, schema] of Object.entries(schemas)) {
 }
 const str = { type: 'string' }, bool = { type: 'boolean' };
 spec.components.schemas.IdentityUser = obj({ id: ref('Id'), name: str, email: { type: 'string', format: 'email' }, phone: { type: 'string', nullable: true }, dateOfBirth: { type: 'string', format: 'date', nullable: true }, role: { type: 'string', enum: ['CLIENTE', 'FORNECEDOR', 'SUPERVISOR', 'COLABORADOR', 'ADMIN'] }, status: { type: 'string', enum: ['ATIVO', 'INATIVO', 'BLOQUEADO', 'PENDENTE_VERIFICACAO'] } });
+spec.components.schemas.IdentityUser.properties.ageVerified = { type: 'boolean', description: 'Retornado em cadastro e GET users/me. Indica existência de prova válida, não apenas data declarada.' };
 spec.components.schemas.IdentityAccess = obj({ accessToken: { type: 'string', description: 'JWT emitido em runtime, nunca valor fixo de exemplo' }, tokenType: { type: 'string', enum: ['Bearer'] }, expiresIn: { type: 'integer', maximum: 900 }, user: ref('IdentityUser') });
 spec.components.schemas.IdentityChallenge = obj({ challengeToken: { type: 'string', pattern: '^[a-f0-9]{64}$', description: 'Token opaco restrito; não é bearer de acesso. Nunca enviar em URL.' }, expiresIn: { type: 'integer', enum: [300] }, next: { type: 'string', enum: ['VERIFY_2FA', 'ENROLL_2FA'] }, method: { type: 'string', nullable: true, enum: ['APP', 'SMS', 'EMAIL', null] }, provisioningUri: { type: 'string', description: 'Segredo TOTP somente na inscrição/rotação autorizada; usar em aplicativo autenticador, não registrar.' } }, ['challengeToken', 'expiresIn', 'next', 'method']);
 spec.components.schemas.IdentityPreferences = { ...spec.components.schemas.IdentityInput_preferences, required: ['tema', 'tamanho_fonte', 'alto_contraste', 'modo_acessibilidade', 'idioma', 'aparencia'] };
@@ -42,7 +43,7 @@ for (const [kind, pk, schema] of [['addresses', 'id_endereco', 'address'], ['con
     spec.components.schemas[`IdentityList_${kind}`] = obj({ items: { type: 'array', maxItems: 100, items: ref(`Identity_${kind}`) }, pagination: ref('Pagination') });
 }
 const descriptions = {
-    register: 'Cadastro público somente CLIENTE. Exige CAPTCHA, termos/privacidade atuais e provider confiável de idade; até 16 anos exige prova de responsável. Nenhum JWT emitido no cadastro.',
+    register: 'Cadastro somente CLIENTE, com termos/privacidade atuais. ALLOW_SELF_DECLARED_AGE=true por padrão permite omitir ageProof: não cria verificação nem vínculo e retorna ageVerified=false. Com prova, exige provider válido e responsável quando aplicável. false restaura exigência de prova. Nenhum JWT no cadastro; CAPTCHA conforme flag.',
     registerAlias: 'Alias compatível de POST /api/auth/register.',
     renewAge: 'Renova prova de idade pelo provider real, vinculada aos dados já persistidos; atualiza histórico e aceite dos documentos vigentes. Sem autodeclaração. Troca de responsável exige revisão separada do vínculo (409).',
     login: 'Credenciais inválidas/inativas retornam mesma resposta 401. Conta com fator ativo exige prova; ADMIN/SUPERVISOR sem fator recebem somente desafio restrito para enrollment. Desafio: 5 minutos, máximo 5 tentativas persistidas. Fator APP usa TOTP com proteção contra replay.',
@@ -67,6 +68,7 @@ for (const r of identityOperations) {
         : ['register', 'registerAlias', 'me', 'patch', 'adminCreate', 'adminAccess', 'adminGet'].includes(r.operationId) ? ref('IdentityUser')
         : r.operationId === 'deleteAccount' ? ref('IdentityDeletion')
         : r.operationId === 'forgot' ? obj({ message: str })
+        : r.operationId === 'list_own_children' ? obj({items:{type:'array',items:obj({id:{type:'string',pattern:'^[1-9][0-9]{0,9}$'},name:str,status:{type:'string',enum:['ATIVO','INATIVO','BLOQUEADO','PENDENTE_VERIFICACAO']},parentalControlsAvailable:bool})},pagination:obj({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{type:'string',pattern:'^[1-9][0-9]{0,9}$',nullable:true}})})
         : r.operationId === 'privacyStatus' ? ref('IdentityPrivacyStatus')
         : ['authorizeMinor', 'authorization'].includes(r.operationId) ? ref('IdentityAuthorization')
         : r.operationId === 'renewAge' ? obj({ ageBand: { type: 'string', enum: ['ATE_16', 'MAIOR_16'] }, expiresAt: { type: 'string', format: 'date-time' } })
@@ -80,6 +82,10 @@ for (const r of identityOperations) {
     if (r.path.startsWith('/api/auth/2fa/')) op.description = 'Em standby retorna 404 FEATURE_DISABLED sem alterar fatores ou desafios. ' + op.description;
     if (r.path.includes('{id}')) op.parameters = [...r.path.matchAll(/\{(\w+)\}/g)].map(m => ({ name: m[1], in: 'path', required: true, schema: ref('Id') }));
     if (r.operationId.startsWith('list_') || r.operationId === 'export') op.parameters = [...(op.parameters ?? []), ...params];
+    if (r.operationId === 'list_own_children') {
+        op.description='Lista apenas vínculos ATIVO do responsável autenticado, sem bypass administrativo. Ordenação decrescente por ID do dependente; cursor exclusivo. Inclui conta inativa ou prova expirada com parentalControlsAvailable false. O indicador exige conta ATIVO e última prova vigente ATE_16; é informativo e não substitui a revalidação dos controles/autorização. Não cria, transfere ou revoga vínculo, não expõe CPF, e-mail, data de nascimento ou referência da prova. Cache-Control: no-store.';
+        op.parameters=[params[0],{name:'cursor',in:'query',schema:{type:'string',pattern:'^[1-9][0-9]{0,9}$'},description:'Último ID do dependente na página anterior; máximo 4294967295.'}];
+    }
     if (r.operationId === 'export') op.parameters.push({ name: 'section', in: 'query', schema: { type: 'string', enum: ['profile', 'addresses', 'contacts', 'preferences', 'consents', 'age', 'privacy', 'guardians', 'authorizations', 'sessions', 'factors', 'recoveries', 'controls'], default: 'profile' } });
     if (r.schema) op.requestBody = { required: true, content: { 'application/json': { schema: ref(`IdentityInput_${r.schema}`) } } };
     op.responses[r.status] = { description: r.status === 204 ? 'Concluído; sem corpo' : r.status === 202 ? 'Solicitação registrada; processamento de privacidade pendente' : 'Operação concluída', headers: { 'Cache-Control': { schema: { type: 'string', enum: ['no-store'] } }, 'X-Request-Id': { $ref: '#/components/headers/RequestId' }, ...([201, 202].includes(r.status) && { Location: { schema: { type: 'string' }, description: 'Caminho do recurso ou acompanhamento conforme descrição da operação' } }) }, ...(r.status !== 204 && { content: { 'application/json': { schema: obj({ success: { type: 'boolean', enum: [true] }, data: schema, requestId: { type: 'string', format: 'uuid' } }) } } }) };

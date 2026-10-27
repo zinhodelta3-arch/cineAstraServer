@@ -1,5 +1,6 @@
 "use client";
 
+import SessionControls from "@/components/auth/session-controls";
 import { useState } from "react";
 import { Film, Home, LayoutDashboard, Menu, Popcorn, Table2, X } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -21,6 +22,7 @@ export default function AdminShell({ children }) {
       <a className={styles.skip} href="#admin-content">Pular para o conteúdo</a>
       <div className={styles.desktop}><AppSidebar items={items} /></div>
       <div className={styles.content}>
+        <div className="flex justify-end p-4"><SessionControls /></div>
         <div className={styles.mobileBar}>
           <span>CineAstra / Administração</span>
           <Sheet open={open} onOpenChange={setOpen}>

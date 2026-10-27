@@ -24,7 +24,7 @@ export function createProfileService({ identity, config, providers }) {
         return u;
     }
     return {
-        async me(context) { return transaction(async c => userDto(await activeActor(c, context)), context); },
+        async me(context) { return transaction(async c => { const user = await activeActor(c, context); return { ...userDto(user), ageVerified: Boolean(await model.latestAge(c, user.id_usuario)) }; }, context); },
         async patch(input, context) {
             const sensitive = Boolean(input.email || input.password);
             const snapshot = sensitive ? await passwordSnapshot(context.actor.id, input.currentPassword) : null;
@@ -155,6 +155,15 @@ export function createProfileService({ identity, config, providers }) {
         },
         async privacyStatus(id, context) {
             return transaction(async c => { if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); const r = await model.privacyStatus(c, id); if (!r) throw ApiError.naoEncontrado(); return normalize(r); }, context);
+        },
+        async children(q,context) {
+            return transaction(async c=>{
+                const actor=await activeActor(c,context);
+                const rows=await model.children(c,actor.id_usuario,q),items=rows.slice(0,q.limit);
+                return {items:items.map(row=>({id:idString(row.id_usuario),name:row.nome,status:row.status,
+                    parentalControlsAvailable:row.status==='ATIVO'&&row.faixa_etaria==='ATE_16'})),
+                    pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(items.at(-1).id_usuario):null}};
+            },context);
         },
         async parental(id, input, authorize, context) {
             return transaction(async c => {

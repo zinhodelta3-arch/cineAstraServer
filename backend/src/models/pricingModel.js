@@ -18,7 +18,7 @@ export function createPricingModel(database){
         updateParameter(c,category,d){const fields=['markup_bps','margem_alerta_bps','teto_desconto_bps','ocupacao_referencia','meia_projecao_bps','combo_passo_bps'];if(Object.keys(d).some(k=>!fields.includes(k))||!Object.keys(d).length)throw new TypeError('Campos inválidos');return c.execute(`UPDATE precificacao_parametros SET ${Object.keys(d).map(k=>`${k}=?`).join(',')} WHERE categoria=?`,[...Object.values(d),category]);},
         product(kind,id,c=database,lock=false){
             const queries={
-                INPUT:'SELECT id_insumo AS id,preco AS published,custo_receita,custo_parceria,status,id_local FROM insumos WHERE id_insumo=?',
+                INPUT:'SELECT id_insumo AS id,preco AS published,custo_receita,custo_parceria,status,venda_avulsa,id_local FROM insumos WHERE id_insumo=?',
                 SESSION:'SELECT s.id_sessao AS id,s.preco_inteira AS published,s.custo_local_dia,s.custo_exibicao,s.data,s.horario_inicio,s.horario_fim,s.status,a.capacidade FROM sessoes s JOIN salas a ON a.id_sala=s.id_sala WHERE s.id_sessao=?',
                 RENTAL:'SELECT id_filme AS id,preco_aluguel AS published,custo_streaming_dia,dias_acesso_aluguel,status,disponivel_streaming FROM filmes WHERE id_filme=?',
                 PURCHASE:'SELECT id_filme AS id,preco_compra AS published,custo_streaming_compra,status,disponivel_streaming FROM filmes WHERE id_filme=?',

@@ -27,7 +27,11 @@ export function createComboService({ model, identity }) {
             if (!visible[0] || idString(visible[0].id_combo) !== idString(id)) throw ApiError.naoEncontrado();
             return detail(id);
         },
-        async adminGet(id, context) { if (context.actor.tipo !== 'ADMIN') throw ApiError.acessoNegado(); return detail(id); },
+        async adminList(q,context) { return transact(context,async c=>{
+            const rows=await model.adminList(c,q),page=rows.slice(0,q.limit);
+            return {items:page.map(row=>({id_combo:idString(row.id_combo),id_local:row.id_local==null?null:idString(row.id_local),nome:row.nome,descricao:row.descricao??null,preco:moneyString(row.preco),ativo:Boolean(row.ativo),data_cadastro:row.data_cadastro??null,itemCount:Number(row.item_count)})),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(page.at(-1).id_combo):null}};
+        }); },
+        async adminGet(id, context) { return transact(context,c=>detail(id,c)); },
         async create(input, context) {
             return transact(context, async c => {
                 await validItems(c, input.localId, input.items);

@@ -14,8 +14,8 @@ const common = { nome: name, descricao: description.optional(), categoria: categ
 const page = status => z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: catalogId.optional(), supplierId: catalogId.optional(), localId: catalogId.optional(), status: status.optional() }).strict();
 export const productSchemas = {
     inputs: {
-        create: z.object({ ...common, supplierId: catalogId.optional(), localId: catalogId, quantidade_minima: count.optional(), preco: price }).strict(),
-        patch: z.object({ nome: name.optional(), descricao: description.optional(), categoria: category.optional(), quantidade_minima: count.optional(), preco: price.optional(), status: supplyStatus.optional() }).strict().refine(v => Object.keys(v).length > 0),
+        create: z.object({ ...common, supplierId: catalogId.optional(), localId: catalogId, quantidade_minima: count.optional(), preco: price, venda_avulsa: z.boolean().default(false) }).strict(),
+        patch: z.object({ nome: name.optional(), descricao: description.optional(), categoria: category.optional(), quantidade_minima: count.optional(), preco: price.optional(), venda_avulsa: z.boolean().optional(), status: supplyStatus.optional() }).strict().refine(v => Object.keys(v).length > 0),
         query: page(supplyStatus)
     },
     equipment: {

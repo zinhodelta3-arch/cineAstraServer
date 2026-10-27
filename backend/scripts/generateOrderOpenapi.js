@@ -25,6 +25,14 @@ spec.components.schemas.CheckoutOrder=obj({orderId:id,status:{type:'string',enum
 const checkoutResponse={description:'Pedido reservado por 15 minutos; pague usando POST /api/payments',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data:ref('CheckoutOrder'),requestId:{type:'string',format:'uuid'}}),example:{success:true,data:{orderId:'123',status:'AGUARDANDO_PAGAMENTO',total:'25.00',currency:'BRL',expiresAt:'2026-10-10T15:15:00.000Z',paymentPath:'/api/payments'},requestId:'00000000-0000-4000-8000-000000000001'}}}};
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for(const r of orderOperations){
+    if(r.action==='list'){
+        const summary=obj({orderId:id,financialStatus:{type:'string',enum:['EM_ANDAMENTO','AGUARDANDO_PAGAMENTO','PAGO','CANCELADO','FINALIZADO']},total:money,currency:kind('BRL'),createdAt:{type:'string',format:'date-time',nullable:true}});
+        const page=obj({items:{type:'array',items:summary},pagination:obj({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...id,nullable:true}})});
+        const op={operationId:r.operationId,tags:['Carrinho'],summary:'Listar os próprios pedidos',description:'Somente CLIENTE autenticado. Resumos em ordem decrescente de ID; cursor exclusivo é o último orderId da página anterior. O proprietário vem da autenticação, nunca da query. Não inclui dados de outros usuários nem itens/tickets; consulte os endpoints de detalhe. nextCursor null indica fim. createdAt pode ser null em registros legados.',security:[{bearerAuth:[]}],parameters:[{name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:id}],responses:{'200':{description:'Página de pedidos próprios (inclui lista vazia)',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data:page,requestId:{type:'string',format:'uuid'}})}}}}};
+        for(const [code,name] of Object.entries(errors))op.responses[code]={$ref:`#/components/responses/${name}`};
+        (spec.paths[r.path]??={})[r.method]=op;
+        continue;
+    }
     if(r.action==='cancel'){
         const cancelled=obj({orderId:id,status:{type:'string',enum:['CANCELADO']}});
         const op={operationId:r.operationId,tags:['Carrinho'],summary:'Cancelar pedido pendente próprio',description:'Somente CLIENTE titular, pedido AGUARDANDO_PAGAMENTO sem ticket nem cobrança despachada/incerta. Intenções PREPARADA são neutralizadas na transação que cancela o pedido e libera reservas. Pedido já CANCELADO retorna 200 sem repetir efeitos. Não chama gateway nem cria reembolso. Estados incompatíveis retornam ORDER_CANCEL_CONFLICT (409).',security:[{bearerAuth:[]}],parameters:[{name:'orderId',in:'path',required:true,schema:id},{name:'Idempotency-Key',in:'header',required:true,schema:{type:'string',minLength:8,maxLength:120}}],responses:{'200':{description:'Pedido cancelado',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data:cancelled,requestId:{type:'string',format:'uuid'}})}}}}};
@@ -50,7 +58,7 @@ for(const r of orderOperations){
     for(const [code,name] of Object.entries(errors))op.responses[code]={$ref:`#/components/responses/${name}`};
     (spec.paths[r.path]??={})[r.method]=op;
 }
-for(const path of ['/api/orders','/api/orders/{id}'])delete spec.paths[path];
+for(const path of ['/api/orders/{id}'])delete spec.paths[path];
 for(const name of ['Order','OrderItem'])delete spec.components.schemas[name];
 await writeFile(file,`${JSON.stringify(spec,null,2)}\n`);
 console.info(`Carrinho: ${orderOperations.length} operação documentada.`);

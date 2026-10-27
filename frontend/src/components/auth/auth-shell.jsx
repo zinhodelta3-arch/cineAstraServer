@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { ArrowLeft, Check, Eye, EyeOff, LockKeyhole, Mail, Phone, UserRound } from "lucide-react";
+import { ArrowLeft, Check, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRegisterForm } from "@/hooks/auth/use-register-form";
+import { useAuthForm } from "@/hooks/auth/use-auth-form";
+import SessionControls from "@/components/auth/session-controls";
 import { Checkbox } from "@/components/ui/checkbox";
 
-function Field({ label, icon: Icon, type = "text", value, onChange, placeholder, autoComplete, required = true, minLength, maxLength }) {
+export function Field({ label, icon: Icon, type = "text", value, onChange, placeholder, autoComplete, required = true, minLength, maxLength, max }) {
   const inputId = useId();
   const [visible, setVisible] = useState(false);
   const isPassword = type === "password";
@@ -29,6 +32,7 @@ function Field({ label, icon: Icon, type = "text", value, onChange, placeholder,
           required={required}
           minLength={minLength}
           maxLength={maxLength}
+          max={max}
         />
         {isPassword && (
           <Button
@@ -49,7 +53,7 @@ function Field({ label, icon: Icon, type = "text", value, onChange, placeholder,
   );
 }
 
-function AuthCard({ eyebrow, title, description, children, footer }) {
+export function AuthCard({ eyebrow, title, description, children, footer }) {
   return (
     <main className="relative flex min-h-[calc(100svh-81px)] flex-col items-center justify-center overflow-hidden bg-background px-3.5 pt-[34px] pb-[50px] text-foreground min-[701px]:px-5 min-[701px]:pt-14 min-[701px]:pb-[72px]">
       <section className="relative grid w-full max-w-[920px] overflow-hidden rounded-2xl border border-border bg-card min-[701px]:min-h-[560px] min-[701px]:grid-cols-[minmax(0,1fr)_210px]" aria-labelledby="auth-title">
@@ -94,25 +98,8 @@ function AuthCard({ eyebrow, title, description, children, footer }) {
 }
 
 export function RegisterPage() {
-  const [form, setForm] = useState({ email: "", phone: "", password: "", confirmPassword: "" });
-  const [accepted, setAccepted] = useState(false);
+  const { form, accepted, setAccepted, update, handleSubmit, message, pending, success, documents, documentError, retryDocuments, today } = useRegisterForm();
   const termsId = useId();
-  const [message, setMessage] = useState("");
-
-  const update = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }));
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    if (form.password !== form.confirmPassword) {
-      setMessage("As senhas não coincidem.");
-      return;
-    }
-    if (!accepted) {
-      setMessage("Você precisa concordar com os Termos de Uso e a Política de Privacidade.");
-      return;
-    }
-    setMessage("Cadastro validado! A integração com o backend será conectada nesta etapa.");
-  }
 
   return (
     <AuthCard
@@ -121,46 +108,48 @@ export function RegisterPage() {
       description="Cadastre-se para comprar ingressos, acompanhar seus pedidos e aproveitar sua experiência CineAstra."
       footer={
         <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground [&_a]:rounded-sm [&_a]:font-extrabold [&_a]:text-primary [&_a:hover]:underline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-ring">
-          Já possui uma conta? <Link href="/login">Entrar na CineAstra</Link>
+          Já possui uma conta? <Link href="/auth/login">Entrar na CineAstra</Link>
         </p>
       }
     >
+      <p className="mb-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">Sua idade será autodeclarada, não verificada. Recursos que exigem comprovação continuarão sujeitos à verificação.</p>
       <form className="grid gap-[17px]" onSubmit={handleSubmit}>
+        <Field label="Nome completo" icon={UserRound} value={form.name} onChange={update("name")} autoComplete="name" minLength={2} maxLength={100} />
+        <Field label="CPF" icon={UserRound} value={form.cpf} onChange={update("cpf")} placeholder="000.000.000-00" maxLength={14} />
+        <Field label="Data de nascimento" icon={UserRound} type="date" value={form.dateOfBirth} onChange={update("dateOfBirth")} autoComplete="bday" max={today} />
         <Field label="E-mail" icon={Mail} type="email" value={form.email} onChange={update("email")} placeholder="seuemail@exemplo.com" autoComplete="email" />
-        <Field label="Telefone" icon={Phone} type="tel" value={form.phone} onChange={update("phone")} placeholder="(11) 99999-9999" autoComplete="tel" />
+
 
         <div className="grid grid-cols-1 gap-[17px] min-[521px]:grid-cols-2 min-[521px]:gap-4">
-          <Field label="Senha" icon={LockKeyhole} type="password" value={form.password} onChange={update("password")} placeholder="••••••••" autoComplete="new-password" minLength={8} />
-          <Field label="Confirmar senha" icon={LockKeyhole} type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="••••••••" autoComplete="new-password" minLength={8} />
+          <Field label="Senha" icon={LockKeyhole} type="password" value={form.password} onChange={update("password")} placeholder="••••••••" autoComplete="new-password" minLength={12} maxLength={72} />
+          <Field label="Confirmar senha" icon={LockKeyhole} type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="••••••••" autoComplete="new-password" minLength={12} maxLength={72} />
         </div>
 
+        <p className="text-xs text-muted-foreground">Senha com 12 caracteres ou mais, maiúscula, minúscula, número e símbolo. Máximo de 72 bytes.</p>
+        {documents && <div className="space-y-3">{[documents.terms, documents.privacy].map(doc => <details key={doc.slug} className="rounded-lg border border-border p-3"><summary className="cursor-pointer font-semibold">{doc.title} — {doc.version}</summary><p className="mt-3 whitespace-pre-wrap text-sm">{doc.body.text}</p></details>)}</div>}
+        {!documents && !documentError && <p role="status">Carregando termos e privacidade…</p>}
+        {documentError && <div role="alert"><p>{documentError}</p><Button type="button" variant="outline" onClick={retryDocuments}>Tentar novamente</Button></div>}
         <div className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground [&_a]:font-bold [&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline">
-          <Checkbox id={termsId} className="mt-0.5 shrink-0" checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} />
+          <Checkbox id={termsId} className="mt-0.5 shrink-0" disabled={!documents || pending || success} checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} />
           <label htmlFor={termsId} className="cursor-pointer">
-            Li e concordo com os <a href="#" onClick={(event) => event.preventDefault()}>Termos de Uso</a> e a <a href="#" onClick={(event) => event.preventDefault()}>Política de Privacidade</a>.
+            Li e concordo com os Termos de Uso e a Política de Privacidade apresentados acima.
           </label>
         </div>
 
         {message && <p className="m-0 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground" role="status">{message}</p>}
 
-        <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit">
+        <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit" disabled={pending || success || !documents || !accepted}>
           <Check size={18} aria-hidden="true" />
-          Criar minha conta
+          {pending ? "Criando conta…" : "Criar minha conta"}
         </Button>
+        {success && <Link href="/auth/login" className="font-bold text-primary underline">Entrar com minha conta</Link>}
       </form>
     </AuthCard>
   );
 }
 
 export function LoginPage() {
-  const [form, setForm] = useState({ login: "", password: "" });
-  const [resetOpen, setResetOpen] = useState(false);
-  const [message, setMessage] = useState("");
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    setMessage("Login validado! A autenticação com o backend será conectada nesta etapa.");
-  }
+  const { form, update, resetOpen, setResetOpen, message, pending, user, handleSubmit } = useAuthForm();
 
   return (
     <AuthCard
@@ -169,32 +158,33 @@ export function LoginPage() {
       description="Acesse sua conta para continuar sua experiência de cinema."
       footer={
         <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground [&_a]:rounded-sm [&_a]:font-extrabold [&_a]:text-primary [&_a:hover]:underline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-ring">
-          Ainda não possui uma conta? <Link href="/cadastro">Criar conta</Link>
+          Ainda não possui uma conta? <Link href="/auth/cadastro">Criar conta</Link>
         </p>
       }
     >
+      {user && <SessionControls />}
       {!resetOpen ? (
         <form className="grid gap-[17px]" onSubmit={handleSubmit}>
-          <Field label="Nome de usuário ou e-mail" icon={UserRound} value={form.login} onChange={(event) => setForm({ ...form, login: event.target.value })} placeholder="Seu usuário ou e-mail" autoComplete="username" />
-          <Field label="Senha" icon={LockKeyhole} type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="••••••••" autoComplete="current-password" />
+          <Field label="E-mail" type="email" icon={UserRound} value={form.login} onChange={update("login")} placeholder="seuemail@exemplo.com" autoComplete="username" />
+          <Field label="Senha" icon={LockKeyhole} type="password" value={form.password} onChange={update("password")} placeholder="••••••••" autoComplete="current-password" />
 
-          <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" onClick={() => { setResetOpen(true); setMessage(""); }}>
+          <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" disabled={pending} onClick={() => setResetOpen(true)}>
             Esqueci minha senha
           </Button>
 
           {message && <p className="m-0 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground" role="status">{message}</p>}
 
-          <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit">
-            Entrar
+          <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit" disabled={pending || Boolean(user)}>
+            {pending ? "Entrando…" : "Entrar"}
           </Button>
         </form>
       ) : (
-        <form className="grid gap-[17px]" onSubmit={(event) => { event.preventDefault(); setMessage("Se o e-mail estiver cadastrado, enviaremos as instruções para redefinir sua senha."); }}>
-          <Field label="Nome de usuário ou e-mail" icon={Mail} type="email" value={form.login} onChange={(event) => setForm({ ...form, login: event.target.value })} placeholder="seuemail@exemplo.com" autoComplete="email" />
+        <form className="grid gap-[17px]" onSubmit={handleSubmit}>
+          <Field label="E-mail" icon={Mail} type="email" value={form.login} onChange={update("login")} placeholder="seuemail@exemplo.com" autoComplete="email" />
           <p className="m-0 text-xs leading-relaxed text-muted-foreground">Informe o e-mail da sua conta e enviaremos as instruções para criar uma nova senha.</p>
           {message && <p className="m-0 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground" role="status">{message}</p>}
-          <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit">Redefinir senha</Button>
-          <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" onClick={() => { setResetOpen(false); setMessage(""); }}>
+          <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit" disabled={pending}>{pending ? "Solicitando…" : "Redefinir senha"}</Button>
+          <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" disabled={pending} onClick={() => setResetOpen(false)}>
             Voltar para o login
           </Button>
         </form>

@@ -1,9 +1,13 @@
 import {ApiError} from '../utils/ApiError.js';
+import {instant} from './identityService.js';
 import {idString} from '../utils/dto.js';
 import {cents,money} from './pricingMath.js';
 
 const conflict=()=>new ApiError('Reembolso em conflito',409,null,'REFUND_CONFLICT');
 const dto=r=>({id:idString(r.id_reembolso),paymentId:idString(r.id_pagamento),reason:r.motivo,status:r.status,requestedAmount:r.valor_solicitado??null,confirmedAmount:r.valor_confirmado??null,withinSevenDays:Boolean(r.dentro_prazo),receivedAt:r.solicitado_em,responseDueAt:r.prazo_resposta_em,respondedAt:r.respondido_em??null,compensation:r.compensacao_status});
+const date=value=>value==null?null:new Date(instant(value)).toISOString();
+const adminDto=r=>({...dto(r),userId:idString(r.id_usuario),orderId:r.id_pedido==null?null:idString(r.id_pedido),chargeId:r.id_cobranca==null?null:idString(r.id_cobranca),paymentAmount:r.pagamento_valor,paymentStatus:r.pagamento_status,
+    receivedAt:date(r.solicitado_em),responseDueAt:date(r.prazo_resposta_em),respondedAt:date(r.respondido_em)});
 const sevenDays=7*24*60*60*1000;
 function withinSeven(value,now=Date.now()){
     if(!value)return false;
@@ -130,5 +134,15 @@ export function createRefundService({model,identity,provider,termsVersion}){
             return {...result,refund:null,refundRequestRequired:true};
         }
     }
-    return {request,get,reconcile,decide,cancelPlan,dispatch,applyResult};
+    async function adminList(q,context){return tx(context,async c=>{
+        if((await identity.activeActor(c,context)).tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();
+        const rows=await model.adminList(c,q),page=rows.slice(0,q.limit);
+        return {items:page.map(adminDto),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(page.at(-1).id_reembolso):null}};
+    });}
+    async function adminGet(id,context){return tx(context,async c=>{
+        if((await identity.activeActor(c,context)).tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();
+        const row=await model.adminGet(c,id);if(!row)throw ApiError.naoEncontrado();
+        return {...adminDto(row),details:row.detalhes??null,termsVersion:row.termos_versao??null,decisionBasis:row.decisao_fundamento??null};
+    });}
+    return {adminList,adminGet,request,get,reconcile,decide,cancelPlan,dispatch,applyResult};
 }

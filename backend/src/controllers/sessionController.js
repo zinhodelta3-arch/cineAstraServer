@@ -3,6 +3,7 @@ const context = req => ({ actor: req.usuario, signal: req.signal, requestId: req
 export function createSessionController(service) {
     return {
         list: admin => async (req, res) => success(res, await service.list(req.sessionQuery, admin)),
+        seats: async (req,res) => success(res,await service.seats(req.params.id)),
         get: admin => async (req, res) => success(res, await service.get(req.params.id, admin)),
         async create(req, res) { const data = await service.create(req.input, context(req)); res.location(`/api/admin/sessions/${data.id_sessao}`); success(res, data, 201); },
         async patch(req, res) { success(res, await service.patch(req.params.id, req.input, context(req))); },

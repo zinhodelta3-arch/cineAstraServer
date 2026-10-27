@@ -1,5 +1,7 @@
 "use client"
 
+import SessionControls from "@/components/auth/session-controls"
+
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { ShoppingCart } from "lucide-react"
@@ -110,20 +112,7 @@ export function Header() {
             <div className="relative z-10 ml-auto flex h-full shrink-0 items-center gap-2 pl-2 pr-2 sm:gap-3 sm:pl-4 sm:pr-4">
               <TicketSeparator className="hidden sm:block" />
 
-              <div className="hidden items-center gap-2 sm:flex">
-                <Link
-                  href="/auth/login"
-                  className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                >
-                  Entrar
-                </Link>
-                <Link
-                  href="/auth/cadastro"
-                  className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-md bg-primary px-3.5 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                >
-                  Criar conta
-                </Link>
-              </div>
+              <div className="hidden items-center gap-2 sm:flex"><SessionControls /></div>
 
               <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                 <NotificationButton />

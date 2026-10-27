@@ -52,6 +52,12 @@ export function createSessionService({ model, identity }) {
             const rows = await model.list(q, isAdmin), items = rows.slice(0, q.limit);
             return { items: items.map(sessionDto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1).id_sessao) : null } };
         },
+        async seats(id) {
+            const rows=await model.seatAvailability(id),session=found(rows[0]);
+            return {sessionId:idString(session.id_sessao),roomId:idString(session.id_sala),locationId:idString(session.id_local),
+                seats:rows.filter(row=>row.id_assento!=null).map(row=>({seatId:idString(row.id_assento),row:row.fileira,
+                    number:row.numero,type:row.tipo,availability:row.disponibilidade}))};
+        },
         async get(id, isAdmin = false) { return sessionDto(found(isAdmin ? await model.session(id) : await model.publicSession(id))); },
         async create(input, context) {
             const initial = found(await model.room(input.id_sala));

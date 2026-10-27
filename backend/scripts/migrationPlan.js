@@ -62,7 +62,13 @@ export async function migrationPlan() {
         ['20261011_27_support_history.sql', () => true],
         ['20261011_28_content_contracts.sql', () => true],
         ['20261011_29_admin_reports.sql', () => true],
-        ['20261011_30_order_manual_cancellation.sql', () => true]
+        ['20261011_30_order_manual_cancellation.sql', () => true],
+        ['20261025_31_streaming_profiles.sql', () => true],
+        ['20261025_32_streaming_favorites.sql', () => true],
+        ['20261025_33_streaming_progress.sql', () => true],
+        ['20261025_34_input_retail_publication.sql', () => true],
+        ['20261026_35_promotional_content.sql', () => true],
+        ['20261026_36_streaming_profile_photos.sql', () => true]
     ];
     const plan = [];
     for (const [file, filter] of sources) {

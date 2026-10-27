@@ -1,5 +1,6 @@
 import {ApiError} from '../utils/ApiError.js';
 import {idString} from '../utils/dto.js';
+import {instant} from './identityService.js';
 import {interval} from './sessionService.js';
 import {operationalOrder} from './orderOperationalStatus.js';
 
@@ -29,7 +30,7 @@ export function createOrderService({model,identity,pricing}){
                 if(ageOn(user.data_nascimento,session.data)<ageLimit[session.classificacao])throw ApiError.acessoNegado();
             }else if(line.kind==='INPUT'){
                 const row=found(await model.input(c,line.id));
-                if(!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO')throw conflict('Insumo indisponível no local');
+                if(!row.venda_avulsa||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO')throw conflict('Insumo indisponível no local');
                 addStock(line.id,line.quantity);
             }else if(line.kind==='COMBO'){
                 const row=found(await model.combo(c,line.id));
@@ -59,5 +60,13 @@ export function createOrderService({model,identity,pricing}){
         const state=['PAGO','FINALIZADO'].includes(financialStatus)?operationalOrder(await model.operationalRows(c,id)):{operationalStatus:null,items:[]};
         return {orderId:idString(order.id_pedido),financialStatus,...state};
     },context);}
-    return {quoteOnConnection,quote:(input,context)=>identity.transaction(c=>quoteOnConnection(c,input,context),context),status};
+    async function list({limit=20,cursor},context){return identity.transaction(async c=>{
+        const actor=await identity.activeActor(c,context);
+        if(actor.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
+        const rows=await model.listOwn(c,actor.id_usuario,limit,cursor),page=rows.slice(0,limit);
+        return {items:page.map(row=>({orderId:idString(row.id_pedido),financialStatus:row.status,
+            total:row.valor_total,currency:'BRL',createdAt:row.data_pedido==null?null:new Date(instant(row.data_pedido)).toISOString()})),
+            pagination:{limit,nextCursor:rows.length>limit?idString(page.at(-1).id_pedido):null}};
+    },context);}
+    return {list,quoteOnConnection,quote:(input,context)=>identity.transaction(c=>quoteOnConnection(c,input,context),context),status};
 }

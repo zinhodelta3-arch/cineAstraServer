@@ -21,7 +21,7 @@ export function createLimits(config, storeFactory) {
         return createHash('sha256').update(key).digest('hex');
     };
     const flows = {};
-    for (const [name, max] of Object.entries({ login: 10, register: 10, recovery: 5, twoFactor: 10, checkout: 20, tickets: 30, upload: 10, newsletter: 5, assistant: 20 })) {
+    for (const [name, max] of Object.entries({ login: 10, register: 10, recovery: 5, twoFactor: 10, checkout: 20, tickets: 30, upload: 10, newsletter: 5, assistant: 20, streamingProgress: 120 })) {
         flows[name] = [limiter(`${name}:ip`, max, ip), limiter(`${name}:identity`, max, identity)];
     }
     return { general: limiter('general', config.rate.max, ip), flows,

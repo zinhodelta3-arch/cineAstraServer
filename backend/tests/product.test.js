@@ -30,7 +30,7 @@ function fixture() {
         async create(type, c, input) {
             if (type === 'equipment' && input.numero_patrimonio && state.equipment.some(e => e.numero_patrimonio?.trim().toUpperCase() === input.numero_patrimonio.trim().toUpperCase())) throw Object.assign(new Error('duplicate'), { code: 'ER_DUP_ENTRY' });
             const id = String(type === 'inputs' ? nextInput++ : nextEquipment++);
-            data(type).push({ [key(type)]: id, id_fornecedor: String(input.supplierId), id_local: String(input.localId), nome: input.nome, descricao: input.descricao ?? null, categoria: input.categoria ?? null, quantidade: 0, ...(type === 'inputs' ? { quantidade_minima: input.quantidade_minima ?? 0, preco: input.preco } : { numero_patrimonio: input.numero_patrimonio ?? null }), status: 'DISPONIVEL', data_cadastro: '2026-10-08 00:00:00' }); return id;
+            data(type).push({ [key(type)]: id, id_fornecedor: String(input.supplierId), id_local: String(input.localId), nome: input.nome, descricao: input.descricao ?? null, categoria: input.categoria ?? null, quantidade: 0, ...(type === 'inputs' ? { venda_avulsa: input.venda_avulsa ?? false, quantidade_minima: input.quantidade_minima ?? 0, preco: input.preco } : { numero_patrimonio: input.numero_patrimonio ?? null }), status: 'DISPONIVEL', data_cadastro: '2026-10-08 00:00:00' }); return id;
         },
         async update(type, c, id, input) { Object.assign(data(type).find(row => row[key(type)] === String(id)), input); }
     };
@@ -104,4 +104,16 @@ test('SQL usa filtros por fornecedor/local, preço exato e bloqueia atualizaçã
     assert.throws(() => model.update('inputs', db, '1', { quantidade: 100 }), /Campos inválidos/);
     assert.throws(() => model.update('inputs', db, '1', { custo: '1.00' }), /Campos inválidos/);
     assert.throws(() => model.update('equipment', db, '1', { id_local: '2' }), /Campos inválidos/);
+});
+
+
+test('publicação avulsa é opt-in e respeita propriedade do fornecedor', async () => {
+    const f = fixture();
+    const created = await f.api('post', '/api/inputs', '2').send({localId:'1',nome:'Milho',preco:'12.00'}).expect(201);
+    assert.equal(created.body.data.venda_avulsa, false);
+    const path = '/api/inputs/' + created.body.data.id_insumo;
+    await f.api('patch', path, '3').send({venda_avulsa:true}).expect(403);
+    assert.equal((await f.api('patch', path, '2').send({venda_avulsa:true}).expect(200)).body.data.venda_avulsa, true);
+    assert.equal((await f.api('patch', path).send({venda_avulsa:false}).expect(200)).body.data.venda_avulsa, false);
+    await f.api('patch', path, '2').send({venda_avulsa:'true'}).expect(422);
 });

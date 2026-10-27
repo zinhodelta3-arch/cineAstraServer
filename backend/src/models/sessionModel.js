@@ -6,6 +6,19 @@ export function createSessionModel(database) {
     const rows = async (c, sql, args = []) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args = []) => (await rows(c, sql, args))[0] ?? null;
     return {
+        // One statement keeps session visibility, seat map and occupancy in the same read snapshot.
+        seatAvailability: id => rows(database, `SELECT s.id_sessao,s.id_sala,sa.id_local,
+            a.id_assento,a.fileira,a.numero,a.tipo,
+            CASE WHEN a.status IS NULL OR a.status<>'ATIVA' THEN 'INDISPONIVEL'
+                 WHEN o.estado='CONFIRMADA' THEN 'VENDIDO'
+                 WHEN o.estado='RESERVADA' AND o.expira_em>UTC_TIMESTAMP(3) THEN 'RESERVADO'
+                 ELSE 'DISPONIVEL' END AS disponibilidade
+            ${joins}
+            LEFT JOIN assentos a ON a.id_sala=s.id_sala
+            LEFT JOIN assento_ocupacoes o ON o.id_sessao=s.id_sessao AND o.id_assento=a.id_assento
+            WHERE s.id_sessao=? AND s.status IN ('AGENDADA','EM_CARTAZ')
+                AND sa.status='ATIVA' AND l.status='ATIVO' AND f.status='ATIVO' AND f.disponivel_cinema=TRUE
+            ORDER BY a.fileira,a.numero,a.id_assento`, [id]),
         session: (id, c = database) => one(c, `SELECT ${projection}${joins} WHERE s.id_sessao = ?`, [id]),
         sessionForUpdate: (id, c) => one(c, 'SELECT id_sessao,id_filme,id_sala,data,horario_inicio,horario_fim,idioma,preco_inteira,status FROM sessoes WHERE id_sessao = ? FOR UPDATE', [id]),
         room: (id, c = database, lock = false) => lock

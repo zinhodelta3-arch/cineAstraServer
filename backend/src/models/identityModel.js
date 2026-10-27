@@ -44,6 +44,16 @@ export function createIdentityModel(database) {
         async age(c, id, proof) { await c.execute('INSERT INTO verificacoes_idade (id_usuario,faixa_etaria,referencia_provedor,verificado_em,expiracao) VALUES (?,?,?,?,?)', [id, proof.ageBand, proof.reference, proof.verifiedAt, proof.expiresAt]); },
         latestAge: (c, id) => one(c, 'SELECT faixa_etaria,expiracao FROM verificacoes_idade WHERE id_usuario = ? AND expiracao > UTC_TIMESTAMP(3) ORDER BY id_verificacao DESC LIMIT 1', [id]),
         async guardian(c, id, proof) { await c.execute('INSERT INTO responsaveis_usuario (id_menor,id_responsavel,referencia_prova) VALUES (?,?,?)', [id, proof.guardianId, proof.reference]); await c.execute('INSERT INTO controles_parentais (id_menor) VALUES (?)', [id]); },
+        children(c,owner,q){
+            const args=[owner];
+            const before=q.cursor?' AND u.id_usuario<?':'';
+            if(q.cursor)args.push(q.cursor);
+            args.push(q.limit+1);
+            return rows(c,`SELECT u.id_usuario,u.nome,u.status,
+                (SELECT v.faixa_etaria FROM verificacoes_idade v WHERE v.id_usuario=u.id_usuario AND v.expiracao>UTC_TIMESTAMP(3) ORDER BY v.id_verificacao DESC LIMIT 1) AS faixa_etaria
+                FROM responsaveis_usuario r JOIN usuarios u ON u.id_usuario=r.id_menor
+                WHERE r.id_responsavel=? AND r.status='ATIVO'${before} ORDER BY u.id_usuario DESC LIMIT ?`,args);
+        },
         guardianLink: (c, guardianId, minorId) => one(c, "SELECT id_vinculo,id_menor,id_responsavel FROM responsaveis_usuario WHERE id_responsavel = ? AND id_menor = ? AND status = 'ATIVO' FOR UPDATE", [guardianId, minorId]),
         controls: (c, id) => one(c, 'SELECT compras_permitidas,assinaturas_permitidas,limite_minutos_diarios FROM controles_parentais WHERE id_menor = ?', [id]),
         async updateControls(c, id, input) { const [set, values] = assignments(input, ['compras_permitidas', 'assinaturas_permitidas', 'limite_minutos_diarios']); await c.execute(`UPDATE controles_parentais SET ${set} WHERE id_menor = ?`, [...values, id]); },

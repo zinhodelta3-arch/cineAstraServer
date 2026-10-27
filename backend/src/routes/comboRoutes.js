@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { allowRoles } from '../middlewares/authMiddleware.js';
 import { validateBody } from '../validators/identityValidators.js';
-import { comboParams, comboQuery, comboSchemas } from '../validators/comboValidators.js';
+import { comboParams, comboQuery, comboSchemas, adminComboQuery } from '../validators/comboValidators.js';
 
 export const comboOperations = [
+    { method: 'get', path: '/api/admin/combos', operationId: 'list_admin_combos', action: 'adminList', admin: true },
     { method: 'get', path: '/api/combos', operationId: 'list_combos', action: 'list' },
     { method: 'get', path: '/api/combos/{id}', operationId: 'get_combo', action: 'get' },
     { method: 'get', path: '/api/admin/combos/{id}', operationId: 'get_admin_combo', action: 'adminGet', admin: true },
@@ -19,6 +20,7 @@ export function comboRoutes(controller, { auth }) {
         if (r.admin) middleware.push(auth, allowRoles('ADMIN'));
         if (r.path.includes('{id}')) middleware.push(comboParams);
         if (r.action === 'list') middleware.push(comboQuery);
+        if (r.action === 'adminList') middleware.push(adminComboQuery);
         if (['create','patch','replace'].includes(r.action)) middleware.push(validateBody(comboSchemas[r.action === 'replace' ? 'composition' : r.action]));
         router[r.method](r.path.replace('{id}', ':id'), ...middleware, controller[r.action]);
     }
