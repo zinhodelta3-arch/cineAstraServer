@@ -3,7 +3,6 @@ import { registrationErrorMessage } from './registration-errors.mjs';
 import { resolveApiBase } from '@/lib/api/api-base.mjs';
 import { cookies } from 'next/headers';
 export const SESSION_COOKIE = 'cineastra_session';
-export const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' };
 export class AuthError extends Error { constructor(status, message) { super(message); this.status = status; } }
 export async function backendAuth(path, { token, body, method = 'GET' } = {}) {
  const base = resolveApiBase(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL);

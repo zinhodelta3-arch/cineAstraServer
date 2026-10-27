@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Film, Bell, LogOut, Menu, UserRound, CircleHelp, X } from "lucide-react";
+import { Film, Bell, Menu, UserRound, CircleHelp, X } from "lucide-react";
 import { AppearanceSelector } from "@/components/appearance-selector";
 
+import SessionControls from "@/components/auth/session-controls";
+
 /* ============ CABEÇALHO EXCLUSIVO DO STREAMING ============ */
-export default function StreammingHeader({ onLogout, notifications = [] }) {
-  const pathname = usePathname() ?? "/streamming";
+export default function StreammingHeader({ notifications = [] }) {
+  const pathname = usePathname() ?? "/streaming";
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -19,7 +21,7 @@ export default function StreammingHeader({ onLogout, notifications = [] }) {
   ];
 
   const isActive = (href) => {
-    if (href === "/streamming") return pathname === "/streamming";
+    if (href === "/streaming") return pathname === "/streaming";
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
@@ -34,7 +36,7 @@ export default function StreammingHeader({ onLogout, notifications = [] }) {
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 text-foreground backdrop-blur-md">
       <div className="mx-auto flex min-h-16 max-w-[1800px] items-center justify-between gap-3 px-4 md:px-12">
         <Link
-          href="/streamming"
+          href="/streaming"
           aria-label="CineAstra Streaming — início"
           className="shrink-0 text-xl font-black tracking-tight sm:text-2xl"
         >
@@ -106,17 +108,7 @@ export default function StreammingHeader({ onLogout, notifications = [] }) {
             <AppearanceSelector />
           </div>
 
-          <button
-            type="button"
-            disabled={!onLogout}
-            onClick={() => onLogout?.()}
-            title={onLogout ? "Sair da conta" : "Ação de saída ainda não conectada à autenticação"}
-            aria-label="Sair da conta"
-            className="hidden h-10 items-center gap-2 rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 sm:inline-flex"
-          >
-            <LogOut className="size-4" aria-hidden="true" />
-            Sair
-          </button>
+          <div className="hidden sm:block"><SessionControls /></div>
 
           <button
             type="button"
@@ -149,18 +141,7 @@ export default function StreammingHeader({ onLogout, notifications = [] }) {
               <span className="text-sm text-muted-foreground">Tema do aplicativo</span>
               <AppearanceSelector />
             </div>
-            <button
-              type="button"
-              disabled={!onLogout}
-              onClick={() => {
-                setMenuOpen(false);
-                onLogout?.();
-              }}
-              className="mt-2 flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <LogOut className="size-4" aria-hidden="true" />
-              Sair da conta
-            </button>
+            <div className="mt-3 sm:hidden"><SessionControls /></div>
           </nav>
         </div>
       )}

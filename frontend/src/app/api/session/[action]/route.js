@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { AuthError, backendAuth, SESSION_COOKIE, cookieOptions } from '@/lib/auth/server';
+import { AuthError, backendAuth, SESSION_COOKIE } from '@/lib/auth/server';
+import { sessionCookieOptions } from '@/lib/auth/session-cookie.mjs';
 import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 import { loginDestination } from '@/lib/auth/destination.mjs';
 const json = (body,status=200) => NextResponse.json(body,{status,headers:{'Cache-Control':'no-store'}});
@@ -11,7 +12,7 @@ export async function GET(request,{params}) {
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({user:null});
  try {return json({user:userDto(await backendAuth('/users/me',{token}))});}
- catch(error){const res=json({user:null,message:error.message},error.status||503);if([401,403].includes(error.status))res.cookies.set(SESSION_COOKIE,'',{...cookieOptions,maxAge:0});return res;}
+ catch(error){const res=json({user:null,message:error.message},error.status||503);if([401,403].includes(error.status))res.cookies.set(SESSION_COOKIE,'',{...sessionCookieOptions(request),maxAge:0});return res;}
 }
 export async function POST(request,{params}) {
  const {action}=await params;
@@ -22,7 +23,7 @@ export async function POST(request,{params}) {
    const token=(await cookies()).get(SESSION_COOKIE)?.value;
    let failed=false;
    try {if(token)await backendAuth('/auth/logout',{method:'POST',token});}catch(e){if(![401,403].includes(e.status))failed=true;}
-   const res=json({message:failed?'Sessão local encerrada. Não foi possível confirmar a revogação no servidor.':'Sessão encerrada.'});res.cookies.set(SESSION_COOKIE,'',{...cookieOptions,maxAge:0});return res;
+   const res=json({message:failed?'Sessão local encerrada. Não foi possível confirmar a revogação no servidor.':'Sessão encerrada.'});res.cookies.set(SESSION_COOKIE,'',{...sessionCookieOptions(request),maxAge:0});return res;
   }
   if(!request.headers.get('content-type')?.includes('application/json'))throw new AuthError(415,'Envie os dados em JSON.');
   const text=await request.text();if(text.length>12000)throw new AuthError(413,'Dados excessivos.');
@@ -35,6 +36,6 @@ export async function POST(request,{params}) {
   if(!['ADMIN','CLIENTE','FORNECEDOR','COLABORADOR','SUPERVISOR'].includes(verified.role))throw new AuthError(403,'Perfil de acesso não reconhecido.');
   if(!Number.isInteger(data.expiresIn)||data.expiresIn<1||data.expiresIn>900)throw new AuthError(503,'Sessão inválida.');
   const res=json({user:userDto(verified),destination:loginDestination(verified.role)});
-  res.cookies.set(SESSION_COOKIE,data.accessToken,{...cookieOptions,maxAge:data.expiresIn});return res;
+  res.cookies.set(SESSION_COOKIE,data.accessToken,{...sessionCookieOptions(request),maxAge:data.expiresIn});return res;
  }catch(error){return json({message:error instanceof AuthError?error.message:'Não foi possível concluir a operação.'},error.status||503);}
 }

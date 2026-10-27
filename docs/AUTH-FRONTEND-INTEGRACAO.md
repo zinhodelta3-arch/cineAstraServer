@@ -14,11 +14,11 @@ Layout administrativo verifica sessão e role no servidor. Sem sessão retorna a
 
 ## Sessão
 
-O Next intermedeia a autenticação em `/api/session/{login,me,logout,forgot,reset}`. Cookie `cineastra_session`: HttpOnly, SameSite=Lax, Secure em produção, path `/`, duração igual ao backend (máximo 900 segundos). O token não é retornado ao JavaScript, nem colocado em localStorage/sessionStorage. Não há refresh token neste contrato; sessão expirada exige novo login.
+O Next intermedeia a autenticação em `/api/session/{login,me,logout,forgot,reset}`. Cookie `cineastra_session`: HttpOnly, SameSite=Lax, Secure quando o acesso público usa HTTPS (incluindo protocolo encaminhado pelo proxy), path `/`, duração igual ao backend (máximo 900 segundos). O token não é retornado ao JavaScript, nem colocado em localStorage/sessionStorage. Não há refresh token neste contrato; sessão expirada exige novo login.
 
 POSTs exigem Origin igual à origem da aplicação. As chamadas upstream são fixas, sem proxy arbitrário, com timeout de 15 segundos e sem redirecionamentos. Respostas não são cacheadas. Dados retornados ao navegador: id, nome e role, sem token. O backend continua revalidando sessão ativa.
 
-Botões de entrar/criar conta no cabeçalho desktop/mobile exibem nome e Sair quando autenticado. Área de admin também oferece Sair. Logout tenta revogar no backend e remove o cookie local; se backend falhar, a sessão remota pode permanecer válida até expirar. Nenhum dado de autenticação é inventado offline.
+Botões de entrar/criar conta nos cabeçalhos de cinema e streaming, desktop/mobile exibem nome e Sair quando autenticado. Área de admin também oferece Sair. Logout tenta revogar no backend e remove o cookie local; se backend falhar, a sessão remota pode permanecer válida até expirar. Nenhum dado de autenticação é inventado offline.
 
 ## Recuperação e redefinição
 
@@ -34,7 +34,7 @@ Cadastro autodeclarado implementado em `/auth/cadastro`, com `ALLOW_SELF_DECLARE
 
 ## Configuração
 
-Definir `BACKEND_API_URL` no **servidor do frontend**, incluindo `/api`, com URL absoluta acessível pelo Next. Na ausência usa `NEXT_PUBLIC_API_URL` se absoluta. Exemplo de desenvolvimento: `http://localhost:8080/api`. Em implantação, usar endereço real/interno apropriado; localhost aponta para o próprio contêiner. Cookies Secure exigem HTTPS em produção.
+Definir `BACKEND_API_URL` no **servidor do frontend**, incluindo `/api`, com URL absoluta acessível pelo Next. Na ausência usa `NEXT_PUBLIC_API_URL` se absoluta. Exemplo de desenvolvimento: `http://localhost:8080/api`. Em implantação, usar endereço real/interno apropriado; localhost aponta para o próprio contêiner. O cookie acompanha o protocolo público: o ambiente HTTP atual permite a sessão, e HTTPS habilita Secure. Em HTTP, o transporte não é criptografado.
 
 Essas chamadas de auth passam pelo servidor Next e não dependem de CORS do navegador; a home pública continua usando NEXT_PUBLIC_API_URL. O proxy precisa preservar a origem/host público para a validação de Origin. Rate limits existentes do backend continuam aplicados; chamadas via Next compartilham o IP da origem do servidor quando não há cadeia de proxies confiáveis configurada. Nenhum Docker/YAML foi modificado.
 
