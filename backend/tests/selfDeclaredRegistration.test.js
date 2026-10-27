@@ -19,3 +19,12 @@ test('termos atuais, role exclusiva e validação de comprovação não são con
  for(const extra of [{termsVersion:'old'},{acceptTerms:false},{role:'ADMIN'},{ageVerified:true},{guardianProof:'fake'},{ageProof:'fake'}])await request(f.app).post('/api/auth/register').send({...input,...extra}).expect(422);
  assert.equal(f.state.users.length,0);
 });
+
+test('PDFs locais 2.0 permitem cadastro de teste sem conteúdo publicado e registram origem',async t=>{
+ const f=await identityFixture({env:{TERMS_VERSION:'',PRIVACY_VERSION:'',IDENTITY_LEGAL_BASIS:''}});t.after(()=>f.close());
+ const body={...input,documentsSource:'LOCAL_TEST_PDF',termsVersion:'2.0',privacyVersion:'2.0'};
+ for(const extra of [{termsVersion:'1.0'},{acceptTerms:false},{ageProof:'fake'}])await request(f.app).post('/api/auth/register').send({...body,...extra}).expect(422);
+ const r=await request(f.app).post('/api/auth/register').send(body).expect(201);assert.equal(r.body.data.ageVerified,false);
+ assert.equal(f.state.consents.length,2);assert.ok(f.state.consents.every(c=>c.version==='2.0'&&c.basis==='ACEITE_PDF_LOCAL_TESTE'));
+ const strict=await identityFixture({env:{ALLOW_LOCAL_REGISTRATION_DOCUMENTS:'false'}});t.after(()=>strict.close());await request(strict.app).post('/api/auth/register').send(body).expect(422);assert.equal(strict.state.users.length,0);
+});

@@ -43,7 +43,7 @@ for (const [kind, pk, schema] of [['addresses', 'id_endereco', 'address'], ['con
     spec.components.schemas[`IdentityList_${kind}`] = obj({ items: { type: 'array', maxItems: 100, items: ref(`Identity_${kind}`) }, pagination: ref('Pagination') });
 }
 const descriptions = {
-    register: 'Cadastro somente CLIENTE, com termos/privacidade atuais. ALLOW_SELF_DECLARED_AGE=true por padrão permite omitir ageProof: não cria verificação nem vínculo e retorna ageVerified=false. Com prova, exige provider válido e responsável quando aplicável. false restaura exigência de prova. Nenhum JWT no cadastro; CAPTCHA conforme flag.',
+    register: 'Cadastro somente CLIENTE, com termos/privacidade atuais. ALLOW_SELF_DECLARED_AGE=true por padrão permite omitir ageProof: não cria verificação nem vínculo e retorna ageVerified=false. Com prova, exige provider válido e responsável quando aplicável. false restaura exigência de prova. documentsSource=LOCAL_TEST_PDF aceita apenas versões 2.0, sem prova, com ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true (padrão temporário). Registra ACEITE_PDF_LOCAL_TESTE; não é publicação final. Nenhum JWT no cadastro; CAPTCHA conforme flag.',
     registerAlias: 'Alias compatível de POST /api/auth/register.',
     renewAge: 'Renova prova de idade pelo provider real, vinculada aos dados já persistidos; atualiza histórico e aceite dos documentos vigentes. Sem autodeclaração. Troca de responsável exige revisão separada do vínculo (409).',
     login: 'Credenciais inválidas/inativas retornam mesma resposta 401. Conta com fator ativo exige prova; ADMIN/SUPERVISOR sem fator recebem somente desafio restrito para enrollment. Desafio: 5 minutos, máximo 5 tentativas persistidas. Fator APP usa TOTP com proteção contra replay.',

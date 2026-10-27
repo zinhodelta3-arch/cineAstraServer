@@ -78,7 +78,7 @@ export function validateEnv(env = process.env) {
         httpTimeout: integer('HTTP_TIMEOUT_MS', 10000, 100, 10000),
         shutdownTimeout: integer('SHUTDOWN_TIMEOUT_MS', 10000, 100, 30000),
         jwt: { secret, issuer: env.JWT_ISSUER ?? 'cineastra', audience: env.JWT_AUDIENCE ?? 'cineastra-web', ttl: integer('JWT_TTL_SECONDS', 900, 60, 900) },
-        identity: { allowSelfDeclaredAge: boolean('ALLOW_SELF_DECLARED_AGE', true), encryptionKey, bcryptCost: integer('BCRYPT_COST', 12, 10, 14), termsVersion: env.TERMS_VERSION || null, privacyVersion: env.PRIVACY_VERSION || null, legalBasis: env.IDENTITY_LEGAL_BASIS || null },
+        identity: { allowLocalRegistrationDocuments: boolean('ALLOW_LOCAL_REGISTRATION_DOCUMENTS', true), allowSelfDeclaredAge: boolean('ALLOW_SELF_DECLARED_AGE', true), encryptionKey, bcryptCost: integer('BCRYPT_COST', 12, 10, 14), termsVersion: env.TERMS_VERSION || null, privacyVersion: env.PRIVACY_VERSION || null, legalBasis: env.IDENTITY_LEGAL_BASIS || null },
         db: { host: required('DB_HOST'), port: integer('DB_PORT', 3306, 1, 65535), user: required('DB_USER'), password: required('DB_PASSWORD'), database: required('DB_NAME'),
             connectionLimit: integer('DB_CONNECTION_LIMIT', 10, 1, 100), queueLimit: integer('DB_QUEUE_LIMIT', 100, 1, 1000), timeout: integer('DB_TIMEOUT_MS', 3000, 100, 5000) },
         rate: { max: integer('RATE_LIMIT_MAX', 120, 1, 10000), windowMs: integer('RATE_LIMIT_WINDOW_MS', 60000, 100, 3600000) },

@@ -98,7 +98,7 @@ export function AuthCard({ eyebrow, title, description, children, footer }) {
 }
 
 export function RegisterPage() {
-  const { form, accepted, setAccepted, update, handleSubmit, message, pending, success, documents, documentError, retryDocuments, today } = useRegisterForm();
+  const { form, accepted, setAccepted, update, handleSubmit, message, pending, success, documents, today } = useRegisterForm();
   const termsId = useId();
 
   return (
@@ -126,13 +126,14 @@ export function RegisterPage() {
         </div>
 
         <p className="text-xs text-muted-foreground">Senha com 12 caracteres ou mais, maiúscula, minúscula, número e símbolo. Máximo de 72 bytes.</p>
-        {documents && <div className="space-y-3">{[documents.terms, documents.privacy].map(doc => <details key={doc.slug} className="rounded-lg border border-border p-3"><summary className="cursor-pointer font-semibold">{doc.title} — {doc.version}</summary><p className="mt-3 whitespace-pre-wrap text-sm">{doc.body.text}</p></details>)}</div>}
-        {!documents && !documentError && <p role="status">Carregando termos e privacidade…</p>}
-        {documentError && <div role="alert"><p>{documentError}</p><Button type="button" variant="outline" onClick={retryDocuments}>Tentar novamente</Button></div>}
+        <div className="space-y-3 rounded-lg border border-border p-4">
+          <p className="text-sm text-muted-foreground">Documentos versão 2.0 — minutas para teste, ainda em revisão.</p>
+          {[documents.terms, documents.privacy].map(doc => <a key={doc.slug} href={doc.url} target="_blank" rel="noopener noreferrer" className="block font-semibold text-primary underline">Abrir {doc.title} (PDF) ↗</a>)}
+        </div>
         <div className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground [&_a]:font-bold [&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline">
           <Checkbox id={termsId} className="mt-0.5 shrink-0" disabled={!documents || pending || success} checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} />
           <label htmlFor={termsId} className="cursor-pointer">
-            Li e concordo com os Termos de Uso e a Política de Privacidade apresentados acima.
+            Li e concordo com os Termos de Uso e a Política de Privacidade em PDF disponíveis acima para este teste.
           </label>
         </div>
 

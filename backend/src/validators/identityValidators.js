@@ -22,7 +22,7 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => Number.isFinite
 const strict = shape => z.object(shape).strict();
 const nonEmpty = schema => schema.refine(o => Object.keys(o).length > 0);
 export const schemas = {
-    register: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, termsVersion: z.string().min(1).max(50), privacyVersion: z.string().min(1).max(50), acceptTerms: z.literal(true), acceptPrivacy: z.literal(true), ageProof: z.string().min(1).max(512).optional(), guardianProof: z.string().min(1).max(512).optional(), captchaToken: z.string().min(1).max(4096).optional() }),
+    register: strict({ documentsSource: z.literal('LOCAL_TEST_PDF').optional(), name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, termsVersion: z.string().min(1).max(50), privacyVersion: z.string().min(1).max(50), acceptTerms: z.literal(true), acceptPrivacy: z.literal(true), ageProof: z.string().min(1).max(512).optional(), guardianProof: z.string().min(1).max(512).optional(), captchaToken: z.string().min(1).max(4096).optional() }),
     login: strict({ email, password, captchaToken: z.string().min(1).max(4096).optional() }),
     forgot: strict({ email, captchaToken: z.string().min(1).max(4096).optional() }),
     reset: strict({ token, password, passwordConfirmation: password, captchaToken: z.string().min(1).max(4096).optional() }),

@@ -435,7 +435,7 @@
           "Identidade"
         ],
         "summary": "Cadastro somente CLIENTE, com termos/privacidade atuais",
-        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Cadastro somente CLIENTE, com termos/privacidade atuais. ALLOW_SELF_DECLARED_AGE=true por padrão permite omitir ageProof: não cria verificação nem vínculo e retorna ageVerified=false. Com prova, exige provider válido e responsável quando aplicável. false restaura exigência de prova. Nenhum JWT no cadastro; CAPTCHA conforme flag. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Cadastro somente CLIENTE, com termos/privacidade atuais. ALLOW_SELF_DECLARED_AGE=true por padrão permite omitir ageProof: não cria verificação nem vínculo e retorna ageVerified=false. Com prova, exige provider válido e responsável quando aplicável. false restaura exigência de prova. Nenhum JWT no cadastro; CAPTCHA conforme flag. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429. documentsSource=LOCAL_TEST_PDF permite usar os PDFs locais 2.0 sem conteúdo publicado; ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true por padrão temporário. Aceite registrado como ACEITE_PDF_LOCAL_TESTE, não publicação final.",
         "security": [],
         "responses": {
           "201": {
@@ -541,7 +541,7 @@
           "Identidade"
         ],
         "summary": "Alias compatível de POST /api/auth/register.",
-        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Alias compatível de POST /api/auth/register. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Alias compatível de POST /api/auth/register. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429. documentsSource=LOCAL_TEST_PDF permite usar os PDFs locais 2.0 sem conteúdo publicado; ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true por padrão temporário. Aceite registrado como ACEITE_PDF_LOCAL_TESTE, não publicação final.",
         "security": [],
         "responses": {
           "201": {
@@ -39598,6 +39598,13 @@
             "minLength": 1,
             "maxLength": 4096,
             "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
+          },
+          "documentsSource": {
+            "type": "string",
+            "enum": [
+              "LOCAL_TEST_PDF"
+            ],
+            "description": "Aceite de PDFs locais versão 2.0 para teste; exige ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true e ausência de ageProof."
           }
         },
         "required": [

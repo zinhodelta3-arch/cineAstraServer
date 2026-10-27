@@ -30,7 +30,7 @@ CAPTCHA/2FA não foram alterados. Se o backend passar a exigir desafio de 2FA, a
 
 ## Cadastro integrado
 
-Cadastro autodeclarado implementado em `/auth/cadastro`, com `ALLOW_SELF_DECLARED_AGE=true` por padrão. Sem prova, a idade permanece não verificada, sem registro de verificação ou vínculo de responsável. Documentos publicados e configuração de versões/consentimento continuam necessários. Ver [contrato do cadastro](CADASTRO-AUTODECLARADO.md).
+Cadastro autodeclarado implementado em `/auth/cadastro`, com `ALLOW_SELF_DECLARED_AGE=true` por padrão. Sem prova, a idade permanece não verificada, sem registro de verificação ou vínculo de responsável. Para teste, o cadastro usa os PDFs locais 2.0 com aceite obrigatório e origem registrada, habilitados por `ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true`. Ver [contrato do cadastro](CADASTRO-AUTODECLARADO.md).
 
 ## Configuração
 

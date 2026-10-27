@@ -106,13 +106,18 @@ export function createIdentityService({ database, model, config, tokens, provide
         },
         async register(input, context = {}) {
             passwordPolicy(input.password, input.passwordConfirmation);
+            const localDocuments = input.documentsSource === 'LOCAL_TEST_PDF';
+            if (localDocuments && (!settings.allowLocalRegistrationDocuments || input.ageProof || input.termsVersion !== '2.0' || input.privacyVersion !== '2.0' || input.acceptTerms !== true || input.acceptPrivacy !== true)) throw ApiError.validacao('Documentos locais de teste indisponíveis ou versões inválidas');
+            const consentBasis = localDocuments ? 'ACEITE_PDF_LOCAL_TESTE' : settings.legalBasis;
             let age, guardian;
             if (input.ageProof) ({ age, guardian } = await verifyProof(input, context));
             else {
                 if (!settings.allowSelfDeclaredAge) throw ApiError.validacao('Verificação de idade obrigatória');
                 if (input.guardianProof) throw ApiError.validacao('Comprovação de responsável exige verificação de idade');
-                if (!settings.termsVersion || !settings.privacyVersion || !settings.legalBasis) throw ApiError.indisponivel();
-                if (input.termsVersion !== settings.termsVersion || input.privacyVersion !== settings.privacyVersion || input.acceptTerms !== true || input.acceptPrivacy !== true) throw ApiError.validacao('Aceite as versões atuais dos termos e da privacidade');
+                if (!localDocuments) {
+                    if (!settings.termsVersion || !settings.privacyVersion || !settings.legalBasis) throw ApiError.indisponivel();
+                    if (input.termsVersion !== settings.termsVersion || input.privacyVersion !== settings.privacyVersion || input.acceptTerms !== true || input.acceptPrivacy !== true) throw ApiError.validacao('Aceite as versões atuais dos termos e da privacidade');
+                }
             }
             const hash = await hashPassword(input.password, settings.bcryptCost);
             return transaction(async c => {
@@ -122,8 +127,8 @@ export function createIdentityService({ database, model, config, tokens, provide
                     if (parentAge?.faixa_etaria !== 'MAIOR_16') throw ApiError.validacao('Responsável sem verificação vigente');
                 }
                 const id = await model.createUser(c, { ...input, hash, role: 'CLIENTE', status: 'ATIVO' });
-                await model.consent(c, id, 'TERMOS', input.termsVersion, settings.legalBasis);
-                await model.consent(c, id, 'PRIVACIDADE', input.privacyVersion, settings.legalBasis);
+                await model.consent(c, id, 'TERMOS', input.termsVersion, consentBasis);
+                await model.consent(c, id, 'PRIVACIDADE', input.privacyVersion, consentBasis);
                 if (age) await model.age(c, id, age);
                 if (guardian) await model.guardian(c, id, guardian);
                 await audit(c, age ? 'IDENTITY.REGISTERED' : 'IDENTITY.REGISTERED_UNVERIFIED', id, context);

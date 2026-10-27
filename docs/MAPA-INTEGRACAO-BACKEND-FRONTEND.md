@@ -194,4 +194,4 @@ A execução continua página por página; esta ordem é uma proposta, não auto
 
 ## Atualização: autenticação no frontend
 
-Login, sessão HttpOnly, logout e redirecionamento por role implementados; ADMIN vai ao dashboard, CLIENTE/FORNECEDOR/COLABORADOR à home cinema e SUPERVISOR permanece no login. Layout de admin valida acesso. Recuperação/redefinição conectadas às rotas; entrega depende do provider. Cadastro autodeclarado integrado, com idade não verificada e aceite de documentos publicados; ver [contrato](CADASTRO-AUTODECLARADO.md). Ver [contrato de integração](AUTH-FRONTEND-INTEGRACAO.md).
+Login, sessão HttpOnly, logout e redirecionamento por role implementados; ADMIN vai ao dashboard, CLIENTE/FORNECEDOR/COLABORADOR à home cinema e SUPERVISOR permanece no login. Layout de admin valida acesso. Recuperação/redefinição conectadas às rotas; entrega depende do provider. Cadastro autodeclarado integrado, com idade não verificada e aceite dos PDFs locais 2.0 para teste; ver [contrato](CADASTRO-AUTODECLARADO.md). Ver [contrato de integração](AUTH-FRONTEND-INTEGRACAO.md).
