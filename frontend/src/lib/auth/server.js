@@ -1,4 +1,5 @@
 import 'server-only';
+import { registrationErrorMessage } from './registration-errors.mjs';
 import { resolveApiBase } from '@/lib/api/api-base.mjs';
 import { cookies } from 'next/headers';
 export const SESSION_COOKIE = 'cineastra_session';
@@ -12,7 +13,8 @@ export async function backendAuth(path, { token, body, method = 'GET' } = {}) {
  catch { throw new AuthError(503, 'Não foi possível conectar ao serviço de autenticação.'); }
  const payload = response.status === 204 ? null : await response.json().catch(() => null);
  if (!response.ok) {
-  const messages = {401:'E-mail ou senha inválidos, ou sessão expirada.',403:'Acesso não permitido para esta conta.',409:'A operação não pôde ser concluída no estado atual da conta.',422:'Confira os dados informados. O link pode estar inválido ou expirado.',429:'Muitas tentativas. Aguarde antes de tentar novamente.'};
+  if (response.status === 422 && path === '/auth/register') throw new AuthError(422, registrationErrorMessage(payload));
+  const messages = {404:'Rota de autenticação não encontrada (HTTP 404). Confira o endereço da API e a implantação.',401:'E-mail ou senha inválidos, ou sessão expirada.',403:'Acesso não permitido para esta conta.',409:'A operação não pôde ser concluída no estado atual da conta.',422:'Confira os dados informados. O link pode estar inválido ou expirado.',429:'Muitas tentativas. Aguarde antes de tentar novamente.'};
   throw new AuthError(response.status >= 500 ? 503 : response.status, messages[response.status] || 'Serviço temporariamente indisponível.');
  }
  if (response.status !== 204 && (payload?.success !== true || payload.data == null)) throw new AuthError(503,'Resposta inválida do serviço de autenticação.');

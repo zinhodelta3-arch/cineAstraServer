@@ -1,6 +1,7 @@
-export const DEFAULT_API_URL = 'http://backend.cineastra.10.189.87.231.sslip.io';
+export const DEFAULT_API_URL = 'http://backend.cineastra.10.189.87.231.sslip.io/api';
 
-// Preserve the configured path; do not automatically append /api.
 export function resolveApiBase(value) {
- return (value?.trim() || DEFAULT_API_URL).replace(/\/+$/, '');
+ const base = (value?.trim() || DEFAULT_API_URL).replace(/\/+$/, '');
+ if (/^https?:\/\//.test(base) && new URL(base).pathname === '/') return `${base}/api`;
+ return base;
 }
