@@ -21,7 +21,7 @@ export function useRegisterForm(){
   if(!documents||!accepted){setMessage('Leia e aceite os termos e a política de privacidade.');return;}
   if(!passwordValid(form.password,form.confirmPassword)){setMessage('As senhas devem ser iguais e ter pelo menos 12 caracteres, maiúscula, minúscula, número e símbolo; máximo de 72 bytes.');return;}
   busy.current=true;setPending(true);setMessage('');const abort=new AbortController();active.current=abort;
-  try{const data=await sessionRequest('register',{name:form.name.trim(),email:form.email.trim(),cpf:form.cpf.replace(/[.\-\s]/g,''),dateOfBirth:form.dateOfBirth,password:form.password,passwordConfirmation:form.confirmPassword,documentsSource:'LOCAL_TEST_PDF',termsVersion:documents.terms.version,privacyVersion:documents.privacy.version,acceptTerms:true,acceptPrivacy:true},abort.signal);if(!abort.signal.aborted){setSuccess(true);setMessage(data.message);setForm(f=>({...f,password:'',confirmPassword:''}));}}
+  try{await sessionRequest('register',{name:form.name.trim(),email:form.email.trim(),cpf:form.cpf.replace(/[.\-\s]/g,''),dateOfBirth:form.dateOfBirth,password:form.password,passwordConfirmation:form.confirmPassword,documentsSource:'LOCAL_TEST_PDF',termsVersion:documents.terms.version,privacyVersion:documents.privacy.version,acceptTerms:true,acceptPrivacy:true},abort.signal);if(!abort.signal.aborted){setSuccess(true);setForm(f=>({...f,password:'',confirmPassword:''}));window.location.replace('/auth/login');}}
   catch(e){if(!abort.signal.aborted)setMessage(e.message||'Não foi possível criar sua conta.');}
   finally{busy.current=false;if(!abort.signal.aborted)setPending(false);}
  };

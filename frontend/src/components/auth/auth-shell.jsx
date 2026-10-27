@@ -143,7 +143,6 @@ export function RegisterPage() {
           <Check size={18} aria-hidden="true" />
           {pending ? "Criando conta…" : "Criar minha conta"}
         </Button>
-        {success && <Link href="/auth/login" className="font-bold text-primary underline">Entrar com minha conta</Link>}
       </form>
     </AuthCard>
   );
