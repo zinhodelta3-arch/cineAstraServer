@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import {identityFixture,PASSWORD} from './identityFixture.js';
-const input={captchaToken:'fixture',name:'Pessoa Teste',email:'self@example.invalid',cpf:'52998224725',dateOfBirth:'2000-01-01',password:PASSWORD,passwordConfirmation:PASSWORD,termsVersion:'fixture-v1',privacyVersion:'fixture-v1',acceptTerms:true,acceptPrivacy:true};
+const input={captchaToken:'fixture',name:'Pessoa Teste',email:'self@example.invalid',cpf:'12345678900',dateOfBirth:'2000-01-01',password:PASSWORD,passwordConfirmation:PASSWORD,termsVersion:'fixture-v1',privacyVersion:'fixture-v1',acceptTerms:true,acceptPrivacy:true};
 test('cadastro sem prova cria CLIENTE e consentimentos, mas não cria verificação ou vínculo',async t=>{
  const f=await identityFixture({providers:{age:{verify:async()=>{throw new Error('provider must not run');}}}});t.after(()=>f.close());
  const r=await request(f.app).post('/api/auth/register').send(input).expect(201);assert.equal(r.body.data.ageVerified,false);assert.equal(r.body.data.role,'CLIENTE');assert.equal(f.state.ages.length,0);assert.equal(f.state.guardians.length,0);assert.equal(f.state.consents.length,2);

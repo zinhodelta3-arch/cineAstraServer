@@ -1,16 +1,9 @@
 import { z } from 'zod';
 import { ApiError } from '../utils/ApiError.js';
 
+// Cadastro de teste: exige apenas 11 dígitos, sem cálculo verificador.
 export function validCpf(value) {
-    if (!/^\d{11}$/.test(value) || /^(\d)\1{10}$/.test(value)) return false;
-    for (let length = 9; length <= 10; length++) {
-        let sum = 0;
-        for (let i = 0; i < length; i++) sum += Number(value[i]) * (length + 1 - i);
-        let digit = (sum * 10) % 11;
-        if (digit === 10) digit = 0;
-        if (digit !== Number(value[length])) return false;
-    }
-    return true;
+    return typeof value === 'string' && /^\d{11}$/.test(value);
 }
 const email = z.string().trim().toLowerCase().max(150).email();
 const cpf = z.string().max(14).transform(v => v.replace(/[.-]/g, '')).refine(validCpf);

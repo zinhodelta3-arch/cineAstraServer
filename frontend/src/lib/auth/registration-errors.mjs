@@ -1,5 +1,5 @@
 const fields = new Map(Object.entries({
- name:'nome completo', email:'e-mail', cpf:'CPF (11 números com dígitos verificadores válidos)',
+ name:'nome completo', email:'e-mail', cpf:'CPF (11 números)',
  dateOfBirth:'data de nascimento', password:'senha', passwordConfirmation:'confirmação da senha',
  termsVersion:'versão dos termos', privacyVersion:'versão da política de privacidade',
  acceptTerms:'aceite dos termos', acceptPrivacy:'aceite da política de privacidade',

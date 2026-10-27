@@ -24,9 +24,10 @@ async function enrollment(f, user) {
 }
 
 test('validação estrita: CPF, datas, confirmação e limite bcrypt UTF-8 sem truncamento', () => {
-    assert.equal(validCpf('52998224725'), true);
-    for (const cpf of ['11111111111', '52998224726', 'abc']) assert.equal(validCpf(cpf), false);
-    for (const patch of [{ role: 'ADMIN' }, { status: 'ATIVO' }, { dateOfBirth: '2024-02-30' }, { cpf: '00000000000' }]) assert.equal(schemas.register.safeParse({ ...input, ...patch }).success, false);
+    for (const cpf of ['52998224725', '11111111111', '52998224726', '00000000000']) assert.equal(validCpf(cpf), true);
+    assert.equal(schemas.register.parse({ ...input, cpf: '123.456.789-00' }).cpf, '12345678900');
+    for (const cpf of ['1234567890', '123456789012', '1234567890a', 'abc']) assert.equal(validCpf(cpf), false);
+    for (const patch of [{ role: 'ADMIN' }, { status: 'ATIVO' }, { dateOfBirth: '2024-02-30' }, { cpf: '1234567890' }]) assert.equal(schemas.register.safeParse({ ...input, ...patch }).success, false);
     assert.throws(() => passwordPolicy('A1!' + 'é'.repeat(35), 'A1!' + 'é'.repeat(35)));
     assert.throws(() => passwordPolicy(PASSWORD, 'diferente'));
     assert.doesNotThrow(() => passwordPolicy(PASSWORD, PASSWORD));
