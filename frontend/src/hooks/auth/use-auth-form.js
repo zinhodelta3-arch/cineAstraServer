@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
+import { readSessionResponse } from '@/lib/auth/session-response.mjs';
 import { passwordValid } from '@/lib/auth/destination.mjs';
 export async function sessionRequest(action,body,signal) {
  const response=await fetch(`/api/session/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body),signal});
- const data=await response.json();if(!response.ok)throw new Error(data.message||'Não foi possível concluir a operação.');return data;
+ return readSessionResponse(response);
 }
 export function useAuthForm({resetToken}={}) {
  const [form,setForm]=useState({login:'',password:'',confirmation:''});

@@ -1,4 +1,5 @@
-const configured = (process.env.NEXT_PUBLIC_API_URL || '/api').replace(/\/$/, '');
+import { resolveApiBase } from './api-base.mjs';
+const configured = resolveApiBase(process.env.NEXT_PUBLIC_API_URL);
 export function apiUrl(path) { return `${configured}${path}`; }
 export function publicAsset(value) {
   if (!value) return null;
