@@ -115,7 +115,7 @@ export function RegisterPage() {
       <p className="mb-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">Sua idade será autodeclarada, não verificada. Recursos que exigem comprovação continuarão sujeitos à verificação.</p>
       <form className="grid gap-[17px]" onSubmit={handleSubmit}>
         <Field label="Nome completo" icon={UserRound} value={form.name} onChange={update("name")} autoComplete="name" minLength={2} maxLength={100} />
-        <Field label="CPF" icon={UserRound} value={form.cpf} onChange={update("cpf")} placeholder="000.000.000-00" maxLength={14} />
+        <Field label="CPF" icon={UserRound} value={form.cpf} onChange={update("cpf")} placeholder="000.000.000-00" inputMode="numeric" maxLength={14} />
         <Field label="Data de nascimento" icon={UserRound} type="date" value={form.dateOfBirth} onChange={update("dateOfBirth")} autoComplete="bday" max={today} />
         <Field label="E-mail" icon={Mail} type="email" value={form.email} onChange={update("email")} placeholder="seuemail@exemplo.com" autoComplete="email" />
 

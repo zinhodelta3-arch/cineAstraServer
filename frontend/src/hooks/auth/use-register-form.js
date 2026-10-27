@@ -9,7 +9,13 @@ export function useRegisterForm(){
  const documents=registrationDocuments;
  const active=useRef(null),busy=useRef(false);
  useEffect(()=>()=>active.current?.abort(),[]);
- const update=key=>event=>setForm(current=>({...current,[key]:event.target.value}));
+ const update=key=>event=>{
+  const raw=event.target.value;
+  const value=key==='cpf'
+   ? raw.replace(/\D/g,'').slice(0,11).replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3}\.\d{3})(\d)/,'$1.$2').replace(/(\d{3}\.\d{3}\.\d{3})(\d)/,'$1-$2')
+   : raw;
+  setForm(current=>({...current,[key]:value}));
+ };
  const handleSubmit=async event=>{
   event.preventDefault();if(busy.current||success)return;
   if(!documents||!accepted){setMessage('Leia e aceite os termos e a política de privacidade.');return;}
