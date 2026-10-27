@@ -47,3 +47,9 @@ Essas chamadas de auth passam pelo servidor Next e não dependem de CORS do nave
 - Build Next passou; testes de destinos/senha e navegador com backend HTTP controlado passaram para todos os perfis, HttpOnly, logout, acesso direto ao admin, erros 401/429/desafio 2FA, recuperação indisponível, redefinição, CSRF e viewport mobile. ESLint dos módulos de auth sem erros; header já tinha alerta de setState síncrono em effect e imagens sem next/image.
 
 Teste não foi realizado no Coolify/banco remoto. Não houve commit/push nem mudanças nas políticas do backend.
+
+### Origem das requisições no Coolify
+
+As rotas `/api/session/*` validam `Origin` contra `Host` e o protocolo informado pelo proxy (`X-Forwarded-Proto`), evitando comparar o domínio público com a URL interna do Next. O proxy deve preservar `Host` e definir o protocolo encaminhado corretamente. `X-Forwarded-Host` não é usado para autorizar origens.
+
+Se o proxy reescrever `Host`, configure **no frontend** `AUTH_PUBLIC_ORIGIN` com a origem pública exata (ex.: `https://cinema.exemplo.com`, sem barra final ou caminho) e reinicie/reimplante. Quando definida, somente essa origem é aceita. Essa variável é diferente do endereço do backend e de sua configuração de CORS.

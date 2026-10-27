@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { AuthError, backendAuth, SESSION_COOKIE, cookieOptions } from '@/lib/auth/server';
+import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 import { loginDestination } from '@/lib/auth/destination.mjs';
 const json = (body,status=200) => NextResponse.json(body,{status,headers:{'Cache-Control':'no-store'}});
 const userDto = u => ({id:u.id,name:u.name,role:u.role,ageVerified:u.ageVerified===true});
@@ -15,7 +16,7 @@ export async function GET(request,{params}) {
 export async function POST(request,{params}) {
  const {action}=await params;
  if(!['login','logout','forgot','reset','register'].includes(action))return json({message:'Recurso inexistente.'},404);
- if(request.headers.get('origin')!==new URL(request.url).origin)return json({message:'Origem não permitida.'},403);
+ if(!isAllowedAuthOrigin(request))return json({message:'Origem não permitida.'},403);
  try {
   if(action==='logout'){
    const token=(await cookies()).get(SESSION_COOKIE)?.value;
