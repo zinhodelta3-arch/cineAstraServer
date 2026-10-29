@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { ArrowLeft, Check, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { ArrowLeft, Check, Eye, EyeOff, LockKeyhole, Mail, Truck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRegisterForm } from "@/hooks/auth/use-register-form";
@@ -148,47 +148,133 @@ export function RegisterPage() {
   );
 }
 
+const LOGIN_PROFILES = {
+  cliente: {
+    label: "Cliente",
+    icon: UserRound,
+    eyebrow: "Bem-vindo de volta",
+    title: "Entre na CineAstra",
+    description: "Acesse sua conta para continuar sua experiência de cinema.",
+    emailLabel: "E-mail",
+    emailPlaceholder: "seuemail@exemplo.com",
+    resetText: "Informe o e-mail da sua conta e enviaremos as instruções para criar uma nova senha.",
+  },
+  fornecedor: {
+    label: "Fornecedor",
+    icon: Truck,
+    eyebrow: "Área do fornecedor",
+    title: "Portal do fornecedor",
+    description: "Acesse para acompanhar pedidos, estoque e entregas da CineAstra.",
+    emailLabel: "E-mail corporativo",
+    emailPlaceholder: "contato@suaempresa.com.br",
+    resetText: "Informe o e-mail corporativo cadastrado e enviaremos as instruções para criar uma nova senha.",
+  },
+};
+
+function ProfileSwitch({ value, onChange, disabled }) {
+  const keys = Object.keys(LOGIN_PROFILES);
+
+  const handleKeyDown = (event) => {
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    event.preventDefault();
+    const step = event.key === "ArrowRight" ? 1 : -1;
+    const next = keys[(keys.indexOf(value) + step + keys.length) % keys.length];
+    onChange(next);
+  };
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Tipo de acesso"
+      onKeyDown={handleKeyDown}
+      className="mb-5 flex items-center gap-3 text-xs"
+    >
+      <span className="text-muted-foreground" aria-hidden="true">Acessar como</span>
+      {keys.map((key, index) => {
+        const active = key === value;
+        return (
+          <span key={key} className="flex items-center gap-3">
+            {index > 0 && <span className="h-3 w-px bg-border" aria-hidden="true" />}
+            <button
+              type="button"
+              role="tab"
+              id={`login-tab-${key}`}
+              aria-selected={active}
+              aria-controls="login-panel"
+              tabIndex={active ? 0 : -1}
+              disabled={disabled}
+              onClick={() => onChange(key)}
+              className={`rounded-sm border-b pb-0.5 font-bold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-60 ${
+                active
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {LOGIN_PROFILES[key].label}
+            </button>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export function LoginPage() {
-  const { form, update, resetOpen, setResetOpen, message, pending, user, handleSubmit } = useAuthForm();
+  const [profile, setProfile] = useState("cliente");
+  const { form, update, resetOpen, setResetOpen, message, pending, user, handleSubmit } = useAuthForm(profile);
+  const current = LOGIN_PROFILES[profile];
+
+  const changeProfile = (next) => {
+    setProfile(next);
+    setResetOpen(false);
+  };
 
   return (
     <AuthCard
-      eyebrow="Bem-vindo de volta"
-      title="Entre na CineAstra"
-      description="Acesse sua conta para continuar sua experiência de cinema."
+      eyebrow={current.eyebrow}
+      title={current.title}
+      description={current.description}
       footer={
         <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground [&_a]:rounded-sm [&_a]:font-extrabold [&_a]:text-primary [&_a:hover]:underline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-ring">
-          Ainda não possui uma conta? <Link href="/auth/cadastro">Criar conta</Link>
+          {profile === "cliente" ? (
+            <>Ainda não possui uma conta? <Link href="/auth/cadastro">Criar conta</Link></>
+          ) : (
+            <>Quer ser fornecedor da CineAstra? <Link href="/suporte">Fale com a gente</Link></>
+          )}
         </p>
       }
     >
+      <ProfileSwitch value={profile} onChange={changeProfile} disabled={pending} />
       {user && <SessionControls />}
-      {!resetOpen ? (
-        <form className="grid gap-[17px]" onSubmit={handleSubmit}>
-          <Field label="E-mail" type="email" icon={UserRound} value={form.login} onChange={update("login")} placeholder="seuemail@exemplo.com" autoComplete="username" />
-          <Field label="Senha" icon={LockKeyhole} type="password" value={form.password} onChange={update("password")} placeholder="••••••••" autoComplete="current-password" />
 
-          <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" disabled={pending} onClick={() => setResetOpen(true)}>
-            Esqueci minha senha
-          </Button>
+      <div id="login-panel" role="tabpanel" aria-labelledby={`login-tab-${profile}`}>
+        {!resetOpen ? (
+          <form className="grid gap-[17px]" onSubmit={handleSubmit}>
+            <Field label={current.emailLabel} type="email" icon={profile === "cliente" ? UserRound : Truck} value={form.login} onChange={update("login")} placeholder={current.emailPlaceholder} autoComplete="username" />
+            <Field label="Senha" icon={LockKeyhole} type="password" value={form.password} onChange={update("password")} placeholder="••••••••" autoComplete="current-password" />
 
-          {message && <p className="m-0 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground" role="status">{message}</p>}
+            <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" disabled={pending} onClick={() => setResetOpen(true)}>
+              Esqueci minha senha
+            </Button>
 
-          <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit" disabled={pending || Boolean(user)}>
-            {pending ? "Entrando…" : "Entrar"}
-          </Button>
-        </form>
-      ) : (
-        <form className="grid gap-[17px]" onSubmit={handleSubmit}>
-          <Field label="E-mail" icon={Mail} type="email" value={form.login} onChange={update("login")} placeholder="seuemail@exemplo.com" autoComplete="email" />
-          <p className="m-0 text-xs leading-relaxed text-muted-foreground">Informe o e-mail da sua conta e enviaremos as instruções para criar uma nova senha.</p>
-          {message && <p className="m-0 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground" role="status">{message}</p>}
-          <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit" disabled={pending}>{pending ? "Solicitando…" : "Redefinir senha"}</Button>
-          <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" disabled={pending} onClick={() => setResetOpen(false)}>
-            Voltar para o login
-          </Button>
-        </form>
-      )}
+            {message && <p className="m-0 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground" role="status">{message}</p>}
+
+            <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit" disabled={pending || Boolean(user)}>
+              {pending ? "Entrando…" : profile === "cliente" ? "Entrar" : "Entrar como fornecedor"}
+            </Button>
+          </form>
+        ) : (
+          <form className="grid gap-[17px]" onSubmit={handleSubmit}>
+            <Field label={current.emailLabel} icon={Mail} type="email" value={form.login} onChange={update("login")} placeholder={current.emailPlaceholder} autoComplete="email" />
+            <p className="m-0 text-xs leading-relaxed text-muted-foreground">{current.resetText}</p>
+            {message && <p className="m-0 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground" role="status">{message}</p>}
+            <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit" disabled={pending}>{pending ? "Solicitando…" : "Redefinir senha"}</Button>
+            <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" disabled={pending} onClick={() => setResetOpen(false)}>
+              Voltar para o login
+            </Button>
+          </form>
+        )}
+      </div>
     </AuthCard>
   );
 }
