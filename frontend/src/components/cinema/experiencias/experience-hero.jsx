@@ -2,7 +2,7 @@ import { ArrowDownRight, CheckCircle2, ChevronRight, Sparkles } from "lucide-rea
 import { Button } from "@/components/ui/button"
 import { U } from "./data"
 
-export default function ExperienceHero({ showExperiences }) {
+export default function ExperienceHero({ chooseExperience, showExperiences }) {
   return (
       <section className="relative isolate min-h-[590px] overflow-hidden border-b border-border/70 bg-background md:min-h-[690px]">
         <img
@@ -23,17 +23,22 @@ export default function ExperienceHero({ showExperiences }) {
               O cinema vai<br />muito <span className="text-primary">além</span><br />da sessão.
             </h1>
             <p className="mt-6 max-w-xl text-sm leading-6 text-foreground/80 sm:text-base sm:leading-7">
-              Conheça as experiências publicadas pela CineAstra, confira os detalhes e solicite informações ao suporte para planejar seu evento.
+              Uma sala inteira só para vocês, filmes sob as estrelas ou a nostalgia do drive-in.
+              Escolha o formato e vamos planejar uma experiência que tem tudo a ver com seu evento.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" onClick={showExperiences}>
+              <Button size="lg" onClick={() => chooseExperience("sala-privativa")}>
                 Planejar minha experiência <ArrowDownRight className="size-4" />
               </Button>
               <Button size="lg" variant="outline" onClick={showExperiences}>
                 Conhecer as opções <ChevronRight className="size-4" />
               </Button>
             </div>
-
+            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-foreground/70">
+              <span className="flex items-center gap-2"><CheckCircle2 className="size-4 text-primary" /> Para grupos e empresas</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="size-4 text-primary" /> Formatos personalizados</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="size-4 text-primary" /> Orçamento sob consulta</span>
+            </div>
           </div>
         </div>
       </section>
