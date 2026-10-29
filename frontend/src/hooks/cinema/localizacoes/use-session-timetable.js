@@ -1,26 +1,12 @@
 "use client";
-
-import { MOVIES, START, END, RANGE, toMin, toHM, pct } from "@/components/cinema/localizacoes/data";
-
-export function useSessionTimetable(loc, day, now) {
-  const isToday = day === 0;
-  const nowLeft = isToday && now != null && now >= START && now <= END ? pct(now) : null;
-  const entries = Object.entries(loc.schedule).flatMap(([id, schedule]) => {
-    const movie = MOVIES[id];
-    if (!movie) return [];
-    const duration = parseInt(movie.duration, 10);
-    const sessions = schedule.times.map((time) => {
-      const start = toMin(time);
-      return {
-        time,
-        past: isToday && now != null && start < now,
-        href: `/cinema/sessao/ingressos?cinema=${loc.id}&filme=${id}&sessao=${time}&dia=${day}`,
-        title: `${time} às ${toHM(start + duration)} · ${schedule.room} · ${schedule.fmt}`,
-        left: `${pct(start)}%`,
-        width: `calc(${(duration / RANGE) * 100}% - 3px)`,
-      };
-    });
-    return [{ id, movie, schedule, sessions }];
-  });
-  return { entries, nowLeft };
+import {useEffect,useState} from 'react';
+import {usePublicList} from '@/hooks/cinema/home/use-public-list';
+import {publicGet} from '@/lib/api/public-api.mjs';
+export function useSessionTimetable(localId,date){
+ const list=usePublicList(date?`/sessions?${new URLSearchParams({localId,date,limit:'20'})}`:null);
+ const ids=[...new Set(list.items.map(s=>String(s.id_filme)))].sort().join(',');
+ const [revision,setRevision]=useState(0),[films,setFilms]=useState({});
+ const key=`${ids}:${revision}`;
+ useEffect(()=>{if(!ids)return;const abort=new AbortController();Promise.all(ids.split(',').map(async id=>{try{return [id,await publicGet(`/films/${id}`,{signal:abort.signal})];}catch{return [id,null];}})).then(rows=>{if(!abort.signal.aborted)setFilms({key,items:Object.fromEntries(rows)});});return()=>abort.abort();},[ids,key]);
+ return {list,films:films.key===key?films.items:{},filmsLoading:Boolean(ids)&&films.key!==key,filmsError:films.key===key&&Object.values(films.items).some(f=>!f),retryFilms:()=>setRevision(v=>v+1)};
 }

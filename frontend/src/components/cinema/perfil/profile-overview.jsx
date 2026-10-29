@@ -1,8 +1,14 @@
-import { Film, Mail, MapPin, Phone } from "lucide-react";
-import { TICKETS, PURCHASES } from "./data";
-import EditProfile from "./edit-profile";
-import ProfileAvatar from "./profile-avatar";
-
-export default function ProfileOverview({ profile, saveProfile, favorites }) {
-  return <section className="ca-grain relative overflow-hidden rounded-2xl border border-border bg-card"><div className="ca-profile-cover relative h-25 overflow-hidden border-b border-border"><Film className="absolute -top-3 right-6 size-32 -rotate-12 text-primary/10" /><div className="ca-perf absolute top-4 inset-x-5 opacity-30" /></div><div className="relative px-6 pt-0 pb-6"><div className="-mt-10 mb-4 flex items-end justify-between"><div className="flex size-20 items-center justify-center rounded-full border-[5px] border-card bg-primary text-primary-foreground shadow-lg shadow-primary/10"><ProfileAvatar avatar={profile.avatar} name={profile.name} /></div><span className="mb-2 text-[9px] font-semibold tracking-wider text-muted-foreground uppercase">Desde set. 2026</span></div><p className="mb-1 text-[10px] font-bold tracking-[0.2em] text-primary uppercase">O protagonista é você</p><h2 className="ca-display text-4xl font-black break-words uppercase">{profile.name}</h2><div className="mt-5 space-y-3 text-xs text-muted-foreground"><p className="flex items-start gap-2.5"><Mail className="mt-0.5 size-3.5 shrink-0" /><span className="min-w-0 break-all">{profile.email}</span></p><p className="flex items-center gap-2.5"><Phone className="size-3.5 shrink-0" />{profile.phone || "Telefone não informado"}</p><p className="flex items-center gap-2.5"><MapPin className="size-3.5 shrink-0" />{profile.city || "Cidade não informada"}</p></div><EditProfile profile={profile} onSave={saveProfile} /><div className="mt-5 grid grid-cols-3 border-t border-dashed border-border pt-5 text-center">{[[TICKETS.length, "Ingressos"], [favorites.length, "Favoritos"], [PURCHASES.length, "Compras"]].map(([value, label]) => <div key={label} className="border-r border-border last:border-r-0"><strong className="ca-display text-2xl text-primary">{value}</strong><p className="mt-0.5 text-[9px] text-muted-foreground">{label}</p></div>)}</div></div></section>;
+import {Film,Mail,Phone} from 'lucide-react';
+import EditProfile from './edit-profile';
+import ProfileAvatar from './profile-avatar';
+export default function ProfileOverview({profile,saveProfile}){
+ return <section className="ca-grain relative overflow-hidden rounded-2xl border border-border bg-card">
+  <div className="ca-profile-cover relative h-25 overflow-hidden border-b border-border"><Film className="absolute -top-3 right-6 size-32 -rotate-12 text-primary/10" /><div className="ca-perf absolute top-4 inset-x-5 opacity-30" /></div>
+  <div className="relative px-6 pb-6"><div className="-mt-10 mb-4 flex size-20 items-center justify-center rounded-full border-[5px] border-card bg-primary text-primary-foreground"><ProfileAvatar name={profile.name} /></div>
+   <p className="mb-1 text-xs font-bold uppercase tracking-widest text-primary">Sua conta CineAstra</p>
+   <h2 className="ca-display break-words text-4xl font-black uppercase">{profile.name}</h2>
+   <div className="mt-5 space-y-3 text-sm text-muted-foreground"><p className="flex items-start gap-3"><Mail className="size-4 shrink-0" /><span className="break-all">{profile.email}</span></p><p className="flex items-start gap-3"><Phone className="size-4 shrink-0" />{profile.phone||'Telefone não informado'}</p></div>
+   <EditProfile profile={profile} onSave={saveProfile} />
+  </div>
+ </section>;
 }

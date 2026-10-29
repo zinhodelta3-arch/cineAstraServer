@@ -1,19 +1,16 @@
 "use client";
-
-import { useState } from "react";
-
-export default function useEditProfile(profile, onSave) {
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(profile);
-  const [error, setError] = useState("");
-  const change = (field, value) => setDraft((previous) => ({ ...previous, [field]: value }));
-  function submit(event) {
-    event.preventDefault();
-    if (!draft.name.trim() || !draft.email.trim()) { setError("Preencha seu nome e e-mail."); return; }
-    if (draft.phone && draft.phone.replace(/\D/g, "").length < 10) { setError("Informe um telefone com DDD ou deixe o campo vazio."); return; }
-    onSave({ ...draft, name: draft.name.trim(), email: draft.email.trim() }); setOpen(false);
-  }
-  const changeOpen = (isOpen) => { if (isOpen) { setDraft(profile); setError(""); } setOpen(isOpen); };
-
-  return { open, draft, error, change, submit, changeOpen };
+import {useRef,useState} from 'react';
+export default function useEditProfile(profile,onSave){
+ const [open,setOpen]=useState(false),[draft,setDraft]=useState({name:profile.name,phone:profile.phone||''}),[error,setError]=useState(''),[pending,setPending]=useState(false);
+ const lock=useRef(false);
+ const change=(field,value)=>setDraft(s=>({...s,[field]:value}));
+ const changeOpen=value=>{if(lock.current)return;if(value){setDraft({name:profile.name,phone:profile.phone||''});setError('');}setOpen(value);};
+ const submit=async e=>{
+  e.preventDefault();if(lock.current)return;
+  lock.current=true;setPending(true);setError('');
+  try{await onSave({name:draft.name.trim(),phone:draft.phone.trim()||null});setOpen(false);}
+  catch(e){setError(e.message);}
+  finally{lock.current=false;setPending(false);}
+ };
+ return {open,draft,error,pending,change,changeOpen,submit};
 }

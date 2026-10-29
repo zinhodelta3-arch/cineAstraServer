@@ -8,7 +8,7 @@ import EmptyCart from "./empty-cart"
 import CartSummary from "./cart-summary"
 
 export default function CinemaCart() {
-  const { items, itemCount, total, increase, decrease, remove, goBack, checkout } = useCinemaCart()
+  const { items, itemCount, increase, decrease, remove, goBack, summary } = useCinemaCart()
 
   return (
     <main className="min-h-[70vh] flex-1 bg-background text-foreground">
@@ -30,7 +30,7 @@ export default function CinemaCart() {
               <div className="pt-3"><Button variant="outline" onClick={goBack}><ArrowLeft className="size-4" /> Voltar</Button></div>
             </section>
 
-<CartSummary itemCount={itemCount} total={total} checkout={checkout} />
+<CartSummary {...summary} />
           </div>
         )}
       </div>

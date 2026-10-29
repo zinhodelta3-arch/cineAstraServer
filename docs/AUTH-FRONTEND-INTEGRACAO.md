@@ -53,3 +53,9 @@ Teste não foi realizado no Coolify/banco remoto. Não houve commit/push nem mud
 As rotas `/api/session/*` validam `Origin` contra `Host` e o protocolo informado pelo proxy (`X-Forwarded-Proto`), evitando comparar o domínio público com a URL interna do Next. O proxy deve preservar `Host` e definir o protocolo encaminhado corretamente. `X-Forwarded-Host` não é usado para autorizar origens.
 
 Se o proxy reescrever `Host`, configure **no frontend** `AUTH_PUBLIC_ORIGIN` com a origem pública exata (ex.: `https://cinema.exemplo.com`, sem barra final ou caminho) e reinicie/reimplante. Quando definida, somente essa origem é aceita. Essa variável é diferente do endereço do backend e de sua configuração de CORS.
+
+### Painel da conta no header
+
+Headers de cinema e streaming compartilham a sessão com `SessionControls`. Usuário autenticado abre `account-sheet.jsx` pelo avatar circular com iniciais; estado e destino do perfil ficam em `use-account-menu.js`. O painel reúne Minhas compras, Notificações, Perfil, Administração quando ADMIN e Sair da conta. O perfil segue a área atual (cinema ou streaming). Navegar fecha o painel; Escape e botão Fechar devolvem o foco ao gatilho. O menu mobile não duplica o painel autenticado.
+
+Notificações e carrinho do header só são renderizados com usuário autenticado, inclusive durante carregamento inicial. Isso controla a apresentação; a autorização continua no backend. Os destinos de perfil/compras/notificações ainda têm suas integrações pendentes conforme o guia. Layout usa os tokens do site e preserva o tema, com painel adaptável e saída ao rodapé.

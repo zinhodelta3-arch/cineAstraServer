@@ -1,64 +1,21 @@
-import { ArrowUpRight, CalendarDays, CheckCircle2, MapPin, MessageCircle, PartyPopper } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { EXPERIENCES } from "./data"
-
-export default function ExperienceInquiry({ selectedExperience, sent, submitInquiry, resetInquiry, changeExperience, minimumDate }) {
-  return (
-      <section id="reservar" className="scroll-mt-24 border-y border-border/70 bg-card/30">
-        <div className="mx-auto grid max-w-[1600px] gap-10 px-5 py-14 md:px-10 md:py-20 lg:grid-cols-[.8fr_1.2fr]">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[.25em] text-primary uppercase"><CalendarDays className="size-4" /> Vamos conversar</div>
-            <h2 className="f-display text-5xl font-black leading-none sm:text-6xl">Sua próxima<br />história começa aqui<span className="text-primary">.</span></h2>
-            <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">Conte um pouco sobre o evento. Nossa equipe poderá entender suas necessidades e preparar uma proposta personalizada.</p>
-            <div className="mt-7 space-y-4">
-              <div className="flex items-start gap-3"><CalendarDays className="mt-0.5 size-4 text-primary" /><div><div className="text-sm font-bold">Data e duração</div><p className="text-xs text-muted-foreground">Informe a data desejada e o tempo estimado.</p></div></div>
-              <div className="flex items-start gap-3"><MapPin className="mt-0.5 size-4 text-primary" /><div><div className="text-sm font-bold">Local e estrutura</div><p className="text-xs text-muted-foreground">Para eventos externos, a disponibilidade depende do local e da infraestrutura.</p></div></div>
-              <div className="flex items-start gap-3"><MessageCircle className="mt-0.5 size-4 text-primary" /><div><div className="text-sm font-bold">Proposta sob medida</div><p className="text-xs text-muted-foreground">Os valores exibidos são iniciais e precisam de confirmação pela equipe.</p></div></div>
-            </div>
-          </div>
-
-          <form onSubmit={submitInquiry} className="rounded-2xl border border-border/70 bg-card p-5 shadow-xl shadow-black/5 sm:p-7">
-            <div className="mb-6 flex items-center justify-between gap-4 border-b border-dashed border-border pb-5">
-              <div><div className="text-[10px] font-black tracking-[.22em] text-primary uppercase">Pedido de informações</div><h3 className="f-display mt-1 text-3xl font-black">Conte pra gente.</h3></div>
-              <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary"><PartyPopper className="size-6" /></div>
-            </div>
-            {sent ? (
-              <div role="status" className="rounded-xl border border-primary/30 bg-primary/10 p-6 text-center">
-                <CheckCircle2 className="mx-auto size-9 text-primary" />
-                <h4 className="mt-3 text-lg font-black">Solicitação preparada!</h4>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Esta é uma demonstração de interface: os dados não foram enviados a uma equipe nem geraram uma reserva real.</p>
-                <Button type="button" variant="outline" className="mt-4" onClick={resetInquiry}>Enviar outra solicitação</Button>
-              </div>
-            ) : (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">Nome
-                    <input required name="name" placeholder="Como podemos te chamar?" className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
-                  </label>
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">E-mail ou telefone
-                    <input required name="contact" placeholder="Seu melhor contato" className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
-                  </label>
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground sm:col-span-2">Experiência desejada
-                    <select value={selectedExperience} onChange={changeExperience} className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
-                      {EXPERIENCES.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-                    </select>
-                  </label>
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">Data desejada
-                    <input type="date" name="date" min={minimumDate} className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
-                  </label>
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">Quantidade de pessoas/veículos
-                    <input type="number" name="guests" min="1" placeholder="Ex.: 40" className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
-                  </label>
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground sm:col-span-2">Conte mais sobre seu evento
-                    <textarea name="details" rows={4} placeholder="Tipo de evento, cidade/local, duração e o que você imagina..." className="resize-y rounded-lg border border-border bg-background px-3 py-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
-                  </label>
-                </div>
-                <Button type="submit" size="lg" className="mt-5 w-full">Solicitar informações <ArrowUpRight className="size-4" /></Button>
-                <p className="mt-3 text-center text-[10px] leading-5 text-muted-foreground">Preenchimento demonstrativo. A integração de envio e a confirmação de reservas serão implementadas posteriormente.</p>
-              </>
-            )}
-          </form>
-        </div>
-      </section>
-  )
+import Link from 'next/link';
+import {Button} from '@/components/ui/button';
+export default function ExperienceInquiry({catalog:c}){
+ const e=c.experience;
+ return <section id="reservar" className="scroll-mt-24 border-y border-border bg-card/30"><div className="mx-auto grid max-w-[1600px] gap-10 px-5 py-14 md:px-10 lg:grid-cols-2">
+  <div><h2 className="f-display text-5xl font-black">Planeje sua experiência</h2><p className="mt-4 text-sm leading-6 text-muted-foreground">Escolha uma opção publicada para ver os detalhes e conversar com o suporte. Solicitar informações não confirma disponibilidade, preço final ou reserva.</p>
+   {c.detailLoading&&<p role="status" className="mt-6">Carregando detalhes…</p>}{c.detailError&&<div role="alert" className="mt-6"><p>{c.detailError}</p><Button onClick={c.retryDetail}>Tentar novamente</Button></div>}
+   {e&&<div className="mt-6"><h3 className="f-title text-2xl font-bold">{e.title}</h3><p className="mt-3 whitespace-pre-line text-sm leading-6">{e.description||e.summary}</p><ul className="mt-4 list-inside list-disc space-y-2 text-sm">{e.details.map((item,i)=><li key={i}>{item}</li>)}</ul>{e.targetUrl&&<a href={e.targetUrl} className="mt-5 inline-block font-semibold text-primary underline" {...(e.targetUrl.startsWith('https:')?{target:'_blank',rel:'noopener noreferrer'}:{})}>{e.ctaLabel||'Saiba mais'}</a>}</div>}
+  </div>
+  <form onSubmit={c.submitInquiry} className="rounded-2xl border border-border bg-card p-6">
+   <h3 className="f-display mb-5 text-3xl font-black">Pedido de informações</h3>
+   {c.sent?<div role="status"><p className="font-bold">Solicitação #{c.sent.id} enviada</p><p className="mt-3 text-sm">{c.sent.message}</p><p className="mt-3 text-sm text-muted-foreground">Guarde o número do chamado para consultar com o suporte.</p></div>:<>
+    <fieldset disabled={c.pending} className="space-y-4"><label className="block text-sm font-semibold">Experiência desejada<select aria-label="Experiência desejada" required value={c.selectedExperience} onChange={c.changeExperience} className="mt-2 block w-full rounded-lg border border-border bg-background p-3"><option value="">Selecione uma experiência</option>{c.experiences.map(item=><option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+    <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm">Data desejada<input required type="date" min={c.minimumDate} value={c.form.date} onChange={c.update('date')} className="mt-2 block w-full rounded-lg border border-border bg-background p-3"/></label><label className="block text-sm">Pessoas ou veículos<input required type="number" min="1" max="100000" step="1" value={c.form.guests} onChange={c.update('guests')} className="mt-2 block w-full rounded-lg border border-border bg-background p-3"/></label></div>
+    <label className="block text-sm">Conte mais sobre seu evento<textarea required minLength={10} maxLength={4000} rows={4} value={c.form.details} onChange={c.update('details')} className="mt-2 block w-full rounded-lg border border-border bg-background p-3"/></label></fieldset>
+    {c.message&&<p role="alert" className="mt-4 text-sm">{c.message}</p>}
+    {c.session.loading?<p role="status" className="mt-4">Verificando sessão…</p>:!c.session.user?<Link href="/auth/login" className="mt-5 inline-block font-semibold text-primary underline">Entrar para enviar a solicitação</Link>:c.session.user.role!=='CLIENTE'?<p className="mt-4 text-sm">Solicitações devem ser enviadas por uma conta de cliente.</p>:<Button type="submit" disabled={!e||c.pending} className="mt-5 w-full">{c.pending?'Enviando…':'Solicitar informações'}</Button>}
+   </>}
+  </form>
+ </div></section>;
 }

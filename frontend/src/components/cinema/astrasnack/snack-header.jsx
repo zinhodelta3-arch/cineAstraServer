@@ -1,9 +1,9 @@
 "use client";
 
 import { ShoppingBag, Ticket } from "lucide-react";
-import BannerCarousel from "./banner-carousel";
 
-export default function SnackHeader({ cartCount }) {
+
+export default function SnackHeader({ cartCount, loggedIn }) {
   return (
       <section className="border-b border-border/70 bg-background">
         <div className="mx-auto max-w-[1600px] px-5 py-6 md:px-8 md:py-8">
@@ -17,11 +17,11 @@ export default function SnackHeader({ cartCount }) {
                 ASTRASNACK<span className="text-primary">.</span>
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground md:text-base">
-                O sabor também faz parte da sessão. Escolha seu snack, monte seu combo e leve a experiência CineAstra para a poltrona.
+                O sabor também faz parte da sessão. Escolha seu snack, encontre seu combo e leve a experiência CineAstra para a poltrona.
               </p>
             </div>
 
-            <div className="astra-cart-ticket hidden w-52 shrink-0 sm:flex">
+            {loggedIn && <div className="astra-cart-ticket hidden w-52 shrink-0 sm:flex">
               <div className="astra-cart-ticket-main">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-1.5 text-[9px] font-black tracking-[.2em] uppercase">
@@ -40,10 +40,10 @@ export default function SnackHeader({ cartCount }) {
               <div className="astra-cart-ticket-stub">
                 <span>AstraSnack • Ticket</span>
               </div>
-            </div>
+            </div>}
           </div>
 
-          <BannerCarousel />
+
         </div>
       </section>
   );

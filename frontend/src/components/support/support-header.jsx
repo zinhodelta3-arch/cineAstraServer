@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 export default function SupportHeader({ search, changeSearch, clearSearch }) {
   return (
       <section className="relative mx-auto w-full max-w-[1120px] px-1 pt-1 pb-[38px] text-center min-[601px]:px-2.5 [&_h1]:m-0 [&_h1]:font-sans [&_h1]:text-[clamp(38px,13vw,58px)] [&_h1]:leading-none [&_h1]:font-black [&_h1]:tracking-[-0.04em] min-[601px]:[&_h1]:text-[clamp(40px,6vw,70px)] [&_em]:text-primary [&_em]:not-italic">
-        <Link href="/" className="inline-flex items-center gap-2 rounded-sm text-xs font-bold text-muted-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
+        <Link href="/cinema/home" className="inline-flex items-center gap-2 rounded-sm text-xs font-bold text-muted-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
           <ArrowLeft size={16} aria-hidden="true" />
           Voltar para a Home
         </Link>

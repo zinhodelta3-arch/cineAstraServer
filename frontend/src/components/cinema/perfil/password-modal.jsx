@@ -1,14 +1,18 @@
-import useProfilePassword from "@/hooks/cinema/perfil/use-profile-password";
-import { LockKeyhole } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DialogClose } from "@/components/ui/dialog";
-import { actionClass } from "./profile-utils";
-import Modal from "./modal";
-import Field from "./field";
-
-export default function PasswordModal({ onSuccess }) {
-  const { open, error, submit, changeOpen } = useProfilePassword(onSuccess);
-  return <Modal open={open} onOpenChange={changeOpen} trigger={<Button variant="ghost" className="h-9 justify-start rounded-full px-3 text-xs text-muted-foreground"><LockKeyhole className="size-3.5" />Alterar senha</Button>} title="Alterar senha" description="Demonstração da interface. Uma alteração real exige integração com a autenticação do CineAstra.">
-    <form onSubmit={submit} className="space-y-4"><Field label="Senha atual (fictícia)" id="current-password" name="current" type="password" autoComplete="off" required /><Field label="Nova senha (fictícia)" id="new-password" name="password" type="password" minLength={8} autoComplete="off" required /><Field label="Confirmar nova senha" id="confirm-password" name="confirm" type="password" minLength={8} autoComplete="off" required /><p className="text-[11px] text-muted-foreground">Mínimo de 8 caracteres. As senhas não são salvas ou enviadas.</p>{error && <p role="alert" className="text-xs text-destructive">{error}</p>}<div className="flex justify-end gap-2 pt-2"><DialogClose render={<Button type="button" variant="outline" className={actionClass}>Cancelar</Button>} /><Button type="submit" className={actionClass}>Validar alteração</Button></div></form>
-  </Modal>;
+import useProfilePassword from '@/hooks/cinema/perfil/use-profile-password';
+import {Button} from '@/components/ui/button';
+import Modal from './modal';
+import Field from './field';
+export default function PasswordModal(){
+ const s=useProfilePassword();
+ return <Modal open={s.open} onOpenChange={s.changeOpen} trigger={<Button variant="outline">Alterar senha</Button>} title="Alterar senha" description="Ao confirmar a alteração, suas sessões serão encerradas. Entre novamente com a nova senha.">
+  <form onSubmit={s.submit} className="space-y-4">
+   <Field label="Senha atual" id="current-password" name="current" type="password" autoComplete="current-password" required disabled={s.pending} maxLength={72} />
+   <Field label="Nova senha" id="new-password" name="password" type="password" autoComplete="new-password" minLength={12} maxLength={72} required disabled={s.pending} />
+   <Field label="Confirmar nova senha" id="confirm-password" name="confirm" type="password" autoComplete="new-password" minLength={12} maxLength={72} required disabled={s.pending} />
+   <p className="text-xs text-muted-foreground">Use pelo menos 12 caracteres, incluindo maiúscula, minúscula, número e símbolo. Limite de 72 bytes.</p>
+   <Field label="Código 2FA (somente se habilitado na sua conta)" id="profile-2fa" name="code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code" disabled={s.pending} />
+   {s.error&&<p role="alert" className="text-sm text-destructive">{s.error}</p>}
+   <div className="flex justify-end gap-3"><Button type="button" variant="outline" disabled={s.pending} onClick={()=>s.changeOpen(false)}>Cancelar</Button><Button type="submit" disabled={s.pending}>Salvar nova senha</Button></div>
+  </form>
+ </Modal>;
 }

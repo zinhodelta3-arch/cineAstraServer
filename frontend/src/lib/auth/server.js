@@ -4,11 +4,11 @@ import { resolveApiBase } from '@/lib/api/api-base.mjs';
 import { cookies } from 'next/headers';
 export const SESSION_COOKIE = 'cineastra_session';
 export class AuthError extends Error { constructor(status, message) { super(message); this.status = status; } }
-export async function backendAuth(path, { token, body, method = 'GET' } = {}) {
+export async function backendAuth(path, { token, body, idempotencyKey, method = 'GET' } = {}) {
  const base = resolveApiBase(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL);
  if (!base || !/^https?:\/\//.test(base)) throw new AuthError(503, 'Serviço de autenticação indisponível.');
  let response;
- try { response = await fetch(`${base.replace(/\/$/,'')}${path}`, { method, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json', ...(body ? {'Content-Type':'application/json'} : {}), ...(token ? {Authorization:`Bearer ${token}`} : {}) }, ...(body ? {body:JSON.stringify(body)} : {}) }); }
+ try { response = await fetch(`${base.replace(/\/$/,'')}${path}`, { method, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json', ...(idempotencyKey ? {'Idempotency-Key':idempotencyKey} : {}), ...(body ? {'Content-Type':'application/json'} : {}), ...(token ? {Authorization:`Bearer ${token}`} : {}) }, ...(body ? {body:JSON.stringify(body)} : {}) }); }
  catch { throw new AuthError(503, 'Não foi possível conectar ao serviço de autenticação.'); }
  const payload = response.status === 204 ? null : await response.json().catch(() => null);
  if (!response.ok) {

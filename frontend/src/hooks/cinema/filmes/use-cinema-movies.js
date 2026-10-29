@@ -1,50 +1,23 @@
 "use client";
-
-import { useId, useMemo, useState } from "react";
-import { MOVIES } from "@/components/cinema/filmes/movies";
-import { SECTIONS, normalize } from "@/components/cinema/filmes/movie-utils";
-
-export function useCinemaMovies() {
-  const [section, setSection] = useState("em-cartaz");
-  const [cinema, setCinema] = useState("todos");
-  const [genre, setGenre] = useState("Todos");
-  const [query, setQuery] = useState("");
-  const [selectedMovie, setSelectedMovie] = useState(null);
-  const suggestionsId = useId();
-
-  const availableMovies = useMemo(() => MOVIES.filter((movie) => movie.status === section &&
-    (cinema === "todos" || movie.cinemas.includes(cinema))), [section, cinema]);
-  const genres = useMemo(() => ["Todos", ...new Set(availableMovies.flatMap((movie) => movie.genres))], [availableMovies]);
-  const visibleMovies = useMemo(() => availableMovies.filter((movie) =>
-    (genre === "Todos" || movie.genres.includes(genre)) && normalize(movie.title).includes(normalize(query))), [availableMovies, genre, query]);
-  const suggestions = availableMovies.filter((movie) => genre === "Todos" || movie.genres.includes(genre));
-  const activeLabel = SECTIONS.find((item) => item.value === section)?.label;
-
-  function changeSection(value) {
-    setSection(value);
-    setGenre("Todos");
-    setQuery("");
-  }
-
-  function changeCinema(value) {
-    if (!value) return;
-    setCinema(value);
-    setGenre("Todos");
-  }
-
-  function clearFilters() {
-    setGenre("Todos");
-    setQuery("");
-  }
-
-  function changeDetailsOpen(open) {
-    if (!open) setSelectedMovie(null);
-  }
-
-  return {
-    section, cinema, genre, query, selectedMovie, suggestionsId,
-    genres, visibleMovies, suggestions, activeLabel,
-    setGenre, setQuery, setSelectedMovie, changeDetailsOpen,
-    changeSection, changeCinema, clearFilters,
-  };
+import {useEffect,useId,useState} from 'react';
+import {usePublicList} from '@/hooks/cinema/home/use-public-list';
+import {cinemaMovie,cinemaCatalogPath} from '@/lib/api/cinema-movies.mjs';
+import {SECTIONS} from '@/components/cinema/filmes/movie-utils';
+export function useCinemaMovies(){
+ const [section,setSection]=useState('em-cartaz'),[genre,setGenre]=useState('Todos'),[query,setQuery]=useState(''),[search,setSearch]=useState('');
+ const [selectedMovie,setSelectedMovie]=useState(null),[sessionMovie,setSessionMovie]=useState(null);
+ const suggestionsId=useId();
+ useEffect(()=>{const timer=setTimeout(()=>setSearch(query),300);return()=>clearTimeout(timer);},[query]);
+ const films=usePublicList(cinemaCatalogPath(search,genre));
+ const genreList=usePublicList('/genres?limit=100');
+ const movies=films.items.map(f=>cinemaMovie(f));
+ const searching=query!==search;
+ return {section,genre,query,selectedMovie,sessionMovie,suggestionsId,films,genreList,searching,
+  genres:[{value:'Todos',label:'Todos'},...genreList.items.map(g=>({value:g.id_genero,label:g.nome}))],
+  visibleMovies:searching?[]:movies.filter(m=>m.status===section),suggestions:movies,
+  activeLabel:SECTIONS.find(s=>s.value===section)?.label,
+  setGenre,setQuery,setSelectedMovie,setSessionMovie,
+  changeDetailsOpen:open=>{if(!open)setSelectedMovie(null);},
+  changeSection:value=>setSection(value),clearFilters:()=>{setGenre('Todos');setQuery('');}
+ };
 }

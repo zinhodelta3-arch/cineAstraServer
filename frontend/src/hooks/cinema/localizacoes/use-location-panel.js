@@ -1,39 +1,17 @@
 "use client";
-
-import { useMemo, useState, useRef, useEffect, useSyncExternalStore } from "react";
-
-function readClock() { return Math.floor(Date.now() / 60000); }
-function serverClock() { return null; }
-function subscribeClock(onChange) {
-  const timer = setInterval(onChange, 60000);
-  return () => clearInterval(timer);
-}
-
-export function useLocationPanel(loc) {
-  const days = useMemo(() => {
-    const base = new Date();
-    return [0, 1, 2, 3].map((i) => {
-      const d = new Date(base); d.setDate(base.getDate() + i);
-      return {
-        key: i,
-        label: i === 0 ? "Hoje" : i === 1 ? "Amanhã" : new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(d).replace(".", ""),
-        date: new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d).replace(".", ""),
-      };
-    });
-  }, []);
-
-  const [day, setDay] = useState(0);
-  const minute = useSyncExternalStore(subscribeClock, readClock, serverClock);
-  const clock = minute === null ? null : new Date(minute * 60000);
-  const now = clock === null ? null : clock.getHours() * 60 + clock.getMinutes();
-  const [copied, setCopied] = useState(false);
-  const copyTimeout = useRef(null);
-  useEffect(() => () => clearTimeout(copyTimeout.current), []);
-
-  const fullAddress = `${loc.street}, ${loc.district}, CEP ${loc.cep}`;
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(fullAddress); setCopied(true); clearTimeout(copyTimeout.current); copyTimeout.current = setTimeout(() => setCopied(false), 2000); } catch { /* sem permissão de área de transferência */ }
-  };
-
-  return { days, day, setDay, now, copied, fullAddress, copy };
+import {useState,useEffect,useRef} from 'react';
+import {usePublicList} from '@/hooks/cinema/home/use-public-list';
+import {publicGet} from '@/lib/api/public-api.mjs';
+import {cinemaLocation} from '@/lib/api/cinema-locations.mjs';
+export function useLocationPanel(initial){
+ const [date,setDate]=useState(()=>new Date().toISOString().slice(0,10));
+ const [revision,setRevision]=useState(0),[detail,setDetail]=useState(null);
+ const [copied,setCopied]=useState(false),[copyError,setCopyError]=useState('');
+ const timer=useRef(null),key=`${initial.id}:${revision}`;
+ useEffect(()=>{const abort=new AbortController();publicGet(`/locations/${initial.id}`,{signal:abort.signal}).then(row=>{if(!abort.signal.aborted)setDetail({key,loc:cinemaLocation(row)});}).catch(e=>{if(!abort.signal.aborted)setDetail({key,error:e.message});});return()=>abort.abort();},[initial.id,key]);
+ useEffect(()=>()=>clearTimeout(timer.current),[]);
+ const loc=detail?.key===key?detail.loc:null;
+ const rooms=usePublicList(loc?`/locations/${loc.id}/rooms?limit=100`:null);
+ const copy=async()=>{try{await navigator.clipboard.writeText(loc.fullAddress);setCopied(true);setCopyError('');clearTimeout(timer.current);timer.current=setTimeout(()=>setCopied(false),2000);}catch{setCopyError('Não foi possível copiar. Selecione o endereço para copiá-lo.');}};
+ return {loc,date,setDate,rooms,copied,copy,copyError,loading:detail?.key!==key,error:detail?.key===key?detail.error:null,retry:()=>setRevision(v=>v+1)};
 }

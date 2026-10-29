@@ -1,5 +1,7 @@
 # Mapa de integração backend–frontend
 
+> Guia atualizado e exclusivo, com cobertura das 28 páginas e arquivos por página: [GUIA-INTEGRACAO-BACK-FRONT.md](GUIA-INTEGRACAO-BACK-FRONT.md). O levantamento abaixo contém histórico e pode divergir do estado atual.
+
 Levantamento do código local em 25/10/2026, incluindo refatorações ainda não commitadas. Não é uma validação do ambiente de produção. Este documento não implementa as integrações.
 
 ## Como ler

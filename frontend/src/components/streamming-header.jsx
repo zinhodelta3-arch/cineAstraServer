@@ -6,10 +6,12 @@ import { useState } from "react";
 import { Film, Bell, Menu, UserRound, CircleHelp, X } from "lucide-react";
 import { AppearanceSelector } from "@/components/appearance-selector";
 
+import {useSession} from "@/hooks/auth/use-session";
 import SessionControls from "@/components/auth/session-controls";
 
 /* ============ CABEÇALHO EXCLUSIVO DO STREAMING ============ */
 export default function StreammingHeader({ notifications = [] }) {
+  const session=useSession();
   const pathname = usePathname() ?? "/streaming";
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -61,7 +63,7 @@ export default function StreammingHeader({ notifications = [] }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1">
-          <div className="relative">
+          {session.user && <div className="relative">
             <button
               type="button"
               aria-label="Notificações"
@@ -102,13 +104,13 @@ export default function StreammingHeader({ notifications = [] }) {
                 )}
               </div>
             )}
-          </div>
+          </div>}
 
           <div className="hidden sm:block">
             <AppearanceSelector />
           </div>
 
-          <div className="hidden sm:block"><SessionControls /></div>
+          <div className={session.user ? "block" : "hidden sm:block"}><SessionControls session={session} /></div>
 
           <button
             type="button"
@@ -141,7 +143,7 @@ export default function StreammingHeader({ notifications = [] }) {
               <span className="text-sm text-muted-foreground">Tema do aplicativo</span>
               <AppearanceSelector />
             </div>
-            <div className="mt-3 sm:hidden"><SessionControls /></div>
+            {!session.user && <div className="mt-3 sm:hidden"><SessionControls session={session} /></div>}
           </nav>
         </div>
       )}

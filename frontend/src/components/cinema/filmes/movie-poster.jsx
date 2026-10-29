@@ -30,11 +30,7 @@ export default function MoviePoster({ movie, onSelect, index }) {
         </div>
         <div className={`${styles.tear} mx-3 mt-4 sm:mx-4`} aria-hidden="true" />
         <div className="px-3 pb-4 pt-3 sm:px-4">
-          <p className="mb-2 text-[11px] text-muted-foreground">{movie.sessions.length ? "Próximas sessões" : "Sessões em breve"}</p>
-          <div className="flex min-h-7 flex-wrap gap-1.5">
-            {movie.sessions.slice(0, 3).map((time) => <span key={time} className="rounded-sm border border-secondary/40 bg-secondary/20 px-2 py-1 text-[10px] font-bold text-foreground">{time}</span>)}
-            {!movie.sessions.length && <span className="text-[11px] text-foreground">Horários a confirmar</span>}
-          </div>
+          <p className="text-[11px] text-muted-foreground">Consulte cinemas e horários nos detalhes.</p>
           <div className="mt-4 flex items-end justify-between gap-2"><Barcode seed={movie.title.length} /><AgeRating age={movie.age} /></div>
         </div>
       </button>

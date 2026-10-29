@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CATEGORIES } from "./data";
+const CATEGORIES=[{id:"todos",label:"Todos"},{id:"INPUT",label:"Produtos avulsos"},{id:"COMBO",label:"Combos"}];
 
 export default function ProductFilters({ snack }) {
   const { category, setCategory, query, setQuery } = snack;
@@ -26,6 +26,7 @@ export default function ProductFilters({ snack }) {
           <label className="flex h-9 w-full items-center gap-2 rounded-full border border-border bg-card px-3 text-muted-foreground lg:max-w-xs">
             <Search className="size-4" />
             <input
+              aria-label="Filtrar produtos"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Filtrar produtos..."

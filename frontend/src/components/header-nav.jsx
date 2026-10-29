@@ -111,7 +111,7 @@ export function DesktopNavigation() {
   )
 }
 
-export function MobileNavigation() {
+export function MobileNavigation({session}) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -146,7 +146,7 @@ export function MobileNavigation() {
 
           <TearLine />
 
-          <div className="space-y-2 p-5"><SessionControls /></div>
+          {!session?.user && <div className="space-y-2 p-5"><SessionControls session={session} /></div>}
 
           <TearLine />
 

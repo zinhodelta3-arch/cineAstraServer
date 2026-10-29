@@ -2,6 +2,7 @@
 
 import { MapPin, Search, X } from "lucide-react";
 import { Button } from "./location-ui";
+import ListStatus from "@/components/cinema/home/list-status";
 import LocationItem from "./location-item";
 
 export default function LocationList({ locations }) {
@@ -35,7 +36,7 @@ export default function LocationList({ locations }) {
                 )}
               </div>
               <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
-                {filteredLocations.length} {filteredLocations.length === 1 ? "local encontrado" : "locais encontrados"}
+                {filteredLocations.length} {filteredLocations.length === 1 ? "local encontrado" : "locais encontrados"}{locations.list.cursor ? " na parte carregada; carregue mais para ampliar a pesquisa." : ""}
               </p>
             </div>
 
@@ -50,7 +51,7 @@ export default function LocationList({ locations }) {
                   />
                 ))}
               </div>
-            ) : (
+            ) : !locations.list.loading && !locations.list.error ? (
               <div className="rounded-xl border border-dashed border-border bg-card/50 p-6 text-center">
                 <MapPin className="mx-auto mb-3 h-6 w-6 text-muted-foreground" aria-hidden="true" />
                 <h2 className="f-title text-lg uppercase text-foreground">Nenhum local encontrado</h2>
@@ -61,7 +62,8 @@ export default function LocationList({ locations }) {
                   Limpar pesquisa
                 </Button>
               </div>
-            )}
+            ) : null}
+            <ListStatus list={locations.list} empty="" more="Carregar mais cinemas" />
           </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import Footer from "@/components/Footer";
-import { LOCATIONS } from "./data";
 import CinemaStyles from "./cinema-styles";
 import LocationPanel from "./location-panel";
 import EmptyPanel from "./empty-panel";
@@ -21,7 +20,7 @@ export default function CinemasPage() {
         <div className="relative z-10 max-w-[1600px] mx-auto px-5 md:px-8">
           <h1 className="f-display text-4xl sm:text-6xl lg:text-[5rem] font-black text-foreground uppercase leading-[0.9] mb-3">Nossos cinemas</h1>
           <p className="text-sm md:text-base text-muted-foreground max-w-xl leading-relaxed">
-            {LOCATIONS.length} endereços entre cinemas e cine-teatros. Escolha um para ver onde fica e que horas passa cada filme.
+            Escolha um cinema para consultar o endereço, as salas e a programação cadastrada.
           </p>
         </div>
         <div className="bulbs absolute bottom-0 inset-x-0" aria-hidden="true" />

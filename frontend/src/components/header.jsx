@@ -1,5 +1,6 @@
 "use client"
 
+import { useSession } from "@/hooks/auth/use-session"
 import SessionControls from "@/components/auth/session-controls"
 
 import Link from "next/link"
@@ -61,6 +62,7 @@ function TicketSeparator({ className = "" }) {
 }
 
 export function Header() {
+  const session = useSession()
   const [logoSrc, setLogoSrc] = useState(DEFAULT_LOGO)
   const [cartOpen, setCartOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -112,11 +114,11 @@ export function Header() {
             <div className="relative z-10 ml-auto flex h-full shrink-0 items-center gap-2 pl-2 pr-2 sm:gap-3 sm:pl-4 sm:pr-4">
               <TicketSeparator className="hidden sm:block" />
 
-              <div className="hidden items-center gap-2 sm:flex"><SessionControls /></div>
+              <div className={session.user ? "flex items-center" : "hidden items-center sm:flex"}><SessionControls session={session} /></div>
 
               <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-                <NotificationButton />
-                <button
+                {session.user && <NotificationButton key={session.user.id} userId={session.user.id} />}
+                {session.user && <button
                   type="button"
                   onClick={() => setCartOpen(true)}
                   aria-label={`Abrir carrinho, ${visibleItemCount} ${visibleItemCount === 1 ? "item" : "itens"}`}
@@ -128,18 +130,18 @@ export function Header() {
                       {visibleItemCount > 99 ? "99+" : visibleItemCount}
                     </span>
                   )}
-                </button>
+                </button>}
                 <div className="hidden shrink-0 sm:block">
                   <AppearanceSelector />
                 </div>
-                <MobileNavigation />
+                <MobileNavigation session={session} />
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
+      {session.user && <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />}
     </>
   )
 }

@@ -7,11 +7,11 @@ export default function NotificationSummary({ ready, unreadCount }) {
           <aside className={styles.sidebar} aria-label="Resumo das notificações">
             <div className={styles.summaryTicket}>
               <div className={styles.ticketTop}><Clapperboard size={24} strokeWidth={1.4} aria-hidden="true" /><span>SEU CINEMA, EM DIA.</span></div>
-              <div className={styles.ticketMiddle}><span className={styles.summaryNumber}>{ready ? unreadCount.toString().padStart(2, "0") : "–"}</span><p>{unreadCount === 1 ? "nova atividade\npara conferir" : "novas atividades\npara conferir"}</p></div>
+              <div className={styles.ticketMiddle}><span className={styles.summaryNumber}>{ready ? unreadCount.toString().padStart(2, "0") : "–"}</span><p>{unreadCount === 1 ? "não lida\nentre as carregadas" : "não lidas\nentre as carregadas"}</p></div>
               <div className={styles.ticketTear} aria-hidden="true" />
-              <div className={styles.ticketBottom}><p>{unreadCount ? "Tem novidade esperando por você. Sua próxima cena começa aqui." : "Tudo em dia. Agora é só aproveitar a próxima cena."}</p><Barcode /><span>ACESSO PESSOAL · CINEASTRA</span></div>
+              <div className={styles.ticketBottom}><p>{unreadCount ? "Tem novidade esperando por você. Sua próxima cena começa aqui." : "Nenhum aviso não lido entre os itens carregados."}</p><Barcode /><span>ACESSO PESSOAL · CINEASTRA</span></div>
             </div>
-            <p className={styles.sidebarNote}><Bell size={15} aria-hidden="true" />Compras e respostas do suporte reunidas em um só lugar.</p>
+            <p className={styles.sidebarNote}><Bell size={15} aria-hidden="true" />Avisos da sua conta. Carregue mais notificações para consultar o restante.</p>
           </aside>
   );
 }

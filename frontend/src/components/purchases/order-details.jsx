@@ -1,24 +1,46 @@
-import useOrderDetails from "@/hooks/cinema/minhascompras/use-order-details";
-import { Dialog } from "@base-ui/react/dialog";
-import { Button } from "@/components/ui/button";
-import { date, money, time } from "./purchase-data";
-import PurchaseIcon from "./purchase-icon";
-import StatusBadge from "./status-badge";
-import Perforation from "./perforation";
-
-export default function OrderDetails({ selection, onClose, focusRef, onDownload, onCopy, demo }) {
-  const { order, view, subtotal, changeOpen } = useOrderDetails(selection, onClose);
-  return <Dialog.Root open onOpenChange={changeOpen}><Dialog.Portal><Dialog.Backdrop className="cp-backdrop" /><Dialog.Popup className="cp-root cp-dialog" finalFocus={focusRef}>
-    <Perforation /><div className="cp-dialog-header"><span className="cp-eyebrow"><PurchaseIcon name="archive" />{view === "tickets" ? "SEUS INGRESSOS" : "DETALHES DO PEDIDO"}</span><Dialog.Close className="cp-icon-button" aria-label="Fechar detalhes"><PurchaseIcon name="close" /></Dialog.Close></div>
-    <Dialog.Title className="cp-dialog-title">{order.title}</Dialog.Title><Dialog.Description className="cp-dialog-description">Pedido {order.id} · {date(order.purchasedAt)} às {time(order.purchasedAt)}</Dialog.Description>
-    <div className="cp-detail-meta"><StatusBadge status={order.status} /><button className="cp-copy-button" onClick={() => onCopy(order.id)}><PurchaseIcon name="copy" />Copiar código</button></div>
-    {order.sessionAt && <section className="cp-detail-session" aria-label="Informações da sessão"><div><span>Sessão</span><strong>{date(order.sessionAt)} · {time(order.sessionAt)}</strong></div><div><span>Cinema</span><strong>{order.venue}</strong></div><div><span>Sala e formato</span><strong>{order.room} · {order.subtitle}</strong></div><div><span>Assentos</span><strong>{order.seats.join(" · ")}</strong></div></section>}
-    {view === "tickets" && order.status === "confirmed" && <section className="cp-ticket-list" aria-label="Ingressos do pedido">{order.seats.map((seat, index) => <div className="cp-mini-ticket" key={seat}><div><span>INGRESSO {String(index + 1).padStart(2, "0")}</span><strong>{seat}</strong><small>ASSENTO</small></div><div><PurchaseIcon name="ticket" /><span>{demo ? "Exemplo visual de ingresso" : "Ingresso do pedido"}</span><code>{order.id} / {seat}</code></div></div>)}</section>}
-    {order.access && <p className="cp-access-note"><PurchaseIcon name="play" />{order.access}</p>}
-    {order.refund && <p className="cp-refund-box"><PurchaseIcon name="check" />{order.refund}</p>}
-    <div className="cp-detail-grid"><section className="cp-detail-items" aria-labelledby="cp-items-title"><h3 id="cp-items-title">Resumo da compra</h3>{order.items.map((item, index) => <div className="cp-item-line" key={index}><span><b>{item.quantity}×</b>{item.label}</span><strong>{money(item.quantity * item.unitPrice)}</strong></div>)}<div className="cp-totals"><div><span>Subtotal</span><span>{money(subtotal)}</span></div><div><span>Taxa de serviço</span><span>{money(order.fee)}</span></div>{order.discount > 0 && <div className="cp-discount"><span>{order.discountLabel || "Desconto"}</span><span>− {money(order.discount)}</span></div>}<div className="cp-final-total"><span>{order.status === "canceled" ? "Total estornado" : "Total pago"}</span><strong>{money(order.total)}</strong></div></div></section>
-    <section className="cp-payment" aria-labelledby="cp-payment-title"><h3 id="cp-payment-title">Pagamento</h3><PurchaseIcon name="card" /><strong>{order.payment}</strong><span>{order.paymentDetail}</span><p>{order.status === "canceled" ? "Pedido cancelado e valor devolvido." : "Pagamento aprovado."}</p></section></div>
-    <section className="cp-timeline" aria-label="Histórico do pedido">{order.timeline.map((item, i) => <div key={i}><span className="cp-timeline-dot" /><strong>{item.title}</strong><span>{date(item.at, { year: undefined })} · {time(item.at)}</span></div>)}</section>
-    <div className="cp-dialog-footer"><span className="cp-summary-note">Resumo do pedido, sem valor fiscal.</span><Button className="cp-btn cp-btn-primary" onClick={() => onDownload(order)}><PurchaseIcon name="download" />Baixar resumo</Button></div>
-  </Dialog.Popup></Dialog.Portal></Dialog.Root>;
+import Link from 'next/link';
+import useOrderDetails from '@/hooks/cinema/minhascompras/use-order-details';
+import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
+import {Button} from '@/components/ui/button';
+import ListStatus from '@/components/cinema/home/list-status';
+import {orderStatuses,itemTypes,ticketStatuses,purchaseMoney,purchaseDate} from '@/lib/api/purchases.mjs';
+function ResourceState({resource}){
+ return <>{resource.loading&&<p role="status" className="mt-4">Carregando…</p>}{resource.error&&<div role="alert" className="my-4"><p>{resource.error}</p><Button variant="outline" className="mt-3" onClick={resource.retry}>Tentar novamente</Button></div>}</>;
+}
+export default function OrderDetails({order,onClose,onChanged}){
+ const s=useOrderDetails(order,onChanged),data=s.detail.data,receipt=s.receipt.data;
+ return <Dialog open onOpenChange={open=>{if(!open&&!s.pending)onClose();}}><DialogContent className="max-h-[90dvh] overflow-y-auto bg-card sm:max-w-3xl">
+  <DialogHeader><DialogTitle className="text-3xl font-bold">Pedido #{order.orderId}</DialogTitle><DialogDescription>{purchaseDate(order.createdAt)} (Brasília) · Total do pedido: {purchaseMoney(order.total)}</DialogDescription></DialogHeader>
+  {s.notice&&<p role="status" className="rounded-lg border border-primary/30 p-3 text-sm">{s.notice}</p>}
+  {s.error&&<p role="alert" className="text-sm text-destructive">{s.error}</p>}
+  <ResourceState resource={s.detail} />
+  {data&&<>
+   <p className="font-semibold">Estado financeiro: {orderStatuses[data.financialStatus]||data.financialStatus}</p>
+   {data.operationalStatus&&<p className="text-sm">Operação: {data.operationalStatus.replaceAll('_',' ').toLowerCase()}</p>}
+   <div className="flex flex-wrap gap-3"><Button variant="outline" onClick={s.refresh} disabled={s.pending||s.detail.loading}>Atualizar pedido</Button><Button variant="outline" onClick={s.download} disabled={s.pending||s.detail.loading}>Baixar resumo</Button></div>
+   {data.items?.length>0&&<section><h3 className="mb-3 text-lg font-bold">Andamento dos itens</h3><ul className="space-y-2">{data.items.map((item,index)=><li key={item.itemId+':'+index} className="rounded-lg border border-border p-3 text-sm">{itemTypes[item.type]||item.type} · item #{item.itemId}{item.status?' · '+item.status.replaceAll('_',' ').toLowerCase():''}</li>)}</ul></section>}
+   {data.financialStatus==='AGUARDANDO_PAGAMENTO'&&!s.confirm&&<Button variant="outline" disabled={s.pending} onClick={()=>s.setConfirm(true)}>Cancelar pedido pendente</Button>}
+   {s.confirm&&<section className="rounded-xl border border-destructive/30 p-4" aria-label="Confirmar cancelamento"><h3 className="font-bold">Cancelar este pedido?</h3><p className="my-3 text-sm">As reservas serão liberadas se o backend permitir o cancelamento. Isso não solicita reembolso de um pagamento.</p><div className="flex flex-wrap gap-3"><Button variant="outline" disabled={s.pending} onClick={()=>s.setConfirm(false)}>Manter pedido</Button><Button disabled={s.pending} onClick={s.cancel}>Confirmar cancelamento</Button></div></section>}
+  </>}
+  <section className="border-t border-border pt-5"><h3 className="text-lg font-bold">Ingressos e códigos de retirada</h3><p className="my-3 text-xs text-muted-foreground">Os códigos pertencem à sua compra. A validação de uso ocorre no atendimento; não compartilhe publicamente.</p>
+   <ul className="space-y-3">{s.tickets.items.map(ticket=><li key={ticket.id} className="rounded-xl border border-border p-4">
+    <p className="font-semibold">{itemTypes[ticket.type]||ticket.type} #{ticket.id}</p><p className="mt-1 text-sm">{ticketStatuses[ticket.status]||ticket.status}</p>
+    {ticket.expiresAt&&<p className="mt-1 text-xs">Validade: {purchaseDate(ticket.expiresAt)} (Brasília)</p>}
+    {ticket.code&&<div className="mt-3"><code className="block select-all break-all text-sm">{ticket.code}</code><Button variant="outline" size="sm" className="mt-2" onClick={()=>s.copy(ticket.code)}>Copiar código #{ticket.id}</Button></div>}
+   </li>)}</ul>
+   <ListStatus list={s.tickets} empty="Nenhum ingresso ou código emitido para este pedido." more="Carregar mais ingressos" />
+  </section>
+  <section className="border-t border-border pt-5"><h3 className="text-lg font-bold">Contrato da compra</h3><p className="my-3 text-xs text-muted-foreground">O contrato registra a oferta aceita. Ele e o resumo baixado não são nota fiscal nem comprovante de estorno.</p>
+   {!s.showReceipt?<Button variant="outline" onClick={()=>s.setShowReceipt(true)}>Consultar contrato</Button>:<ResourceState resource={s.receipt} />}
+   {receipt&&<div className="mt-4 space-y-4">
+    <p className="text-sm">Aceito em {purchaseDate(receipt.acceptedAt)} (Brasília)</p>
+    <ul className="space-y-2">{receipt.contract.offer.lines.map((line,index)=><li key={index} className="rounded-lg border border-border p-3 text-sm">{itemTypes[line.category]||line.category} #{line.id} · {line.quantity} × {purchaseMoney(line.unitPrice)} · Subtotal {purchaseMoney(line.subtotal)}</li>)}</ul>
+    <p>Total contratado: <strong>{purchaseMoney(receipt.contract.offer.total)}</strong></p>
+    <p className="text-sm">Taxas: {purchaseMoney(receipt.contract.offer.fees)}</p>
+    <p className="whitespace-pre-wrap text-sm">{receipt.contract.offer.conditions}</p>
+    {['terms','privacy'].map(key=>receipt.contract[key]&&<details key={key} className="rounded-lg border border-border p-3"><summary className="cursor-pointer font-semibold">{receipt.contract[key].title} · versão {receipt.contract[key].version}</summary><p className="mt-3 whitespace-pre-wrap break-words text-sm">{receipt.contract[key].body?.text}</p></details>)}
+   </div>}
+  </section>
+  <p className="text-sm text-muted-foreground">Solicitação e acompanhamento de reembolso ainda não estão disponíveis nesta página. <Link href="/cinema/suporte" className="text-primary underline">Fale com o suporte</Link> e informe o número do pedido.</p>
+ </DialogContent></Dialog>;
 }
