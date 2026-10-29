@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   InstagramLogo,
   FacebookLogo,
@@ -25,35 +26,38 @@ const socialLinks = [
   { icon: YoutubeLogo, href: "#", label: "YouTube" },
 ];
 
+/**
+ * Rotas baseadas nas pastas de src/app/cinema:
+ * astrasnack, experiencias, filmes, localizacoes, notificacao,
+ * parcerias, planos, suporte...
+ */
 const footerSections = [
   {
     title: "Programação",
     items: [
-      "Filmes em cartaz",
-      "Próximas estreias",
-      "Sessões IMAX 3D",
-      "Salas VIP Gold Class",
-      "Festivais e mostras",
+      { label: "Filmes em cartaz", href: "/cinema/filmes" },
+      { label: "Salas VIP Gold Class", href: "/cinema/experiencias" },
+      { label: "Festivais e eventos", href: "/cinema/noticias" },
     ],
   },
   {
     title: "Experiência",
     items: [
-      "Bomboniere e pipocas gourmet",
-      "Aluguel privado de salas",
-      "Eventos corporativos",
-      "Cartão presente",
-      "Passe anual VIP",
+      { label: "Bomboniere e pipocas gourmet", href: "/cinema/astrasnack" },
+      { label: "Aluguel privado de salas", href: "/cinema/experiencias" },
+      { label: "Eventos corporativos", href: "/cinema/parcerias" },
+      { label: "Planos e assinaturas", href: "/cinema/planos" },
+      { label: "Passe anual VIP", href: "/cinema/planos" },
     ],
   },
   {
-    title: "Suporte",
+    title: "Sobre nós",
     items: [
-      "Meia-entrada",
-      "Acessibilidade",
-      "Perguntas frequentes",
-      "Termos de uso",
-      "Política de privacidade",
+      { label: "Notícias", href: "/cinema/noticias" },
+      { label: "Sobre nós", href: "/cinema/sobre-nos" },
+      { label: "AstraSnack", href: "/cinema/astrasnack" },
+      { label: "Termos de uso", href: "/cinema/suporte" },
+      { label: "Suporte", href: "/cinema/suporte" },
     ],
   },
 ];
@@ -219,7 +223,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5">
           {/* Marca */}
           <div className="space-y-6 lg:col-span-2">
-            <a href="/" aria-label="CineAstra, página inicial" className="inline-block">
+            <Link
+              href="/cinema/home"
+              aria-label="CineAstra, página inicial"
+              className="inline-block"
+            >
               <Image
                 src="/CineAstraCompleto.png"
                 alt="CineAstraCompleto"
@@ -227,7 +235,7 @@ export default function Footer() {
                 height={44}
                 className="h-23 w-auto"
               />
-            </a>
+            </Link>
 
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
               Descubra filmes, acompanhe sessões e garanta seu ingresso em
@@ -235,13 +243,23 @@ export default function Footer() {
             </p>
 
             <ul className="space-y-2.5 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                Av. das Estrelas, 1000 — Centro Cultural CineAstra
+              <li>
+                <Link
+                  href="/cinema/localizacoes"
+                  className="flex items-start gap-2.5 transition-colors hover:text-primary"
+                >
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  Av. das Estrelas, 1000 — Centro Cultural CineAstra
+                </Link>
               </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                +55 (11) 0000-0000
+              <li>
+                <a
+                  href="tel:+551100000000"
+                  className="flex items-center gap-2.5 transition-colors hover:text-primary"
+                >
+                  <Phone className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  +55 (11) 0000-0000
+                </a>
               </li>
             </ul>
 
@@ -252,6 +270,8 @@ export default function Footer() {
                   key={label}
                   href={href}
                   aria-label={label}
+                  target={href === "#" ? undefined : "_blank"}
+                  rel={href === "#" ? undefined : "noopener noreferrer"}
                   onClick={(e) => href === "#" && e.preventDefault()}
                   className="text-muted-foreground transition-colors duration-200 hover:text-[#FAD241]"
                 >
@@ -273,14 +293,13 @@ export default function Footer() {
               </h3>
               <ul className="space-y-2.5 text-sm">
                 {section.items.map((item) => (
-                  <li key={item}>
-                    <a
-                      href="#"
-                      onClick={(e) => e.preventDefault()}
+                  <li key={item.label}>
+                    <Link
+                      href={item.href}
                       className="text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
                     >
-                      {item}
-                    </a>
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
