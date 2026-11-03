@@ -15,6 +15,13 @@ export const comboOperations = [
 ];
 export function comboRoutes(controller, { auth }) {
     const router = Router();
+    const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, allowRoles('SUPERVISOR')];
+    router.get('/api/unit/combos', ...unitAccess, adminComboQuery, controller.unitList);
+    router.get('/api/unit/combos/:id', ...unitAccess, comboParams, controller.unitGet);
+    router.post('/api/unit/combos', ...unitAccess, validateBody(comboSchemas.create), controller.unitCreate);
+    router.patch('/api/unit/combos/:id', ...unitAccess, comboParams, validateBody(comboSchemas.patch), controller.unitPatch);
+    router.put('/api/unit/combos/:id/items', ...unitAccess, comboParams, validateBody(comboSchemas.composition), controller.unitReplace);
+    router.delete('/api/unit/combos/:id', ...unitAccess, comboParams, controller.unitArchive);
     for (const r of comboOperations) {
         const middleware = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }];
         if (r.admin) middleware.push(auth, allowRoles('ADMIN'));

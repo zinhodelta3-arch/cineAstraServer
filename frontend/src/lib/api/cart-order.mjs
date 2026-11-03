@@ -2,14 +2,16 @@ const id=v=>typeof v==='string'&&/^[1-9]\d{0,19}$/.test(v)&&BigInt(v)<=184467440
 export function cartOrder(items,coupon=''){
  if(!Array.isArray(items)||!items.length)throw new Error('Adicione produtos ao carrinho.');
  const lines=new Map();let localId;
+ const sessionId=items.find(item=>item.purchaseKind==='SESSION'&&id(item.sourceId))?.sourceId;
  for(const item of items){
-  if(!id(item.localId)||!id(item.sourceId)||!['INPUT','COMBO'].includes(item.purchaseKind))throw new Error('Há itens antigos ou ingressos ainda não integrados. Remova-os e adicione produtos pelo AstraSnack.');
+  if(!id(item.localId)||!id(item.sourceId)||!['INPUT','COMBO','SESSION'].includes(item.purchaseKind)||item.purchaseKind==='SESSION'&&!id(item.seatId))throw new Error('Há itens antigos ou inválidos no carrinho. Remova-os e escolha novamente.');
   if(localId&&localId!==item.localId)throw new Error('Escolha produtos de um único cinema para este pedido.');
   localId=item.localId;
   if(!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>100)throw new Error('Use quantidades inteiras entre 1 e 100.');
-  const key=item.purchaseKind+':'+item.sourceId,quantity=(lines.get(key)?.quantity||0)+item.quantity;
+  const key=item.purchaseKind+':'+item.sourceId+(item.seatId?':'+item.seatId:''),quantity=(lines.get(key)?.quantity||0)+item.quantity;
+  if(item.purchaseKind==='SESSION'&&quantity!==1)throw new Error('Cada assento admite um ingresso. Escolha outro assento para adicionar ingressos.');
   if(quantity>100)throw new Error('O limite por produto é de 100 unidades.');
-  lines.set(key,{kind:item.purchaseKind,id:item.sourceId,quantity});
+  lines.set(key,{kind:item.purchaseKind,id:item.sourceId,quantity,...(item.purchaseKind==='SESSION'?{seatId:item.seatId}:item.purchaseKind==='COMBO'&&sessionId?{sessionId}:{})});
  }
  const couponCode=coupon.trim().toUpperCase();
  if(couponCode&&!/^[A-Z0-9_-]{1,50}$/.test(couponCode))throw new Error('Cupom inválido. Use até 50 letras, números, hífen ou sublinhado.');
@@ -20,8 +22,8 @@ export function validCartOrder(body){
  if(!body||typeof body!=='object'||Object.keys(body).some(k=>!['localId','lines','couponCode'].includes(k))||!id(body.localId)||!Array.isArray(body.lines)||!body.lines.length||body.lines.length>50)return false;
  const seen=new Set();
  for(const line of body.lines){
-  if(!line||Object.keys(line).some(k=>!['kind','id','quantity'].includes(k))||!id(line.id)||!['INPUT','COMBO'].includes(line.kind)||!Number.isInteger(line.quantity)||line.quantity<1||line.quantity>100)return false;
-  const key=line.kind+':'+line.id;if(seen.has(key))return false;seen.add(key);
+  if(!line||Object.keys(line).some(k=>!['kind','id','quantity','seatId','sessionId'].includes(k))||!id(line.id)||!['INPUT','COMBO','SESSION'].includes(line.kind)||!Number.isInteger(line.quantity)||line.quantity<1||line.quantity>100||line.kind==='SESSION'&&(!id(line.seatId)||line.quantity!==1)||line.kind!=='SESSION'&&line.seatId!==undefined||line.kind==='COMBO'&&line.sessionId!==undefined&&!id(line.sessionId)||line.kind!=='COMBO'&&line.sessionId!==undefined)return false;
+  const key=line.kind+':'+line.id+(line.seatId?':'+line.seatId:'');if(seen.has(key))return false;seen.add(key);
  }
  return body.couponCode===undefined||typeof body.couponCode==='string'&&/^[A-Z0-9_-]{1,50}$/.test(body.couponCode);
 }

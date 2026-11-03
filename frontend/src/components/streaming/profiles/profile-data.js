@@ -1,7 +1,5 @@
 // Troque esta rota se a home do streaming estiver em outro endereço.
 export const STREAMING_PATH = "/streaming/home";
-export const PROFILE_STORAGE_KEY = "cineastra.streaming.profiles.v1";
-export const ACTIVE_PROFILE_KEY = "cineastra.streaming.active-profile.v1";
 export const MAX_PROFILES = 5;
 export const AVATARS = [
   { id: "astronauta", name: "Astronauta", color: "#9c343e" },
@@ -12,12 +10,6 @@ export const AVATARS = [
   { id: "robo", name: "Robô projetor", color: "#897d59" },
   { id: "raposa", name: "Raposa", color: "#bb6950" },
   { id: "estrela", name: "Estrela", color: "#ac737f" },
-];
-export const DEFAULT_PROFILES = [
-  { id: "perfil-1", name: "Alan", avatar: "astronauta", photo: "", kids: false },
-  { id: "perfil-2", name: "Marina", avatar: "gato", photo: "", kids: false },
-  { id: "perfil-3", name: "Visitante", avatar: "lua", photo: "", kids: false },
-  { id: "perfil-4", name: "Pequenos", avatar: "pipoca", photo: "", kids: true },
 ];
 export function avatarSource(profile) {
   return profile.photo || `/streaming/avatars/${profile.avatar}.svg`;
@@ -30,18 +22,6 @@ export function validateName(value, profiles, editingId) {
     return "Já existe um perfil com esse nome.";
   }
   return "";
-}
-export function parseProfiles(raw) {
-  const value = JSON.parse(raw);
-  if (!Array.isArray(value) || !value.length || value.length > MAX_PROFILES) throw new Error("Perfis inválidos");
-  const ids = new Set();
-  return value.map((p) => {
-    if (!p || typeof p.id !== "string" || ids.has(p.id) || typeof p.name !== "string" || !p.name.trim() || p.name.length > 24) throw new Error("Perfil inválido");
-    ids.add(p.id);
-    const avatar = AVATARS.some((a) => a.id === p.avatar) ? p.avatar : AVATARS[0].id;
-    const photo = typeof p.photo === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(p.photo) && p.photo.length < 700000 ? p.photo : "";
-    return { id: p.id, name: p.name.trim(), avatar, photo, kids: Boolean(p.kids) };
-  });
 }
 // O arquivo é validado e convertido em uma foto quadrada pequena antes de salvar.
 export function readProfilePhoto(file) {

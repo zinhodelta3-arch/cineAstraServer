@@ -5,7 +5,7 @@ import {Sheet,SheetTrigger,SheetContent,SheetHeader,SheetTitle,SheetDescription,
 import {useAccountMenu} from '@/hooks/auth/use-account-menu';
 export default function AccountSheet({session}){
  const {user,message,pending,logout}=session,menu=useAccountMenu(user);
- const links=[{label:'Minhas compras',href:'/cinema/minhascompras',icon:Ticket},{label:'Notificações',href:'/cinema/notificacao',icon:Bell},{label:'Perfil',href:menu.profilePath,icon:UserRound},...(user.role==='ADMIN'?[{label:'Administração',href:'/admin/dashboard',icon:LayoutDashboard}]:[])];
+ const links=[{label:'Minhas compras',href:'/cinema/minhascompras',icon:Ticket},{label:'Notificações',href:'/cinema/notificacao',icon:Bell},{label:'Perfil',href:menu.profilePath,icon:UserRound},...(user.role==='ADMIN'?[{label:'Administração',href:'/admin/dashboard',icon:LayoutDashboard}]:[]),...(['SUPERVISOR','COLABORADOR'].includes(user.role)?[{label:'Minha unidade',href:'/unidade',icon:LayoutDashboard}]:[]),...(user.role==='FORNECEDOR'?[{label:'Área do fornecedor',href:'/fornecedor',icon:LayoutDashboard}]:[])];
  return <Sheet open={menu.open} onOpenChange={menu.onOpenChange}>
   <SheetTrigger aria-label={`Abrir minha conta: ${user.name}`} title="Minha conta" className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">{menu.initials}</SheetTrigger>
   <SheetContent side="right" showCloseButton={false} className="z-[80] !w-[min(24rem,100vw)] gap-0 overflow-y-auto border-border bg-card pl-5 motion-reduce:transition-none">

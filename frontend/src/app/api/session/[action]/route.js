@@ -34,7 +34,7 @@ export async function POST(request,{params}) {
   if(!data.accessToken){throw new AuthError(409,'Esta conta exige uma etapa adicional de autenticação que ainda não está disponível nesta tela.');}
   const verified=await backendAuth('/users/me',{token:data.accessToken});
   if(!['ADMIN','CLIENTE','FORNECEDOR','COLABORADOR','SUPERVISOR'].includes(verified.role))throw new AuthError(403,'Perfil de acesso não reconhecido.');
-  if(!Number.isInteger(data.expiresIn)||data.expiresIn<1||data.expiresIn>900)throw new AuthError(503,'Sessão inválida.');
+  if(!Number.isInteger(data.expiresIn)||data.expiresIn<1||data.expiresIn>86400)throw new AuthError(503,'Sessão inválida.');
   const res=json({user:userDto(verified),destination:loginDestination(verified.role)});
   res.cookies.set(SESSION_COOKIE,data.accessToken,{...sessionCookieOptions(request),maxAge:data.expiresIn});return res;
  }catch(error){return json({message:error instanceof AuthError?error.message:'Não foi possível concluir a operação.'},error.status||503);}

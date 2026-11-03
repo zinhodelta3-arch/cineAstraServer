@@ -5,8 +5,9 @@ import { AVATARS, readProfilePhoto, validateName } from "@/components/streaming/
 
 export default function useProfileEditor(profile, profiles, onSave) {
   const [draft, setDraft] = useState(profile || { name: "", avatar: AVATARS[profiles.length % AVATARS.length].id, photo: "", kids: false });
-  const [error, setError] = useState("");
+  const [error, setError] = useState(profile?.saveError || "");
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileRef = useRef(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
@@ -22,14 +23,18 @@ export default function useProfileEditor(profile, profiles, onSave) {
     } catch (err) { if (alive.current) setError(err.message); }
     finally { if (alive.current) setPhotoBusy(false); }
   };
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
+    if (saving || photoBusy) return;
     const invalid = validateName(draft.name, profiles, profile?.id);
     if (invalid) return setError(invalid);
-    const saveError = onSave({ ...draft, name: draft.name.trim() });
-    if (saveError) setError(saveError);
+    setSaving(true);
+    try {
+      const saveError = await onSave({ ...draft, name: draft.name.trim() });
+      if (saveError && alive.current) setError(saveError);
+    } finally { if (alive.current) setSaving(false); }
   };
   const openPhotoPicker = () => fileRef.current?.click();
   const chooseAvatar = (id) => { setDraft((p) => ({ ...p, avatar: id, photo: "" })); setError(""); };
-  return { draft, error, photoBusy, fileRef, update, choosePhoto, submit, chooseAvatar, openPhotoPicker };
+  return { draft, error, photoBusy, saving, fileRef, update, choosePhoto, submit, chooseAvatar, openPhotoPicker };
 }

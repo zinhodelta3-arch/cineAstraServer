@@ -13,9 +13,14 @@ export function createSupplyService({model,identity}) {
     async function actor(c,context) { const a=await identity.activeActor(c,context);return {id:idString(a.id_usuario),role:a.tipo_usuario}; }
     async function staff(c,a,sessionId,localId,allowEnded=false) {
         if(a.role==='ADMIN')return;
-        if(!['SUPERVISOR','COLABORADOR'].includes(a.role)||!sessionId)throw ApiError.acessoNegado();
+        if(!['SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();
+        if(a.role==='SUPERVISOR'){
+            const location=await model.supervisorLocation(a.id,c);
+            if(!location||!same(location.id_local,localId))throw ApiError.acessoNegado();
+            if(!sessionId){if(!allowEnded)throw ApiError.acessoNegado();return;}
+        }else if(!sessionId)throw ApiError.acessoNegado();
         const session=found(await model.session(sessionId,c));
-        if(!same(session.id_local,localId)||!(allowEnded?['AGENDADA','EM_CARTAZ','ENCERRADA']:['AGENDADA','EM_CARTAZ']).includes(session.status)||session.local_status!=='ATIVO'||!await model.member(a.id,sessionId,c))throw ApiError.acessoNegado();
+        if(!same(session.id_local,localId)||!(allowEnded?['AGENDADA','EM_CARTAZ','ENCERRADA']:['AGENDADA','EM_CARTAZ']).includes(session.status)||session.local_status!=='ATIVO'||a.role==='COLABORADOR'&&!await model.member(a.id,sessionId,c))throw ApiError.acessoNegado();
     }
     async function supplier(c,a,id) {
         if(a.role==='ADMIN')return;
@@ -28,24 +33,31 @@ export function createSupplyService({model,identity}) {
         if(g.supplier_status!=='ATIVO'||g.user_status!=='ATIVO'||g.tipo_usuario!=='FORNECEDOR'||g.grant_status!=='ATIVO'||g.local_status!=='ATIVO')throw conflict('Fornecedor ou local indisponível');
     }
     async function visibleRequest(c,a,r) {
-        if(a.role==='ADMIN'||same(r.id_usuario,a.id))return;
+        if(a.role==='ADMIN')return;
         if(a.role==='FORNECEDOR') { const item=found(await model.item(itemKind(r),itemId(r),c));await supplier(c,a,item.id_fornecedor);return; }
         await staff(c,a,r.id_sessao,r.id_local,true);
     }
     const tx=(context,work)=>identity.transaction(async c=>work(c,await actor(c,context)),context);
     return {
+        async sources(q,context) { return tx(context,async(c,a)=>{
+            if(a.role!=='SUPERVISOR')throw ApiError.acessoNegado();
+            const location=await model.supervisorLocation(a.id,c);
+            if(!location)throw ApiError.acessoNegado();
+            const rows=await model.availableInputs(idString(location.id_local),q,c),items=rows.slice(0,q.limit);
+            return {items:items.map(r=>({id_insumo:idString(r.id_insumo),nome:r.nome,id_local_origem:idString(r.id_local_origem),nome_origem:r.nome_origem,disponivel:r.disponivel})),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(items.at(-1).id_insumo):null}};
+        }); },
         async stock(q,context) { return tx(context,async(c,a)=>{
             if(a.role!=='ADMIN')await staff(c,a,q.sessionId,q.localId,true);
             const local=found(await model.local(q.localId,c));if(local.status!=='ATIVO')throw conflict('Local indisponível');
             const stock=await model.stock(q.localId,c),incoming=await model.incoming(q.localId,c);
             return {id_local:q.localId,inputs:stock.inputs.map(r=>({id_insumo:idString(r.id),id_fornecedor:idString(r.id_fornecedor),nome:r.nome,quantidade:r.quantidade,disponivel:r.status==='DISPONIVEL'?r.quantidade-r.quantidade_reservada:0,status:r.status==='DISPONIVEL'&&r.quantidade-r.quantidade_reservada>0?'EM_ESTOQUE':'SEM_ESTOQUE'})),equipment:stock.equipment.map(r=>({id_equipamento:idString(r.id),id_fornecedor:idString(r.id_fornecedor),nome:r.nome,quantidade:r.quantidade,status:r.status==='DISPONIVEL'&&r.quantidade>0?'EM_ESTOQUE':'SEM_ESTOQUE'})),a_chegar:incoming.map(r=>({id_logistica:idString(r.id_logistica),id_insumo:r.id_insumo_origem==null?null:idString(r.id_insumo_origem),id_equipamento:r.id_equipamento_origem==null?null:idString(r.id_equipamento_origem),nome:r.nome,quantidade:r.quantidade,status:r.status}))};
         }); },
-        async requests(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','SUPERVISOR','COLABORADOR','FORNECEDOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(['SUPERVISOR','COLABORADOR'].includes(a.role)){if(q.sessionId){if(!q.localId)throw ApiError.validacao('localId obrigatório');await staff(c,a,q.sessionId,q.localId,true);}else q.userId=a.id;}return page(await model.listRequests(q,c),q,requestDto,'id_solicitacao');}); },
+        async requests(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','SUPERVISOR','COLABORADOR','FORNECEDOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(a.role==='SUPERVISOR'){const location=await model.supervisorLocation(a.id,c);if(!location||q.localId&&!same(q.localId,location.id_local))throw ApiError.acessoNegado();q.localId=idString(location.id_local);if(q.sessionId)await staff(c,a,q.sessionId,q.localId,true);}if(a.role==='COLABORADOR'){if(!q.sessionId||!q.localId)throw ApiError.validacao('localId e sessionId obrigatórios');await staff(c,a,q.sessionId,q.localId,true);}return page(await model.listRequests(q,c),q,requestDto,'id_solicitacao');}); },
         async request(id,context) { return tx(context,async(c,a)=>{const r=found(await model.request(id,c));await visibleRequest(c,a,r);return requestDto(r);}); },
         async createRequest(input,context) { return tx(context,async(c,a)=>{
             if(!['ADMIN','SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();
             const local=found(await model.local(input.localId,c));if(local.status!=='ATIVO')throw conflict('Local indisponível');
-            await staff(c,a,input.sessionId,input.localId);
+            await staff(c,a,input.sessionId,input.localId,a.role==='SUPERVISOR'&&!input.sessionId);
             if(input.sessionId){const s=found(await model.session(input.sessionId,c));if(!same(s.id_local,input.localId)||!['AGENDADA','EM_CARTAZ'].includes(s.status))throw conflict('Sessão incompatível');}
             const kind=input.inputId?'input':'equipment', item=found(await model.item(kind,input.inputId??input.equipmentId,c));
             if(item.status!=='DISPONIVEL')throw conflict('Item indisponível');
@@ -65,7 +77,7 @@ export function createSupplyService({model,identity}) {
             }
             await model.setRequest(c,id,status);await identity.audit(c,`SUPPLY.${status}`,id,context);return requestDto(found(await model.request(id,c)));
         }); },
-        async shipments(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(['SUPERVISOR','COLABORADOR'].includes(a.role)){if(!q.localId||!q.sessionId)throw ApiError.validacao('localId e sessionId obrigatórios');await staff(c,a,q.sessionId,q.localId,true);}return page(await model.listShipments(q,c),q,shipmentDto,'id_logistica');}); },
+        async shipments(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(a.role==='SUPERVISOR'){const location=await model.supervisorLocation(a.id,c);if(!location||q.localId&&!same(q.localId,location.id_local))throw ApiError.acessoNegado();q.localId=idString(location.id_local);if(q.sessionId)await staff(c,a,q.sessionId,q.localId,true);}if(a.role==='COLABORADOR'){if(!q.localId||!q.sessionId)throw ApiError.validacao('localId e sessionId obrigatórios');await staff(c,a,q.sessionId,q.localId,true);}return page(await model.listShipments(q,c),q,shipmentDto,'id_logistica');}); },
         async shipment(id,context) { return tx(context,async(c,a)=>{const r=found(await model.shipment(id,c));await supplierOrStaff(c,a,r);return shipmentDto(r);}); },
         async returnEquipment(id,context) { return tx(context,async(c,a)=>{
             const initial=found(await model.shipment(id,c)),request=found(await model.request(initial.id_solicitacao,c,true));
@@ -98,7 +110,7 @@ export function createSupplyService({model,identity}) {
             }else if(action==='transit'){
                 await supplier(c,a,r.id_fornecedor);if(r.status!=='ENVIADO')throw conflict('Estado de envio incompatível');await model.setShipment(c,id,'EM_TRANSITO');
             }else if(action==='receive'){
-                if(a.role!=='ADMIN'){if(a.role==='FORNECEDOR')throw ApiError.acessoNegado();await staff(c,a,request.id_sessao,request.id_local);}
+                if(a.role!=='ADMIN'){if(a.role==='FORNECEDOR')throw ApiError.acessoNegado();await staff(c,a,request.id_sessao,request.id_local,a.role==='SUPERVISOR'&&!request.id_sessao);}
                 if(!['ENVIADO','EM_TRANSITO'].includes(r.status))throw conflict('Recebimento exige envio ativo');
                 if(kind==='input'){
                     let targetId=itemId(request);

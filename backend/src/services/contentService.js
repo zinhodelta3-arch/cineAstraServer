@@ -7,12 +7,17 @@ const parse=value=>typeof value==='string'?JSON.parse(value):value;
 const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const iso=value=>{const text=String(value);return new Date(text.includes('T')?text:`${text.replace(' ','T')}Z`).toISOString();};
 const publicDto=row=>({slug:row.slug,version:row.versao,title:row.titulo,body:parse(row.corpo),source:row.fonte,publishedAt:iso(row.publicado_em)});
-export function createContentService({model,identity}){
+const simulatedDocuments={
+    business:{slug:'business',version:'1.0',title:'Informações da compra',body:{text:'Os itens, quantidades e valores deste pedido estão detalhados no resumo da compra. A disponibilidade é confirmada ao finalizar o pedido.'},source:'SIMULADO',publishedAt:'2026-01-01T00:00:00.000Z'},
+    terms:{slug:'terms',version:'1.0',title:'Termos da compra',body:{text:'Ao confirmar, você aceita os itens e valores apresentados. A reserva é mantida por 15 minutos e o pedido é concluído após a confirmação do pagamento.'},source:'SIMULADO',publishedAt:'2026-01-01T00:00:00.000Z'},
+    privacy:{slug:'privacy',version:'1.0',title:'Privacidade dos dados',body:{text:'Os dados da conta e do pedido são utilizados para identificar a compra e disponibilizar os ingressos. O número completo e o código de segurança do cartão não são enviados nem armazenados neste fluxo.'},source:'SIMULADO',publishedAt:'2026-01-01T00:00:00.000Z'}
+};
+export function createContentService({model,identity,simulated=false}){
     async function get(c,slug){const row=await model.current(c,slug);if(!row)throw ApiError.naoEncontrado();return publicDto(row);}
     async function wrap(c,input,offer){
-        const rows=await Promise.all(['business','terms','privacy'].map(slug=>model.current(c,slug)));
-        if(rows.some(row=>!row))throw unavailable();
-        const [business,terms,privacy]=rows.map(publicDto);
+        const rows=simulated?null:await Promise.all(['business','terms','privacy'].map(slug=>model.current(c,slug)));
+        if(rows?.some(row=>!row))throw unavailable();
+        const [business,terms,privacy]=simulated?['business','terms','privacy'].map(slug=>simulatedDocuments[slug]):rows.map(publicDto);
         const summary={business,terms,privacy,offer};
         return {...summary,offerHash:hash({input,summary})};
     }

@@ -45,7 +45,7 @@
 .mapHint { font-size: 10px; color: var(--muted-foreground); line-height: 1.7; margin: 12px 0 18px; max-width: 75ch; }
 .mapScroll { overflow: auto; padding: 6px 4px 12px; scrollbar-width: thin; scrollbar-color: var(--primary) var(--muted); }
 .map { width: max-content; margin: auto; }
-.seatRow, .numbers { display: grid; grid-template-columns: 18px repeat(10,var(--seat-size)) calc(var(--seat-size) + 20px) repeat(9,var(--seat-size)) 18px; gap: var(--seat-gap); align-items: center; }
+.seatRow, .numbers { display: grid; grid-template-columns: 18px repeat(var(--columns),var(--seat-size)) 18px; gap: var(--seat-gap); align-items: center; }
 .seatRow { margin-top: var(--seat-gap); }
 .numbers { margin-bottom: 12px; font-size: 9px; text-align: center; color: var(--muted-foreground); }
 .afterAisle { margin-left: 20px; }

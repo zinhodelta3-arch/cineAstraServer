@@ -1,27 +1,51 @@
-import useEscape from "@/hooks/streaming/home/use-escape";
-import { X } from "lucide-react";
-import { ACCENT, TRAILER } from "./data";
+"use client";
 
-export default function PlayerModal({ movie, onClose }) {
-  useEscape(onClose);
-  return (
-    <div role="dialog" aria-modal="true" aria-label={`Assistindo ${movie.title}`} className="fixed inset-0 z-50 bg-background/90 backdrop-blur-md flex flex-col items-center justify-center p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-5xl">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <span className={`text-xs font-semibold ${ACCENT} block`}>Reproduzindo</span>
-            <h3 className="f-display text-3xl font-black text-foreground">{movie.title}</h3>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Fechar" className="p-2 text-muted-foreground hover:text-foreground rounded-full"><X className="size-6" /></button>
-        </div>
-        <div className="flex gap-2 bg-card p-3 rounded-md border border-border">
-          <div className="perf-v hidden sm:block rounded-xs" aria-hidden="true" />
-          <div className="aspect-video w-full bg-black">
-            <iframe src={`${TRAILER}?autoplay=1`} title={movie.title} className="size-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-          </div>
-          <div className="perf-v hidden sm:block rounded-xs" aria-hidden="true" />
-        </div>
-      </div>
-    </div>
+import { useState } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import useStreamingPlayback from "@/hooks/streaming/player/use-streaming-playback";
+
+const VideoPlayer = dynamic(() => import("@/components/cineastra-player/VideoPlayer"), {
+  ssr: false,
+  loading: () => <p role="status" className="fixed inset-0 z-[1000] grid place-items-center bg-background/90 text-foreground">Carregando player…</p>,
+});
+
+export default function PlayerModal({ movie, profileId, access, onProgress, onClose, initialMode = "modal" }) {
+  const [mode, setMode] = useState(initialMode);
+  const { playback, loading, error, errorCode, saveError, savePosition } = useStreamingPlayback({ movie, profileId, access, onProgress });
+
+  if (!playback && initialMode === "page") return <div className="grid min-h-64 place-content-center gap-4 rounded-md border border-border bg-card p-6 text-center" role={error ? "alert" : "status"}>
+    <p>{loading ? "Preparando reprodução…" : error || "Não foi possível iniciar a reprodução."}</p>
+    {errorCode === "STREAMING_ACCESS_REQUIRED" && <Link href="/cinema/planos" className="text-primary underline">Conhecer os planos</Link>}
+    {error && <button type="button" className="min-h-11 underline" onClick={onClose}>Voltar ao catálogo</button>}
+  </div>;
+
+  if (!playback) return (
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="border border-border bg-card">
+        <DialogTitle className="pr-8 text-xl font-bold">{movie.title}</DialogTitle>
+        <DialogDescription>{loading ? "Preparando reprodução…" : "Não foi possível iniciar a reprodução."}</DialogDescription>
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {errorCode === "STREAMING_ACCESS_REQUIRED" && <Button nativeButton={false} render={<Link href="/cinema/planos" />}>Conhecer os planos</Button>}
+      </DialogContent>
+    </Dialog>
   );
+
+  return <>
+    <VideoPlayer
+      media={{ ...movie, type: "movie", src: playback.url }}
+      options={{
+        isTrailer: playback.kind === "youtube", autoPlay: true, initialPosition: playback.initialPosition,
+        onTimeUpdate: (position, duration) => { void savePosition(position, false, duration); },
+        onPause: (position, duration) => { void savePosition(position, true, duration); },
+      }}
+      mode={mode}
+      onModeChange={setMode}
+      onRestore={() => setMode(initialMode)}
+      onClose={onClose}
+    />
+    {saveError && <p role="status" className="fixed bottom-4 left-4 z-[10001] max-w-sm rounded-md border border-border bg-card p-3 text-sm text-destructive">{saveError}</p>}
+  </>;
 }

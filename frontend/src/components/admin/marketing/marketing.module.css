@@ -1,0 +1,3 @@
+.preview { max-height: 230px; overflow: auto; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--muted); color: var(--foreground); font: inherit; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.previewHeading { margin: 12px 0 6px; font-size: 12px; font-weight: 650; }
+.previewLink { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }

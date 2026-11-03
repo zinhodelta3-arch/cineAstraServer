@@ -35,6 +35,7 @@ spec.components.schemas.IdentityDeletion = obj({ id: ref('Id'), status: { type: 
 spec.components.schemas.IdentityControls = obj({ compras_permitidas: bool, assinaturas_permitidas: bool, limite_minutos_diarios: { type: 'integer', minimum: 1, maximum: 1440 } });
 spec.components.schemas.IdentityAuthorization = obj({ id: ref('Id'), purpose: { type: 'string', enum: ['COMPRA', 'ASSINATURA'] }, operationReference: str, expiresAt: { type: 'string', format: 'date-time' } });
 spec.components.schemas.IdentityPrivacyStatus = obj({ id_solicitacao: ref('Id'), id_usuario: ref('Id'), tipo: { type: 'string', enum: ['EXCLUSAO'] }, status: { type: 'string', enum: ['RECEBIDA', 'EM_ANALISE', 'CONCLUIDA', 'RECUSADA'] }, motivo_decisao: { type: 'string', nullable: true }, criada_em: str, encerrada_em: { type: 'string', nullable: true } });
+spec.components.schemas.SupervisorLocation = obj({ supervisorId: ref('Id'), localId: { type: 'string', pattern: '^[1-9][0-9]{0,9}$', nullable: true }, localName: { type: 'string', nullable: true } });
 for (const [kind, pk, schema] of [['addresses', 'id_endereco', 'address'], ['contacts', 'id_contato', 'contact']]) {
     const fields = structuredClone(spec.components.schemas[`IdentityInput_${schema}`].properties);
     // Colunas opcionais legadas podem ser NULL; respostas sempre têm principal booleano.
@@ -58,6 +59,8 @@ const descriptions = {
     export: 'Portabilidade paginada do módulo identidade, própria conta, senha e fator se ativo. Seções explícitas; sem hash, segredo, token ou referência interna de prova. CPF só aparece nesta exportação privada. Outros módulos devem acrescentar seus exports. Novo TOTP necessário em cada página sensível.',
     adminCreate: 'Somente ADMIN com 2FA. Cria contas internas; CPF/e-mail únicos. Novo ADMIN/SUPERVISOR passa por enrollment obrigatório. Primeiro ADMIN via CLI seguro bootstrap:admin.',
     adminAccess: 'Somente ADMIN com 2FA. Revoga sessões/desafios/resets ao alterar perfil/status. Preserva último ADMIN ativo. Reativação de conta inativa/bloqueada exige revisão, retorna 409.',
+    getSupervisorLocation: 'Somente ADMIN. Consulta o cinema atribuído a um supervisor ativo.',
+    setSupervisorLocation: 'Somente ADMIN. Atribui um cinema ativo por supervisor. Equipes ativas de outro cinema impedem transferência ou remoção do vínculo.',
     authorizeMinor: 'Somente responsável com vínculo legal comprovado e ativo. Controle parental deve permitir finalidade; prova de idade vigente. Autorização por operação, prazo de até 24 horas e UNIQUE. Checkout/assinaturas futuros devem consultar requireAge na sua transação.'
 };
 const params = [{ name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: { type: 'string', pattern: '^[1-9][0-9]{0,19}$' }, description: 'Último ID da página anterior, ordenação crescente estável.' }];
@@ -66,6 +69,7 @@ for (const r of identityOperations) {
         : r.operationId === 'verify' ? ref('IdentityAccess')
         : r.operationId === 'enroll' ? ref('IdentityChallenge')
         : ['register', 'registerAlias', 'me', 'patch', 'adminCreate', 'adminAccess', 'adminGet'].includes(r.operationId) ? ref('IdentityUser')
+        : ['getSupervisorLocation', 'setSupervisorLocation'].includes(r.operationId) ? ref('SupervisorLocation')
         : r.operationId === 'deleteAccount' ? ref('IdentityDeletion')
         : r.operationId === 'forgot' ? obj({ message: str })
         : r.operationId === 'list_own_children' ? obj({items:{type:'array',items:obj({id:{type:'string',pattern:'^[1-9][0-9]{0,9}$'},name:str,status:{type:'string',enum:['ATIVO','INATIVO','BLOQUEADO','PENDENTE_VERIFICACAO']},parentalControlsAvailable:bool})},pagination:obj({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{type:'string',pattern:'^[1-9][0-9]{0,9}$',nullable:true}})})

@@ -1,77 +1,116 @@
 "use client";
 
 import { useDashboard } from "@/hooks/use-dashboard";
-import Link from "next/link";
-import { ArrowUpRight, CalendarDays, Film, Ticket, Users, Wallet } from "lucide-react";
+import { CalendarDays, ChevronDown } from "lucide-react";
+import MoviePerformanceTable from "./movie-performance-table";
 import styles from "./dashboard.module.css";
 
-const brl = (value) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
-const integer = (value) => value.toLocaleString("pt-BR");
-const movies = [
-  { name: "Duna: Parte Dois", genre: "Ficção científica", share: 0.34, color: "var(--chart-1)" },
-  { name: "Interestelar", genre: "Aventura", share: 0.28, color: "var(--chart-2)" },
-  { name: "Oppenheimer", genre: "Drama", share: 0.22, color: "var(--chart-3)" },
-  { name: "Parasita", genre: "Suspense", share: 0.16, color: "var(--chart-4)" },
-];
-function Panel({ title, subtitle, className = "", children }) {
-  return <section className={`${styles.panel} ${className}`}><header className={styles.panelHeader}><h2>{title}</h2><p>{subtitle}</p></header>{children}</section>;
+const money = (value) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value));
+const integer = (value) => BigInt(value).toLocaleString("pt-BR");
+const shortDate = (date) => new Date(`${date}T12:00:00Z`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+const dayLabel = (date) => new Date(`${date}T12:00:00Z`).toLocaleDateString("pt-BR", { weekday: "short", timeZone: "UTC" }).replace(".", "");
+const compact = (value) => new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+const typeNames = { INTEIRA: "Inteira", MEIA: "Meia-entrada", ISENTA: "Isenta", UNKNOWN: "Não identificado" };
+const languages = { DUBLADO: "Dublado", LEGENDADO: "Legendado", ORIGINAL: "Original" };
+
+function chartSeries(daily, period) {
+  const values = daily.map((day) => ({ date: day.date, tickets: Number(day.tickets), revenue: Number(day.ticketSalesValue) }));
+  if (period === "week") return values.map((day) => ({ ...day, label: dayLabel(day.date) }));
+  const grouped = [];
+  for (let index = 0; index < values.length; index += 5) {
+    const days = values.slice(index, index + 5);
+    const first = shortDate(days[0].date);
+    const last = shortDate(days.at(-1).date);
+    grouped.push({
+      label: first.slice(3) === last.slice(3) ? `${first.slice(0, 2)}–${last}` : `${first}–${last}`,
+      tickets: days.reduce((sum, day) => sum + day.tickets, 0),
+      revenue: days.reduce((sum, day) => sum + day.revenue, 0),
+    });
+  }
+  return grouped;
 }
-function Bars({ labels, values, percent = false }) {
-  const max = percent ? 100 : Math.ceil(Math.max(...values) / 100) * 100;
-  return <div className={styles.bars} role="img" aria-label={labels.map((label, i) => `${label}: ${values[i]}${percent ? "% de ocupação" : " ingressos"}`).join("; ")}>
-    <div className={styles.scale}><span>{integer(max)}{percent && "%"}</span><span>{integer(max / 2)}</span><span>0</span></div>
-    <div className={styles.barPlot}>{values.map((value, i) => <div className={styles.barColumn} key={labels[i]}><span className={styles.barValue}>{integer(value)}{percent && "%"}</span><div className={styles.bar} style={{ height: `${value / max * 100}%`, background: percent ? "var(--chart-2)" : "var(--chart-1)" }} /><span className={styles.barLabel}>{labels[i]}</span></div>)}</div>
+
+function Panel({ title, subtitle, className = "", children }) {
+  return <section className={`${styles.panel} ${className}`}>
+    <header className={styles.panelHeader}><h2>{title}</h2><p>{subtitle}</p></header>
+    {children}
+  </section>;
+}
+
+function RevenueChart({ series, total }) {
+  const max = Math.max(...series.map((day) => day.revenue), 1);
+  const coordinates = series.map((day, index) => ({ x: 38 + index * 562 / Math.max(series.length - 1, 1), y: 178 - day.revenue / max * 140 }));
+  const points = coordinates.map(({ x, y }) => `${x},${y}`).join(" ");
+  return <div className={styles.revenueChart}>
+    <div className={styles.chartTotal}><strong>{money(total)}</strong><span>no período selecionado</span></div>
+    <svg viewBox="0 0 638 222" className={styles.lineChart} role="img" aria-label={series.map((day) => `${day.label}: ${money(day.revenue)}`).join("; ")}>
+      {[0, 0.5, 1].map((step) => <g key={step}><line x1="38" x2="600" y1={178 - step * 140} y2={178 - step * 140} className={styles.gridLine} /><text x="0" y={182 - step * 140}>{compact(max * step)}</text></g>)}
+      <polygon points={`38,178 ${points} 600,178`} className={styles.area} />
+      <polyline points={points} className={styles.line} />
+      {coordinates.map(({ x, y }, index) => <g key={series[index].label}><circle cx={x} cy={y} r="4" className={styles.point} /><text x={x} y="210" textAnchor="middle">{series[index].label}</text></g>)}
+    </svg>
   </div>;
 }
 
+function TicketBars({ series }) {
+  const max = Math.max(...series.map((day) => day.tickets), 1);
+  return <div className={styles.ticketChart} role="img" aria-label={series.map((day) => `${day.label}: ${integer(day.tickets)} ingressos`).join("; ")}>
+    {series.map((day) => <div className={styles.ticketColumn} key={day.label}><span className={styles.ticketValue}>{integer(day.tickets)}</span><div className={styles.ticketTrack}><span style={{ height: `${day.tickets / max * 100}%` }} /></div><span className={styles.ticketLabel}>{day.label}</span></div>)}
+  </div>;
+}
+
+function RoomOccupancy({ rooms }) {
+  const visible = [...rooms].sort((left, right) => Number(right.sessionCount) - Number(left.sessionCount)).slice(0, 4);
+  if (!visible.length) return <p className={styles.panelState}>Nenhuma sala com sessões neste período.</p>;
+  return <>
+    <div className={styles.roomList} role="img" aria-label={visible.map((room) => `${room.locationName}, ${room.name}: ${room.occupancyPercent == null ? "sem capacidade registrada" : `${room.occupancyPercent}% de ocupação`}`).join("; ")}>
+      {visible.map((room) => <div className={styles.roomRow} key={room.id}><span className={styles.roomName} title={`${room.locationName} · ${room.name}`}>{room.name}<small>{room.locationName}</small></span><div className={styles.roomTrack}><span style={{ width: `${Math.max(0, Math.min(100, room.occupancyPercent ?? 0))}%` }} /></div><strong>{room.occupancyPercent == null ? "—" : `${room.occupancyPercent}%`}</strong></div>)}
+    </div>
+    {rooms.length > visible.length && <p className={styles.roomNote}>Exibindo {visible.length} de {rooms.length} salas com mais sessões.</p>}
+  </>;
+}
+
+function TicketTypes({ types }) {
+  const visible = types.map((item, index) => ({ ...item, color: styles[`type${index + 1}`] })).filter((item) => Number(item.tickets) > 0);
+  if (!visible.length) return <p className={styles.panelState}>Nenhum ingresso vendido neste período.</p>;
+  return <div className={styles.ticketTypes}>
+    <div className={styles.typeTrack} role="img" aria-label={visible.map((item) => `${typeNames[item.type] ?? item.type}: ${item.sharePercent}%`).join("; ")}>{visible.map((item) => <span className={item.color} style={{ flexGrow: Number(item.tickets) }} key={item.type} />)}</div>
+    <ul className={styles.typeList}>{visible.map((item) => <li key={item.type}><span className={`${styles.typeDot} ${item.color}`} /><span>{typeNames[item.type] ?? item.type}</span><strong>{item.sharePercent?.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) ?? "0"}%</strong></li>)}</ul>
+  </div>;
+}
+
+function UpcomingSessions({ sessions, loading, error }) {
+  if (loading || error || !sessions.length) return <p className={styles.panelState}>{loading ? "Carregando sessões…" : error ? "Sessões indisponíveis no momento." : "Nenhuma sessão futura cadastrada."}</p>;
+  return <ol className={styles.sessions}>{sessions.map((session) => <li key={session.id}>
+    <time dateTime={`${session.date}T${session.startTime}`}>{shortDate(session.date)} <strong>{session.startTime.slice(0, 5)}</strong></time>
+    <div><strong>{session.filmTitle}</strong><span>{session.locationName} · {session.roomName} · {languages[session.language] ?? session.language}</span></div>
+  </li>)}</ol>;
+}
+
 export default function Dashboard() {
-  const { period, setPeriod, data } = useDashboard();
-  const maxRevenue = Math.ceil(Math.max(...data.sales) * 30 / 5000) * 5000;
-  const points = data.sales.map((value, i) => `${45 + i * 535 / (data.sales.length - 1)},${148 - value * 30 / maxRevenue * 125}`).join(" ");
+  const { period, setPeriod, report, loading, error, retry } = useDashboard();
+  const label = period === "week" ? "Últimos 7 dias" : "Últimos 30 dias";
+  const series = report ? chartSeries(report.daily, period) : [];
+  const chartState = <p className={styles.panelState}>{loading ? "Carregando indicadores…" : error ? "Indicadores indisponíveis no momento." : "Nenhuma venda neste período."}</p>;
   const metrics = [
-    { label: "Receita de bilheteria", value: brl(data.revenue), note: "Vendas de ingressos", icon: Wallet },
-    { label: "Ingressos vendidos", value: integer(data.tickets), note: "Todos os tipos de ingresso", icon: Ticket },
-    { label: "Ocupação média", value: `${data.occupancy}%`, note: "Capacidade das salas", icon: Users },
-    { label: "Sessões realizadas", value: data.sessions, note: "Em todas as salas", icon: Film },
+    { label: "Receita de bilheteria", value: report ? money(report.sales.ticketSalesValue) : "—", note: "Vendas de ingressos" },
+    { label: "Ingressos vendidos", value: report ? integer(report.sales.tickets) : "—", note: "No período selecionado" },
+    { label: "Ocupação média", value: report?.occupancy.occupancyPercent == null ? "—" : `${report.occupancy.occupancyPercent}%`, note: "Lugares confirmados" },
+    { label: "Sessões realizadas", value: report ? integer(report.occupancy.completedSessions) : "—", note: "Sessões encerradas" },
   ];
+
   return <main id="admin-content" tabIndex={-1} className={styles.dashboard}>
-    <header className={styles.heading}>
-      <div><h1>Seu cinema em <em>cena.</em></h1><p>Acompanhe a bilheteria, as salas e os filmes que movem o público.</p></div>
-      <label className={styles.period}><CalendarDays size={18} aria-hidden="true" /><span className="sr-only">Período dos indicadores</span><select value={period} onChange={(event) => setPeriod(event.target.value)}><option value="week">Últimos 7 dias</option><option value="month">Últimos 30 dias</option></select></label>
-    </header>
-    <div className={styles.filmStrip} aria-hidden="true" />
-    <div className={styles.context}><span className={styles.demo}>Dados demonstrativos</span><p>Prévia do dashboard · sem conexão com a bilheteria</p></div>
-    <section className={styles.metrics} aria-label={`Indicadores: ${data.label}`} aria-live="polite">
-      {metrics.map(({ label, value, note, icon: Icon }) => <article className={styles.metric} key={label}><div><span>{label}</span><Icon size={19} aria-hidden="true" /></div><strong>{value}</strong><p>{note}</p></article>)}
-    </section>
+    <header className={styles.heading}><div><h1>Visão geral</h1><p>Bilheteria, ocupação e programação em um só lugar.</p></div><label className={styles.period}><CalendarDays size={16} aria-hidden="true" /><span className="sr-only">Período dos indicadores</span><select value={period} onChange={(event) => setPeriod(event.target.value)}><option value="week">Últimos 7 dias</option><option value="month">Últimos 30 dias</option></select><ChevronDown size={15} aria-hidden="true" /></label></header>
+    {error && <div className={styles.errorBanner} role="alert"><span>{error}</span><button type="button" onClick={retry}>Tentar novamente</button></div>}
+    <section className={styles.metrics} aria-label={`Indicadores: ${label}`} aria-live="polite">{metrics.map(({ label: metricLabel, value, note }) => <article className={styles.metric} key={metricLabel}><span>{metricLabel}</span><strong>{value}</strong><p>{note}</p></article>)}</section>
+    <Panel title="Próximas sessões" subtitle="Programação futura" className={styles.sessionsPanel}><UpcomingSessions sessions={report?.upcomingSessions ?? []} loading={loading} error={error} /></Panel>
     <div className={styles.charts}>
-      <Panel title="O público da vez" subtitle={`Ingressos por ${period === "week" ? "dia da semana" : "intervalo de 5 dias"}`}><Bars labels={data.days} values={data.sales} /></Panel>
-      <Panel title="De olho nas salas" subtitle="Ocupação média por sala"><Bars labels={["Sala 1", "Sala 2", "Sala 3", "Sala 4"]} values={data.rooms} percent /></Panel>
-      <Panel title="Cada ingresso conta" subtitle="Distribuição por tipo de entrada" className={styles.piePanel}>
-        <div className={styles.donut} role="img" aria-label={`Inteira: ${data.split[0]}%; meia-entrada: ${data.split[1]}%; promocional: ${data.split[2]}%`} style={{ background: `conic-gradient(var(--chart-1) 0 ${data.split[0]}%, var(--chart-2) ${data.split[0]}% ${data.split[0] + data.split[1]}%, var(--chart-3) ${data.split[0] + data.split[1]}% 100%)` }}><div><strong>{integer(data.tickets)}</strong><span>ingressos</span></div></div>
-        <ul className={styles.legend}>{["Inteira", "Meia-entrada", "Promocional"].map((label, i) => <li key={label}><span className={styles.dot} style={{ background: `var(--chart-${i + 1})` }} /><span>{label}</span><strong>{data.split[i]}%</strong></li>)}</ul>
-        <p className={styles.pieNote}>Cada lugar ocupado faz parte dessa história.</p>
-      </Panel>
-      <Panel title="A bilheteria em movimento" subtitle={`Receita de ingressos · ${data.label.toLowerCase()}`} className={styles.linePanel}>
-        <svg className={styles.lineChart} viewBox="0 0 610 185" role="img" aria-label={data.days.map((day, i) => `${day}: ${brl(data.sales[i] * 30)}`).join("; ")}>
-          {[0, 1, 2].map((i) => <g key={i}><line x1="45" x2="580" y1={23 + i * 62.5} y2={23 + i * 62.5} stroke="var(--border)" strokeDasharray="3 5" /><text x="0" y={27 + i * 62.5}>{maxRevenue / 1000 * (1 - i / 2)} mil</text></g>)}
-          <polygon points={`45,148 ${points} 580,148`} fill="var(--primary)" opacity=".09" /><polyline points={points} fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinejoin="round" />
-          {data.sales.map((value, i) => <g key={data.days[i]}><circle cx={45 + i * 535 / (data.sales.length - 1)} cy={148 - value * 30 / maxRevenue * 125} r="4" fill="var(--primary)" /><text x={45 + i * 535 / (data.sales.length - 1)} y="177" textAnchor="middle">{data.days[i]}</text></g>)}
-        </svg>
-        <span className={styles.chartCaption}>Valores em reais (R$)</span>
-      </Panel>
+      <Panel title="Receita de ingressos" subtitle={`Evolução da bilheteria · ${label.toLowerCase()}`} className={styles.revenuePanel}>{series.some((day) => day.revenue > 0) ? <RevenueChart series={series} total={report.sales.ticketSalesValue} /> : chartState}</Panel>
+      <Panel title="Ingressos vendidos" subtitle={period === "week" ? "Volume por dia da semana" : "Volume por intervalo de 5 dias"} className={styles.ticketsPanel}>{series.some((day) => day.tickets > 0) ? <TicketBars series={series} /> : chartState}</Panel>
+      <Panel title="Ocupação por sala" subtitle="Salas com mais sessões no período">{report ? <RoomOccupancy rooms={report.rooms} /> : chartState}</Panel>
+      <Panel title="Tipos de ingresso" subtitle="Distribuição dos ingressos vendidos">{report ? <TicketTypes types={report.ticketTypes} /> : chartState}</Panel>
     </div>
-    <div className={styles.sectionHeading}><h2>Os protagonistas da programação</h2><span>Filmes e próximas sessões</span></div>
-    <div className={styles.bottom}>
-      <Panel title="Sucessos de bilheteria" subtitle="Os filmes mais vistos no período selecionado">
-        <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th scope="col">Filme</th><th scope="col">Ingressos</th><th scope="col">Receita</th></tr></thead><tbody>{movies.map((movie) => <tr key={movie.name}><th scope="row"><span className={styles.movieName}>{movie.name}</span><span className={styles.genre}>{movie.genre}</span></th><td>{integer(Math.round(data.tickets * movie.share))}</td><td>{brl(Math.round(data.tickets * movie.share) * 30)}</td></tr>)}</tbody></table></div>
-        <Link className={styles.link} href="/cinema/filmes">Explorar filmes em cartaz <ArrowUpRight size={16} aria-hidden="true" /></Link>
-      </Panel>
-      <Panel title="A seguir, nas telas" subtitle="Exemplo da programação de hoje">
-        <ol className={styles.sessions}>{[{ time: "18:30", film: "Duna: Parte Dois", room: "Sala 2 · IMAX · Legendado" }, { time: "19:00", film: "Interestelar", room: "Sala 1 · 2D · Legendado" }, { time: "20:15", film: "Oppenheimer", room: "Sala 3 · 2D · Dublado" }].map((session) => <li key={session.time}><time>{session.time}</time><div><strong>{session.film}</strong><span>{session.room}</span></div></li>)}</ol>
-        <p className={styles.scheduleNote}>Horários ilustrativos. Consulte a programação no site do cinema.</p>
-      </Panel>
-    </div>
-    <footer className={styles.footer}>CineAstra <span>O espetáculo também acontece nos bastidores.</span></footer>
+    <div className={styles.sectionHeading}><h2>Desempenho dos filmes</h2><span>Ranking por ingressos vendidos</span></div>
+    <div className={styles.bottom}><Panel title="Filmes mais vendidos" subtitle={`Ingressos e receita · ${label.toLowerCase()}`} className={styles.movieTablePanel}><MoviePerformanceTable key={period} items={report?.topMovies ?? []} loading={loading} error={error} retry={retry} /></Panel></div>
   </main>;
 }

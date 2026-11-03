@@ -11,12 +11,12 @@ const ageLimit={L:0,'10':10,'12':12,'14':14,'16':16,'18':18};
 const category=line=>line.kind==='STREAMING'?(line.mode==='COMPRA'?'PURCHASE':'RENTAL'):line.kind;
 export const pricingInput=input=>({couponCode:input.couponCode,lines:input.lines.map(line=>({category:category(line),id:line.id,quantity:line.quantity,...(line.halfPreview?{halfPreview:true}:{})}))});
 
-export function createOrderService({model,identity,pricing}){
+export function createOrderService({model,identity,pricing,selfDeclaredAge=false}){
     async function quoteOnConnection(c,input,context){
         const user=await identity.activeActor(c,context);
         if(user.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
-        const proof=await model.age(c,user.id_usuario);
-        if(!proof)throw ApiError.acessoNegado();
+        const proof=await model.age(c,user.id_usuario) ?? (selfDeclaredAge&&ageOn(user.data_nascimento,new Date().toISOString().slice(0,10))>=0?{faixa_etaria:ageOn(user.data_nascimento,new Date().toISOString().slice(0,10))>16?'MAIOR_16':'ATE_16'}:null);
+        if(!proof)throw new ApiError('Verificação de idade vigente necessária para cotar este pedido',403,null,'AGE_VERIFICATION_REQUIRED');
         const seen=new Set(),stock=new Map();
         const addStock=(id,count)=>stock.set(id,(stock.get(id)??0n)+BigInt(count));
         for(const line of input.lines){
@@ -27,7 +27,7 @@ export function createOrderService({model,identity,pricing}){
                 if(!['AGENDADA','EM_CARTAZ'].includes(session.status)||session.sala_status!=='ATIVA'||session.local_status!=='ATIVO'||session.filme_status!=='ATIVO'||!session.disponivel_cinema||idString(session.id_sala)!==idString(seat.id_sala)||seat.status!=='ATIVA')throw conflict('Sessão ou assento indisponível');
                 if(await model.occupiedSeat(c,line.id,line.seatId))throw conflict('Assento ocupado');
                 if(input.localId&&idString(session.id_local)!==input.localId)throw conflict('Sessão de outro local');
-                if(ageOn(user.data_nascimento,session.data)<ageLimit[session.classificacao])throw ApiError.acessoNegado();
+                if(ageOn(user.data_nascimento,session.data)<ageLimit[session.classificacao])throw new ApiError('Idade abaixo da classificação da sessão',403,null,'AGE_RESTRICTION');
             }else if(line.kind==='INPUT'){
                 const row=found(await model.input(c,line.id));
                 if(!row.venda_avulsa||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO')throw conflict('Insumo indisponível no local');
@@ -45,7 +45,7 @@ export function createOrderService({model,identity,pricing}){
             }else{
                 const film=found(await model.film(c,line.id));
                 if(film.status!=='ATIVO'||!film.disponivel_streaming)throw conflict('Filme indisponível');
-                if(ageOn(user.data_nascimento,new Date().toISOString().slice(0,10))<ageLimit[film.classificacao])throw ApiError.acessoNegado();
+                if(ageOn(user.data_nascimento,new Date().toISOString().slice(0,10))<ageLimit[film.classificacao])throw new ApiError('Idade abaixo da classificação do filme',403,null,'AGE_RESTRICTION');
             }
         }
         for(const [id,count] of stock){const row=found(await model.stock(c,id));if(count>2147483647n||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO'||BigInt(row.quantidade)-BigInt(row.quantidade_reservada)<count)throw conflict('Estoque insuficiente no local');}

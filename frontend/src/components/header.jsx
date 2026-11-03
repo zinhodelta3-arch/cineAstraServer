@@ -1,11 +1,12 @@
 "use client"
 
 import { useSession } from "@/hooks/auth/use-session"
+import useStreamingAccess from "@/hooks/cinema/use-streaming-access"
 import SessionControls from "@/components/auth/session-controls"
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { ShoppingCart } from "lucide-react"
+import { ShoppingCart, TvMinimalPlay } from "lucide-react"
 import { useCart } from "@/components/cart/cart-provider"
 import { CartDrawer } from "@/components/cart/cart-drawer"
 import { AppearanceSelector } from "@/components/appearance-selector"
@@ -63,6 +64,7 @@ function TicketSeparator({ className = "" }) {
 
 export function Header() {
   const session = useSession()
+  const canAccessStreaming = useStreamingAccess(session.user)
   const [logoSrc, setLogoSrc] = useState(DEFAULT_LOGO)
   const [cartOpen, setCartOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -97,13 +99,16 @@ export function Header() {
             <Link
               href="/cinema/home"
               aria-label="CineAstra — Página inicial"
-              className="relative z-10 flex h-full shrink-0 items-center rounded-l-lg px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:px-5"
+              className="relative z-10 flex h-full shrink-0 items-center gap-2 rounded-l-lg px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:gap-2.5 sm:px-5"
             >
               <img
                 src={logoSrc}
                 alt="CineAstra"
-                className="h-9 w-[84px] object-contain object-left sm:h-10 sm:w-[120px] 2xl:w-[144px]"
+                className="h-9 w-10 shrink-0 object-contain sm:h-10 sm:w-11"
               />
+              <span aria-hidden="true" className="whitespace-nowrap text-[20px] font-black leading-none tracking-[-0.06em] sm:text-[24px]">
+                <span className="text-black dark:text-white">cine</span><span className="text-primary">astra.</span>
+              </span>
             </Link>
 
             <div className="relative z-10 hidden h-full min-w-0 flex-1 items-center justify-center px-3 xl:flex 2xl:px-4">
@@ -113,6 +118,8 @@ export function Header() {
 
             <div className="relative z-10 ml-auto flex h-full shrink-0 items-center gap-2 pl-2 pr-2 sm:gap-3 sm:pl-4 sm:pr-4">
               <TicketSeparator className="hidden sm:block" />
+
+              {canAccessStreaming && <Link href="/streaming" className="hidden xl:inline-flex shrink-0 items-center gap-2 rounded-md border border-dashed border-primary/60 bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><TvMinimalPlay className="size-4" aria-hidden="true" /> Streaming</Link>}
 
               <div className={session.user ? "flex items-center" : "hidden items-center sm:flex"}><SessionControls session={session} /></div>
 
@@ -134,7 +141,7 @@ export function Header() {
                 <div className="hidden shrink-0 sm:block">
                   <AppearanceSelector />
                 </div>
-                <MobileNavigation session={session} />
+                <MobileNavigation session={session} canAccessStreaming={canAccessStreaming} />
               </div>
             </div>
           </div>

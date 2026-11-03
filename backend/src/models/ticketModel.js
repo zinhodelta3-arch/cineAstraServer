@@ -25,10 +25,13 @@ export function createTicketModel(database){return {
         FROM tickets t JOIN itens_pedido ip ON ip.id_item=t.id_item WHERE ip.id_pedido=? AND t.id_ticket>? ORDER BY t.id_ticket LIMIT ?`,[orderId,cursor,limit+1]),
     byCode:(c,code,lock=false)=>one(c,`SELECT ${ticketProjection}${ticketJoin} WHERE t.codigo=?${lock?' FOR UPDATE':''}`,[code]),
     sessionLocal:(c,sessionId)=>one(c,'SELECT sa.id_local FROM sessoes s JOIN salas sa ON sa.id_sala=s.id_sala WHERE s.id_sessao=?',[sessionId]),
-    staffScope:(c,actorId,role,sessionId,localId)=>one(c,`SELECT e.id_equipe FROM equipes e JOIN sessoes s ON s.id_sessao=e.id_sessao JOIN salas sa ON sa.id_sala=s.id_sala
-        LEFT JOIN equipe_membros m ON m.id_equipe=e.id_equipe AND m.id_usuario=? AND m.status='ATIVO'
-        WHERE e.status='ATIVA' AND (? IS NULL OR e.id_sessao=?) AND sa.id_local=? AND
-          ((?='SUPERVISOR' AND e.id_supervisor=?) OR (?='COLABORADOR' AND m.id_equipe_membro IS NOT NULL)) LIMIT 1`,[actorId,sessionId,sessionId,localId,role,actorId,role]),
+    staffScope:(c,actorId,role,sessionId,localId)=>one(c,`SELECT 1 AS allowed FROM locais l WHERE l.id_local=? AND (
+        (?='SUPERVISOR' AND EXISTS (SELECT 1 FROM supervisor_locais sl WHERE sl.id_supervisor=? AND sl.id_local=l.id_local))
+        OR (?='COLABORADOR' AND EXISTS (
+            SELECT 1 FROM equipes e JOIN sessoes s ON s.id_sessao=e.id_sessao JOIN salas sa ON sa.id_sala=s.id_sala
+            JOIN equipe_membros m ON m.id_equipe=e.id_equipe AND m.id_usuario=? AND m.status='ATIVO'
+            WHERE e.status='ATIVA' AND sa.id_local=l.id_local AND (? IS NULL OR e.id_sessao=?)))
+        ) LIMIT 1`,[localId,role,actorId,role,actorId,sessionId,sessionId]),
     sessionTickets:(c,sessionId,limit,cursor)=>rows(c,`SELECT t.id_ticket,t.id_item,t.tipo,t.status,t.unidade,t.expira_em,t.data_utilizacao,t.saida_em,
         (SELECT tp.tipo FROM ticket_passagens tp WHERE tp.id_ticket=t.id_ticket ORDER BY tp.id_passagem DESC LIMIT 1) AS ultima_passagem
         FROM tickets t JOIN itens_pedido ip ON ip.id_item=t.id_item WHERE COALESCE(ip.id_sessao,t.id_sessao_retirada)=? AND t.id_ticket>? ORDER BY t.id_ticket LIMIT ?`,[sessionId,cursor,limit+1]),

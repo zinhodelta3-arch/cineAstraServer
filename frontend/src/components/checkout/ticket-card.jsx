@@ -2,7 +2,7 @@ import { Ticket, Plus, Minus, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { brl } from "./ticket-state.mjs";
 
-export default function TicketCard({ type, count, selectedCount, seatCount, onChange, onInfo, large = false }) {
+export default function TicketCard({ type, count, selectedCount, seatCount, onChange, onInfo, locked = false, large = false }) {
   const selected = count > 0;
   const remaining = seatCount - selectedCount;
   return (
@@ -17,9 +17,9 @@ export default function TicketCard({ type, count, selectedCount, seatCount, onCh
         <div className="ca-ticket-stub">
           <span className="ca-stub-caption">QUANTIDADE</span>
           <div className="ca-counter" role="group" aria-label={`Quantidade de ${type.name}`}>
-            <Button variant="outline" className="ca-counter-button" disabled={count === 0} onClick={() => onChange(type.id, -1)} aria-label={`Remover uma ${type.name.toLowerCase()}`}><Minus size={17} aria-hidden="true" /></Button>
+            <Button variant="outline" className="ca-counter-button" disabled={locked || count === 0} onClick={() => onChange(type.id, -1)} aria-label={`Remover uma ${type.name.toLowerCase()}`}><Minus size={17} aria-hidden="true" /></Button>
             <output className="ca-counter-value" aria-label={`${count} ingressos de ${type.name}`}>{String(count).padStart(2, "0")}</output>
-            <Button variant="outline" className="ca-counter-button" disabled={remaining <= 0} onClick={() => onChange(type.id, 1)} aria-label={`Adicionar uma ${type.name.toLowerCase()}`}><Plus size={17} aria-hidden="true" /></Button>
+            <Button variant="outline" className="ca-counter-button" disabled={locked || remaining <= 0} onClick={() => onChange(type.id, 1)} aria-label={`Adicionar uma ${type.name.toLowerCase()}`}><Plus size={17} aria-hidden="true" /></Button>
           </div>
           <span className="ca-stub-end">{selected ? <><Check size={13} aria-hidden="true" /> No pedido</> : "ADMIT ONE"}</span>
         </div>

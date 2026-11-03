@@ -1,0 +1,371 @@
+/* Cinema 2026: paletas inspiradas nos filmes, preservando os tokens CineAstra. */
+
+html[data-theme="homem-aranha"],
+html[data-theme="odisseia"],
+html[data-theme="mario-galaxy"],
+html[data-theme="toy-story-5"],
+html[data-theme="mandalorian-grogu"],
+html[data-theme="moana"],
+html[data-theme="devoradores-estrelas"],
+html[data-theme="supergirl"],
+html[data-theme="mestres-universo"],
+html[data-theme="panico-7"] {
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --input: var(--border);
+  --ring: var(--primary);
+  --destructive: #b42335;
+  --destructive-foreground: #ffffff;
+  --chart-1: var(--primary);
+  --chart-2: var(--secondary);
+  --chart-3: var(--muted-foreground);
+  --chart-4: var(--accent-foreground);
+  --chart-5: var(--border);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --theme-font-sans: var(--font-geist-sans), sans-serif;
+  --theme-font-serif: Georgia, serif;
+  --theme-font-mono: var(--font-geist-mono), monospace;
+  --radius: 0.625rem;
+}
+
+html.dark[data-theme="homem-aranha"],
+html.dark[data-theme="odisseia"],
+html.dark[data-theme="mario-galaxy"],
+html.dark[data-theme="toy-story-5"],
+html.dark[data-theme="mandalorian-grogu"],
+html.dark[data-theme="moana"],
+html.dark[data-theme="devoradores-estrelas"],
+html.dark[data-theme="supergirl"],
+html.dark[data-theme="mestres-universo"],
+html.dark[data-theme="panico-7"] {
+  --destructive: #ff9aa9;
+  --destructive-foreground: #300b14;
+}
+
+html[data-theme="homem-aranha"] {
+  --background: #f4f6fc;
+  --foreground: #14243d;
+  --card: #ffffff;
+  --primary: #b91c1c;
+  --primary-foreground: #ffffff;
+  --secondary: #173d78;
+  --secondary-foreground: #ffffff;
+  --muted: #e3e9f4;
+  --muted-foreground: #48566f;
+  --accent: #e7eefb;
+  --accent-foreground: #173d78;
+  --border: #8c9cb7;
+  --film-logo-red-shift: 0deg;
+  --film-logo-gold-shift: 175deg;
+}
+
+html.dark[data-theme="homem-aranha"] {
+  --background: #090f1e;
+  --foreground: #f1f5ff;
+  --card: #111d33;
+  --primary: #f56876;
+  --primary-foreground: #200913;
+  --secondary: #1e4074;
+  --secondary-foreground: #edf3ff;
+  --muted: #1c2a43;
+  --muted-foreground: #aebcd4;
+  --accent: #233a5a;
+  --accent-foreground: #f1f5ff;
+  --border: #536c91;
+}
+
+html[data-theme="odisseia"] {
+  --background: #f6f0e4;
+  --foreground: #243940;
+  --card: #fffaf1;
+  --primary: #8b4a20;
+  --primary-foreground: #ffffff;
+  --secondary: #184b5c;
+  --secondary-foreground: #ffffff;
+  --muted: #e7ddcb;
+  --muted-foreground: #5c625e;
+  --accent: #e5d5b5;
+  --accent-foreground: #563c1f;
+  --border: #a19983;
+  --film-logo-red-shift: 25deg;
+  --film-logo-gold-shift: 0deg;
+}
+
+html.dark[data-theme="odisseia"] {
+  --background: #101c23;
+  --foreground: #f3e9d5;
+  --card: #182b34;
+  --primary: #dfb775;
+  --primary-foreground: #201a0e;
+  --secondary: #224a59;
+  --secondary-foreground: #f2eee1;
+  --muted: #263942;
+  --muted-foreground: #b5c8c9;
+  --accent: #3c3a2a;
+  --accent-foreground: #f4dfaf;
+  --border: #637f84;
+}
+
+html[data-theme="mario-galaxy"] {
+  --background: #f1f5ff;
+  --foreground: #18294e;
+  --card: #ffffff;
+  --primary: #075bb0;
+  --primary-foreground: #ffffff;
+  --secondary: #8f265f;
+  --secondary-foreground: #ffffff;
+  --muted: #e3eafa;
+  --muted-foreground: #4e5d7d;
+  --accent: #fff0b1;
+  --accent-foreground: #543c09;
+  --border: #8e9fc1;
+  --film-logo-red-shift: 195deg;
+  --film-logo-gold-shift: 235deg;
+}
+
+html.dark[data-theme="mario-galaxy"] {
+  --background: #0e102a;
+  --foreground: #f2f1ff;
+  --card: #1a2043;
+  --primary: #65d7ef;
+  --primary-foreground: #082333;
+  --secondary: #64318a;
+  --secondary-foreground: #ffffff;
+  --muted: #292d50;
+  --muted-foreground: #b9bddf;
+  --accent: #33234e;
+  --accent-foreground: #f1e8ff;
+  --border: #69729b;
+}
+
+html[data-theme="toy-story-5"] {
+  --background: #f5f7eb;
+  --foreground: #27374c;
+  --card: #ffffff;
+  --primary: #2756a6;
+  --primary-foreground: #ffffff;
+  --secondary: #706000;
+  --secondary-foreground: #ffffff;
+  --muted: #e8ecd9;
+  --muted-foreground: #53614e;
+  --accent: #fff1b4;
+  --accent-foreground: #55420b;
+  --border: #939f79;
+  --film-logo-red-shift: 195deg;
+  --film-logo-gold-shift: 0deg;
+}
+
+html.dark[data-theme="toy-story-5"] {
+  --background: #101d29;
+  --foreground: #f4f4df;
+  --card: #192d3d;
+  --primary: #f2ca55;
+  --primary-foreground: #27200a;
+  --secondary: #325c9f;
+  --secondary-foreground: #ffffff;
+  --muted: #253d40;
+  --muted-foreground: #b8c9bf;
+  --accent: #253d31;
+  --accent-foreground: #d6efbf;
+  --border: #667e87;
+}
+
+html[data-theme="mandalorian-grogu"] {
+  --background: #f0f2eb;
+  --foreground: #26382e;
+  --card: #fafcf7;
+  --primary: #476444;
+  --primary-foreground: #ffffff;
+  --secondary: #6b5140;
+  --secondary-foreground: #ffffff;
+  --muted: #dfe6d7;
+  --muted-foreground: #52604f;
+  --accent: #e1e8d4;
+  --accent-foreground: #34452f;
+  --border: #8f9d88;
+  --film-logo-red-shift: 110deg;
+  --film-logo-gold-shift: 50deg;
+}
+
+html.dark[data-theme="mandalorian-grogu"] {
+  --background: #101916;
+  --foreground: #edf4e7;
+  --card: #1c2a24;
+  --primary: #a8c18d;
+  --primary-foreground: #101a12;
+  --secondary: #405243;
+  --secondary-foreground: #f2f6eb;
+  --muted: #2b3a31;
+  --muted-foreground: #b7c7af;
+  --accent: #344a37;
+  --accent-foreground: #dfefd2;
+  --border: #647e68;
+}
+
+html[data-theme="moana"] {
+  --background: #f4f8f0;
+  --foreground: #173d43;
+  --card: #ffffff;
+  --primary: #08706e;
+  --primary-foreground: #ffffff;
+  --secondary: #9e4227;
+  --secondary-foreground: #ffffff;
+  --muted: #dfede7;
+  --muted-foreground: #49665e;
+  --accent: #fde5d6;
+  --accent-foreground: #743b28;
+  --border: #88a59a;
+  --film-logo-red-shift: 155deg;
+  --film-logo-gold-shift: 340deg;
+}
+
+html.dark[data-theme="moana"] {
+  --background: #08272e;
+  --foreground: #e9f7ef;
+  --card: #103b41;
+  --primary: #5dd7cb;
+  --primary-foreground: #072d31;
+  --secondary: #8f3d30;
+  --secondary-foreground: #fff0e5;
+  --muted: #1b4b50;
+  --muted-foreground: #afd1c9;
+  --accent: #164b50;
+  --accent-foreground: #c8f2e6;
+  --border: #4e8b8b;
+}
+
+html[data-theme="devoradores-estrelas"] {
+  --background: #f7f2e9;
+  --foreground: #253b40;
+  --card: #fffcf6;
+  --primary: #8c491d;
+  --primary-foreground: #ffffff;
+  --secondary: #165b68;
+  --secondary-foreground: #ffffff;
+  --muted: #e9e1d0;
+  --muted-foreground: #5a6059;
+  --accent: #dceff0;
+  --accent-foreground: #1b505a;
+  --border: #a39c85;
+  --film-logo-red-shift: 25deg;
+  --film-logo-gold-shift: 150deg;
+}
+
+html.dark[data-theme="devoradores-estrelas"] {
+  --background: #0b1d25;
+  --foreground: #f3ede1;
+  --card: #14313b;
+  --primary: #f4b56a;
+  --primary-foreground: #2c1a09;
+  --secondary: #15515c;
+  --secondary-foreground: #edfafd;
+  --muted: #24434c;
+  --muted-foreground: #b4cdd0;
+  --accent: #3d3425;
+  --accent-foreground: #ffe2b5;
+  --border: #5c8088;
+}
+
+html[data-theme="supergirl"] {
+  --background: #f4f5fc;
+  --foreground: #192e52;
+  --card: #ffffff;
+  --primary: #184e9c;
+  --primary-foreground: #ffffff;
+  --secondary: #b62032;
+  --secondary-foreground: #ffffff;
+  --muted: #e4e9f5;
+  --muted-foreground: #4b5c79;
+  --accent: #fff0bb;
+  --accent-foreground: #59430d;
+  --border: #929fba;
+  --film-logo-red-shift: 0deg;
+  --film-logo-gold-shift: 0deg;
+}
+
+html.dark[data-theme="supergirl"] {
+  --background: #10172d;
+  --foreground: #f6f2e8;
+  --card: #1a2947;
+  --primary: #f5ce67;
+  --primary-foreground: #2b210b;
+  --secondary: #912b41;
+  --secondary-foreground: #ffffff;
+  --muted: #293651;
+  --muted-foreground: #bcc5dc;
+  --accent: #3c3444;
+  --accent-foreground: #fff0df;
+  --border: #687b9c;
+}
+
+html[data-theme="mestres-universo"] {
+  --background: #f5f1fa;
+  --foreground: #332647;
+  --card: #ffffff;
+  --primary: #57339d;
+  --primary-foreground: #ffffff;
+  --secondary: #17686e;
+  --secondary-foreground: #ffffff;
+  --muted: #e8dff2;
+  --muted-foreground: #64536f;
+  --accent: #d5eeeb;
+  --accent-foreground: #245356;
+  --border: #a494b4;
+  --film-logo-red-shift: 265deg;
+  --film-logo-gold-shift: 120deg;
+}
+
+html.dark[data-theme="mestres-universo"] {
+  --background: #191024;
+  --foreground: #f3ebfa;
+  --card: #2a1d3b;
+  --primary: #b4f0e2;
+  --primary-foreground: #092828;
+  --secondary: #62409b;
+  --secondary-foreground: #ffffff;
+  --muted: #3a2a4c;
+  --muted-foreground: #cbb8dc;
+  --accent: #274447;
+  --accent-foreground: #d6f6ec;
+  --border: #8a6a9f;
+}
+
+html[data-theme="panico-7"] {
+  --background: #f4f1ef;
+  --foreground: #28252b;
+  --card: #ffffff;
+  --primary: #9c1832;
+  --primary-foreground: #ffffff;
+  --secondary: #25252b;
+  --secondary-foreground: #ffffff;
+  --muted: #e5dfdf;
+  --muted-foreground: #62585e;
+  --accent: #f4dde2;
+  --accent-foreground: #7a2538;
+  --border: #a2979e;
+  --film-logo-red-shift: 0deg;
+  --film-logo-gold-shift: 340deg;
+}
+
+html.dark[data-theme="panico-7"] {
+  --background: #111014;
+  --foreground: #f5eef0;
+  --card: #201c24;
+  --primary: #ff788e;
+  --primary-foreground: #2e0b17;
+  --secondary: #443b45;
+  --secondary-foreground: #faf0f3;
+  --muted: #332b35;
+  --muted-foreground: #c9b9c2;
+  --accent: #482532;
+  --accent-foreground: #ffdce4;
+  --border: #82727e;
+}

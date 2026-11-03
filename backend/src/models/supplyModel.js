@@ -6,13 +6,26 @@ export function createSupplyModel(database) {
     const itemSpec = kind => kind === 'input' ? ['insumos','id_insumo'] : ['equipamentos','id_equipamento'];
     return {
         local: (id,c=database) => one(c,'SELECT id_local,status FROM locais WHERE id_local = ?',[id]),
+        supervisorLocation: (userId,c=database) => one(c,'SELECT id_local FROM supervisor_locais WHERE id_supervisor = ?',[userId]),
+        availableInputs(localId,q,c=database) {
+            if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
+            return rows(c,`SELECT i.id_insumo,i.nome,i.id_local AS id_local_origem,l.nome AS nome_origem,i.quantidade-i.quantidade_reservada AS disponivel
+                FROM insumos i JOIN locais l ON l.id_local=i.id_local JOIN fornecedores f ON f.id_fornecedor=i.id_fornecedor
+                JOIN usuarios u ON u.id_usuario=f.id_usuario
+                JOIN fornecedor_locais origem ON origem.id_fornecedor=f.id_fornecedor AND origem.id_local=i.id_local
+                JOIN fornecedor_locais destino ON destino.id_fornecedor=f.id_fornecedor AND destino.id_local=?
+                WHERE i.id_local<>? AND i.id_insumo>? AND i.status='DISPONIVEL' AND i.quantidade-i.quantidade_reservada>0
+                AND l.status='ATIVO' AND f.status='ATIVO' AND u.status='ATIVO' AND u.tipo_usuario='FORNECEDOR'
+                AND origem.status='ATIVO' AND destino.status='ATIVO'
+                ORDER BY i.id_insumo LIMIT ${q.limit+1}`,[localId,localId,q.cursor??'0']);
+        },
         stock: async (localId,c=database) => ({
             inputs:await rows(c,"SELECT id_insumo AS id,id_fornecedor,nome,quantidade,quantidade_reservada,status FROM insumos WHERE id_local=? ORDER BY id_insumo",[localId]),
             equipment:await rows(c,"SELECT id_equipamento AS id,id_fornecedor,nome,quantidade,status FROM equipamentos WHERE id_local=? ORDER BY id_equipamento",[localId])
         }),
         incoming: (localId,c=database) => rows(c,"SELECT l.id_logistica,l.id_insumo_origem,l.id_equipamento_origem,l.quantidade,l.status,COALESCE(i.nome,e.nome) AS nome FROM logistica l LEFT JOIN insumos i ON i.id_insumo=l.id_insumo_origem LEFT JOIN equipamentos e ON e.id_equipamento=l.id_equipamento_origem WHERE l.id_local_destino=? AND l.status IN ('ENVIADO','EM_TRANSITO') AND l.id_solicitacao IS NOT NULL ORDER BY l.id_logistica",[localId]),
         session: (id,c=database) => one(c,'SELECT s.id_sessao,s.status,l.id_local,l.status AS local_status FROM sessoes s JOIN salas a ON a.id_sala=s.id_sala JOIN locais l ON l.id_local=a.id_local WHERE s.id_sessao = ?',[id]),
-        member: (userId,sessionId,c=database) => one(c,"SELECT e.id_equipe FROM equipes e LEFT JOIN equipe_membros m ON m.id_equipe=e.id_equipe AND m.id_usuario=? AND m.status='ATIVO' WHERE e.id_sessao=? AND e.status IN ('ATIVA','FINALIZADA') AND (e.id_supervisor=? OR m.id_usuario IS NOT NULL) LIMIT 1",[userId,sessionId,userId]),
+        member: (userId,sessionId,c=database) => one(c,"SELECT e.id_equipe FROM equipes e JOIN equipe_membros m ON m.id_equipe=e.id_equipe AND m.id_usuario=? AND m.status='ATIVO' WHERE e.id_sessao=? AND e.status IN ('ATIVA','FINALIZADA') LIMIT 1",[userId,sessionId]),
         supplierByUser: (id,c=database) => one(c,'SELECT id_fornecedor,status FROM fornecedores WHERE id_usuario = ?',[id]),
         grant: (supplierId,localId,c=database) => one(c,"SELECT f.status AS supplier_status,u.status AS user_status,u.tipo_usuario,fl.status AS grant_status,l.status AS local_status FROM fornecedores f JOIN usuarios u ON u.id_usuario=f.id_usuario JOIN locais l ON l.id_local=? LEFT JOIN fornecedor_locais fl ON fl.id_fornecedor=f.id_fornecedor AND fl.id_local=l.id_local WHERE f.id_fornecedor=?",[localId,supplierId]),
         item(kind,id,c=database,lock=false) { const [table,key]=itemSpec(kind); return one(c,`SELECT ${key},id_fornecedor,id_local,nome,descricao,categoria,quantidade,${kind==='input'?'quantidade_reservada,quantidade_minima,preco,':'numero_patrimonio,'}status FROM ${table} WHERE ${key}=?${lock?' FOR UPDATE':''}`,[id]); },

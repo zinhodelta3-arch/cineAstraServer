@@ -1,6 +1,7 @@
 import {ApiError} from '../utils/ApiError.js';
 import {idString} from '../utils/dto.js';
 import {instant} from './identityService.js';
+import {youtubeTrailerId} from '../utils/youtubeTrailer.js';
 
 const ageLimit={L:0,'10':10,'12':12,'14':14,'16':16,'18':18};
 const ageOn=(birth,on)=>{if(!birth)return -1;const b=String(birth).slice(0,10),d=String(on).slice(0,10);return Number(d.slice(0,4))-Number(b.slice(0,4))-(d.slice(5)<b.slice(5)?1:0);};
@@ -12,11 +13,17 @@ const validItem=item=>['ALUGUEL','COMPRA'].includes(item.tipo_streaming)&&item.i
 const dto=(row,now)=>({id:idString(row.id_acesso),itemId:idString(row.id_item),filmId:idString(row.id_filme),mode:row.tipo_streaming,status:row.status==='ATIVO'&&row.data_expiracao&&instant(row.data_expiracao)<=now?'EXPIRADO':row.status,available:available(row,now),startsAt:date(row.data_inicio),expiresAt:date(row.data_expiracao)});
 const paid=status=>['PAGO','ISENTO'].includes(status);
 const catalogBenefit=value=>{try{return (typeof value==='string'?JSON.parse(value):value)?.catalogAccess===true;}catch{return false;}};
-export function createStreamingService({model,identity,provider}){
+function trailerPlayback(value){
+    const videoId=youtubeTrailerId(value);
+    return videoId?{kind:'youtube',url:`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`,expiresAt:new Date(Date.now()+60000).toISOString()}:null;
+}
+export function createStreamingService({model,identity,provider,selfDeclaredAge=false}){
     async function actor(c,context){const a=await identity.activeActor(c,context);if(a.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();return a;}
     async function checkAge(c,user,classification){
-        const proof=await model.age(c,user.id_usuario);
-        if(!proof||proof.faixa_etaria==='ATE_16'||ageOn(user.data_nascimento,new Date().toISOString().slice(0,10))<(ageLimit[classification]??Infinity))throw ApiError.acessoNegado();
+        const age=ageOn(user.data_nascimento,new Date().toISOString().slice(0,10));
+        const proof=await model.age(c,user.id_usuario) ?? (selfDeclaredAge&&age>=0?{faixa_etaria:age>16?'MAIOR_16':'ATE_16'}:null);
+        if(!proof)throw new ApiError('Confira a verificação de idade da sua conta.',403,null,'AGE_VERIFICATION_REQUIRED');
+        if(proof.faixa_etaria==='ATE_16'||age<(ageLimit[classification]??Infinity))throw new ApiError('Sua conta não atende à classificação etária deste filme.',403,null,'AGE_RESTRICTION');
     }
     async function canGrant(c,orderId){
         const items=await model.orderItems(c,orderId);
@@ -53,7 +60,7 @@ export function createStreamingService({model,identity,provider}){
         if(!row)throw ApiError.naoEncontrado();
         if(!available(row,Date.now()))throw ApiError.acessoNegado();
         await checkAge(c,user,row.classificacao);
-        if(row.filme_status!=='ATIVO'||!row.disponivel_streaming||!row.url_reproducao)throw ApiError.indisponivel();
+        if(row.filme_status!=='ATIVO'||!row.disponivel_streaming||(!row.url_reproducao&&!trailerPlayback(row.trailer)))throw ApiError.indisponivel();
         return row;
     },context);}
     async function checkedPlanFilm(filmId,context){return identity.transaction(async c=>{
@@ -68,9 +75,9 @@ export function createStreamingService({model,identity,provider}){
             if(Boolean(row.suspenso_por_cobranca)&&(owner||row.tipo_divisao==='TITULAR_PAGA'))return false;
             return paid(owner||row.tipo_divisao==='TITULAR_PAGA'?row.cobranca_titular:row.cobranca_propria??row.cobranca_titular);
         });
-        if(!eligible)throw ApiError.acessoNegado();
+        if(!eligible)throw new ApiError('Você ainda não tem acesso a este filme.',403,null,'STREAMING_ACCESS_REQUIRED');
         await checkAge(c,user,film.classificacao);
-        if(film.status!=='ATIVO'||!film.disponivel_streaming||!film.url_reproducao)throw ApiError.indisponivel();
+        if(film.status!=='ATIVO'||!film.disponivel_streaming||(!film.url_reproducao&&!trailerPlayback(film.trailer)))throw ApiError.indisponivel();
         return {film,subscriptionId:idString(eligible.id_assinatura)};
     },context);}
     function ready(){if(provider?.available!==true||provider.privateOrigin!==true||typeof provider.sign!=='function'||!Array.isArray(provider.deliveryHosts)||!provider.deliveryHosts.length)throw ApiError.indisponivel();}
@@ -82,6 +89,8 @@ export function createStreamingService({model,identity,provider}){
     }
     async function play(id,context){
         const row=await checkedAccess(id,context);
+        const trailer=trailerPlayback(row.trailer);
+        if(trailer)return {accessId:idString(row.id_acesso),...trailer};
         ready();
         const result=await provider.sign({source:row.url_reproducao,accessId:idString(row.id_acesso),filmId:idString(row.id_filme),ttlSeconds:60,signal:context.signal});
         const signed=signedUrl(result);
@@ -90,6 +99,8 @@ export function createStreamingService({model,identity,provider}){
     }
     async function playWithPlan(filmId,context){
         const entitlement=await checkedPlanFilm(filmId,context);
+        const trailer=trailerPlayback(entitlement.film.trailer);
+        if(trailer)return {filmId:idString(filmId),subscriptionId:entitlement.subscriptionId,...trailer};
         ready();
         const result=await provider.sign({source:entitlement.film.url_reproducao,subscriptionId:entitlement.subscriptionId,filmId:idString(filmId),ttlSeconds:60,signal:context.signal});
         const signed=signedUrl(result);

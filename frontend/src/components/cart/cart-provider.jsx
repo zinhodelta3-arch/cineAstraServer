@@ -40,7 +40,7 @@ export function CartProvider({ children }) {
       price: Math.max(0, Number(product.price) || 0),
       image: product.image || "",
       details: product.details || "",
-      ...(product.sourceId && product.localId && ["INPUT", "COMBO"].includes(product.purchaseKind) ? {sourceId:String(product.sourceId),localId:String(product.localId),purchaseKind:product.purchaseKind} : {}),
+      ...(product.sourceId && product.localId && ["INPUT", "COMBO", "SESSION"].includes(product.purchaseKind) ? {sourceId:String(product.sourceId),localId:String(product.localId),purchaseKind:product.purchaseKind,...(product.purchaseKind === "SESSION" && product.seatId ? {seatId:String(product.seatId)} : {})} : {}),
     }
     setItems((current) => {
       const existing = current.find((entry) => entry.id === item.id && entry.type === item.type && entry.details === item.details)

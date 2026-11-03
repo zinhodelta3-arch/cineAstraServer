@@ -1,78 +1,74 @@
 "use client";
 
 import useStreamingHome from "@/hooks/streaming/home/use-streaming-home";
-import { Bookmark } from "lucide-react";
-import { POPULAR, RECENT, PROGRESS, PREMIERES, SOON, TOP10, GENRES } from "./data";
+import { ArrowRight, Bookmark, LayoutGrid } from "lucide-react";
+import Link from "next/link";
 import Button from "./button";
-import SectionTitle from "./section-title";
 import Row from "./row";
 import HeroSection from "./hero-section";
 import Thumb from "./thumb";
 import Top10Card from "./top10-card";
-import PosterTile from "./poster-tile";
-import PlayerModal from "./player-modal";
+import { useRouter } from "next/navigation";
 import DetailsModal from "./details-modal";
 import ListDrawer from "./list-drawer";
 import CinemaStyles from "./cinema-styles";
 
 export default function CineAstraStream() {
-  const { genre, setGenre, playing, setPlaying, details, setDetails, myList, isListOpen, isInList, toggleList, filtered, closePlayer, closeDetails, openList, closeList } = useStreamingHome();
+  const { ready, error, actionError, setActionError, retry, catalog, genreRows, popular, heroes, recent, continuing, premieres, soon, progress, myList, favoriteIds, toggleList, details, setDetails, isListOpen, closeDetails, openList, closeList } = useStreamingHome();
+
+  const router = useRouter();
+  const setPlaying = (movie) => router.push(`/streaming/assistir/filme/${encodeURIComponent(movie.id)}`);
 
   const thumb = (m) => (
-    <Thumb key={m.id} movie={m} onSelect={setDetails} onPlay={setPlaying} inList={isInList(m.id)} onToggleList={toggleList} progress={PROGRESS[m.id]} />
+    <Thumb key={m.id} movie={m} onSelect={setDetails} onPlay={setPlaying} inList={favoriteIds.has(m.id)} onToggleList={toggleList} progress={progress[m.id]} />
   );
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
       <CinemaStyles />
 
+      {!ready && <div className="mx-auto max-w-[1800px] px-5 md:px-12 pt-32 pb-24" role={error ? "alert" : "status"}><p className="text-lg text-foreground">{error || "Carregando o streaming..."}</p>{error && <Button className="mt-4" onClick={retry}>Tentar novamente</Button>}</div>}
+      {ready && actionError && <div role="alert" className="mx-auto max-w-[1800px] px-5 md:px-12 pt-6 text-sm text-destructive">{actionError} <button type="button" className="ml-3 underline" onClick={() => setActionError("")}>Fechar</button></div>}
+
+      {ready && <>
+
     <HeroSection
+      heroes={heroes}
       onPlay={setPlaying}
       onSelect={setDetails}
       myList={myList}
       onToggleList={toggleList}
       />
 
-      {/* FILEIRAS DE CONTEÚDO COM ESPAÇAMENTO REFINADO */}
-      <div className="relative z-30 -mt-28 sm:-mt-36 space-y-4 md:space-y-6">
-        <Row title="Populares na CineAstra">{POPULAR.map((m) => thumb(m))}</Row>
-        <Row title="Assistidos recentemente">{RECENT.map((m) => thumb(m))}</Row>
-        <Row title="Top 10 no Brasil hoje">
-          {TOP10.map((m, i) => <Top10Card key={m.id} movie={m} rank={i + 1} onSelect={setDetails} />)}
+      <div className={`relative z-30 ${heroes.length ? "-mt-28 sm:-mt-36" : "pt-12"} space-y-4 md:space-y-6 pb-12`}>
+        <Row title="Continuar assistindo" emptyMessage={!continuing.length ? "Os filmes com reprodução em andamento aparecerão aqui." : undefined}>{continuing.map((m) => thumb(m))}</Row>
+        <Row title="Populares na CineAstra" emptyMessage={!popular.length ? "Os destaques de popularidade aparecerão aqui quando houver dados disponíveis." : undefined}>{popular.map((m) => thumb(m))}</Row>
+        <Row title="Assistidos recentemente" emptyMessage={!recent.length ? "Seu histórico de filmes aparecerá aqui." : undefined}>{recent.map((m) => thumb(m))}</Row>
+        <Row title="Mais assistidos na CineAstra" emptyMessage={!popular.length ? "O ranking aparecerá aqui conforme os dados de popularidade estiverem disponíveis." : undefined}>
+          {popular.slice(0, 10).map((m, i) => <Top10Card key={m.id} movie={m} rank={i + 1} onSelect={setDetails} />)}
         </Row>
-        <Row title="Estreias da semana">{PREMIERES.map((m) => thumb(m))}</Row>
-        <Row title="Valem a espera">{SOON.map((m) => thumb(m))}</Row>
+        <Row title="Lançamentos" emptyMessage={!premieres.length ? "Novos títulos aparecerão aqui em breve." : undefined}>{premieres.map((m) => thumb(m))}</Row>
+        <Row title="Valem a espera" emptyMessage={!soon.length ? "Aguarde as próximas novidades do catálogo." : undefined}>{soon.map((m) => thumb(m))}</Row>
+        {genreRows.map((row) => <Row key={row.id} title={row.title}>{row.films.map((movie) => thumb(movie))}</Row>)}
       </div>
 
-      {/* CATÁLOGO COMPLETO */}
-      <section id="catalogo" className="py-20 max-w-[1800px] mx-auto px-5 md:px-12">
-        <SectionTitle eyebrow="Catálogo completo" title="Todos os filmes" description="Escolha um gênero e explore o catálogo da CineAstra." />
-
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
-          {GENRES.map((g) => (
-            <Button key={g} variant={genre === g ? "default" : "outline"} size="sm" className="shrink-0" onClick={() => setGenre(g)}>{g}</Button>
-          ))}
-        </div>
-
-        {filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum filme neste gênero no momento.</p>
-        ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3 md:gap-4">
-            {filtered.map((m) => <PosterTile key={m.id} movie={m} onSelect={setDetails} inList={isInList(m.id)} />)}
-          </div>
-        )}
-      </section>
+      <div className="max-w-[1800px] mx-auto px-5 md:px-12 pb-16">
+        <Link href="/streaming/categorias" className="flex min-h-16 flex-wrap items-center gap-3 rounded-md border border-dashed border-border bg-card px-6 py-5 text-sm font-bold text-foreground hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
+          <LayoutGrid size={20} aria-hidden="true" /><span>Explorar todas as categorias</span><ArrowRight className="ml-auto" size={20} aria-hidden="true" />
+        </Link>
+      </div>
 
       {/* MODAIS & LISTA */}
-      {playing && <PlayerModal movie={playing} onClose={closePlayer} />}
       {details && (
         <DetailsModal
           key={details.id}
           movie={details}
           onClose={closeDetails}
           onPlay={setPlaying}
-          inList={isInList(details.id)}
+          inList={favoriteIds.has(details.id)}
           onToggleList={toggleList}
+          catalog={catalog}
+          progress={progress}
         />
       )}
 
@@ -88,6 +84,8 @@ export default function CineAstraStream() {
       {isListOpen && (
         <ListDrawer items={myList} onRemove={toggleList} onPlay={setPlaying} onClose={closeList} />
       )}
+
+      </>}
 
     </div>
   );

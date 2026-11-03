@@ -153,10 +153,6 @@
       "description": "Minha lista por perfil de visualização."
     },
     {
-      "name": "Progresso de streaming",
-      "description": "Histórico resumido e continuar assistindo por perfil."
-    },
-    {
       "name": "Admin: usuários e privacidade"
     },
     {
@@ -168,6 +164,10 @@
     {
       "name": "Perfis de streaming",
       "description": "Perfis de visualização próprios do cliente, separados da identidade da conta."
+    },
+    {
+      "name": "Progresso de streaming",
+      "description": "Histórico resumido e continuar assistindo por perfil."
     }
   ],
   "security": [
@@ -10336,6 +10336,176 @@
         }
       }
     },
+    "/api/teams/context": {
+      "get": {
+        "operationId": "get_team_context",
+        "tags": [
+          "Equipes"
+        ],
+        "summary": "Consultar cinemas da unidade",
+        "description": "SUPERVISOR vê o cinema atribuído; COLABORADOR vê cinemas das equipes em que possui vínculo ativo.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "locations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id_local": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,9}$"
+                              },
+                              "nome": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              }
+                            },
+                            "required": [
+                              "id_local",
+                              "nome"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "locations"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/teams/collaborator": {
+      "get": {
+        "operationId": "find_team_collaborator",
+        "tags": [
+          "Equipes"
+        ],
+        "summary": "Localizar colaborador para convite",
+        "description": "SUPERVISOR vinculado a um cinema localiza por e-mail exato uma conta COLABORADOR ativa; retorna somente identificador e nome.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 150
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$"
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
     "/api/teams": {
       "get": {
         "operationId": "list_teams",
@@ -10343,7 +10513,7 @@
           "Equipes"
         ],
         "summary": "Listar equipes visíveis",
-        "description": "ADMIN vê todas; SUPERVISOR somente equipes próprias; COLABORADOR vê equipes ativas de sessões AGENDADA/EM_CARTAZ.",
+        "description": "ADMIN vê todas; SUPERVISOR vê equipes do cinema atribuído; COLABORADOR vê equipes com vínculo ativo ou convite pendente próprio.",
         "security": [
           {
             "bearerAuth": []
@@ -10456,7 +10626,7 @@
           "Equipes"
         ],
         "summary": "Criar equipe para sessão",
-        "description": "ADMIN indica supervisor ativo; SUPERVISOR só cria para si. Sessão deve estar AGENDADA/EM_CARTAZ e aceita uma equipe ativa.",
+        "description": "ADMIN indica supervisor ativo; SUPERVISOR só cria para si. Supervisor deve estar vinculado ao cinema da sessão. Sessão deve estar AGENDADA/EM_CARTAZ e aceita uma equipe ativa.",
         "security": [
           {
             "bearerAuth": []
@@ -10567,7 +10737,7 @@
           "Equipes"
         ],
         "summary": "Consultar equipe",
-        "description": "SUPERVISOR somente equipe própria. COLABORADOR vê equipe ativa de sessão vigente ou equipe na qual é membro ativo.",
+        "description": "SUPERVISOR vê equipes do cinema atribuído. COLABORADOR vê equipe com vínculo ativo ou convite pendente próprio.",
         "security": [
           {
             "bearerAuth": []
@@ -10655,7 +10825,7 @@
           "Equipes"
         ],
         "summary": "Alterar equipe",
-        "description": "ADMIN ou supervisor próprio. Transferir supervisão exige ADMIN e cancela entradas pendentes. FINALIZADA/CANCELADA cancelam pendências.",
+        "description": "ADMIN ou supervisor vinculado ao cinema. Transferir supervisão exige ADMIN e vínculo do novo supervisor ao cinema da sessão; cancela entradas pendentes. FINALIZADA/CANCELADA cancelam pendências.",
         "security": [
           {
             "bearerAuth": []
@@ -10774,7 +10944,7 @@
           "Equipes"
         ],
         "summary": "Cancelar equipe",
-        "description": "ADMIN ou supervisor próprio. Cancelamento lógico.",
+        "description": "ADMIN ou supervisor vinculado ao cinema. Cancelamento lógico.",
         "security": [
           {
             "bearerAuth": []
@@ -10836,7 +11006,7 @@
           "Equipes"
         ],
         "summary": "Listar membros",
-        "description": "ADMIN, supervisor próprio ou membro ativo.",
+        "description": "ADMIN, supervisor vinculado ao cinema ou membro ativo da equipe.",
         "security": [
           {
             "bearerAuth": []
@@ -10961,7 +11131,7 @@
           "Equipes"
         ],
         "summary": "Alterar função de membro",
-        "description": "Somente ADMIN ou supervisor próprio define função de membro ativo.",
+        "description": "Somente ADMIN ou supervisor vinculado ao cinema define função de membro ativo.",
         "security": [
           {
             "bearerAuth": []
@@ -11080,7 +11250,7 @@
           "Equipes"
         ],
         "summary": "Desativar membro",
-        "description": "ADMIN ou supervisor próprio desativa o vínculo; nova entrada exige solicitação ou convite.",
+        "description": "ADMIN ou supervisor vinculado ao cinema desativa o vínculo; nova entrada exige solicitação ou convite.",
         "security": [
           {
             "bearerAuth": []
@@ -11152,7 +11322,7 @@
           "Equipes"
         ],
         "summary": "Listar solicitações e convites",
-        "description": "ADMIN e supervisor próprio veem todas as entradas; COLABORADOR vê somente as suas.",
+        "description": "ADMIN e supervisor vinculado ao cinema veem todas as entradas; COLABORADOR vê somente as próprias quando membro ativo ou convidado.",
         "security": [
           {
             "bearerAuth": []
@@ -11277,7 +11447,7 @@
           "Equipes"
         ],
         "summary": "Solicitar entrada na equipe",
-        "description": "COLABORADOR ativo solicita para si; não ingressa automaticamente. Função será definida por ADMIN ou supervisor próprio ao aceitar.",
+        "description": "COLABORADOR membro ativo de outra equipe do mesmo cinema pode solicitar entrada para si; não ingressa automaticamente.",
         "security": [
           {
             "bearerAuth": []
@@ -11379,7 +11549,7 @@
           "Equipes"
         ],
         "summary": "Convidar colaborador",
-        "description": "ADMIN ou supervisor próprio convida COLABORADOR ativo e define função. Membro só entra após aceitar.",
+        "description": "ADMIN ou supervisor vinculado ao cinema convida COLABORADOR ativo e define função. Membro só entra após aceitar.",
         "security": [
           {
             "bearerAuth": []
@@ -11496,7 +11666,7 @@
           "Equipes"
         ],
         "summary": "Aceitar ou recusar entrada",
-        "description": "Solicitação: ADMIN ou supervisor próprio aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.",
+        "description": "Solicitação: ADMIN ou supervisor vinculado ao cinema aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.",
         "security": [
           {
             "bearerAuth": []
@@ -11696,7 +11866,7 @@
           "Chamados internos"
         ],
         "summary": "Listar chamados da equipe",
-        "description": "ADMIN, supervisor próprio ou membro ativo. assigned=me filtra tarefas atribuídas ao ator.",
+        "description": "ADMIN, supervisor vinculado ao cinema ou membro ativo. assigned=me filtra tarefas atribuídas ao ator.",
         "security": [
           {
             "bearerAuth": []
@@ -11843,7 +12013,7 @@
           "Chamados internos"
         ],
         "summary": "Abrir chamado interno",
-        "description": "ADMIN, supervisor próprio ou colaborador membro ativo. Sessão AGENDADA/EM_CARTAZ e equipe ATIVA; criador vem da sessão autenticada.",
+        "description": "ADMIN, supervisor vinculado ao cinema ou colaborador membro ativo. Sessão AGENDADA/EM_CARTAZ e equipe ATIVA; criador vem da sessão autenticada.",
         "security": [
           {
             "bearerAuth": []
@@ -12066,7 +12236,7 @@
           "Chamados internos"
         ],
         "summary": "Editar chamado aberto",
-        "description": "Somente ADMIN, supervisor próprio ou criador, enquanto ABERTO. Não altera equipe, sessão, responsável nem status.",
+        "description": "Somente ADMIN, supervisor vinculado ao cinema ou criador, enquanto ABERTO. Não altera equipe, sessão, responsável nem status.",
         "security": [
           {
             "bearerAuth": []
@@ -12269,7 +12439,7 @@
           "Chamados internos"
         ],
         "summary": "Atribuir colaborador",
-        "description": "ADMIN ou supervisor próprio atribui apenas colaborador ativo da mesma equipe; mantém ABERTO até aceite.",
+        "description": "ADMIN ou supervisor vinculado ao cinema atribui apenas colaborador ativo da mesma equipe; mantém ABERTO até aceite.",
         "security": [
           {
             "bearerAuth": []
@@ -12590,7 +12760,7 @@
           "Chamados internos"
         ],
         "summary": "Fechar chamado resolvido",
-        "description": "ADMIN, supervisor próprio ou responsável fecha RESOLVIDO.",
+        "description": "ADMIN, supervisor vinculado ao cinema, criador ou responsável fecha RESOLVIDO.",
         "security": [
           {
             "bearerAuth": []
@@ -18736,7 +18906,7 @@
           "Suprimentos"
         ],
         "summary": "list stock requests",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -18864,7 +19034,7 @@
           "Suprimentos"
         ],
         "summary": "create stock request",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -18985,7 +19155,7 @@
           "Suprimentos"
         ],
         "summary": "get stock request",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19074,7 +19244,7 @@
           "Suprimentos"
         ],
         "summary": "approve stock request",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19163,7 +19333,7 @@
           "Suprimentos"
         ],
         "summary": "refuse stock request",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19252,7 +19422,7 @@
           "Suprimentos"
         ],
         "summary": "list logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19382,7 +19552,7 @@
           "Suprimentos"
         ],
         "summary": "get logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19471,7 +19641,7 @@
           "Suprimentos"
         ],
         "summary": "send logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19560,7 +19730,7 @@
           "Suprimentos"
         ],
         "summary": "transit logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19649,7 +19819,7 @@
           "Suprimentos"
         ],
         "summary": "receive logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19738,7 +19908,7 @@
           "Suprimentos"
         ],
         "summary": "cancel logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19827,7 +19997,7 @@
           "Suprimentos"
         ],
         "summary": "get local stock",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -19924,7 +20094,7 @@
           "Suprimentos"
         ],
         "summary": "return logistics equipment",
-        "description": "Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
         "security": [
           {
             "bearerAuth": []
@@ -23703,7 +23873,7 @@
           "Tickets"
         ],
         "summary": "Ver tickets da sessão vinculada",
-        "description": "ADMIN ou equipe ativa vinculada à sessão consulta tickets sem ver códigos.",
+        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe da sessão consulta tickets sem ver códigos.",
         "security": [
           {
             "bearerAuth": []
@@ -23852,7 +24022,7 @@
           "Tickets"
         ],
         "summary": "Validar ticket sem consumir",
-        "description": "ADMIN ou equipe vinculada consulta validade sem mudar estado.",
+        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe consulta validade sem mudar estado.",
         "security": [
           {
             "bearerAuth": []
@@ -23972,7 +24142,7 @@
           "Tickets"
         ],
         "summary": "Consumir ticket uma vez",
-        "description": "ADMIN ou equipe vinculada consome ticket uma vez. Ingresso cria a primeira entrada no histórico; retirada de insumo não cria presença. Meia exige conferência presencial mínima. Ticket expirado ou repetido retorna 409.",
+        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe consome ticket uma vez. Ingresso cria a primeira entrada no histórico; retirada de insumo não cria presença. Meia exige conferência presencial mínima. Ticket expirado ou repetido retorna 409.",
         "security": [
           {
             "bearerAuth": []
@@ -24100,7 +24270,7 @@
           "Tickets"
         ],
         "summary": "Registrar saída do ingresso",
-        "description": "ADMIN ou equipe vinculada registra saída somente após entrada ativa; a passagem é append-only.",
+        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe registra saída somente após entrada ativa; a passagem é append-only.",
         "security": [
           {
             "bearerAuth": []
@@ -24439,7 +24609,7 @@
           "Tickets"
         ],
         "summary": "Histórico de entradas e saídas da sessão",
-        "description": "ADMIN ou equipe ativa vinculada à sessão consulta histórico de passagens, sem códigos de tickets ou documentos.",
+        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe da sessão consulta histórico de passagens, sem códigos de tickets ou documentos.",
         "security": [
           {
             "bearerAuth": []
@@ -24629,7 +24799,7 @@
           "Tickets"
         ],
         "summary": "Registrar reentrada do ingresso",
-        "description": "ADMIN ou equipe vinculada registra reentrada somente após saída, antes do vencimento, com nova conferência de meia; UTILIZADO permanece.",
+        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe registra reentrada somente após saída, antes do vencimento, com nova conferência de meia; UTILIZADO permanece.",
         "security": [
           {
             "bearerAuth": []
@@ -35441,7 +35611,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
+        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos; para trailers YouTube cadastrados, playbackDurationSeconds permite salvar a duração real do trailer, limitada à duração do filme. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
         "parameters": [
           {
             "name": "profileId",
@@ -35586,7 +35756,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
+        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos; para trailers YouTube cadastrados, playbackDurationSeconds permite salvar a duração real do trailer, limitada à duração do filme. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
         "parameters": [
           {
             "name": "profileId",
@@ -35731,7 +35901,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
+        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos; para trailers YouTube cadastrados, playbackDurationSeconds permite salvar a duração real do trailer, limitada à duração do filme. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
         "parameters": [
           {
             "name": "profileId",
@@ -35827,7 +35997,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
+        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos; para trailers YouTube cadastrados, playbackDurationSeconds permite salvar a duração real do trailer, limitada à duração do filme. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
         "parameters": [
           {
             "name": "profileId",
@@ -35937,7 +36107,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
+        "description": "Somente CLIENTE proprietário do perfil; perfil alheio/inexistente retorna 404. Progresso informado pelo cliente, não comprova reprodução nem concede direitos. Duração vem de filmes.duracao em minutos, convertida para segundos; para trailers YouTube cadastrados, playbackDurationSeconds permite salvar a duração real do trailer, limitada à duração do filme. Conclusão a partir de 95%; posição zero/reinício permite assistir novamente. Salvar exige filme ativo/disponível para streaming, versão atual e posição dentro da duração. Histórico guarda um resumo por filme, não eventos de cada sessão. Filmes fora do catálogo ficam no histórico com title null; continuar assistindo os exclui, assim como concluídos e posição zero. DELETE remove progresso/histórico do filme, idempotente. Exclusão do perfil remove em cascata. Atualizações concorrentes usam versão (PROGRESS_VERSION_CONFLICT).",
         "parameters": [
           {
             "name": "profileId",
@@ -39358,6 +39528,222 @@
           },
           "503": {
             "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/location": {
+      "get": {
+        "operationId": "getSupervisorLocation",
+        "tags": [
+          "Identidade"
+        ],
+        "summary": "Consultar cinema do supervisor",
+        "description": "ADMIN autenticado. Consulta o cinema atribuído a um supervisor ativo. Cache-Control: no-store.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupervisorLocation"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMedia"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "setSupervisorLocation",
+        "tags": [
+          "Identidade"
+        ],
+        "summary": "Atribuir cinema ao supervisor",
+        "description": "ADMIN autenticado. Um supervisor ativo pode ser vinculado a um cinema ativo por vez. Equipes ativas de outro cinema impedem mudança ou remoção do vínculo. Cache-Control: no-store.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupervisorLocation"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMedia"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityInput_supervisorLocation"
+              }
+            }
           }
         }
       }
@@ -46175,6 +46561,12 @@
             "minimum": 0,
             "maximum": 4294967294,
             "description": "0 para criar; versão devolvida pela consulta/gravação anterior para atualizar. Conflito retorna 409."
+          },
+          "playbackDurationSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295,
+            "description": "Opcional apenas para trailer YouTube cadastrado; duração reportada pelo player, limitada à duração do filme. Metadado de retomada, não comprova reprodução."
           }
         },
         "required": [
@@ -47212,6 +47604,43 @@
           "topMovies",
           "notes"
         ]
+      },
+      "IdentityInput_supervisorLocation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "localId"
+        ],
+        "properties": {
+          "localId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$",
+            "nullable": true
+          }
+        }
+      },
+      "SupervisorLocation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "supervisorId",
+          "localId",
+          "localName"
+        ],
+        "properties": {
+          "supervisorId": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "localId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$",
+            "nullable": true
+          },
+          "localName": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       }
     },
     "responses": {

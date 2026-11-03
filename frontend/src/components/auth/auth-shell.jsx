@@ -74,7 +74,7 @@ export function AuthCard({ eyebrow, title, description, children, footer }) {
 
           <p className="mb-1 text-[11px] font-extrabold tracking-[0.14em] text-primary uppercase">{eyebrow}</p>
           <h1 id="auth-title" className="m-0 font-sans text-[clamp(32px,4vw,46px)] leading-tight font-extrabold tracking-[-0.04em] text-foreground">{title}</h1>
-          <p className="mt-[13px] mb-7 max-w-[560px] text-sm leading-relaxed text-muted-foreground">{description}</p>
+          {description && <p className="mt-[13px] mb-7 max-w-[560px] text-sm leading-relaxed text-muted-foreground">{description}</p>}
 
           {children}
         </div>
@@ -105,14 +105,13 @@ export function RegisterPage() {
     <AuthCard
       eyebrow="Novo ingresso"
       title="Crie sua conta"
-      description="Cadastre-se para comprar ingressos, acompanhar seus pedidos e aproveitar sua experiência CineAstra."
       footer={
         <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground [&_a]:rounded-sm [&_a]:font-extrabold [&_a]:text-primary [&_a:hover]:underline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-ring">
           Já possui uma conta? <Link href="/auth/login">Entrar na CineAstra</Link>
         </p>
       }
     >
-      <p className="mb-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">Sua idade será autodeclarada, não verificada. Recursos que exigem comprovação continuarão sujeitos à verificação.</p>
+      <p className="mt-5 mb-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">Sua idade será autodeclarada, não verificada. Recursos que exigem comprovação continuarão sujeitos à verificação.</p>
       <form className="grid gap-[17px]" onSubmit={handleSubmit}>
         <Field label="Nome completo" icon={UserRound} value={form.name} onChange={update("name")} autoComplete="name" minLength={2} maxLength={100} />
         <Field label="CPF" icon={UserRound} value={form.cpf} onChange={update("cpf")} placeholder="000.000.000-00" inputMode="numeric" maxLength={14} />
@@ -125,15 +124,14 @@ export function RegisterPage() {
           <Field label="Confirmar senha" icon={LockKeyhole} type="password" value={form.confirmPassword} onChange={update("confirmPassword")} placeholder="••••••••" autoComplete="new-password" minLength={12} maxLength={72} />
         </div>
 
-        <p className="text-xs text-muted-foreground">Senha com 12 caracteres ou mais, maiúscula, minúscula, número e símbolo. Máximo de 72 bytes.</p>
-        <div className="space-y-3 rounded-lg border border-border p-4">
-          <p className="text-sm text-muted-foreground">Documentos versão 2.0 — minutas para teste, ainda em revisão.</p>
+        <p className="text-xs text-muted-foreground">Senha com 12 caracteres ou mais, maiúscula, minúscula, número e símbolo.</p>
+        <div className="space-y-3">
           {[documents.terms, documents.privacy].map(doc => <a key={doc.slug} href={doc.url} target="_blank" rel="noopener noreferrer" className="block font-semibold text-primary underline">Abrir {doc.title} (PDF) ↗</a>)}
         </div>
         <div className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground [&_a]:font-bold [&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline">
           <Checkbox id={termsId} className="mt-0.5 shrink-0" disabled={!documents || pending || success} checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} />
           <label htmlFor={termsId} className="cursor-pointer">
-            Li e concordo com os Termos de Uso e a Política de Privacidade em PDF disponíveis acima para este teste.
+            Li e concordo com os Termos de Uso e a Política de Privacidade disponíveis acima.
           </label>
         </div>
 

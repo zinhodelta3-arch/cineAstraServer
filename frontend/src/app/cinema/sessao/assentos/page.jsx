@@ -5,6 +5,7 @@ export const metadata = {
   description: "Selecione seus lugares para a sessão de cinema.",
 };
 
-export default function AssentosPage() {
-  return <SeatSelection />;
+export default async function AssentosPage({ searchParams }) {
+  const { sessionId } = await searchParams;
+  return <SeatSelection sessionId={typeof sessionId === "string" ? sessionId : ""} />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FRIENDS_MOCK, buildFriends, buildStrip, getTonightContext, pickMovie } from "./astra-spin-engine";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { buildStrip, getTonightContext, pickMovie } from "./astra-spin-engine";
 
 // Linha do tempo do evento (ms)
 const SPIN_MS = 5400; // pôsteres girando até parar
@@ -16,7 +16,6 @@ export default function useAstraSpin({ catalog, historyIds = [], myListIds = [] 
   const [genre, setGenre] = useState(null);
   const [time, setTime] = useState("any");
   const [company, setCompany] = useState(null);
-  const [friendIds, setFriendIds] = useState(() => FRIENDS_MOCK.map((f) => f.id));
 
   const [phase, setPhase] = useState("idle");
   const [result, setResult] = useState(null);
@@ -29,7 +28,6 @@ export default function useAstraSpin({ catalog, historyIds = [], myListIds = [] 
   const seen = useRef(new Set()); // filmes já sorteados nesta sessão
   const timers = useRef([]);
 
-  const friends = useMemo(() => buildFriends(catalog), [catalog]);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -43,15 +41,11 @@ export default function useAstraSpin({ catalog, historyIds = [], myListIds = [] 
   }, [clearTimers]);
 
   const busy = phase === "spinning" || phase === "hush" || phase === "flash";
-  const canSpin = catalog.length > 0 && (mode !== "friends" || friendIds.length > 0);
+  const canSpin = catalog.length > 0;
 
   const changeMode = useCallback((id) => {
     setModeState(id);
     setNotice("");
-  }, []);
-
-  const toggleFriend = useCallback((id) => {
-    setFriendIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   }, []);
 
   const spin = useCallback(() => {
@@ -59,7 +53,6 @@ export default function useAstraSpin({ catalog, historyIds = [], myListIds = [] 
 
     const cfg = {
       mode, mood, genre, time, company,
-      friends: friends.filter((f) => friendIds.includes(f.id)),
       now: new Date(),
       historyIds, myListIds,
       exclude: seen.current,
@@ -106,7 +99,7 @@ export default function useAstraSpin({ catalog, historyIds = [], myListIds = [] 
         if (typeof navigator !== "undefined") navigator.vibrate?.([40, 60, 90]);
       }, t1 + hushMs + FLASH_MS)
     );
-  }, [busy, canSpin, mode, mood, genre, time, company, friends, friendIds, historyIds, myListIds, catalog, clearTimers]);
+  }, [busy, canSpin, mode, mood, genre, time, company, historyIds, myListIds, catalog, clearTimers]);
 
   const reset = useCallback(() => {
     clearTimers();
@@ -120,7 +113,6 @@ export default function useAstraSpin({ catalog, historyIds = [], myListIds = [] 
     genre, setGenre,
     time, setTime,
     company, setCompany,
-    friends, friendIds, toggleFriend,
     tonight,
     phase, busy, canSpin,
     result, strip, spinId, duration, notice,

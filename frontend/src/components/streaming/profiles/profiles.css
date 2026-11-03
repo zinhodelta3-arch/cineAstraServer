@@ -148,6 +148,7 @@
 .sp-toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; display: flex; align-items: center; gap: 12px; z-index: 110; width: max-content; max-width: calc(100vw - 32px); border-radius: var(--radius, 10px); background: var(--card); color: var(--card-foreground); border: 1px solid var(--sp-line); font-size: 12px; line-height: 1.6; box-shadow: 0 8px 32px #0004; transition: opacity .2s, transform .2s; }
 .sp-toast.is-visible { opacity: 1; transform: translate(-50%, 0); padding: 14px 16px; pointer-events: auto; }
 .sp-toast > svg { color: var(--primary); }
+.sp-load-error { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin: 24px auto 0; color: var(--destructive); font-size: 13px; text-align: center; }
 @keyframes sp-arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @media(min-width: 1500px) { .sp-main { padding-top: 65px; padding-bottom: 60px; } .sp-profiles { margin-top: 50px; } }
 @media(max-width: 850px) { .sp-main { padding: 44px 28px; } .sp-profiles { gap: 22px; max-width: 650px; } .sp-profile { width: 150px; } .sp-title { font-size: 79px; } .sp-header { min-height: 80px; padding-block: 22px; } .sp-header-tag { font-size: 8px; letter-spacing: 1px; } }

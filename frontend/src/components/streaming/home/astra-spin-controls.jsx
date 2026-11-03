@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  Brain, Coffee, Compass, Dices, Ghost, Heart, Laugh, Moon, SlidersHorizontal, Sparkles, Users, Zap,
+  Brain, Coffee, Compass, Dices, Ghost, Heart, Laugh, Moon, SlidersHorizontal, Sparkles, Zap,
 } from "lucide-react";
 import Button from "./button";
 import { COMPANIES, MODES, MOODS, TIMES } from "@/hooks/streaming/astra-spin/astra-spin-engine";
 
-const MODE_ICON = { custom: SlidersHorizontal, surprise: Sparkles, comfort: Compass, today: Moon, friends: Users };
+const MODE_ICON = { custom: SlidersHorizontal, surprise: Sparkles, comfort: Compass, today: Moon };
 const MOOD_ICON = { relax: Coffee, laugh: Laugh, feel: Heart, thrill: Zap, think: Brain, scare: Ghost };
 
 function Chip({ active, onClick, icon: Icon, children }) {
@@ -36,7 +36,7 @@ function Group({ title, children }) {
 export default function AstraSpinControls({ astra, genres }) {
   const {
     mode, changeMode, mood, setMood, genre, setGenre, time, setTime, company, setCompany,
-    friends, friendIds, toggleFriend, tonight, spin, busy, canSpin, phase,
+    tonight, spin, busy, canSpin, phase,
   } = astra;
 
   const current = MODES.find((m) => m.id === mode);
@@ -105,29 +105,6 @@ export default function AstraSpinControls({ astra, genres }) {
           ) : (
             <p className="text-sm text-muted-foreground">Lendo o clima do dia…</p>
           )}
-        </div>
-      )}
-
-      {mode === "friends" && (
-        <div className="space-y-8">
-          <Group title="Quem está na roda?">
-            {friends.map((f) => (
-              <Chip key={f.id} active={friendIds.includes(f.id)} onClick={() => toggleFriend(f.id)}>
-                <span className="grid size-5 place-items-center rounded-full bg-foreground/15 text-[11px] font-semibold">
-                  {f.name[0]}
-                </span>
-                {f.name}
-              </Chip>
-            ))}
-          </Group>
-          {friendIds.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Escolha pelo menos um amigo para girar.</p>
-          ) : (
-            <p className="max-w-xl text-sm text-muted-foreground">
-              Filmes que agradam mais amigos da roda têm mais chance de sair.
-            </p>
-          )}
-          {timeGroup}
         </div>
       )}
 

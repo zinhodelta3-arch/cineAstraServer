@@ -3,6 +3,7 @@ const configured = resolveApiBase(process.env.NEXT_PUBLIC_API_URL);
 export function apiUrl(path) { return `${configured}${path}`; }
 export function publicAsset(value) {
   if (!value) return null;
+  if (value.startsWith('/images/streaming/') && !/[\\\u0000-\u0020]/.test(value) && !value.includes('..')) return value;
   try {
     const base = new URL(configured, typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
     const url = new URL(value, base.origin);

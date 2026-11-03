@@ -10,7 +10,6 @@ export const MODES = [
   { id: "surprise", label: "Me surpreenda", hint: "Sem filtros. Qualquer filme do catálogo pode sair." },
   { id: "comfort", label: "Sair da zona de conforto", hint: "Um filme de um gênero que você quase não assiste." },
   { id: "today", label: "Perfeito para hoje", hint: "A roleta lê o dia da semana e o horário e escolhe pelo momento." },
-  { id: "friends", label: "Filmes dos amigos", hint: "Sorteia entre os filmes que seus amigos curtiram." },
 ];
 
 // keys: trechos de gêneros normalizados (sem acento, minúsculos)
@@ -37,15 +36,6 @@ export const COMPANIES = [
   { id: "friends", label: "Com amigos", boost: ["comedia", "acao", "terror", "aventura"], avoid: [], reason: "Pede companhia e pipoca" },
 ];
 
-// SUBSTITUA por dados reais da API de amigos (cada amigo: { id, name, likes: [ids de filmes] }).
-// Enquanto isso, os gostos são gerados de forma determinística a partir do catálogo.
-export const FRIENDS_MOCK = [
-  { id: "ana", name: "Ana", seed: 7 },
-  { id: "caio", name: "Caio", seed: 13 },
-  { id: "bia", name: "Bia", seed: 29 },
-  { id: "leo", name: "Leo", seed: 41 },
-];
-
 export const STRIP_LENGTH = 46;
 export const WINNER_INDEX = 38;
 
@@ -70,9 +60,6 @@ export function formatMinutes(min) {
   const m = Math.round(min % 60);
   return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
 }
-
-const joinNames = (names) =>
-  names.length <= 1 ? names[0] ?? "" : `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}`;
 
 export function parseMinutes(v) {
   if (v == null) return null;
@@ -128,17 +115,6 @@ export function buildCatalog(...lists) {
     map.set(String(m.id), toEntry(m));
   });
   return [...map.values()];
-}
-
-export function buildFriends(catalog, base = FRIENDS_MOCK) {
-  return base.map((f) => ({
-    ...f,
-    likes: new Set(
-      f.likes
-        ? f.likes.map(String)
-        : catalog.filter((e) => hash(`${f.seed}:${e.id}`) % 100 < 38).map((e) => e.id)
-    ),
-  }));
 }
 
 function shuffle(arr, rng) {
@@ -199,7 +175,7 @@ function tasteFreq(catalog, cfg) {
 }
 
 function buildCriteria(catalog, cfg) {
-  const c = { mood: null, genre: null, genreLabel: "", maxMin: Infinity, company: null, likedBy: null, outside: null, context: null };
+  const c = { mood: null, genre: null, genreLabel: "", maxMin: Infinity, company: null, outside: null, context: null };
   const time = TIMES.find((t) => t.id === cfg.time) ?? TIMES[0];
 
   switch (cfg.mode) {
@@ -217,17 +193,6 @@ function buildCriteria(catalog, cfg) {
       c.context = ctx;
       c.mood = getMood(ctx.mood);
       c.maxMin = ctx.maxMin;
-      break;
-    }
-    case "friends": {
-      c.maxMin = time.max;
-      c.likedBy = new Map();
-      (cfg.friends ?? []).forEach((f) =>
-        f.likes.forEach((id) => {
-          if (!c.likedBy.has(id)) c.likedBy.set(id, []);
-          c.likedBy.get(id).push(f.name);
-        })
-      );
       break;
     }
     default: {
@@ -255,7 +220,6 @@ function passes(e, c, drop) {
     if (c.company.maxAge != null && e.age != null && e.age > c.company.maxAge) return false;
   }
   if (!off("mood") && c.mood && !hasAny(e.genres, c.mood.keys)) return false;
-  if (c.likedBy && !c.likedBy.has(e.id)) return false; // amigos nunca é afrouxado
   return true;
 }
 
@@ -263,12 +227,11 @@ function weigh(e, c, x) {
   let w = 1;
   if (c.mood && hasAny(e.genres, c.mood.keys)) w *= 5;
   if (c.company && hasAny(e.genres, c.company.boost)) w *= 2;
-  if (c.likedBy) w *= 1 + (c.likedBy.get(e.id)?.length ?? 0) * 1.5;
   if (c.outside && e.genres.length) {
     const avg = e.genres.reduce((s, g) => s + (c.outside.freq.get(g) ?? 0), 0) / e.genres.length;
     w *= 1 / (1 + avg);
   }
-  if (x.history.has(e.id) && !c.likedBy) w *= 0.25; // evita repetir o que já foi visto
+  if (x.history.has(e.id)) w *= 0.25; // evita repetir o que já foi visto
   if (x.myList.has(e.id) && !c.outside) w *= 2; // dá preferência ao que já está na lista
   if (Number.isFinite(e.rating) && e.rating <= 10) w *= 1 + Math.max(0, e.rating - 6) * 0.15;
   return w;
@@ -303,10 +266,6 @@ function explain(e, c, extra) {
       !hasAny(e.genres, c.company.avoid) && !(c.company.maxAge != null && e.age != null && e.age > c.company.maxAge);
     out.push({ ok: strict ? safe : hasAny(e.genres, c.company.boost), label: c.company.reason });
   }
-  if (c.likedBy) {
-    const names = c.likedBy.get(e.id) ?? [];
-    out.push({ ok: names.length > 0, label: `Curtido por ${joinNames(names)}` });
-  }
   if (c.outside) out.push({ ok: true, label: `Você quase não assiste ${rarestGenreLabel(e, c.outside.freq)}` });
   if (extra.inMyList) out.push({ ok: true, bonus: true, label: "Estava na sua lista" });
   return out;
@@ -316,7 +275,7 @@ function explain(e, c, extra) {
 /* Sorteio                                                             */
 /* ------------------------------------------------------------------ */
 
-// cfg: { mode, mood, genre, time, company, friends, now, historyIds, myListIds, exclude:Set }
+// cfg: { mode, mood, genre, time, company, now, historyIds, myListIds, exclude:Set }
 // Retorna { entry, reasons, fit, relaxed, context, poolSize } ou null.
 export function pickMovie(catalog, cfg, rng = Math.random) {
   const base = catalog.filter((e) => !cfg.exclude?.has(e.id));

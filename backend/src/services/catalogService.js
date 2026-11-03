@@ -7,6 +7,8 @@ export function filmDto(row, admin = false) {
     for (const key of [...filmFields, 'imagem', ...(admin ? ['url_reproducao'] : [])]) out[key] = row[key] ?? null;
     for (const key of ['disponivel_cinema', 'disponivel_streaming']) out[key] = Boolean(row[key]);
     for (const key of ['preco_aluguel', 'preco_compra']) if (out[key] !== null) out[key] = moneyString(out[key]);
+    out.generos = typeof row.generos === 'string' ? JSON.parse(row.generos) : row.generos ?? [];
+    out.banner = row.banner ?? null;
     return out;
 }
 const genreDto = row => ({ id_genero: idString(row.id_genero), nome: row.nome, status: row.status });
@@ -22,6 +24,7 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
     }
     function page(rows, q, dto, pk) { const limit = q.limit ?? 20; return { items: rows.slice(0, limit).map(dto), pagination: { limit, nextCursor: rows.length > limit ? idString(rows[limit - 1][pk]) : null } }; }
     return {
+        async popularFilms() { return (await model.popularFilms()).map(r => filmDto(r)); },
         async listFilms(q, isAdmin) { return page(await model.listFilms(q, isAdmin), q, r => filmDto(r, isAdmin), 'id_filme'); },
         async film(id, isAdmin) { return filmDto(found(await model.film(id, isAdmin)), isAdmin); },
         async listGenres(q, isAdmin, filmId) {

@@ -1,4 +1,5 @@
 "use client";
+import Link from 'next/link';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
 import {useMovieDetails} from '@/hooks/cinema/filmes/use-movie-details';
@@ -18,7 +19,7 @@ function Details({id,onSessions}){
     <div className="my-5 flex flex-wrap items-center gap-3 text-xs"><AgeRating age={movie.age}/><span>{durationLabel(movie.duration)}</span>{movie.director&&<span>Direção: {movie.director}</span>}</div>
     <p className="text-sm text-primary">{genres.items.map(g=>g.nome).join(' · ')}</p><ListStatus list={genres} empty="" more="Mais gêneros"/>
     {movie.trailer&&<a href={movie.trailer} target="_blank" rel="noopener noreferrer" className="mb-4 block text-sm text-primary underline">Assistir ao trailer</a>}
-    <Button onClick={()=>onSessions(movie)}>Consultar sessões</Button>
+    <div className="flex flex-wrap gap-2"><Button onClick={()=>onSessions(movie)}>Consultar sessões</Button><Button nativeButton={false} variant="outline" render={<Link href={`/cinema/filmes/${movie.id}`} />}>Página do filme</Button></div>
    </div>
   </div>
   <section aria-label="Galeria do filme"><div className="grid grid-cols-2 gap-3">{gallery.items.map(img=>{const src=publicAsset(img.url);return src?<img key={img.id_imagem} src={src} alt={img.texto_alternativo||movie.title} loading="lazy" className="w-full rounded-md object-contain"/>:null;})}</div><ListStatus list={gallery} empty="" more="Carregar mais imagens"/></section>

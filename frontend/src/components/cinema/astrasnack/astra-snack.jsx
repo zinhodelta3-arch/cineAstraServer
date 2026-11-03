@@ -21,7 +21,7 @@ export default function AstraSnackPage() {
       <SnackHeader cartCount={cartCount} loggedIn={Boolean(snack.session.user)} />
 
       <section className="mx-auto max-w-[1600px] bg-background px-5 py-6 md:px-8">
-        <label className="mb-4 block text-sm font-semibold">Cinema<select aria-label="Cinema" value={snack.localId} onChange={e=>snack.changeLocation(e.target.value)} className="mt-2 block w-full rounded-lg border border-border bg-card p-3"><option value="">Selecione o cinema</option>{snack.locations.items.map(l=><option key={l.id_local} value={l.id_local}>{l.nome} — {l.cidade}</option>)}</select></label>
+        <label className="mb-4 block text-sm font-semibold">Cinema<select aria-label="Cinema" value={snack.localId} onChange={e=>snack.changeLocation(e.target.value)} className="mt-2 block w-full rounded-lg border border-border bg-card p-3">{snack.locations.items.map(l=><option key={l.id_local} value={l.id_local}>{l.nome} — {l.cidade}</option>)}</select></label>
         <ListStatus list={snack.locations} empty="Nenhum cinema disponível." more="Carregar mais cinemas"/>
         {snack.notice&&<p role="status" className="mb-4 text-sm text-primary">{snack.notice}</p>}
         {snack.localId&&<ProductFilters snack={snack} />}

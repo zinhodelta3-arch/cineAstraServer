@@ -27,6 +27,14 @@ export function splitSql(source) {
 }
 
 export async function migrationPlan() {
+    // Estes arquivos foram aplicados com LF; preservar seus checksums após conversão local para CRLF.
+    const legacyLf = new Set([
+        '20261025_31_streaming_profiles.sql',
+        '20261025_32_streaming_favorites.sql',
+        '20261025_33_streaming_progress.sql',
+        '20261026_35_promotional_content.sql',
+        '20261026_36_streaming_profile_photos.sql'
+    ]);
     const sources = [
         ['20261001_02_create_tables.sql', sql => /^(CREATE TABLE|CREATE INDEX)\b/i.test(sql)],
         ['20261001_03_create_table_logs.sql', sql => /^(CREATE TABLE|CREATE INDEX)\b/i.test(sql)],
@@ -68,7 +76,8 @@ export async function migrationPlan() {
         ['20261025_33_streaming_progress.sql', () => true],
         ['20261025_34_input_retail_publication.sql', () => true],
         ['20261026_35_promotional_content.sql', () => true],
-        ['20261026_36_streaming_profile_photos.sql', () => true]
+        ['20261026_36_streaming_profile_photos.sql', () => true],
+        ['20261031_37_supervisor_locations.sql', () => true]
     ];
     const plan = [];
     for (const [file, filter] of sources) {
@@ -76,7 +85,8 @@ export async function migrationPlan() {
         let index = 0;
         for (const sql of splitSql(text).filter(filter)) {
             if (!/^(CREATE TABLE|CREATE INDEX|ALTER TABLE|INSERT INTO|UPDATE suporte SET)\b/i.test(sql) || sql.includes(' ?')) throw new Error('Statement não aprovado');
-            plan.push({ name: `${file}:${++index}`, sql, checksum: createHash('sha256').update(sql).digest('hex') });
+            const statement = legacyLf.has(file) ? sql.replaceAll('\r\n', '\n') : sql;
+            plan.push({ name: `${file}:${++index}`, sql: statement, checksum: createHash('sha256').update(statement).digest('hex') });
         }
     }
     return plan;

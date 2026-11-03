@@ -4,8 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Bookmark } from "lucide-react";
 import useStreamingHome from "@/hooks/streaming/home/use-streaming-home";
 import useAstraSpin from "@/hooks/streaming/astra-spin/use-astra-spin";
-import { buildCatalog, norm } from "@/hooks/streaming/astra-spin/astra-spin-engine";
-import { POPULAR, RECENT, PROGRESS, PREMIERES, TOP10, GENRES } from "./data";
+import { buildCatalog } from "@/hooks/streaming/astra-spin/astra-spin-engine";
 import Button from "./button";
 import SectionTitle from "./section-title";
 import PlayerModal from "./player-modal";
@@ -19,23 +18,22 @@ import AstraSpinControls from "./astra-spin-controls";
 
 export default function AstraSpinStream() {
   const {
-    playing, setPlaying, details, setDetails, myList, isListOpen, isInList, toggleList,
+    ready, error, retry, actionError, profile, history, catalog: films, popular, recent, premieres, explore, genres: availableGenres, favoriteIds, accessByFilm, updateProgress,
+    playing, setPlaying, details, setDetails, myList, isListOpen, toggleList,
     closePlayer, closeDetails, openList, closeList,
   } = useStreamingHome();
 
-  // Só filmes já disponíveis (fica de fora "Valem a espera"). Se existir um catálogo completo
-  // em data.js, passe ele aqui no lugar das listas.
-  const catalog = useMemo(() => buildCatalog(POPULAR, RECENT, TOP10, PREMIERES), []);
+  const catalog = useMemo(() => buildCatalog(popular, recent, explore, premieres), [popular, recent, explore, premieres]);
 
   const historyIds = useMemo(
-    () => [...RECENT.map((m) => String(m.id)), ...Object.keys(PROGRESS ?? {})],
-    []
+    () => history.map((item) => item.filmId),
+    [history]
   );
   const myListIds = useMemo(
     () => myList.map((m) => String(typeof m === "object" ? m.id : m)),
     [myList]
   );
-  const genres = useMemo(() => GENRES.filter((g) => norm(g) !== "todos"), []);
+  const genres = useMemo(() => availableGenres.map((item) => item.nome), [availableGenres]);
 
   const idleItems = useMemo(() => {
     if (!catalog.length) return [];
@@ -67,7 +65,7 @@ export default function AstraSpinStream() {
           description="Diga como você está e a roleta escolhe um filme do catálogo da CineAstra."
         />
 
-        {catalog.length === 0 ? (
+        {!ready ? <div role={error ? "alert" : "status"}><p>{error || "Carregando filmes..."}</p>{error && <Button className="mt-4" onClick={retry}>Tentar novamente</Button>}</div> : catalog.length === 0 ? (
           <p className="text-sm text-muted-foreground">O catálogo está vazio no momento.</p>
         ) : (
           <>
@@ -85,7 +83,7 @@ export default function AstraSpinStream() {
               <div ref={ticketRef} className="mt-6">
                 <AstraSpinTicket
                   result={result}
-                  inList={isInList(result.entry.movie.id)}
+                  inList={favoriteIds.has(result.entry.movie.id)}
                   onPlay={setPlaying}
                   onDetails={setDetails}
                   onToggleList={toggleList}
@@ -97,18 +95,20 @@ export default function AstraSpinStream() {
             <AstraSpinControls astra={astra} genres={genres} />
           </>
         )}
+        {actionError && <p role="alert" className="mt-6 text-sm text-destructive">{actionError}</p>}
       </section>
 
       {/* MODAIS & LISTA */}
-      {playing && <PlayerModal movie={playing} onClose={closePlayer} />}
+      {playing && profile && <PlayerModal movie={playing} profileId={profile.id} access={accessByFilm[playing.id]} onProgress={updateProgress} onClose={closePlayer} />}
       {details && (
         <DetailsModal
           key={details.id}
           movie={details}
           onClose={closeDetails}
           onPlay={setPlaying}
-          inList={isInList(details.id)}
+          inList={favoriteIds.has(details.id)}
           onToggleList={toggleList}
+          catalog={films}
         />
       )}
 

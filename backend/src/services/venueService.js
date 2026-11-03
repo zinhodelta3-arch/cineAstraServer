@@ -18,6 +18,12 @@ export function venueDto(kind, row) {
 }
 export function createVenueService({ model, identity }) {
     async function admin(c, context) { if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); }
+    async function unit(c, contextValue, localId) {
+        const actor = await identity.activeActor(c, contextValue);
+        if (actor.tipo_usuario !== 'SUPERVISOR') throw ApiError.acessoNegado();
+        const location = await model.supervisorLocation(actor.id_usuario, c);
+        if (!location || idString(location.id_local) !== idString(localId)) throw ApiError.acessoNegado();
+    }
     async function local(id, c, lock) { return found(await model.local(id, c, lock)); }
     async function room(localId, id, c, lock) { return found(await model.room(localId, id, c, lock)); }
     async function seat(roomId, id, c, lock) { return found(await model.seat(roomId, id, c, lock)); }
@@ -31,8 +37,8 @@ export function createVenueService({ model, identity }) {
         if (chair && !adminRead) visible(chair, 'seat');
         return { place, hall, chair };
     }
-    async function safeMutation(operation, contextValue) {
-        try { return await identity.transaction(async c => { await admin(c, contextValue); return operation(c); }, contextValue); }
+    async function safeMutation(operation, contextValue, localId, unitAccess = false) {
+        try { return await identity.transaction(async c => { if (unitAccess) await unit(c, contextValue, localId); else await admin(c, contextValue); return operation(c); }, contextValue); }
         catch (error) {
             if (error.code === 'ER_DUP_ENTRY') throw conflict('Nome ou assento já existe neste contexto');
             throw error;
@@ -50,7 +56,23 @@ export function createVenueService({ model, identity }) {
             const { place, hall, chair } = await context(kind, ids, adminRead);
             return venueDto(kind, kind === 'local' ? place : kind === 'room' ? hall : chair);
         },
-        async save(kind, ids, input, contextValue) {
+        async unitList(kind, ids, q, contextValue) {
+            if (!['room', 'seat'].includes(kind)) throw ApiError.acessoNegado();
+            return identity.transaction(async c => {
+                await unit(c, contextValue, ids.localId);
+                await context(kind, ids, true, c);
+                return page(kind, await model.list(kind, kind === 'room' ? ids.localId : ids.roomId, q, true, c), q);
+            }, contextValue);
+        },
+        async unitGet(kind, ids, contextValue) {
+            if (!['room', 'seat'].includes(kind)) throw ApiError.acessoNegado();
+            return identity.transaction(async c => {
+                await unit(c, contextValue, ids.localId);
+                const { hall, chair } = await context(kind, ids, true, c);
+                return venueDto(kind, kind === 'room' ? hall : chair);
+            }, contextValue);
+        },
+        async save(kind, ids, input, contextValue, unitAccess = false) {
             return safeMutation(async c => {
                 const { place, hall, chair } = await context(kind, ids, true, c, true);
                 const previous = kind === 'local' ? place : kind === 'room' ? hall : chair;
@@ -77,9 +99,9 @@ export function createVenueService({ model, identity }) {
                 await identity.audit(c, `VENUE.${kind.toUpperCase()}_${id ? 'CHANGED' : 'CREATED'}`, key, contextValue);
                 const row = kind === 'local' ? await local(key, c) : kind === 'room' ? await room(ids.localId, key, c) : await seat(ids.roomId, key, c);
                 return venueDto(kind, row);
-            }, contextValue);
+            }, contextValue, ids.localId, unitAccess);
         },
-        async archive(kind, ids, contextValue) {
+        async archive(kind, ids, contextValue, unitAccess = false) {
             return safeMutation(async c => {
                 const { place, hall } = await context(kind, ids, true, c, true);
                 const key = kind === 'local' ? ids.localId : kind === 'room' ? ids.roomId : ids.seatId;
@@ -93,7 +115,7 @@ export function createVenueService({ model, identity }) {
                 }
                 await model.update(kind, c, key, { status: kind === 'local' ? 'INATIVO' : 'INATIVA' });
                 await identity.audit(c, `VENUE.${kind.toUpperCase()}_ARCHIVED`, key, contextValue);
-            }, contextValue);
+            }, contextValue, ids.localId, unitAccess);
         }
     };
 }

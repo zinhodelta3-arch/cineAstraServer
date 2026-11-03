@@ -6,7 +6,8 @@ export function createTaskModel(database) {
     const rows = async (c, sql, params = []) => (await c.execute(sql, params))[0];
     const one = async (c, sql, params = []) => (await rows(c, sql, params))[0] ?? null;
     return {
-        team: (id, c = database, lock = false) => one(c, `SELECT e.id_equipe,e.id_supervisor,e.id_sessao,e.status,s.status AS sessao_status FROM equipes e JOIN sessoes s ON s.id_sessao = e.id_sessao WHERE e.id_equipe = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
+        team: (id, c = database, lock = false) => one(c, `SELECT e.id_equipe,e.id_supervisor,e.id_sessao,e.status,s.status AS sessao_status,sa.id_local FROM equipes e JOIN sessoes s ON s.id_sessao = e.id_sessao JOIN salas sa ON sa.id_sala = s.id_sala WHERE e.id_equipe = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
+        supervisorLocation: (id, c = database) => one(c, 'SELECT id_local FROM supervisor_locais WHERE id_supervisor = ?', [id]),
         membership: (teamId, userId, c = database) => one(c, 'SELECT m.id_equipe_membro,m.status,u.tipo_usuario,u.status AS usuario_status,m.funcao FROM equipe_membros m JOIN usuarios u ON u.id_usuario = m.id_usuario WHERE m.id_equipe = ? AND m.id_usuario = ?', [teamId, userId]),
         task: (teamId, id, c = database, lock = false) => one(c, `SELECT ${fields} FROM chamados WHERE id_equipe = ? AND id_chamado = ?${lock ? ' FOR UPDATE' : ''}`, [teamId, id]),
         list(teamId, sessionId, q, actorId) {

@@ -24,15 +24,15 @@ const bodies = {
 };
 const summaries = { list: 'Listar chamados da equipe', get: 'Consultar chamado interno', create: 'Abrir chamado interno', edit: 'Editar chamado aberto', cancel: 'Cancelar chamado não atribuído', assign: 'Atribuir colaborador', accept: 'Aceitar chamado', resolve: 'Resolver chamado', close: 'Fechar chamado resolvido', history: 'Consultar histórico de transições' };
 const descriptions = {
-    list: 'ADMIN, supervisor próprio ou membro ativo. assigned=me filtra tarefas atribuídas ao ator.',
+    list: 'ADMIN, supervisor vinculado ao cinema da equipe ou membro ativo. assigned=me filtra tarefas atribuídas ao ator.',
     get: 'A equipe e a sessão do chamado são verificadas em toda consulta.',
-    create: 'ADMIN, supervisor próprio ou colaborador membro ativo. Sessão AGENDADA/EM_CARTAZ e equipe ATIVA; criador vem da sessão autenticada.',
-    edit: 'Somente ADMIN, supervisor próprio ou criador, enquanto ABERTO. Não altera equipe, sessão, responsável nem status.',
+    create: 'ADMIN, supervisor vinculado ao cinema ou colaborador membro ativo. Sessão AGENDADA/EM_CARTAZ e equipe ATIVA; criador vem da sessão autenticada.',
+    edit: 'Somente ADMIN, supervisor vinculado ao cinema ou criador, enquanto ABERTO. Não altera equipe, sessão, responsável nem status.',
     cancel: 'Cancelamento lógico somente em ABERTO sem responsável, por gestor ou criador; histórico permanece.',
-    assign: 'ADMIN ou supervisor próprio atribui apenas colaborador ativo da mesma equipe; mantém ABERTO até aceite.',
+    assign: 'ADMIN ou supervisor vinculado ao cinema atribui apenas colaborador ativo da mesma equipe; mantém ABERTO até aceite.',
     accept: 'Colaborador ativo da equipe aceita chamado ABERTO livre ou atribuído a si; lock transacional permite um único vencedor.',
     resolve: 'Responsável ativo resolve EM_ANDAMENTO.',
-    close: 'ADMIN, supervisor próprio ou responsável fecha RESOLVIDO.',
+    close: 'ADMIN, supervisor vinculado ao cinema, criador ou responsável fecha RESOLVIDO.',
     history: 'Histórico durável das transições, visível somente a gestor ou membro ativo da equipe.'
 };
 for (const r of taskOperations) {

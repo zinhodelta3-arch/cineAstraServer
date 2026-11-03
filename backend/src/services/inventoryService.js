@@ -6,14 +6,19 @@ const conflict = message => new ApiError(message, 409, null, 'INVENTORY_CONFLICT
 const sortIds = (a,b) => BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0;
 const kindOf = input => input.inputId ? 'inputs' : 'equipment';
 const itemId = input => input.inputId ?? input.equipmentId;
-const balanceDto = (kind, row) => ({ [kind === 'inputs' ? 'id_insumo' : 'id_equipamento']: idString(row[kind === 'inputs' ? 'id_insumo' : 'id_equipamento']), id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), quantidade: row.quantidade, quantidade_reservada: kind === 'inputs' ? row.quantidade_reservada : 0, disponivel: row.quantidade - (kind === 'inputs' ? row.quantidade_reservada : 0), ...(kind === 'inputs' ? { quantidade_minima: row.quantidade_minima, alerta_reposicao: row.quantidade - row.quantidade_reservada <= row.quantidade_minima } : {}), status: row.status });
-const movementDto = row => ({ id_movimentacao: idString(row.id_movimentacao), id_insumo: row.id_insumo === null ? null : idString(row.id_insumo), id_equipamento: row.id_equipamento === null ? null : idString(row.id_equipamento), id_reserva: row.id_reserva === null ? null : idString(row.id_reserva), id_usuario: idString(row.id_usuario), tipo: row.tipo, quantidade: row.quantidade, motivo: row.motivo ?? null, data_movimentacao: row.data_movimentacao });
+const balanceDto = (kind, row) => ({ [kind === 'inputs' ? 'id_insumo' : 'id_equipamento']: idString(row[kind === 'inputs' ? 'id_insumo' : 'id_equipamento']), nome: row.nome ?? null, id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), quantidade: row.quantidade, quantidade_reservada: kind === 'inputs' ? row.quantidade_reservada : 0, disponivel: row.quantidade - (kind === 'inputs' ? row.quantidade_reservada : 0), ...(kind === 'inputs' ? { quantidade_minima: row.quantidade_minima, alerta_reposicao: row.quantidade - row.quantidade_reservada <= row.quantidade_minima } : {}), status: row.status });
+const movementDto = row => ({ id_movimentacao: idString(row.id_movimentacao), id_insumo: row.id_insumo === null ? null : idString(row.id_insumo), id_equipamento: row.id_equipamento === null ? null : idString(row.id_equipamento), nome_item: row.nome_insumo ?? row.nome_equipamento ?? null, id_reserva: row.id_reserva === null ? null : idString(row.id_reserva), id_usuario: idString(row.id_usuario), tipo: row.tipo, quantidade: row.quantidade, motivo: row.motivo ?? null, data_movimentacao: row.data_movimentacao });
 const positive = value => Number.isInteger(value) && value > 0 && value <= 2147483647;
 export function createInventoryService({ model, identity }) {
-    async function active(c, context) { const row = await identity.activeActor(c, context); if (!['ADMIN','FORNECEDOR'].includes(row.tipo_usuario)) throw ApiError.acessoNegado(); return { id: idString(row.id_usuario), role: row.tipo_usuario }; }
+    async function active(c, context) { const row = await identity.activeActor(c, context); if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(row.tipo_usuario)) throw ApiError.acessoNegado(); return { id: idString(row.id_usuario), role: row.tipo_usuario }; }
     async function ownSupplier(c, actor) { const row = found(await model.supplierByUser(actor.id, c)); if (row.status !== 'ATIVO') throw ApiError.acessoNegado(); return idString(row.id_fornecedor); }
+    async function ownLocation(c, actor) { const row = await model.supervisorLocation(actor.id, c); if (!row) throw ApiError.acessoNegado(); return idString(row.id_local); }
     async function scope(c, row, actor) {
         if (actor.role === 'ADMIN') return;
+        if (actor.role === 'SUPERVISOR') {
+            if (await ownLocation(c, actor) !== idString(row.id_local)) throw ApiError.acessoNegado();
+            return;
+        }
         const operation = found(await model.operational(row.id_fornecedor, row.id_local, c));
         if (idString(operation.id_usuario) !== actor.id || operation.fornecedor_status !== 'ATIVO' || operation.usuario_status !== 'ATIVO' || operation.tipo_usuario !== 'FORNECEDOR' || operation.local_status !== 'ATIVO' || operation.vinculo_status !== 'ATIVO') throw ApiError.acessoNegado();
     }
@@ -54,21 +59,27 @@ export function createInventoryService({ model, identity }) {
         async balance(kind, id, context) {
             if (!['inputs','equipment'].includes(kind)) throw ApiError.validacao('Tipo inválido');
             const actor = { id: idString(context.actor.id), role: context.actor.tipo };
-            if (!['ADMIN','FORNECEDOR'].includes(actor.role)) throw ApiError.acessoNegado();
+            if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(actor.role)) throw ApiError.acessoNegado();
             const row = found(await model.item(kind,id)); await scope(undefined,row,actor);
             return balanceDto(kind,row);
         },
         async listMovements(q, context) {
             const actor = { id: idString(context.actor.id), role: context.actor.tipo };
-            if (!['ADMIN','FORNECEDOR'].includes(actor.role)) throw ApiError.acessoNegado();
+            if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(actor.role)) throw ApiError.acessoNegado();
             const supplierId = actor.role === 'FORNECEDOR' ? await ownSupplier(undefined,actor) : null;
+            if (actor.role === 'SUPERVISOR') {
+                const localId = await ownLocation(undefined, actor);
+                if (q.localId && idString(q.localId) !== localId) throw ApiError.acessoNegado();
+                q = { ...q, localId };
+            }
             const rows = await model.listMovements(q,supplierId), items = rows.slice(0,q.limit);
             return { items: items.map(movementDto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1).id_movimentacao) : null } };
         },
         async alerts(q, context) {
             const actor = { id: idString(context.actor.id), role: context.actor.tipo };
-            if (!['ADMIN','FORNECEDOR'].includes(actor.role)) throw ApiError.acessoNegado();
+            if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(actor.role)) throw ApiError.acessoNegado();
             const supplierId = actor.role === 'FORNECEDOR' ? await ownSupplier(undefined,actor) : null;
+            if (actor.role === 'SUPERVISOR' && await ownLocation(undefined, actor) !== idString(q.localId)) throw ApiError.acessoNegado();
             const rows = await model.alerts(q,supplierId), items = rows.slice(0,q.limit);
             return { items: items.map(row => balanceDto('inputs',{ ...row,status: 'DISPONIVEL' })), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1).id_insumo) : null } };
         },
@@ -79,6 +90,7 @@ export function createInventoryService({ model, identity }) {
                 const actor = await active(c,context), row = found(await model.item(kind,id,c,true));
                 await scope(c,row,actor);
                 const qty = input.quantidade;
+                if (actor.role === 'SUPERVISOR' && (kind !== 'inputs' || !['SAIDA','PERDA'].includes(input.tipo) || qty >= 0)) throw ApiError.acessoNegado();
                 if ((['ENTRADA','DEVOLUCAO'].includes(input.tipo) && qty <= 0) || (['SAIDA','PERDA'].includes(input.tipo) && qty >= 0) || !Number.isInteger(qty) || qty === 0 || Math.abs(qty) > 2147483647) throw ApiError.validacao('Sinal da quantidade incompatível com o tipo');
                 if (kind === 'inputs' && qty < 0 && row.quantidade - row.quantidade_reservada < -qty) throw conflict('Saldo disponível insuficiente');
                 if (row.status === 'INDISPONIVEL' && actor.role !== 'ADMIN') throw conflict('Item indisponível');

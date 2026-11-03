@@ -1,24 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { TICKET_TYPES, emptySelection, quantityOf, totalOf, updateQuantity, createOrder } from "@/components/checkout/ticket-state.mjs";
+import { ticketTypes, emptySelection, quantityOf, totalOf, updateQuantity, createOrder } from "@/components/checkout/ticket-state.mjs";
 
 export default function useTicketSelection(session, onContinue) {
-  const [selection, setSelection] = useState(emptySelection);
+  const [selection, setSelection] = useState(() => ({ ...emptySelection(), inteira: session.priceCents != null ? session.seats.length : 0 }));
   const [info, setInfo] = useState(null);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const types = ticketTypes(session);
   const count = quantityOf(selection);
-  const total = totalOf(selection);
+  const total = totalOf(selection, types);
   const seatCount = session.seats.length;
   const remaining = seatCount - count;
   const complete = remaining === 0;
-  const selected = TICKET_TYPES.filter(({ id }) => selection[id] > 0);
+  const selected = types.filter(({ id }) => selection[id] > 0);
 
   function change(id, delta) {
     setMessage("");
-    setSelection((current) => updateQuantity(current, id, delta, seatCount));
+    if (types.some(type => type.id === id)) setSelection((current) => updateQuantity(current, id, delta, seatCount));
   }
 
   async function continueOrder() {
@@ -37,5 +38,5 @@ export default function useTicketSelection(session, onContinue) {
   const failImage = () => setImageFailed(true);
   const closeInfo = () => setInfo(null);
   const changeInfoOpen = (open) => { if (!open) setInfo(null); };
-  return { selection, info, message, submitting, imageFailed, count, total, seatCount, remaining, complete, selected, change, setInfo, continueOrder, failImage, closeInfo, changeInfoOpen };
+  return { types, selection, info, message, submitting, imageFailed, count, total, seatCount, remaining, complete, selected, change, setInfo, continueOrder, failImage, closeInfo, changeInfoOpen };
 }

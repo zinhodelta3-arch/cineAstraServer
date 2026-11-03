@@ -7,7 +7,7 @@ import { cleanSeats, MAX_SEATS, toggleSeat } from "@/components/cinema/assentos/
 
 export function useSeatSelection(session) {
   const router = useRouter();
-  const [selected, setSelected] = useState(() => cleanSeats(session.seats));
+  const [selected, setSelected] = useState(() => cleanSeats(session.seats, session.seatMap));
   const [zoom, setZoom] = useState(100);
   const [error, setError] = useState("");
   const [continuing, setContinuing] = useState(false);
@@ -19,7 +19,7 @@ export function useSeatSelection(session) {
       return;
     }
     setError("");
-    setSelected((current) => toggleSeat(current, id));
+    setSelected((current) => toggleSeat(current, id, session.seatMap));
   }
 
   function continueToTickets() {

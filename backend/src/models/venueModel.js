@@ -14,16 +14,17 @@ export function createVenueModel(database) {
     const rows = async (c, sql, params = []) => (await c.execute(sql, params))[0];
     const one = async (c, sql, params = []) => (await rows(c, sql, params))[0] ?? null;
     return {
+        supervisorLocation: (id, c = database) => one(c, 'SELECT id_local FROM supervisor_locais WHERE id_supervisor = ?', [id]),
         local: (id, c = database, lock = false) => one(c, `SELECT ${columns.local} FROM locais WHERE id_local = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
         room: (localId, id, c = database, lock = false) => one(c, `SELECT ${columns.room} FROM salas WHERE id_local = ? AND id_sala = ?${lock ? ' FOR UPDATE' : ''}`, [localId, id]),
         seat: (roomId, id, c = database, lock = false) => one(c, `SELECT ${columns.seat} FROM assentos WHERE id_sala = ? AND id_assento = ?${lock ? ' FOR UPDATE' : ''}`, [roomId, id]),
-        list(kind, parentId, q, admin = false) {
+        list(kind, parentId, q, admin = false, c = database) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
             const filters = [`${pk[kind]} > ?`], args = [q.cursor ?? '0'];
             if (parentId) { filters.push(`${parent[kind]} = ?`); args.push(parentId); }
             if (!admin || q.status) { filters.push('status = ?'); args.push(q.status ?? (kind === 'local' ? 'ATIVO' : 'ATIVA')); }
             if (kind === 'seat' && q.accessible !== undefined) { filters.push(`tipo ${q.accessible ? 'IN' : 'NOT IN'} ('PCD','OBESO','IDOSO')`); }
-            return rows(database, `SELECT ${columns[kind]} FROM ${table[kind]} WHERE ${filters.join(' AND ')} ORDER BY ${pk[kind]} LIMIT ${q.limit + 1}`, args);
+            return rows(c, `SELECT ${columns[kind]} FROM ${table[kind]} WHERE ${filters.join(' AND ')} ORDER BY ${pk[kind]} LIMIT ${q.limit + 1}`, args);
         },
         async insert(kind, c, parentId, input) {
             const keys = [...(parentId ? [parent[kind]] : []), ...Object.keys(input)];

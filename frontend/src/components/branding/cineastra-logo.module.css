@@ -1,0 +1,40 @@
+.logo {
+  --cineastra-logo-red-shift: var(--film-logo-red-shift, 0deg);
+  --cineastra-logo-gold-shift: var(--film-logo-gold-shift, 0deg);
+  --cineastra-logo-neutral-shift: 0deg;
+  --cineastra-logo-saturation: 1;
+  display: block;
+  flex-shrink: 0;
+}
+
+:global(html[data-theme="violet-bloom"]) .logo {
+  --cineastra-logo-red-shift: 260deg;
+  --cineastra-logo-gold-shift: 235deg;
+  --cineastra-logo-saturation: .8;
+}
+
+:global(html[data-theme="mocha-mousse"]) .logo {
+  --cineastra-logo-red-shift: 16deg;
+  --cineastra-logo-gold-shift: 3deg;
+  --cineastra-logo-saturation: .38;
+}
+
+:global(html[data-theme="catppucin"]) .logo {
+  --cineastra-logo-red-shift: 290deg;
+  --cineastra-logo-gold-shift: 165deg;
+  --cineastra-logo-saturation: .7;
+}
+
+:global(html[data-theme="doomsday"]) .logo {
+  --cineastra-logo-red-shift: 110deg;
+  --cineastra-logo-gold-shift: 65deg;
+  --cineastra-logo-saturation: .7;
+}
+
+:global(html[data-theme="noir"]) .logo {
+  --cineastra-logo-saturation: 0;
+}
+
+:global(html[data-theme="noir-grafico"]) .logo {
+  --cineastra-logo-saturation: .3;
+}

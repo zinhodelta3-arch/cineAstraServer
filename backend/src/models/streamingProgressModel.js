@@ -3,7 +3,7 @@ const from=' FROM streaming_progresso p JOIN filmes f ON f.id_filme=p.id_filme';
 const one=async(c,sql,args)=>(await c.execute(sql,args))[0][0]??null;
 export function createStreamingProgressModel(){return {
     profile:(c,owner,id)=>one(c,'SELECT id_perfil FROM streaming_perfis WHERE id_usuario=? AND id_perfil=?',[owner,id]),
-    film:(c,id)=>one(c,'SELECT id_filme,duracao,status,disponivel_streaming FROM filmes WHERE id_filme=? FOR UPDATE',[id]),
+    film:(c,id)=>one(c,'SELECT id_filme,duracao,status,disponivel_streaming,trailer FROM filmes WHERE id_filme=? FOR UPDATE',[id]),
     get:(c,profileId,filmId)=>one(c,`SELECT ${fields}${from} WHERE p.id_perfil=? AND p.id_filme=?`,[profileId,filmId]),
     save:(c,profileId,filmId,data,exists)=>exists
         ?c.execute('UPDATE streaming_progresso SET posicao_segundos=?,duracao_segundos=?,concluido=?,versao=versao+1,atualizado_em=UTC_TIMESTAMP(3) WHERE id_perfil=? AND id_filme=?',[data.position,data.duration,data.completed,profileId,filmId])

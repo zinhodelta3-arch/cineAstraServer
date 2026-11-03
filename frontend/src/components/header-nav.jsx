@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import {
   ArrowUpRight, CircleHelp, Crown, Film, House, MapPin, Menu,
-  Popcorn, Sparkles, UserRound, UserPlus,
+  Popcorn, Sparkles, TvMinimalPlay, UserRound, UserPlus,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +22,7 @@ const navigation = [
   { label: "AstraSnack", href: "/cinema/astrasnack", icon: Popcorn },
   { label: "Experiências", href: "/cinema/experiencias", icon: Sparkles },
   { label: "Planos", href: "/cinema/planos", icon: Crown },
+  { label: "Streaming", href: "/streaming", icon: TvMinimalPlay, mobileOnly: true },
   { label: "Suporte", href: "/cinema/suporte", icon: CircleHelp },
 ]
 
@@ -45,12 +46,12 @@ function Barcode() {
   )
 }
 
-function NavigationItems({ mobile = false, onNavigate }) {
+function NavigationItems({ mobile = false, onNavigate, canAccessStreaming = false }) {
   const pathname = usePathname()
 
   return (
     <ul className={mobile ? "flex flex-col gap-1 py-3" : "flex items-center gap-0.5 2xl:gap-1"}>
-      {navigation.map(({ label, href, icon: Icon }) => {
+      {navigation.filter((item) => !item.mobileOnly || (mobile && canAccessStreaming)).map(({ label, href, icon: Icon }) => {
         const active = Boolean(
           href && (pathname === href || pathname?.startsWith(`${href}/`))
         )
@@ -68,7 +69,7 @@ function NavigationItems({ mobile = false, onNavigate }) {
                   active
                     ? "bg-primary/10 font-semibold text-primary"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                }`}
+                } ${label === "Streaming" ? "my-2 border border-dashed border-primary/50 bg-primary/10 text-primary" : ""}`}
               >
                 <Icon
                   className={`${mobile ? "block" : "hidden 2xl:block"} size-4 shrink-0`}
@@ -111,7 +112,7 @@ export function DesktopNavigation() {
   )
 }
 
-export function MobileNavigation({session}) {
+export function MobileNavigation({session, canAccessStreaming = false}) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -141,7 +142,7 @@ export function MobileNavigation({session}) {
           <TearLine />
 
           <nav aria-label="Navegação mobile" className="flex-1 px-3">
-            <NavigationItems mobile onNavigate={() => setOpen(false)} />
+            <NavigationItems mobile canAccessStreaming={canAccessStreaming} onNavigate={() => setOpen(false)} />
           </nav>
 
           <TearLine />

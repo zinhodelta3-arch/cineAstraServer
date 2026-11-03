@@ -10,6 +10,6 @@ export const metadata = {
 export default async function AdminLayout({ children }) {
   const user = await currentUser();
   if (!user) redirect("/auth/login");
-  if (user.role !== "ADMIN") redirect(user.role === "SUPERVISOR" ? "/auth/login" : "/cinema/home");
-  return <AdminShell>{children}</AdminShell>;
+  if (user.role !== "ADMIN") redirect(['SUPERVISOR', 'COLABORADOR'].includes(user.role) ? '/unidade' : '/cinema/home');
+  return <AdminShell initialUser={user}>{children}</AdminShell>;
 }

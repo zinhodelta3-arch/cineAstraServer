@@ -91,7 +91,7 @@ export function createPaymentService({model,methods,identity,provider,checkout,s
         ready();
         const row=await tx(context,async c=>{const a=await contextActor(identity,c,context);const r=await model.byPayment(id,c);if(!r||idString(r.id_usuario)!==idString(a.id_usuario))throw ApiError.naoEncontrado();return r;});
         if(row.pagamento_status==='APROVADO')return statusDto(row);
-        const result=await provider.consult({idempotencyKey:row.chave_idempotencia,intentionId:idString(row.id_intencao),transactionId:row.provider_ref,signal:context.signal});
+        const result=await provider.consult({idempotencyKey:row.chave_idempotencia,intentionId:idString(row.id_intencao),transactionId:row.provider_ref,amount:String(row.valor),currency:row.moeda,signal:context.signal});
         if(result)await applyEvent(result,'CONSULTA',context);
         return ownPayment(id,context);
     }

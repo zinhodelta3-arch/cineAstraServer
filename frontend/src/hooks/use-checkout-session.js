@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { DEMO_SESSION, validSession } from "@/components/checkout/ticket-state.mjs";
+import { validSession } from "@/components/checkout/ticket-state.mjs";
 
 export const CHECKOUT_SESSION_KEY = "cineastra:checkout:session";
 
@@ -29,13 +29,13 @@ function subscribe(onChange) {
   return () => window.removeEventListener("storage", onStorage);
 }
 
-export function useCheckoutSession(fallback = DEMO_SESSION) {
+export function useCheckoutSession(fallback = null) {
   const saved = useSyncExternalStore(subscribe, readSnapshot, serverSnapshot);
 
   return useMemo(() => {
     try {
       const session = JSON.parse(saved || "null");
-      return validSession(session) ? session : fallback;
+      return validSession(session) && Array.isArray(session.seatMap) && Number.isInteger(session.priceCents) && session.localId ? session : fallback;
     } catch {
       return fallback;
     }

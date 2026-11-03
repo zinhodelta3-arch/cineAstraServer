@@ -4,6 +4,13 @@ export function createVenueController(service) {
     return {
         list: (kind, admin) => async (req, res) => success(res, await service.list(kind, req.params, req.venueQuery, admin)),
         get: (kind, admin) => async (req, res) => success(res, await service.get(kind, req.params, admin)),
+        unitList: kind => async (req, res) => success(res, await service.unitList(kind, req.params, req.venueQuery, context(req))),
+        unitGet: kind => async (req, res) => success(res, await service.unitGet(kind, req.params, context(req))),
+        unitSave: kind => async (req, res) => {
+            const created = !req.params[kind === 'room' ? 'roomId' : 'seatId'];
+            success(res, await service.save(kind, req.params, req.input, context(req), true), created ? 201 : 200);
+        },
+        unitArchive: kind => async (req, res) => { await service.archive(kind, req.params, context(req), true); res.sendStatus(204); },
         save: kind => async (req, res) => {
             const created = !req.params[{ local: 'localId', room: 'roomId', seat: 'seatId' }[kind]];
             const data = await service.save(kind, req.params, req.input, context(req));

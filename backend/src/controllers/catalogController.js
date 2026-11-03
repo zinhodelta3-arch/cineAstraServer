@@ -2,6 +2,7 @@ import { success } from '../utils/dto.js';
 const context = req => ({ actor: req.usuario, signal: req.signal, requestId: req.res.locals.requestId });
 export function createCatalogController(service) {
     return {
+        popularFilms: async (req, res) => success(res, { items: await service.popularFilms(), pagination: { limit: 4, nextCursor: null } }),
         listFilms: admin => async (req, res) => success(res, await service.listFilms(req.catalogQuery, admin)),
         film: admin => async (req, res) => success(res, await service.film(req.params.id, admin)),
         listGenres: admin => async (req, res) => success(res, await service.listGenres(req.catalogQuery, admin, req.params.id)),

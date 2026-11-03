@@ -28,8 +28,8 @@ export default function useCinemaCart(){
   return {...item,price:line?Number(line.unitPrice):item.price,quoted:Boolean(line)};
  });
  return {items,itemCount:cart.itemCount,total:current.quote?Number(current.quote.total):cart.total,
-  increase:item=>cart.updateQuantity(item.id,item.type,item.details,Math.min(100,item.quantity+1)),
+  increase:item=>{if(item.purchaseKind!=='SESSION')cart.updateQuantity(item.id,item.type,item.details,Math.min(100,item.quantity+1));},
   decrease:item=>cart.updateQuantity(item.id,item.type,item.details,item.quantity-1),
   remove:item=>cart.removeItem(item.id,item.type,item.details),goBack:()=>router.back(),
-  summary:{...current,issue:cart.items.length?issue:null,session,coupon,setCoupon,calculate,itemCount:cart.itemCount,total:current.quote?Number(current.quote.total):cart.total}};
+  summary:{quote:current.quote,pending:current.pending,error:current.error,issue:cart.items.length?issue:null,session,coupon,setCoupon,calculate,itemCount:cart.itemCount,total:current.quote?Number(current.quote.total):cart.total}};
 }

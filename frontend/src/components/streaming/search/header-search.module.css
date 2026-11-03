@@ -1,0 +1,33 @@
+.trigger { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; width: 164px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--muted-foreground); font-size: 12px; cursor: pointer; }
+.trigger:hover { border-color: var(--primary); color: var(--foreground); }
+.overlay[data-slot="dialog-content"] { position: fixed; inset: 0; z-index: 100; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; transform: none; translate: none; border-radius: 0; overflow: hidden; background: var(--background); color: var(--foreground); animation: none; }
+.top { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 24px; padding: 28px max(20px, calc((100% - 1440px) / 2)); border-bottom: 1px dashed var(--border); background: var(--card); }
+.heading { min-width: 0; }
+.title { font-size: clamp(24px, 4vw, 40px); line-height: 1.15; font-weight: 800; }
+.description { margin-top: 10px; color: var(--muted-foreground); font-size: 14px; }
+.close { display: grid; place-items: center; align-self: start; width: 44px; height: 44px; background: transparent; color: var(--foreground); cursor: pointer; }
+.close:hover { color: var(--primary); }
+.form { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; min-width: 0; padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--muted-foreground); }
+.form:focus-within { border-color: var(--ring); outline: 1px solid var(--ring); }
+.form > svg { flex-shrink: 0; }
+.form input { flex: 1; min-width: 0; width: 100%; min-height: 44px; border: 0; outline: none; background: transparent; color: var(--foreground); font: inherit; font-size: clamp(16px, 2vw, 24px); }
+.form input::placeholder { color: var(--muted-foreground); opacity: 1; }
+.form input::-webkit-search-cancel-button { display: none; }
+.form button { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; background: transparent; color: var(--muted-foreground); cursor: pointer; }
+.body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 28px max(20px, calc((100% - 1440px) / 2)) 48px; }
+.count { margin-bottom: 24px; color: var(--muted-foreground); font-size: 14px; }
+.films { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 28px 20px; }
+.film { display: flex; flex-direction: column; gap: 8px; min-width: 0; border-radius: 6px; }
+.poster { position: relative; aspect-ratio: 2 / 3; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; mask: radial-gradient(circle 7px at 0 65%, transparent 97%, black) left / 51% 100% no-repeat, radial-gradient(circle 7px at 100% 65%, transparent 97%, black) right / 51% 100% no-repeat; }
+.film strong { font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+.film > span { color: var(--muted-foreground); font-size: 12px; overflow-wrap: anywhere; }
+.play { position: absolute; inset: 0; display: grid; place-items: center; background: #0008; color: white; opacity: 0; transition: opacity .15s; }
+.film:hover .play, .film:focus-visible .play { opacity: 1; }
+.film:hover strong { color: var(--primary); }
+.message { display: grid; justify-items: start; gap: 16px; padding-block: 24px; color: var(--muted-foreground); line-height: 1.6; overflow-wrap: anywhere; }
+.retry { min-height: 44px; padding: 8px 20px; border-radius: 6px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; }
+.overlay :is(button, a):focus-visible, .trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+@media (max-width: 1399px) { .trigger { width: 40px; justify-content: center; padding-inline: 0; } .trigger span { display: none; } .films { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (max-width: 767px) { .top { padding-top: 20px; gap: 16px; } .films { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 12px; } .form { gap: 10px; padding-inline: 10px; } }
+@media (max-width: 359px) { .films { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .play { transition: none; } }

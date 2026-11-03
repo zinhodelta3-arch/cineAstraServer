@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import { readSessionResponse } from '@/lib/auth/session-response.mjs';
-import { passwordValid } from '@/lib/auth/destination.mjs';
+import { loginDestination, passwordValid } from '@/lib/auth/destination.mjs';
 export async function sessionRequest(action,body,signal) {
  const response=await fetch(`/api/session/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body),signal});
  return readSessionResponse(response);
@@ -23,8 +23,9 @@ export function useAuthForm({resetToken}={}) {
    const result=await sessionRequest(action,body,abort.signal);setForm(f=>({...f,password:'',confirmation:''}));
    if(action==='login'){
     setUser(result.user);window.dispatchEvent(new Event('cineastra-session'));
-    if(result.destination){window.location.replace(result.destination);}
-    else setMessage('Login realizado. A área do supervisor ainda não está disponível.');
+    const destination = loginDestination(result.user?.role) ?? result.destination;
+    if(destination){window.location.replace(destination);}
+    else setMessage('Login realizado.');
    }else{setMessage(result.message);setSuccess(true);}
   }catch(e){if(!abort.signal.aborted)setMessage(e.message||'Falha de conexão. Tente novamente.');}
   finally{busy.current=false;if(!abort.signal.aborted)setPending(false);}

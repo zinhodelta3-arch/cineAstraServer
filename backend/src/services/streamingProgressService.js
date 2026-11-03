@@ -1,6 +1,7 @@
 import {ApiError} from '../utils/ApiError.js';
 import {idString} from '../utils/dto.js';
 import {instant} from './identityService.js';
+import {youtubeTrailerId} from '../utils/youtubeTrailer.js';
 const iso=value=>new Date(instant(value)).toISOString();
 const dto=row=>({filmId:idString(row.id_filme),positionSeconds:row.posicao_segundos,durationSeconds:row.duracao_segundos,completed:Boolean(row.concluido),version:row.versao,updatedAt:iso(row.atualizado_em),catalogAvailable:row.status==='ATIVO'&&Boolean(row.disponivel_streaming),title:row.status==='ATIVO'&&row.disponivel_streaming?row.titulo:null});
 export function createStreamingProgressService({model,identity}){
@@ -22,8 +23,10 @@ export function createStreamingProgressService({model,identity}){
             if(input.expectedVersion!==(old?.versao??0))throw new ApiError('Progresso alterado; consulte a versão atual',409,null,'PROGRESS_VERSION_CONFLICT');
             const film=await model.film(c,filmId);
             if(!film||film.status!=='ATIVO'||!film.disponivel_streaming)throw ApiError.naoEncontrado();
-            const duration=film.duracao*60;
-            if(!Number.isSafeInteger(duration)||duration<=0||duration>4294967295)throw ApiError.indisponivel();
+            const filmDuration=film.duracao*60;
+            if(!Number.isSafeInteger(filmDuration)||filmDuration<=0||filmDuration>4294967295)throw ApiError.indisponivel();
+            if(input.playbackDurationSeconds!==undefined&&(!youtubeTrailerId(film.trailer)||input.playbackDurationSeconds>filmDuration))throw ApiError.validacao('Duração da reprodução inválida');
+            const duration=input.playbackDurationSeconds??filmDuration;
             if(input.positionSeconds>duration)throw ApiError.validacao('Posição excede a duração do filme');
             await model.save(c,profileId,filmId,{position:input.positionSeconds,duration,completed:input.positionSeconds>=Math.ceil(duration*0.95)},Boolean(old));
             // This is client-reported resume metadata, not proof of playback or an entitlement.

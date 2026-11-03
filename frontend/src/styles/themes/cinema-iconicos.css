@@ -1,0 +1,371 @@
+/* Filmes icônicos: paletas autorais inspiradas nos filmes, sobre os tokens CineAstra. */
+
+html[data-theme="ultimato"],
+html[data-theme="castelo-infinito"],
+html[data-theme="era-ultron"],
+html[data-theme="guerra-infinita"],
+html[data-theme="chainsaw-reze"],
+html[data-theme="interestelar"],
+html[data-theme="retorno-rei"],
+html[data-theme="cavaleiro-trevas"],
+html[data-theme="atraves-aranhaverso"],
+html[data-theme="viagem-chihiro"] {
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --input: var(--border);
+  --ring: var(--primary);
+  --destructive: #b42335;
+  --destructive-foreground: #ffffff;
+  --chart-1: var(--primary);
+  --chart-2: var(--secondary);
+  --chart-3: var(--muted-foreground);
+  --chart-4: var(--accent-foreground);
+  --chart-5: var(--border);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --theme-font-sans: var(--font-geist-sans), sans-serif;
+  --theme-font-serif: Georgia, serif;
+  --theme-font-mono: var(--font-geist-mono), monospace;
+  --radius: 0.625rem;
+}
+
+html.dark[data-theme="ultimato"],
+html.dark[data-theme="castelo-infinito"],
+html.dark[data-theme="era-ultron"],
+html.dark[data-theme="guerra-infinita"],
+html.dark[data-theme="chainsaw-reze"],
+html.dark[data-theme="interestelar"],
+html.dark[data-theme="retorno-rei"],
+html.dark[data-theme="cavaleiro-trevas"],
+html.dark[data-theme="atraves-aranhaverso"],
+html.dark[data-theme="viagem-chihiro"] {
+  --destructive: #ff9aa9;
+  --destructive-foreground: #300b14;
+}
+
+html[data-theme="ultimato"] {
+  --background: #f4eff8;
+  --foreground: #30213e;
+  --card: #fffcff;
+  --primary: #65358b;
+  --primary-foreground: #ffffff;
+  --secondary: #805818;
+  --secondary-foreground: #ffffff;
+  --muted: #e7ddee;
+  --muted-foreground: #63516f;
+  --accent: #f6e8c6;
+  --accent-foreground: #674a16;
+  --border: #a592b6;
+  --film-logo-red-shift: 270deg;
+  --film-logo-gold-shift: 0deg;
+}
+
+html.dark[data-theme="ultimato"] {
+  --background: #160f24;
+  --foreground: #f4edf9;
+  --card: #251b38;
+  --primary: #d3b4f5;
+  --primary-foreground: #241335;
+  --secondary: #74521e;
+  --secondary-foreground: #fff4db;
+  --muted: #352744;
+  --muted-foreground: #cdbbdf;
+  --accent: #4b382a;
+  --accent-foreground: #f6dba0;
+  --border: #82679c;
+}
+
+html[data-theme="castelo-infinito"] {
+  --background: #faf1e5;
+  --foreground: #3c2927;
+  --card: #fffaf2;
+  --primary: #a12e2e;
+  --primary-foreground: #ffffff;
+  --secondary: #765016;
+  --secondary-foreground: #ffffff;
+  --muted: #eddfcd;
+  --muted-foreground: #705649;
+  --accent: #f8e3bb;
+  --accent-foreground: #704415;
+  --border: #b2967b;
+  --film-logo-red-shift: 0deg;
+  --film-logo-gold-shift: 350deg;
+}
+
+html.dark[data-theme="castelo-infinito"] {
+  --background: #1a1112;
+  --foreground: #f7ecdd;
+  --card: #2b1c1b;
+  --primary: #efbd74;
+  --primary-foreground: #2e1b0b;
+  --secondary: #842f39;
+  --secondary-foreground: #fff0e8;
+  --muted: #3d2926;
+  --muted-foreground: #d4bdb1;
+  --accent: #503227;
+  --accent-foreground: #ffe1b4;
+  --border: #947360;
+}
+
+html[data-theme="era-ultron"] {
+  --background: #eff2f4;
+  --foreground: #27313b;
+  --card: #ffffff;
+  --primary: #b02232;
+  --primary-foreground: #ffffff;
+  --secondary: #3e5265;
+  --secondary-foreground: #ffffff;
+  --muted: #dde4e9;
+  --muted-foreground: #4e5b68;
+  --accent: #f2dde0;
+  --accent-foreground: #842d3b;
+  --border: #8f9eaa;
+  --film-logo-red-shift: 0deg;
+  --film-logo-gold-shift: 180deg;
+}
+
+html.dark[data-theme="era-ultron"] {
+  --background: #101418;
+  --foreground: #eef2f5;
+  --card: #1c242d;
+  --primary: #ff7a81;
+  --primary-foreground: #320f18;
+  --secondary: #3d5266;
+  --secondary-foreground: #f3f8fc;
+  --muted: #2b3642;
+  --muted-foreground: #bdc9d3;
+  --accent: #4b2832;
+  --accent-foreground: #ffdce0;
+  --border: #657d91;
+}
+
+html[data-theme="guerra-infinita"] {
+  --background: #faf0e8;
+  --foreground: #412a35;
+  --card: #fffaf5;
+  --primary: #95461d;
+  --primary-foreground: #ffffff;
+  --secondary: #66358a;
+  --secondary-foreground: #ffffff;
+  --muted: #f0dfd2;
+  --muted-foreground: #6b5360;
+  --accent: #eddff4;
+  --accent-foreground: #633479;
+  --border: #b09599;
+  --film-logo-red-shift: 280deg;
+  --film-logo-gold-shift: 345deg;
+}
+
+html.dark[data-theme="guerra-infinita"] {
+  --background: #211125;
+  --foreground: #faf0e5;
+  --card: #342039;
+  --primary: #ffb36a;
+  --primary-foreground: #351b0c;
+  --secondary: #754695;
+  --secondary-foreground: #fff5ff;
+  --muted: #493047;
+  --muted-foreground: #d9bfd0;
+  --accent: #614126;
+  --accent-foreground: #ffe4ae;
+  --border: #99788e;
+}
+
+html[data-theme="chainsaw-reze"] {
+  --background: #eff6ee;
+  --foreground: #223c32;
+  --card: #fcfff9;
+  --primary: #9b315c;
+  --primary-foreground: #ffffff;
+  --secondary: #245d46;
+  --secondary-foreground: #ffffff;
+  --muted: #dfeade;
+  --muted-foreground: #506455;
+  --accent: #f5dfe9;
+  --accent-foreground: #80364f;
+  --border: #8fa68e;
+  --film-logo-red-shift: 130deg;
+  --film-logo-gold-shift: 260deg;
+}
+
+html.dark[data-theme="chainsaw-reze"] {
+  --background: #101c19;
+  --foreground: #ecf7e9;
+  --card: #1c3029;
+  --primary: #f29dbf;
+  --primary-foreground: #351426;
+  --secondary: #28755c;
+  --secondary-foreground: #f2fff5;
+  --muted: #2a4235;
+  --muted-foreground: #b8d2ba;
+  --accent: #3c2c4b;
+  --accent-foreground: #f2dcfa;
+  --border: #688c74;
+}
+
+html[data-theme="interestelar"] {
+  --background: #f1f4f5;
+  --foreground: #283a43;
+  --card: #ffffff;
+  --primary: #315e78;
+  --primary-foreground: #ffffff;
+  --secondary: #81532d;
+  --secondary-foreground: #ffffff;
+  --muted: #e0e8eb;
+  --muted-foreground: #52636b;
+  --accent: #eee2d3;
+  --accent-foreground: #6e4e2c;
+  --border: #94a7b0;
+  --film-logo-red-shift: 190deg;
+  --film-logo-gold-shift: 345deg;
+}
+
+html.dark[data-theme="interestelar"] {
+  --background: #10191f;
+  --foreground: #edf2f2;
+  --card: #1b2b34;
+  --primary: #a6cfdf;
+  --primary-foreground: #152a35;
+  --secondary: #725033;
+  --secondary-foreground: #fff1df;
+  --muted: #2a3e48;
+  --muted-foreground: #b9cdd2;
+  --accent: #42403a;
+  --accent-foreground: #efe0c4;
+  --border: #6b8793;
+}
+
+html[data-theme="retorno-rei"] {
+  --background: #f5f2e6;
+  --foreground: #303a28;
+  --card: #fffdf3;
+  --primary: #476239;
+  --primary-foreground: #ffffff;
+  --secondary: #80591d;
+  --secondary-foreground: #ffffff;
+  --muted: #e5e7d4;
+  --muted-foreground: #59634c;
+  --accent: #f1e3ba;
+  --accent-foreground: #64501b;
+  --border: #9ba181;
+  --film-logo-red-shift: 110deg;
+  --film-logo-gold-shift: 0deg;
+}
+
+html.dark[data-theme="retorno-rei"] {
+  --background: #131c15;
+  --foreground: #f0f1dc;
+  --card: #213023;
+  --primary: #dbc57c;
+  --primary-foreground: #2d240d;
+  --secondary: #3a5c3b;
+  --secondary-foreground: #f4f8e7;
+  --muted: #314331;
+  --muted-foreground: #bfccb0;
+  --accent: #4c482a;
+  --accent-foreground: #f7e7b2;
+  --border: #7b8b65;
+}
+
+html[data-theme="cavaleiro-trevas"] {
+  --background: #eef1f4;
+  --foreground: #242f40;
+  --card: #ffffff;
+  --primary: #244b70;
+  --primary-foreground: #ffffff;
+  --secondary: #83612b;
+  --secondary-foreground: #ffffff;
+  --muted: #dce3eb;
+  --muted-foreground: #4d5e72;
+  --accent: #eee4cd;
+  --accent-foreground: #68511f;
+  --border: #8d9caf;
+  --film-logo-red-shift: 190deg;
+  --film-logo-gold-shift: 0deg;
+}
+
+html.dark[data-theme="cavaleiro-trevas"] {
+  --background: #0c121b;
+  --foreground: #eaf0f6;
+  --card: #172230;
+  --primary: #8db8d2;
+  --primary-foreground: #142536;
+  --secondary: #68522d;
+  --secondary-foreground: #fff4dd;
+  --muted: #263445;
+  --muted-foreground: #b0c2d3;
+  --accent: #363c42;
+  --accent-foreground: #f1e3c2;
+  --border: #5f7994;
+}
+
+html[data-theme="atraves-aranhaverso"] {
+  --background: #f8f0fc;
+  --foreground: #352047;
+  --card: #fffaff;
+  --primary: #9a267a;
+  --primary-foreground: #ffffff;
+  --secondary: #125c81;
+  --secondary-foreground: #ffffff;
+  --muted: #eee0f3;
+  --muted-foreground: #6b4d7a;
+  --accent: #d7f1f4;
+  --accent-foreground: #20596a;
+  --border: #ab8dbd;
+  --film-logo-red-shift: 290deg;
+  --film-logo-gold-shift: 145deg;
+}
+
+html.dark[data-theme="atraves-aranhaverso"] {
+  --background: #180d2c;
+  --foreground: #f8edff;
+  --card: #2d1945;
+  --primary: #fc8bc8;
+  --primary-foreground: #3b1032;
+  --secondary: #255a83;
+  --secondary-foreground: #f0f9ff;
+  --muted: #402955;
+  --muted-foreground: #d8b9e7;
+  --accent: #174b60;
+  --accent-foreground: #d4f8fc;
+  --border: #9666b2;
+}
+
+html[data-theme="viagem-chihiro"] {
+  --background: #f9f2e7;
+  --foreground: #3c342b;
+  --card: #fffaf1;
+  --primary: #a63436;
+  --primary-foreground: #ffffff;
+  --secondary: #2e6753;
+  --secondary-foreground: #ffffff;
+  --muted: #e9e2d1;
+  --muted-foreground: #665e4a;
+  --accent: #dcebdc;
+  --accent-foreground: #355c43;
+  --border: #a99b7e;
+  --film-logo-red-shift: 115deg;
+  --film-logo-gold-shift: 350deg;
+}
+
+html.dark[data-theme="viagem-chihiro"] {
+  --background: #17231f;
+  --foreground: #f5efdf;
+  --card: #27352d;
+  --primary: #f3b4a2;
+  --primary-foreground: #3c211b;
+  --secondary: #396b55;
+  --secondary-foreground: #f5fff1;
+  --muted: #384939;
+  --muted-foreground: #c5d1b8;
+  --accent: #4b4930;
+  --accent-foreground: #f8e6b3;
+  --border: #829472;
+}

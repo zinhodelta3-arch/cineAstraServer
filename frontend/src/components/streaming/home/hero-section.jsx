@@ -1,17 +1,18 @@
 import useStreamHero from "@/hooks/streaming/home/use-stream-hero";
 import Image from "next/image";
 import { Play, Plus, BookmarkCheck, Info } from "lucide-react";
-import { ACCENT, HERO_FILMS } from "./data";
+import { ACCENT } from "./data";
 import Art from "./art";
 import Button from "./button";
 import HeroArrow from "./hero-arrow";
 
-export default function HeroSection({ onPlay, onSelect, myList, onToggleList }) {
-  const { cur, setCur, go, movie, inList } = useStreamHero(myList);
+export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggleList }) {
+  const { cur, setCur, go, movie, inList } = useStreamHero(myList, heroes);
+  if (!movie) return null;
 
   return (
     <section id="hero" aria-roledescription="carrossel" className="grain relative min-h-[90vh] bg-background flex items-center pt-28 pb-40 overflow-hidden">
-      {HERO_FILMS.map((m, i) => (
+      {heroes.map((m, i) => (
         <div key={m.id} aria-hidden={i !== cur} className={`absolute inset-y-0 right-0 w-full lg:w-[78%] transition-opacity duration-1000 ${i === cur ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
           <Art movie={m} variant="backdrop" className="absolute inset-0 size-full object-cover" />
         </div>
@@ -37,19 +38,17 @@ export default function HeroSection({ onPlay, onSelect, myList, onToggleList }) 
       <div className="relative z-20 max-w-[1800px] mx-auto px-5 md:px-12 w-full">
         <div className="max-w-2xl" aria-live="polite">
           <div className="f-display text-xl tracking-[0.2em] text-foreground/90 mb-1">
-            <span className={`${ACCENT} font-black`}>CINEASTRA</span> ORIGINAL
+            <span className={`${ACCENT} font-black`}>CINEASTRA</span> STREAMING
           </div>
           <h1 className="f-display text-6xl sm:text-7xl lg:text-[8rem] font-black text-foreground uppercase leading-[0.85] mb-5">{movie.title}</h1>
           <div className="flex items-center gap-3 text-sm text-muted-foreground mb-5 flex-wrap">
-            <span className={`font-bold ${ACCENT}`}>{movie.match}% relevante</span>
-            <span>{movie.year}</span>
+            {movie.year && <span>{movie.year}</span>}
             <span>{movie.duration}</span>
-            <span className="px-1.5 py-0.5 rounded-xs border border-muted-foreground/60 text-[11px] font-bold">4K Ultra HD</span>
-            <span className="px-1.5 py-0.5 rounded-xs border border-muted-foreground/60 text-[11px] font-bold">5.1</span>
+            <span className="px-1.5 py-0.5 rounded-xs border border-muted-foreground/60 text-[11px] font-bold">{movie.age}</span>
           </div>
           <p className="text-base md:text-lg text-foreground/80 max-w-xl mb-5 line-clamp-3 leading-relaxed">{movie.synopsis}</p>
           <p className="text-sm italic text-muted-foreground mb-8">
-            {movie.cast}<br />Filmes · {movie.genre}
+            {movie.director && <>Direção: {movie.director}<br /></>}Filmes
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             <Button size="lg" onClick={() => onPlay(movie)}><Play className="size-5 mr-2 fill-current" aria-hidden="true" /> Assistir</Button>
@@ -64,7 +63,7 @@ export default function HeroSection({ onPlay, onSelect, myList, onToggleList }) 
 
       <div className="absolute z-20 bottom-40 right-0 flex items-center gap-4">
         <div className="flex gap-2">
-          {HERO_FILMS.map((m, i) => (
+          {heroes.map((m, i) => (
             <button key={m.id} type="button" aria-label={`Ir para ${m.title}`} aria-current={i === cur} onClick={() => setCur(i)} className={`h-1.5 rounded-full transition-all outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${i === cur ? "w-8 bg-primary" : "w-4 bg-foreground/30 hover:bg-foreground/60"}`} />
           ))}
         </div>

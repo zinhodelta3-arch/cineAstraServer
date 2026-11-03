@@ -4,6 +4,7 @@ import { EnvironmentValidationError, loadEnvironment } from './config/env.js';
 import { runtimeConfig } from './config/runtime.js';
 import { createDatabase } from './config/database.js';
 import { createApp } from './app.js';
+import { simulatedPaymentProvider } from './providers/paymentProvider.js';
 import { createLogModel } from './models/logModel.js';
 import { createLogQueue } from './services/logService.js';
 import { createLogRetention } from './jobs/logRetention.js';
@@ -20,7 +21,7 @@ export async function startServer(config, overrides = {}) {
     const retention = overrides.retention ?? createLogRetention(model, config.logging);
     const lifecycle = { stopping: false };
     let app;
-    try { app = createApp({ config, database, logQueue: queue, retention, lifecycle, identityProviders: overrides.identityProviders, captchaProvider: overrides.captchaProvider, paymentProvider: overrides.paymentProvider, streamingProvider: overrides.streamingProvider, newsletterEmailProvider: overrides.newsletterEmailProvider, assistantProvider: overrides.assistantProvider, ipcaProvider: overrides.ipcaProvider, storeFactory: overrides.storeFactory }); }
+    try { app = createApp({ config, database, logQueue: queue, retention, lifecycle, identityProviders: overrides.identityProviders, captchaProvider: overrides.captchaProvider, paymentProvider: overrides.paymentProvider ?? (config.paymentMode === 'SIMULATED' ? simulatedPaymentProvider() : undefined), streamingProvider: overrides.streamingProvider, newsletterEmailProvider: overrides.newsletterEmailProvider, assistantProvider: overrides.assistantProvider, ipcaProvider: overrides.ipcaProvider, storeFactory: overrides.storeFactory }); }
     catch (error) { await queue.close(); await database.close(); throw error; }
     const server = createServer(app);
     server.requestTimeout = config.httpTimeout;

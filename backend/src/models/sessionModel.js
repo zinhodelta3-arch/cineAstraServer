@@ -1,11 +1,22 @@
 import { idString } from '../utils/dto.js';
 
-const projection = 's.id_sessao,s.id_filme,s.id_sala,sa.id_local,s.data,s.horario_inicio,s.horario_fim,s.idioma,s.preco_inteira,s.status';
+const projection = 's.id_sessao,s.id_filme,s.id_sala,sa.id_local,f.titulo AS titulo_filme,sa.nome AS nome_sala,l.nome AS nome_local,s.data,s.horario_inicio,s.horario_fim,s.idioma,s.preco_inteira,s.status';
 const joins = ' FROM sessoes s JOIN salas sa ON sa.id_sala = s.id_sala JOIN locais l ON l.id_local = sa.id_local JOIN filmes f ON f.id_filme = s.id_filme';
 export function createSessionModel(database) {
     const rows = async (c, sql, args = []) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args = []) => (await rows(c, sql, args))[0] ?? null;
     return {
+        supervisorLocation: (id, c = database) => one(c, 'SELECT id_local FROM supervisor_locais WHERE id_supervisor = ?', [id]),
+        filmAvailability: filmId => rows(database, `SELECT sa.id_local, COUNT(*) AS session_count, GROUP_CONCAT(DISTINCT sa.tipo ORDER BY sa.tipo SEPARATOR ' · ') AS formats${joins}
+            WHERE s.id_filme = ? AND s.status IN ('AGENDADA','EM_CARTAZ') AND sa.status = 'ATIVA'
+            AND l.status = 'ATIVO' AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE
+            AND TIMESTAMP(s.data,s.horario_inicio) > UTC_TIMESTAMP()
+            GROUP BY sa.id_local ORDER BY sa.id_local`, [filmId]),
+        availableDays: (filmId, localId) => rows(database, `SELECT DISTINCT s.data AS date${joins}
+            WHERE s.id_filme = ? AND sa.id_local = ? AND s.status IN ('AGENDADA','EM_CARTAZ')
+            AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO'
+            AND f.disponivel_cinema = TRUE AND TIMESTAMP(s.data,s.horario_inicio) > UTC_TIMESTAMP()
+            ORDER BY s.data`, [filmId, localId]),
         // One statement keeps session visibility, seat map and occupancy in the same read snapshot.
         seatAvailability: id => rows(database, `SELECT s.id_sessao,s.id_sala,sa.id_local,
             a.id_assento,a.fileira,a.numero,a.tipo,
@@ -31,7 +42,7 @@ export function createSessionModel(database) {
         overlapCandidates(localId, startDate, endDate, excludeId, c) {
             return rows(c, `SELECT s.id_sessao,s.data,s.horario_inicio,s.horario_fim FROM sessoes s JOIN salas sa ON sa.id_sala = s.id_sala WHERE sa.id_local = ? AND s.data BETWEEN ? AND ? AND s.status <> 'CANCELADA'${excludeId ? ' AND s.id_sessao <> ?' : ''} ORDER BY s.data,s.horario_inicio,s.id_sessao`, [localId, startDate, endDate, ...(excludeId ? [excludeId] : [])]);
         },
-        list(q, admin = false) {
+        list(q, admin = false, c = database) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
             const where = ['s.id_sessao > ?'], args = [q.cursor ?? '0'];
             if (q.localId) { where.push('sa.id_local = ?'); args.push(q.localId); }
@@ -40,7 +51,7 @@ export function createSessionModel(database) {
             if (q.startUntil) { where.push('s.horario_inicio <= ?'); args.push(q.startUntil); }
             if (admin) { if (q.status) { where.push('s.status = ?'); args.push(q.status); } }
             else where.push("s.status IN ('AGENDADA','EM_CARTAZ')", "sa.status = 'ATIVA'", "l.status = 'ATIVO'", "f.status = 'ATIVO'", 'f.disponivel_cinema = TRUE');
-            return rows(database, `SELECT ${projection}${joins} WHERE ${where.join(' AND ')} ORDER BY s.id_sessao LIMIT ${q.limit + 1}`, args);
+            return rows(c, `SELECT ${projection}${joins} WHERE ${where.join(' AND ')} ORDER BY s.id_sessao LIMIT ${q.limit + 1}`, args);
         },
         publicSession: id => one(database, `SELECT ${projection}${joins} WHERE s.id_sessao = ? AND s.status IN ('AGENDADA','EM_CARTAZ') AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE`, [id]),
         async insert(c, data) {

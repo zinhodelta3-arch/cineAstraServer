@@ -19,6 +19,18 @@ export const venueOperations = Object.entries(paths).flatMap(([kind, [collection
 ]);
 export function venueRoutes(controller, { auth }) {
     const router = Router();
+    const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, allowRoles('SUPERVISOR'), venueParams];
+    for (const [kind, collection, item] of [
+        ['room', '/api/unit/locations/:localId/rooms', '/api/unit/locations/:localId/rooms/:roomId'],
+        ['seat', '/api/unit/locations/:localId/rooms/:roomId/seats', '/api/unit/locations/:localId/rooms/:roomId/seats/:seatId']
+    ]) {
+        const query = kind === 'room' ? venueSchemas.adminRooms : venueSchemas.adminSeats;
+        router.get(collection, ...unitAccess, venueQuery(query), controller.unitList(kind));
+        router.get(item, ...unitAccess, controller.unitGet(kind));
+        router.post(collection, ...unitAccess, validateBody(venueSchemas[kind]), controller.unitSave(kind));
+        router.patch(item, ...unitAccess, validateBody(venueSchemas[`${kind}Patch`]), controller.unitSave(kind));
+        router.delete(item, ...unitAccess, controller.unitArchive(kind));
+    }
     for (const r of venueOperations) {
         const middleware = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }];
         if (r.admin) middleware.push(auth, allowRoles('ADMIN'));

@@ -8,10 +8,11 @@ import {readSessionResponse} from '@/lib/auth/session-response.mjs';
 import {snackProduct} from '@/lib/api/snack-products.mjs';
 export function useAstraSnack(){
  const session=useSession(),cart=useCart();
- const [localId,setLocalId]=useState(''),[category,setCategory]=useState('todos'),[query,setQuery]=useState('');
+ const [chosenLocalId,setLocalId]=useState(''),[category,setCategory]=useState('todos'),[query,setQuery]=useState('');
  const [selected,setSelected]=useState(null),[quantity,setQuantity]=useState(1),[cartOpen,setCartOpen]=useState(false),[notice,setNotice]=useState(''),[revision,setRevision]=useState(0);
  const [detail,setDetail]=useState(null),[quote,setQuote]=useState(null);
  const locations=usePublicList('/locations?limit=100');
+ const localId=chosenLocalId||String(locations.items[0]?.id_local||'');
  const snacks=usePublicList(localId?`/locations/${localId}/snacks?limit=20`:null),combos=usePublicList(localId?`/combos?localId=${localId}&limit=20`:null);
  const products=[...snacks.items.map(r=>snackProduct(r,'INPUT',localId)),...combos.items.map(r=>snackProduct(r,'COMBO',localId))];
  const filteredProducts=products.filter(p=>(category==='todos'||p.categoryId===category)&&`${p.name} ${p.description} ${p.category}`.toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR')));

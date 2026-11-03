@@ -14,7 +14,12 @@ export function createTeamService({ model, identity, notifications }) {
         if (!['ADMIN','SUPERVISOR','COLABORADOR'].includes(u.tipo_usuario)) throw ApiError.acessoNegado();
         return { id: idString(u.id_usuario), tipo: u.tipo_usuario };
     }
-    const manager = (u, team) => u.tipo === 'ADMIN' || u.tipo === 'SUPERVISOR' && u.id === idString(team.id_supervisor);
+    async function manager(u, team, c) {
+        if (u.tipo === 'ADMIN') return true;
+        if (u.tipo !== 'SUPERVISOR') return false;
+        const location = await model.supervisorLocation(u.id, c);
+        return Boolean(location && idString(location.id_local) === idString(team.id_local));
+    }
     async function lockedTeam(c, id) { return found(await model.lockTeam(id, c)); }
     async function eligibleUser(c, id, role, lock = false) {
         const u = found(await model.user(id, c, lock));
@@ -35,6 +40,17 @@ export function createTeamService({ model, identity, notifications }) {
         catch (error) { if (error.code === 'ER_DUP_ENTRY') throw conflict('Solicitação, convite ou vínculo já existe'); throw error; }
     }
     return {
+        async context(context) {
+            const u = { id: context.actor.id, tipo: context.actor.tipo };
+            if (!['SUPERVISOR','COLABORADOR'].includes(u.tipo)) throw ApiError.acessoNegado();
+            const locations = await model.actorLocations(u);
+            return { locations: locations.map(row => ({ id_local: idString(row.id_local), nome: row.nome })) };
+        },
+        async collaborator(email, context) {
+            if (context.actor.tipo !== 'SUPERVISOR' || !await model.supervisorLocation(context.actor.id)) throw ApiError.acessoNegado();
+            const user = found(await model.collaboratorByEmail(email));
+            return { id: idString(user.id_usuario), name: user.nome };
+        },
         async listTeams(q, context) {
             const u = { id: context.actor.id, tipo: context.actor.tipo };
             if (!['ADMIN','SUPERVISOR','COLABORADOR'].includes(u.tipo)) throw ApiError.acessoNegado();
@@ -42,9 +58,10 @@ export function createTeamService({ model, identity, notifications }) {
         },
         async team(id, context) {
             const u = { id: context.actor.id, tipo: context.actor.tipo }, team = found(await model.team(id));
-            if (!manager(u, team)) {
+            if (!await manager(u, team)) {
                 const member = await model.memberByUser(id, u.id);
-                if (!(u.tipo === 'COLABORADOR' && (team.status === 'ATIVA' && activeSession(team) || member?.status === 'ATIVO'))) throw ApiError.acessoNegado();
+                const invitation = u.tipo === 'COLABORADOR' && await model.pendingEntry(id, u.id);
+                if (!(u.tipo === 'COLABORADOR' && (member?.status === 'ATIVO' || invitation?.tipo === 'CONVITE'))) throw ApiError.acessoNegado();
             }
             return teamDto(team);
         },
@@ -57,6 +74,8 @@ export function createTeamService({ model, identity, notifications }) {
                 const session = found(await model.session(input.sessionId, c, true));
                 if (!activeSession(session)) throw conflict('Sessão não admite equipe ativa');
                 await eligibleUser(c, supervisorId, 'SUPERVISOR', true);
+                const location = await model.supervisorLocation(supervisorId, c, true);
+                if (!location || idString(location.id_local) !== idString(session.id_local)) throw conflict('Supervisor não está vinculado ao cinema desta sessão');
                 if (await model.activeTeamForSession(input.sessionId, c)) throw conflict('Sessão já tem equipe ativa');
                 const id = await model.create(c, { sessionId: input.sessionId, supervisorId, nome: input.nome });
                 await identity.audit(c, 'TEAM.CREATED', id, context);
@@ -66,10 +85,15 @@ export function createTeamService({ model, identity, notifications }) {
         async patch(id, input, context) {
             return transaction(async (c, u) => {
                 const team = await lockedTeam(c, id);
-                if (!manager(u, team)) throw ApiError.acessoNegado();
+                if (!await manager(u, team, c)) throw ApiError.acessoNegado();
                 if (team.status !== 'ATIVA') throw conflict('Equipe encerrada');
                 if (input.supervisorId && u.tipo !== 'ADMIN') throw ApiError.acessoNegado();
-                if (input.supervisorId) await eligibleUser(c, input.supervisorId, 'SUPERVISOR', true);
+                if (input.supervisorId) {
+                    await eligibleUser(c, input.supervisorId, 'SUPERVISOR', true);
+                    const session = found(await model.session(team.id_sessao, c));
+                    const location = await model.supervisorLocation(input.supervisorId, c, true);
+                    if (!location || idString(location.id_local) !== idString(session.id_local)) throw conflict('Supervisor não está vinculado ao cinema desta sessão');
+                }
                 if (!input.status || input.nome || input.supervisorId) await writableTeam(c, team);
                 const data = { ...input };
                 if (input.supervisorId) { data.id_supervisor = input.supervisorId; delete data.supervisorId; await model.cancelPending(c, id); }
@@ -82,7 +106,7 @@ export function createTeamService({ model, identity, notifications }) {
         async archive(id, context) {
             return transaction(async (c, u) => {
                 const team = await lockedTeam(c, id);
-                if (!manager(u, team)) throw ApiError.acessoNegado();
+                if (!await manager(u, team, c)) throw ApiError.acessoNegado();
                 if (team.status === 'CANCELADA') return;
                 if (team.status !== 'ATIVA') throw conflict('Equipe finalizada');
                 await model.cancelPending(c, id);
@@ -92,13 +116,13 @@ export function createTeamService({ model, identity, notifications }) {
         },
         async members(id, q, context) {
             const u = { id: context.actor.id, tipo: context.actor.tipo }, team = found(await model.team(id));
-            if (!manager(u, team) && (await model.memberByUser(id, u.id))?.status !== 'ATIVO') throw ApiError.acessoNegado();
+            if (!await manager(u, team) && !(u.tipo === 'COLABORADOR' && (await model.memberByUser(id, u.id))?.status === 'ATIVO')) throw ApiError.acessoNegado();
             return page(await model.listMembers(id, q), q, memberDto, 'id_equipe_membro');
         },
         async changeMember(id, memberId, input, context) {
             return transaction(async (c, u) => {
                 const team = await lockedTeam(c, id);
-                if (!manager(u, team)) throw ApiError.acessoNegado();
+                if (!await manager(u, team, c)) throw ApiError.acessoNegado();
                 await writableTeam(c, team);
                 const member = found(await model.member(id, memberId, c));
                 if (member.status !== 'ATIVO') throw conflict('Membro inativo exige novo convite ou solicitação');
@@ -110,7 +134,7 @@ export function createTeamService({ model, identity, notifications }) {
         async removeMember(id, memberId, context) {
             return transaction(async (c, u) => {
                 const team = await lockedTeam(c, id);
-                if (!manager(u, team)) throw ApiError.acessoNegado();
+                if (!await manager(u, team, c)) throw ApiError.acessoNegado();
                 await writableTeam(c, team);
                 const member = found(await model.member(id, memberId, c));
                 if (member.status === 'INATIVO') return;
@@ -120,15 +144,21 @@ export function createTeamService({ model, identity, notifications }) {
         },
         async entries(id, q, context) {
             const u = { id: context.actor.id, tipo: context.actor.tipo }, team = found(await model.team(id));
-            if (!manager(u, team) && u.tipo !== 'COLABORADOR') throw ApiError.acessoNegado();
-            return page(await model.listEntries(id, q, manager(u, team) ? null : u.id), q, entryDto, 'id_entrada');
+            const managed = await manager(u, team);
+            if (!managed) {
+                const member = u.tipo === 'COLABORADOR' && await model.memberByUser(id, u.id);
+                const invitation = u.tipo === 'COLABORADOR' && await model.pendingEntry(id, u.id);
+                if (member?.status !== 'ATIVO' && invitation?.tipo !== 'CONVITE') throw ApiError.acessoNegado();
+            }
+            return page(await model.listEntries(id, q, managed ? null : u.id), q, entryDto, 'id_entrada');
         },
         async propose(id, input, type, context) {
             return transaction(async (c, u) => {
                 const team = await lockedTeam(c, id);
                 await writableTeam(c, team);
                 const request = type === 'SOLICITACAO';
-                if (request && u.tipo !== 'COLABORADOR' || !request && !manager(u, team)) throw ApiError.acessoNegado();
+                if (request && u.tipo !== 'COLABORADOR' || !request && !await manager(u, team, c)) throw ApiError.acessoNegado();
+                if (request && !await model.activeMemberInLocal(u.id, team.id_local, c)) throw ApiError.acessoNegado();
                 const userId = request ? u.id : input.userId;
                 await eligibleUser(c, userId, 'COLABORADOR', true);
                 await noActiveMember(c, id, userId);
@@ -146,7 +176,7 @@ export function createTeamService({ model, identity, notifications }) {
                 const entry = found(await model.entry(id, entryId, c, true));
                 if (entry.status !== 'PENDENTE') throw conflict('Entrada já decidida');
                 const request = entry.tipo === 'SOLICITACAO';
-                if (request ? !manager(u, team) : u.id !== idString(entry.id_usuario) || u.tipo !== 'COLABORADOR') throw ApiError.acessoNegado();
+                if (request ? !await manager(u, team, c) : u.id !== idString(entry.id_usuario) || u.tipo !== 'COLABORADOR') throw ApiError.acessoNegado();
                 if (request && input.decision === 'ACEITAR' && !input.funcao || input.funcao && !(request && input.decision === 'ACEITAR')) throw ApiError.validacao('Função inválida para esta decisão');
                 if (input.decision === 'ACEITAR') {
                     await eligibleUser(c, entry.id_usuario, 'COLABORADOR', true);
@@ -161,7 +191,7 @@ export function createTeamService({ model, identity, notifications }) {
         async cancelEntry(id, entryId, context) {
             return transaction(async (c, u) => {
                 const team = await lockedTeam(c, id), entry = found(await model.entry(id, entryId, c, true));
-                if (!manager(u, team) && u.id !== idString(entry.id_emissor)) throw ApiError.acessoNegado();
+                if (!await manager(u, team, c) && u.id !== idString(entry.id_emissor)) throw ApiError.acessoNegado();
                 if (entry.status !== 'PENDENTE') throw conflict('Entrada já decidida');
                 await model.decideEntry(c, id, entryId, 'CANCELADA');
                 await identity.audit(c, 'TEAM.ENTRY_CANCELLED', entryId, context);

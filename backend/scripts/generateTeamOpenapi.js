@@ -12,6 +12,24 @@ const obj = (properties, required = Object.keys(properties)) => ({ type: 'object
 const nullable = schema => ({ ...schema, nullable: true });
 const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const response = data => ({ description: 'Sucesso', content: { 'application/json': { schema: obj({ success: { type: 'boolean', enum: [true] }, data, requestId: { type: 'string', format: 'uuid' } }) } } });
+spec.paths['/api/teams/context'] = { get: {
+    operationId: 'get_team_context', tags: ['Equipes'], summary: 'Consultar cinemas da unidade',
+    description: 'SUPERVISOR vê o cinema atribuído; COLABORADOR vê cinemas das equipes em que possui vínculo ativo.',
+    security: [{ bearerAuth: [] }], responses: {
+        200: response(obj({ locations: { type: 'array', items: obj({ id_local: id, nome: str }) } })),
+        401: { $ref: '#/components/responses/Unauthorized' }, 403: { $ref: '#/components/responses/Forbidden' }
+    }
+} };
+spec.paths['/api/teams/collaborator'] = { get: {
+    operationId: 'find_team_collaborator', tags: ['Equipes'], summary: 'Localizar colaborador para convite',
+    description: 'SUPERVISOR vinculado a um cinema localiza por e-mail exato uma conta COLABORADOR ativa; retorna somente identificador e nome.',
+    security: [{ bearerAuth: [] }], parameters: [{ name: 'email', in: 'query', required: true, schema: { type: 'string', format: 'email', maxLength: 150 } }],
+    responses: {
+        200: response(obj({ id, name: str })),
+        401: { $ref: '#/components/responses/Unauthorized' }, 403: { $ref: '#/components/responses/Forbidden' },
+        404: { $ref: '#/components/responses/NotFound' }, 422: { $ref: '#/components/responses/ValidationError' }
+    }
+} };
 spec.components.schemas.Team = obj({ id_equipe: id, id_supervisor: id, id_sessao: id, nome: str, status: { type: 'string', enum: ['ATIVA','FINALIZADA','CANCELADA'] } });
 spec.components.schemas.TeamMember = obj({ id_equipe_membro: id, id_equipe: id, id_usuario: id, funcao: nullable(str), data_entrada: { type: 'string', format: 'date' }, status: { type: 'string', enum: ['ATIVO','INATIVO'] } });
 spec.components.schemas.TeamEntry = obj({ id_entrada: entryId, id_equipe: id, id_usuario: id, id_emissor: id, tipo: { type: 'string', enum: ['SOLICITACAO','CONVITE'] }, funcao_proposta: nullable(str), status: { type: 'string', enum: ['PENDENTE','ACEITA','RECUSADA','CANCELADA'] }, criado_em: { type: 'string' }, decidido_em: nullable({ type: 'string' }) });
@@ -27,18 +45,18 @@ const summaries = {
     request: 'Solicitar entrada na equipe', invitation: 'Convidar colaborador', decision: 'Aceitar ou recusar entrada', cancelEntry: 'Cancelar entrada pendente'
 };
 const descriptions = {
-    list: 'ADMIN vê todas; SUPERVISOR somente equipes próprias; COLABORADOR vê equipes ativas de sessões AGENDADA/EM_CARTAZ.',
-    get: 'SUPERVISOR somente equipe própria. COLABORADOR vê equipe ativa de sessão vigente ou equipe na qual é membro ativo.',
-    create: 'ADMIN indica supervisor ativo; SUPERVISOR só cria para si. Sessão deve estar AGENDADA/EM_CARTAZ e aceita uma equipe ativa.',
-    patch: 'ADMIN ou supervisor próprio. Transferir supervisão exige ADMIN e cancela entradas pendentes. FINALIZADA/CANCELADA cancelam pendências.',
-    archive: 'ADMIN ou supervisor próprio. Cancelamento lógico.',
-    members: 'ADMIN, supervisor próprio ou membro ativo.',
-    changeMember: 'Somente ADMIN ou supervisor próprio define função de membro ativo.',
-    removeMember: 'ADMIN ou supervisor próprio desativa o vínculo; nova entrada exige solicitação ou convite.',
-    entries: 'ADMIN e supervisor próprio veem todas as entradas; COLABORADOR vê somente as suas.',
-    request: 'COLABORADOR ativo solicita para si; não ingressa automaticamente. Função será definida por ADMIN ou supervisor próprio ao aceitar.',
-    invitation: 'ADMIN ou supervisor próprio convida COLABORADOR ativo e define função. Membro só entra após aceitar.',
-    decision: 'Solicitação: ADMIN ou supervisor próprio aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.',
+    list: 'ADMIN vê todas; SUPERVISOR vê equipes do cinema atribuído; COLABORADOR vê equipes com vínculo ativo ou convite pendente próprio.',
+    get: 'SUPERVISOR vê equipes do cinema atribuído. COLABORADOR vê equipe com vínculo ativo ou convite pendente próprio.',
+    create: 'ADMIN indica supervisor ativo; SUPERVISOR só cria para si. Supervisor deve estar vinculado ao cinema da sessão. Sessão deve estar AGENDADA/EM_CARTAZ e aceita uma equipe ativa.',
+    patch: 'ADMIN ou supervisor vinculado ao cinema. Transferir supervisão exige ADMIN e vínculo do novo supervisor ao cinema da sessão; cancela entradas pendentes. FINALIZADA/CANCELADA cancelam pendências.',
+    archive: 'ADMIN ou supervisor vinculado ao cinema. Cancelamento lógico.',
+    members: 'ADMIN, supervisor vinculado ao cinema ou membro ativo da equipe.',
+    changeMember: 'Somente ADMIN ou supervisor vinculado ao cinema define função de membro ativo.',
+    removeMember: 'ADMIN ou supervisor vinculado ao cinema desativa o vínculo; nova entrada exige solicitação ou convite.',
+    entries: 'ADMIN e supervisor vinculado ao cinema veem todas as entradas; COLABORADOR vê somente as próprias quando membro ativo ou convidado.',
+    request: 'COLABORADOR membro ativo de outra equipe do mesmo cinema pode solicitar entrada para si; não ingressa automaticamente.',
+    invitation: 'ADMIN ou supervisor vinculado ao cinema convida COLABORADOR ativo e define função. Membro só entra após aceitar.',
+    decision: 'Solicitação: ADMIN ou supervisor vinculado ao cinema aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.',
     cancelEntry: 'ADMIN, supervisor próprio ou emissor cancela entrada pendente.'
 };
 for (const r of teamOperations) {

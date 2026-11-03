@@ -2,11 +2,12 @@
 
 import useSeatMap from "@/hooks/cinema/sessao/use-seat-map";
 import { Accessibility, Check, Minus, Plus, X } from "lucide-react";
-import { COLUMNS, ROWS, SEATS } from "./seat-state.mjs";
 import styles from "./seat-selection.module.css";
 
-export default function SeatMap({ selection }) {
-  const { activeSeat, setActiveSeat, registerSeat, navigate } = useSeatMap(selection);
+export default function SeatMap({ selection, seats }) {
+  const rows = [...new Set(seats.map(seat => seat.row))];
+  const columns = Math.max(1, ...seats.map(seat => seat.number));
+  const { activeSeat, setActiveSeat, registerSeat, navigate } = useSeatMap(selection, seats);
 
   return (
     <section className={styles.mapSection} aria-label="Mapa de assentos">
@@ -21,18 +22,19 @@ export default function SeatMap({ selection }) {
       </div>
       <p id="seat-instructions" className={styles.mapHint}>Escolha no mapa. Use as setas do teclado para navegar e Espaço para selecionar. Em telas pequenas, deslize para os lados.</p>
       <div className={styles.mapScroll}>
-        <div className={styles.map} style={{ "--seat-size": `${30 * selection.zoom / 100}px`, "--seat-gap": `${6 * selection.zoom / 100}px` }}>
-          <div className={styles.numbers} aria-hidden="true"><span />{Array.from({ length: COLUMNS }, (_, i) => <span className={i === 10 ? styles.afterAisle : ""} key={i}>{i + 1}</span>)}<span /></div>
-          {ROWS.map((row) => (
+        <div className={styles.map} style={{ "--columns": columns, "--seat-size": `${30 * selection.zoom / 100}px`, "--seat-gap": `${6 * selection.zoom / 100}px` }}>
+          <div className={styles.numbers} aria-hidden="true"><span />{Array.from({ length: columns }, (_, i) => <span key={i}>{i + 1}</span>)}<span /></div>
+          {rows.map((row) => (
             <div className={`${styles.seatRow} ${row === "G" ? styles.accessRow : ""}`} key={row} role="group" aria-label={`Fileira ${row}`}>
               <span className={styles.rowLabel} aria-hidden="true">{row}</span>
-              {SEATS.filter((seat) => seat.row === row).map((seat) => {
+              {Array.from({ length: columns }, (_, index) => seats.find(seat => seat.row === row && seat.number === index + 1) || null).map((seat, index) => {
+                if (!seat) return <span key={`empty-${row}-${index}`} />;
                 const selected = selection.selected.includes(seat.id);
                 return <button
                   key={seat.id}
                   ref={(element) => registerSeat(seat.id, element)}
                   type="button"
-                  className={`${styles.seat} ${seat.number === 11 ? styles.afterAisle : ""} ${seat.accessible ? styles.accessible : ""} ${selected ? styles.selected : ""}`}
+                  className={`${styles.seat} ${seat.accessible ? styles.accessible : ""} ${selected ? styles.selected : ""}`}
                   disabled={seat.occupied || selection.continuing}
                   tabIndex={seat.id === activeSeat ? 0 : -1}
                   aria-pressed={selected}
@@ -40,14 +42,14 @@ export default function SeatMap({ selection }) {
                   aria-describedby="seat-instructions"
                   title={`${seat.id}${seat.accessible ? " · Acessível" : ""}`}
                   onFocus={() => setActiveSeat(seat.id)}
-                  onKeyDown={(event) => navigate(event, SEATS.indexOf(seat))}
+                  onKeyDown={(event) => navigate(event, seat)}
                   onClick={() => selection.selectSeat(seat.id)}
                 >{seat.occupied ? <X size={14} aria-hidden="true" /> : selected ? <Check size={15} aria-hidden="true" /> : seat.accessible ? <Accessibility size={17} aria-hidden="true" /> : <span className={styles.seatNumber}>{seat.number}</span>}</button>;
               })}
               <span className={styles.rowLabel} aria-hidden="true">{row}</span>
             </div>
           ))}
-          <div className={styles.screen} aria-label="Tela na frente da fileira L"><span>Tela</span></div>
+          <div className={styles.screen} aria-label="Tela da sala"><span>Tela</span></div>
         </div>
       </div>
       <ul className={styles.legend} aria-label="Legenda do mapa">

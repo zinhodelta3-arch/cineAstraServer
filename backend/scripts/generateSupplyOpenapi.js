@@ -18,7 +18,7 @@ const list=schema=>object({items:{type:'array',items:ref(schema)},pagination:ref
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for(const r of supplyOperations){
     const isRequest=r.path.includes('/stock/'),name=isRequest?'StockRequest':'Logistics';
-    const op={operationId:r.operationId,tags:['Suprimentos'],summary:r.operationId.replaceAll('_',' '),description:'Escopo por ADMIN, fornecedor proprietário ou equipe ativa da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
+    const op={operationId:r.operationId,tags:['Suprimentos'],summary:r.operationId.replaceAll('_',' '),description:'Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
     if(r.path.includes('{id}'))op.parameters.push({name:'id',in:'path',required:true,schema:id});
     if(r.action==='stock'){
         op.parameters.push({name:'localId',in:'query',required:true,schema:id},{name:'sessionId',in:'query',schema:id});

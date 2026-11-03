@@ -1,5 +1,5 @@
 -- CineAstra: instalacao unica em schema VAZIO (MySQL 8.0.16+).
--- Gerado por backend/scripts/generateInstallSql.js a partir de migrationPlan.js: 176 statements.
+-- Gerado por backend/scripts/generateInstallSql.js a partir de migrationPlan.js: 177 statements.
 -- Uso no Bash: mysql --default-character-set=utf8mb4 -u root -p cineastra < cineastra-install.sql
 -- O banco precisa existir. Usa exclusivamente o banco selecionado pelo cliente.
 -- Nao use --force, nao reaplique em banco existente e nao apague o ledger.
@@ -41,7 +41,7 @@ BEGIN
         applied_at DATETIME(3) NULL
     ) ENGINE=InnoDB;
 
-    -- 1/176: 20261001_02_create_tables.sql:1
+    -- 1/177: 20261001_02_create_tables.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:1', '9940a28da82c0567f9a8caabd36e4ab6046e1a277cbaa9e0fb30d3a63cbaca11', 'RUNNING');
 CREATE TABLE usuarios (
     id_usuario INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -57,7 +57,7 @@ CREATE TABLE usuarios (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:1';
 
-    -- 2/176: 20261001_02_create_tables.sql:2
+    -- 2/177: 20261001_02_create_tables.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:2', '4372f051cbdc2c684aaa0f1a6b6b31fb1e9e8ccaf9bc70a6cc5de0e51a92d1a7', 'RUNNING');
 CREATE TABLE enderecos (
     id_endereco INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -74,7 +74,7 @@ CREATE TABLE enderecos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:2';
 
-    -- 3/176: 20261001_02_create_tables.sql:3
+    -- 3/177: 20261001_02_create_tables.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:3', '704cdfc256274616756e7847fdd8016e89a6b288d9fba095e996473138ab3259', 'RUNNING');
 CREATE TABLE contatos (
     id_contato INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -86,7 +86,7 @@ CREATE TABLE contatos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:3';
 
-    -- 4/176: 20261001_02_create_tables.sql:4
+    -- 4/177: 20261001_02_create_tables.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:4', 'f9a90b5f2130d330bb6916e17264a0f794aae689d9763452567927f0fefe5f37', 'RUNNING');
 CREATE TABLE recuperacao_senha (
     id_recuperacao INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -99,7 +99,7 @@ CREATE TABLE recuperacao_senha (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:4';
 
-    -- 5/176: 20261001_02_create_tables.sql:5
+    -- 5/177: 20261001_02_create_tables.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:5', 'f1aff461f79cd509e303921244a65a1e2a9ba3ce014874e9229c9d89bf44ba5f', 'RUNNING');
 CREATE TABLE autenticacao_2fa (
     id_2fa INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -111,7 +111,7 @@ CREATE TABLE autenticacao_2fa (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:5';
 
-    -- 6/176: 20261001_02_create_tables.sql:6
+    -- 6/177: 20261001_02_create_tables.sql:6
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:6', '38b2783a654401b8ccd3e9553bda8b57e673638b8d6374e76d92fd2782a7a7be', 'RUNNING');
 CREATE TABLE preferencias_usuario (
     id_preferencia INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -126,7 +126,7 @@ CREATE TABLE preferencias_usuario (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:6';
 
-    -- 7/176: 20261001_02_create_tables.sql:7
+    -- 7/177: 20261001_02_create_tables.sql:7
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:7', 'd5ce955f784924212fa9bbf4ee7de01482d5192abf8412db4af78ca91701e0a7', 'RUNNING');
 CREATE TABLE generos (
     id_genero INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -134,7 +134,7 @@ CREATE TABLE generos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:7';
 
-    -- 8/176: 20261001_02_create_tables.sql:8
+    -- 8/177: 20261001_02_create_tables.sql:8
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:8', 'bf8468f5fafbeafb75ee236f3319a6012ab3fadcde72f4c71ee48f3ad9de3fd4', 'RUNNING');
 CREATE TABLE filmes (
     id_filme INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -162,7 +162,7 @@ CREATE TABLE filmes (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:8';
 
-    -- 9/176: 20261001_02_create_tables.sql:9
+    -- 9/177: 20261001_02_create_tables.sql:9
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:9', '4fc1dcbb909c0bc665cdc8122b3c974a205b087745c811d72487492f38f418f1', 'RUNNING');
 CREATE TABLE filme_generos (
     id_filme INT UNSIGNED NOT NULL,
@@ -173,7 +173,7 @@ CREATE TABLE filme_generos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:9';
 
-    -- 10/176: 20261001_02_create_tables.sql:10
+    -- 10/177: 20261001_02_create_tables.sql:10
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:10', '99cbf40b198ed674480c4c5ef3a71c2c130369fb9fd93e333e1b174c1c13977f', 'RUNNING');
 CREATE TABLE locais (
     id_local INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -191,7 +191,7 @@ CREATE TABLE locais (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:10';
 
-    -- 11/176: 20261001_02_create_tables.sql:11
+    -- 11/177: 20261001_02_create_tables.sql:11
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:11', '9513e5d3fed22458959fd6f6d48e916fdbed535bbff8052568067933541166f0', 'RUNNING');
 CREATE TABLE salas (
     id_sala INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -206,7 +206,7 @@ CREATE TABLE salas (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:11';
 
-    -- 12/176: 20261001_02_create_tables.sql:12
+    -- 12/177: 20261001_02_create_tables.sql:12
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:12', '7e699012c7d8cf1444c7850a3877d86cc319016b74ab55f77cca2c082941ab33', 'RUNNING');
 CREATE TABLE assentos (
     id_assento INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -221,7 +221,7 @@ CREATE TABLE assentos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:12';
 
-    -- 13/176: 20261001_02_create_tables.sql:13
+    -- 13/177: 20261001_02_create_tables.sql:13
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:13', '84d3b2bf8e81d3b0b127c64f6cdeaa86db004e04615b4a6f8ddcf6809d824c8b', 'RUNNING');
 CREATE TABLE sessoes (
     id_sessao INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -239,7 +239,7 @@ CREATE TABLE sessoes (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:13';
 
-    -- 14/176: 20261001_02_create_tables.sql:14
+    -- 14/177: 20261001_02_create_tables.sql:14
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:14', '1a4915df4b189441e0cdc1152301562ff7a25cd621ba31536628a9ae511ade98', 'RUNNING');
 CREATE TABLE equipes (
     id_equipe INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -252,7 +252,7 @@ CREATE TABLE equipes (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:14';
 
-    -- 15/176: 20261001_02_create_tables.sql:15
+    -- 15/177: 20261001_02_create_tables.sql:15
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:15', '60dcc1097f8eeea95a83c830ce723d859a3986d989042a7411399bacd5a85b40', 'RUNNING');
 CREATE TABLE equipe_membros (
     id_equipe_membro INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -267,7 +267,7 @@ CREATE TABLE equipe_membros (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:15';
 
-    -- 16/176: 20261001_02_create_tables.sql:16
+    -- 16/177: 20261001_02_create_tables.sql:16
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:16', '4af0a19832e26bee452e049ab86b804a474a183e2414aae9dd001d0292f60ce2', 'RUNNING');
 CREATE TABLE chamados (
     id_chamado INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -286,7 +286,7 @@ CREATE TABLE chamados (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:16';
 
-    -- 17/176: 20261001_02_create_tables.sql:17
+    -- 17/177: 20261001_02_create_tables.sql:17
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:17', '71eefe3280fbf3760c14057ba68a96f658d491635207ff92c801331b4b7d5028', 'RUNNING');
 CREATE TABLE notificacoes (
     id_notificacao BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -300,7 +300,7 @@ CREATE TABLE notificacoes (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:17';
 
-    -- 18/176: 20261001_02_create_tables.sql:18
+    -- 18/177: 20261001_02_create_tables.sql:18
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:18', '922d38e1105201fe54e5d9707376a5f3e0a833dadfdf25eafad82ef223292e30', 'RUNNING');
 CREATE TABLE fornecedores (
     id_fornecedor INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -314,7 +314,7 @@ CREATE TABLE fornecedores (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:18';
 
-    -- 19/176: 20261001_02_create_tables.sql:19
+    -- 19/177: 20261001_02_create_tables.sql:19
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:19', '5192ded5a3b45a0c4f459d993b9ceb4cdc008613c71f8aecfc93d671249924d9', 'RUNNING');
 CREATE TABLE insumos (
     id_insumo INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -335,7 +335,7 @@ CREATE TABLE insumos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:19';
 
-    -- 20/176: 20261001_02_create_tables.sql:20
+    -- 20/177: 20261001_02_create_tables.sql:20
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:20', '67bfa95b76d1cdfcd942709aec9ae0d31239983a8e7579aca73d5b7ea72cf682', 'RUNNING');
 CREATE TABLE equipamentos (
     id_equipamento INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -354,7 +354,7 @@ CREATE TABLE equipamentos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:20';
 
-    -- 21/176: 20261001_02_create_tables.sql:21
+    -- 21/177: 20261001_02_create_tables.sql:21
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:21', 'f093dc2db4c318b60621205ddaa5e43c8b02291d874af1c69c949ed0c9ef0d2a', 'RUNNING');
 CREATE TABLE combos (
     id_combo INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -367,7 +367,7 @@ CREATE TABLE combos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:21';
 
-    -- 22/176: 20261001_02_create_tables.sql:22
+    -- 22/177: 20261001_02_create_tables.sql:22
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:22', '7a6731793579f6cbd09ad9113b8f56e614f30b04845a7bbbd2ad399f0d14dae4', 'RUNNING');
 CREATE TABLE combo_itens (
     id_combo INT UNSIGNED NOT NULL,
@@ -380,7 +380,7 @@ CREATE TABLE combo_itens (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:22';
 
-    -- 23/176: 20261001_02_create_tables.sql:23
+    -- 23/177: 20261001_02_create_tables.sql:23
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:23', 'a9265eb4ed4e697a9541a3399123b9e3b6364d88b2bc4d48d99c918036d55b8b', 'RUNNING');
 CREATE TABLE movimentacoes_estoque (
     id_movimentacao BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -402,7 +402,7 @@ CREATE TABLE movimentacoes_estoque (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:23';
 
-    -- 24/176: 20261001_02_create_tables.sql:24
+    -- 24/177: 20261001_02_create_tables.sql:24
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:24', '348cfb98c76d8b650eeeb89b3eb664d2c56812887276b1362124ec7fed830dc8', 'RUNNING');
 CREATE TABLE solicitacoes_estoque (
     id_solicitacao INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -428,7 +428,7 @@ CREATE TABLE solicitacoes_estoque (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:24';
 
-    -- 25/176: 20261001_02_create_tables.sql:25
+    -- 25/177: 20261001_02_create_tables.sql:25
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:25', 'ee10923e13fbe0f123f5909c75cfbb68c8cbb34bf1778606bc01430923179a91', 'RUNNING');
 CREATE TABLE logistica (
     id_logistica INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -448,7 +448,7 @@ CREATE TABLE logistica (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:25';
 
-    -- 26/176: 20261001_02_create_tables.sql:26
+    -- 26/177: 20261001_02_create_tables.sql:26
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:26', '8e711ce9ff2c1fa1c56f596f26e9912be5e86211de052a1fc4a4c98f7233343d', 'RUNNING');
 CREATE TABLE cupons (
     id_cupom INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -462,7 +462,7 @@ CREATE TABLE cupons (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:26';
 
-    -- 27/176: 20261001_02_create_tables.sql:27
+    -- 27/177: 20261001_02_create_tables.sql:27
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:27', '0a6a2f45b08af5d78e9a10f14bdfd4bd672b9b269a4820facbdd070a326d1335', 'RUNNING');
 CREATE TABLE pedidos (
     id_pedido BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -477,7 +477,7 @@ CREATE TABLE pedidos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:27';
 
-    -- 28/176: 20261001_02_create_tables.sql:28
+    -- 28/177: 20261001_02_create_tables.sql:28
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:28', '70c61d02f37cdd10287a47d2b59ef3dcfa6e85bf8c32d0c5215d8341e2060b20', 'RUNNING');
 CREATE TABLE itens_pedido (
     id_item BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -515,7 +515,7 @@ CREATE TABLE itens_pedido (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:28';
 
-    -- 29/176: 20261001_02_create_tables.sql:29
+    -- 29/177: 20261001_02_create_tables.sql:29
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:29', '8438079a24d020e425d1ea4973d3a176a2aa7773ba52626aba4f270204440a54', 'RUNNING');
 CREATE TABLE tickets (
     id_ticket BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -529,7 +529,7 @@ CREATE TABLE tickets (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:29';
 
-    -- 30/176: 20261001_02_create_tables.sql:30
+    -- 30/177: 20261001_02_create_tables.sql:30
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:30', 'ab423211d013564ff10c7f1d37686a1dd737346663e753d5c47a982a60d37126', 'RUNNING');
 CREATE TABLE acessos_streaming (
     id_acesso BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -545,7 +545,7 @@ CREATE TABLE acessos_streaming (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:30';
 
-    -- 31/176: 20261001_02_create_tables.sql:31
+    -- 31/177: 20261001_02_create_tables.sql:31
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:31', '157db7fe25bf013f4196bc96ea18ca4a408675f1eb485c21149c00d9c0937b9e', 'RUNNING');
 CREATE TABLE metodos_pagamento (
     id_metodo INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -557,7 +557,7 @@ CREATE TABLE metodos_pagamento (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:31';
 
-    -- 32/176: 20261001_02_create_tables.sql:32
+    -- 32/177: 20261001_02_create_tables.sql:32
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:32', 'fecfa8102920b0b2dd8d6da253fcc1a6151d6273bdd8d97175f760b131cede3b', 'RUNNING');
 CREATE TABLE planos (
     id_plano INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -572,7 +572,7 @@ CREATE TABLE planos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:32';
 
-    -- 33/176: 20261001_02_create_tables.sql:33
+    -- 33/177: 20261001_02_create_tables.sql:33
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:33', 'f9066da8ed2522368ca6c20758934cbf4a6bde95dfd51c3a688ee4bb1bee32c7', 'RUNNING');
 CREATE TABLE assinaturas (
     id_assinatura INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -589,7 +589,7 @@ CREATE TABLE assinaturas (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:33';
 
-    -- 34/176: 20261001_02_create_tables.sql:34
+    -- 34/177: 20261001_02_create_tables.sql:34
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:34', '0336cec2482145a8006afd77045f7b6410a6d286596c126159290461fc698bff', 'RUNNING');
 CREATE TABLE convites_plano (
     id_convite INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -604,7 +604,7 @@ CREATE TABLE convites_plano (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:34';
 
-    -- 35/176: 20261001_02_create_tables.sql:35
+    -- 35/177: 20261001_02_create_tables.sql:35
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:35', '5ef5682f24d9bbca22c76594b7f71bde23593bed7493dd1c0d17454e46ecea12', 'RUNNING');
 CREATE TABLE assinatura_cobrancas (
     id_cobranca BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -623,7 +623,7 @@ CREATE TABLE assinatura_cobrancas (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:35';
 
-    -- 36/176: 20261001_02_create_tables.sql:36
+    -- 36/177: 20261001_02_create_tables.sql:36
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:36', '93d0594b7216b66a1e861cb1e687ebd8b281ec9ed7299b4f03edce127c6c72ec', 'RUNNING');
 CREATE TABLE pagamentos (
     id_pagamento BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -645,7 +645,7 @@ CREATE TABLE pagamentos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:36';
 
-    -- 37/176: 20261001_02_create_tables.sql:37
+    -- 37/177: 20261001_02_create_tables.sql:37
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:37', '697847c435412aeaa9a3731a628bb840c797e163523464cd8c29b0857103d695', 'RUNNING');
 CREATE TABLE suporte (
     id_suporte INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -662,92 +662,92 @@ CREATE TABLE suporte (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:37';
 
-    -- 38/176: 20261001_02_create_tables.sql:38
+    -- 38/177: 20261001_02_create_tables.sql:38
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:38', '83c66c13eb057dcf0407a23f581392733b09ed0effcc1e8c677961c33c728ec6', 'RUNNING');
 CREATE INDEX idx_usuarios_tipo ON usuarios(tipo_usuario);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:38';
 
-    -- 39/176: 20261001_02_create_tables.sql:39
+    -- 39/177: 20261001_02_create_tables.sql:39
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:39', 'a1a43c5525d0cce95157c54b0120fda776ea1d7c07fbf1adc4861addde22c2e6', 'RUNNING');
 CREATE INDEX idx_sessoes_data_sala ON sessoes(data, id_sala);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:39';
 
-    -- 40/176: 20261001_02_create_tables.sql:40
+    -- 40/177: 20261001_02_create_tables.sql:40
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:40', '77999fa1a39d42a7e8383fd098b111a17eec29e4254df9f110687474119398f0', 'RUNNING');
 CREATE INDEX idx_pedidos_usuario_data ON pedidos(id_usuario, data_pedido DESC);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:40';
 
-    -- 41/176: 20261001_02_create_tables.sql:41
+    -- 41/177: 20261001_02_create_tables.sql:41
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:41', '6d1f743044d1786342ddb03633de56e05a310f1e2b95a15026171d29c40eeedd', 'RUNNING');
 CREATE INDEX idx_pedidos_status ON pedidos(status);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:41';
 
-    -- 42/176: 20261001_02_create_tables.sql:42
+    -- 42/177: 20261001_02_create_tables.sql:42
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:42', 'f2b0961355b249562ea2eeb0c7bb3a676e74f48a17eba1023eb465f951c1ba9c', 'RUNNING');
 CREATE INDEX idx_tickets_status ON tickets(status);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:42';
 
-    -- 43/176: 20261001_02_create_tables.sql:43
+    -- 43/177: 20261001_02_create_tables.sql:43
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:43', '2f7c1481ddf02f201ac74f870e93ebc8d4c937f3b347bf8527950b102741a1b7', 'RUNNING');
 CREATE INDEX idx_acessos_streaming_usuario_status ON acessos_streaming(id_usuario, status);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:43';
 
-    -- 44/176: 20261001_02_create_tables.sql:44
+    -- 44/177: 20261001_02_create_tables.sql:44
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:44', '7cb445c331624c02b47f96e14a63511a8bdbcc372e16e3e2b3e933372a86e405', 'RUNNING');
 CREATE INDEX idx_insumos_estoque_baixo ON insumos(status, quantidade, quantidade_minima);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:44';
 
-    -- 45/176: 20261001_02_create_tables.sql:45
+    -- 45/177: 20261001_02_create_tables.sql:45
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:45', '171620ec88434bf9c79a307d3e9dd97c3ab643ca049b796afc7ef5797428b923', 'RUNNING');
 CREATE INDEX idx_movestoque_data ON movimentacoes_estoque(data_movimentacao);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:45';
 
-    -- 46/176: 20261001_02_create_tables.sql:46
+    -- 46/177: 20261001_02_create_tables.sql:46
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:46', 'db1216505fb1a1f7f3ca3ea1ec23137cdc12b312fe2409f50c7f931ac3c17299', 'RUNNING');
 CREATE INDEX idx_assinaturas_status ON assinaturas(status);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:46';
 
-    -- 47/176: 20261001_02_create_tables.sql:47
+    -- 47/177: 20261001_02_create_tables.sql:47
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:47', 'e8b1e8e7b60cbbb0dfe00c94aa4010345ad1d869b56b6c2a85ec9b01406deeb1', 'RUNNING');
 CREATE INDEX idx_assinaturas_usuario_status ON assinaturas(id_usuario, status);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:47';
 
-    -- 48/176: 20261001_02_create_tables.sql:48
+    -- 48/177: 20261001_02_create_tables.sql:48
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:48', '92a749bee7c1e20d9d30d378411bdfcbb2d1e5f2ad460babec7721d8228b55f4', 'RUNNING');
 CREATE INDEX idx_cobrancas_vencimento_status ON assinatura_cobrancas(data_vencimento, status);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:48';
 
-    -- 49/176: 20261001_02_create_tables.sql:49
+    -- 49/177: 20261001_02_create_tables.sql:49
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:49', '5ad1ffa51963714c64df5706eef5897b90264115f0b8e7c7b0328ec079d26057', 'RUNNING');
 CREATE INDEX idx_chamados_status_data ON chamados(status, data_abertura);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:49';
 
-    -- 50/176: 20261001_02_create_tables.sql:50
+    -- 50/177: 20261001_02_create_tables.sql:50
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:50', '1cc0bf80c2f548ad935cfddc2e16a04c13142f0ee8c2704bac631ef2fc200cea', 'RUNNING');
 CREATE INDEX idx_suporte_status ON suporte(status, data_abertura);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:50';
 
-    -- 51/176: 20261001_02_create_tables.sql:51
+    -- 51/177: 20261001_02_create_tables.sql:51
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:51', '026c22aed05567e3e24c446ac9be5c23ed38073d047dd776d32008b1241d921c', 'RUNNING');
 CREATE INDEX idx_notificacoes_usuario_lida_data ON notificacoes(id_usuario, lida, data_envio DESC);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:51';
 
-    -- 52/176: 20261001_02_create_tables.sql:52
+    -- 52/177: 20261001_02_create_tables.sql:52
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:52', 'bf857672c8879f0a76118df20b3b8a821ac9219784114934278a22f2f8dabcdd', 'RUNNING');
 CREATE INDEX idx_logistica_status ON logistica(status);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:52';
 
-    -- 53/176: 20261001_02_create_tables.sql:53
+    -- 53/177: 20261001_02_create_tables.sql:53
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:53', 'bfec18b110177ca7a18fb9c3d179ca405262a288c80a3be909cb82f308eba1e8', 'RUNNING');
 CREATE INDEX idx_solicitacoes_status_data ON solicitacoes_estoque(status, data_solicitacao);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:53';
 
-    -- 54/176: 20261001_02_create_tables.sql:54
+    -- 54/177: 20261001_02_create_tables.sql:54
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_02_create_tables.sql:54', '140dab4d0e5851aebc74a19fbcb56975254f6ff1abf152c80a9550fbe177a3da', 'RUNNING');
 CREATE INDEX idx_filme_generos_genero ON filme_generos(id_genero, id_filme);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_02_create_tables.sql:54';
 
-    -- 55/176: 20261001_03_create_table_logs.sql:1
+    -- 55/177: 20261001_03_create_table_logs.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_03_create_table_logs.sql:1', 'dba6e74115bfc4336341f3fd7c7474fe255a114ec494b14ef4e1aa326fd36687', 'RUNNING');
 CREATE TABLE IF NOT EXISTS logs (
     id_log BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -781,31 +781,31 @@ CREATE TABLE IF NOT EXISTS logs (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_03_create_table_logs.sql:1';
 
-    -- 56/176: 20261001_03_create_table_logs.sql:2
+    -- 56/177: 20261001_03_create_table_logs.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_03_create_table_logs.sql:2', 'c4a93711944e4e3bf574fdd851ab9336cda2cea18543a174adf8e33d4dad1a40', 'RUNNING');
 CREATE INDEX idx_logs_data_hora
     ON logs(data_hora);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_03_create_table_logs.sql:2';
 
-    -- 57/176: 20261001_03_create_table_logs.sql:3
+    -- 57/177: 20261001_03_create_table_logs.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_03_create_table_logs.sql:3', '1b94e7c18d82ccfc5e5c676f2fd6a91f607f07359ae9a219dd820ba5e9592ab4', 'RUNNING');
 CREATE INDEX idx_logs_usuario_data
     ON logs(id_usuario, data_hora);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_03_create_table_logs.sql:3';
 
-    -- 58/176: 20261001_03_create_table_logs.sql:4
+    -- 58/177: 20261001_03_create_table_logs.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_03_create_table_logs.sql:4', 'dbfac87b5b1c4b6f1d17894f434b0f385457aa165a8981a6ded2c1a4de1a45be', 'RUNNING');
 CREATE INDEX idx_logs_status_data
     ON logs(status_code, data_hora);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_03_create_table_logs.sql:4';
 
-    -- 59/176: 20261001_04_update_alter_table_fornecedores.sql:1
+    -- 59/177: 20261001_04_update_alter_table_fornecedores.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261001_04_update_alter_table_fornecedores.sql:1', 'd2e004676caba166c9e2cf1967ee125aa1b5599f61d336cd2e44e36d7d2f2911', 'RUNNING');
 ALTER TABLE fornecedores
 CHANGE COLUMN nome_fantasia nome_cine VARCHAR(150);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261001_04_update_alter_table_fornecedores.sql:1';
 
-    -- 60/176: 20261006_alter_table_filmes.sql:1
+    -- 60/177: 20261006_alter_table_filmes.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:1', '85fe1e6e5ecc875221b887237ada747fc835b4ea98f91fc55c779cdb9f32fd64', 'RUNNING');
 ALTER TABLE filmes
     ADD COLUMN url_reproducao VARCHAR(2048) NULL
@@ -816,7 +816,7 @@ ALTER TABLE filmes
     );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:1';
 
-    -- 61/176: 20261006_alter_table_filmes.sql:2
+    -- 61/177: 20261006_alter_table_filmes.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:2', 'f9839c285b06df96e0a18273f1bdbf23fba7f313e0a0f8f5ea292b98e5ffb5d1', 'RUNNING');
 CREATE TABLE filmes_imagens (
     id_imagem BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -839,7 +839,7 @@ CREATE TABLE filmes_imagens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:2';
 
-    -- 62/176: 20261006_alter_table_filmes.sql:3
+    -- 62/177: 20261006_alter_table_filmes.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:3', '4ce9a804af1e4da1d61ea95674e0a8320bf5d1d05fcbddacea36aeb80311bf4b', 'RUNNING');
 INSERT INTO filmes_imagens (id_filme, tipo, url, texto_alternativo, principal)
 SELECT id_filme, 'CAPA', TRIM(imagem), CONCAT('Capa de ', titulo), TRUE
@@ -847,7 +847,7 @@ FROM filmes
 WHERE imagem IS NOT NULL AND CHAR_LENGTH(TRIM(imagem)) > 0;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:3';
 
-    -- 63/176: 20261006_alter_table_filmes.sql:4
+    -- 63/177: 20261006_alter_table_filmes.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:4', 'fdace76c4a88e462832707fc3f60bcab03c771a13c15f5c88c202622a3080d5d', 'RUNNING');
 CREATE TABLE insumos_imagens (
     id_imagem BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -868,7 +868,7 @@ CREATE TABLE insumos_imagens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:4';
 
-    -- 64/176: 20261006_alter_table_filmes.sql:5
+    -- 64/177: 20261006_alter_table_filmes.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:5', 'a01f840ce6c63b51ab1566a4f18d73802521e9cc3c75d94d823a15632b01b099', 'RUNNING');
 CREATE TABLE combos_imagens (
     id_imagem BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -889,7 +889,7 @@ CREATE TABLE combos_imagens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:5';
 
-    -- 65/176: 20261006_alter_table_filmes.sql:6
+    -- 65/177: 20261006_alter_table_filmes.sql:6
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:6', 'b3d343fa723ee05f533e818a076a783694ec5a3dcd75b5052e7e1cddf24366ab', 'RUNNING');
 CREATE TABLE newsletter_inscritos (
     id_inscrito INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -931,7 +931,7 @@ CREATE TABLE newsletter_inscritos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:6';
 
-    -- 66/176: 20261006_alter_table_filmes.sql:7
+    -- 66/177: 20261006_alter_table_filmes.sql:7
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:7', '9f41c095741df5bd98746b7bdbd747fedf628d342ca509d7a412302c531fc3a1', 'RUNNING');
 CREATE TABLE newsletter_categorias (
     id_categoria INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -946,7 +946,7 @@ CREATE TABLE newsletter_categorias (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:7';
 
-    -- 67/176: 20261006_alter_table_filmes.sql:8
+    -- 67/177: 20261006_alter_table_filmes.sql:8
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:8', 'f2c7c29668ab09034ab152fd0c8e19c3aed6ca78da4aa5e2bb0d63c7f06f8f5f', 'RUNNING');
 INSERT INTO newsletter_categorias (codigo, nome, descricao) VALUES
     ('PROMOCOES', 'Promocoes', 'Descontos, cupons e ofertas de produtos e combos'),
@@ -954,7 +954,7 @@ INSERT INTO newsletter_categorias (codigo, nome, descricao) VALUES
     ('NOVIDADES', 'Novidades', 'Noticias, eventos e novidades gerais do Cineastra');
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:8';
 
-    -- 68/176: 20261006_alter_table_filmes.sql:9
+    -- 68/177: 20261006_alter_table_filmes.sql:9
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:9', 'd0ce8d2a9c4f2da596531f81cd86aa760f631d2bc20a4f0ae5ae19861b255576', 'RUNNING');
 CREATE TABLE newsletter_preferencias (
     id_inscrito INT UNSIGNED NOT NULL,
@@ -972,7 +972,7 @@ CREATE TABLE newsletter_preferencias (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:9';
 
-    -- 69/176: 20261006_alter_table_filmes.sql:10
+    -- 69/177: 20261006_alter_table_filmes.sql:10
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:10', 'bd1b7bc06b0128502a7212c5b262f3ddb19cf9d254b0ccc9d3665327f97e1735', 'RUNNING');
 CREATE TABLE newsletter_tokens (
     id_token BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -994,7 +994,7 @@ CREATE TABLE newsletter_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:10';
 
-    -- 70/176: 20261006_alter_table_filmes.sql:11
+    -- 70/177: 20261006_alter_table_filmes.sql:11
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:11', '8ad401be6ec789f7b859259f881635011fcb8fe7d6af65e16d9100d53392c270', 'RUNNING');
 CREATE TABLE newsletter_campanhas (
     id_campanha INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1023,7 +1023,7 @@ CREATE TABLE newsletter_campanhas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:11';
 
-    -- 71/176: 20261006_alter_table_filmes.sql:12
+    -- 71/177: 20261006_alter_table_filmes.sql:12
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_alter_table_filmes.sql:12', 'bec702b449709aefae03caa067c5b1ce51ec53583ac08b9f359d7f70763dfadf', 'RUNNING');
 CREATE TABLE newsletter_envios (
     id_envio BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1056,7 +1056,7 @@ CREATE TABLE newsletter_envios (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_alter_table_filmes.sql:12';
 
-    -- 72/176: 20261006_01_infrastructure_events.sql:1
+    -- 72/177: 20261006_01_infrastructure_events.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_01_infrastructure_events.sql:1', '6401ebe285da99d6f103fa4e48d7ae244ef4bf1b80d56d7cf814e1fa2171fb65', 'RUNNING');
 CREATE TABLE auditoria_eventos (
     id_auditoria BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1072,7 +1072,7 @@ CREATE TABLE auditoria_eventos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_01_infrastructure_events.sql:1';
 
-    -- 73/176: 20261006_01_infrastructure_events.sql:2
+    -- 73/177: 20261006_01_infrastructure_events.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261006_01_infrastructure_events.sql:2', 'c62344286ecd2e554b387e9c4b79a525f1d9bdeeb381d2e78b3d3c438940783a', 'RUNNING');
 CREATE TABLE outbox_eventos (
     id_outbox BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1087,7 +1087,7 @@ CREATE TABLE outbox_eventos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261006_01_infrastructure_events.sql:2';
 
-    -- 74/176: 20261008_01_identity.sql:1
+    -- 74/177: 20261008_01_identity.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:1', '9dd3c2bcf4858aab701f9bb54a2b714d0b91df0824c90c3ccb76430f69fe8f43', 'RUNNING');
 ALTER TABLE usuarios
     ADD COLUMN email_normalizado VARCHAR(150) GENERATED ALWAYS AS (LOWER(TRIM(email))) STORED,
@@ -1096,34 +1096,34 @@ ALTER TABLE usuarios
     ADD UNIQUE KEY uk_usuarios_cpf_normalizado (cpf_normalizado);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:1';
 
-    -- 75/176: 20261008_01_identity.sql:2
+    -- 75/177: 20261008_01_identity.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:2', '91d1d952b80f30f198359d1ac99cdee86ea4bf40ba971131dd1ff87c1961da86', 'RUNNING');
 ALTER TABLE autenticacao_2fa
     ADD COLUMN ultimo_passo BIGINT UNSIGNED NULL,
     ADD UNIQUE KEY uk_2fa_usuario_metodo (id_usuario, metodo);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:2';
 
-    -- 76/176: 20261008_01_identity.sql:3
+    -- 76/177: 20261008_01_identity.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:3', 'f4e32bd44d6aba1c3032cf07ac313eadfb38e3522bd91954cc9c1e9cc5db9c6d', 'RUNNING');
 ALTER TABLE enderecos
     ADD COLUMN slot_principal TINYINT GENERATED ALWAYS AS (CASE WHEN principal = 1 THEN 1 ELSE NULL END) STORED,
     ADD UNIQUE KEY uk_enderecos_principal (id_usuario, slot_principal);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:3';
 
-    -- 77/176: 20261008_01_identity.sql:4
+    -- 77/177: 20261008_01_identity.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:4', '248d0932cf3d7dff9e14b40d854d08b1dae04a98c27a9e8ebe3648fd25d4bca0', 'RUNNING');
 ALTER TABLE contatos
     ADD COLUMN tipo_principal VARCHAR(30) GENERATED ALWAYS AS (CASE WHEN principal = 1 THEN tipo ELSE NULL END) STORED,
     ADD UNIQUE KEY uk_contatos_principal (id_usuario, tipo_principal);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:4';
 
-    -- 78/176: 20261008_01_identity.sql:5
+    -- 78/177: 20261008_01_identity.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:5', '4024a8d2c5114945eb03d4a380ec754824f06c3ee89140fa6e4af715c20b116c', 'RUNNING');
 ALTER TABLE preferencias_usuario
     ADD COLUMN aparencia ENUM('cineastra','violet-bloom','mocha-mousse','catppucin') NOT NULL DEFAULT 'cineastra';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:5';
 
-    -- 79/176: 20261008_01_identity.sql:6
+    -- 79/177: 20261008_01_identity.sql:6
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:6', '97f22ee66cfc54a8c791d57e39e5e3371f625c63b1a7fc0d9375310317e4da67', 'RUNNING');
 CREATE TABLE sessoes_autenticacao (
     id_sessao_auth BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1138,7 +1138,7 @@ CREATE TABLE sessoes_autenticacao (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:6';
 
-    -- 80/176: 20261008_01_identity.sql:7
+    -- 80/177: 20261008_01_identity.sql:7
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:7', 'd528ef8017f8be1eb0e8e3d681b3a4b67c64c66a25ed9412e2ff70003c8b2f6a', 'RUNNING');
 CREATE TABLE desafios_2fa (
     id_desafio BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1156,7 +1156,7 @@ CREATE TABLE desafios_2fa (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:7';
 
-    -- 81/176: 20261008_01_identity.sql:8
+    -- 81/177: 20261008_01_identity.sql:8
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:8', 'df9140ba1174cec279f8aa61d9d5097f5533bbf5f945b9fb143e26f3f8400a46', 'RUNNING');
 CREATE TABLE consentimentos_usuario (
     id_consentimento BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1170,7 +1170,7 @@ CREATE TABLE consentimentos_usuario (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:8';
 
-    -- 82/176: 20261008_01_identity.sql:9
+    -- 82/177: 20261008_01_identity.sql:9
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:9', '50f37d6c5b1375ee2b70dd58ca7be8e6554812ecf2bbfdec62b124cce5fb5093', 'RUNNING');
 CREATE TABLE verificacoes_idade (
     id_verificacao BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1184,7 +1184,7 @@ CREATE TABLE verificacoes_idade (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:9';
 
-    -- 83/176: 20261008_01_identity.sql:10
+    -- 83/177: 20261008_01_identity.sql:10
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:10', '0665ace351988ea3dcf18b00c60a6551f80d58252b171b7c646b84e8f817fa09', 'RUNNING');
 CREATE TABLE responsaveis_usuario (
     id_vinculo BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1201,7 +1201,7 @@ CREATE TABLE responsaveis_usuario (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:10';
 
-    -- 84/176: 20261008_01_identity.sql:11
+    -- 84/177: 20261008_01_identity.sql:11
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:11', '77696555ca2d34e093cfc7e867b51073292617bd956bc30d99d13d747a42f777', 'RUNNING');
 CREATE TABLE controles_parentais (
     id_menor INT UNSIGNED PRIMARY KEY,
@@ -1214,7 +1214,7 @@ CREATE TABLE controles_parentais (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:11';
 
-    -- 85/176: 20261008_01_identity.sql:12
+    -- 85/177: 20261008_01_identity.sql:12
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:12', '5a0ab7c7fd72673c27fced697381b8acb9b565cff28b5eb1901ae4d3a953a5ff', 'RUNNING');
 CREATE TABLE autorizacoes_responsavel (
     id_autorizacao BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1229,7 +1229,7 @@ CREATE TABLE autorizacoes_responsavel (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:12';
 
-    -- 86/176: 20261008_01_identity.sql:13
+    -- 86/177: 20261008_01_identity.sql:13
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_01_identity.sql:13', 'c3902702d7552a2f99346b1d073fadba39233493793e59b0dfe4c97d3f3f225e', 'RUNNING');
 CREATE TABLE solicitacoes_privacidade (
     id_solicitacao BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1245,7 +1245,7 @@ CREATE TABLE solicitacoes_privacidade (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_01_identity.sql:13';
 
-    -- 87/176: 20261008_02_identity_guard.sql:1
+    -- 87/177: 20261008_02_identity_guard.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_02_identity_guard.sql:1', 'd3c397f1d6e291125dc8dd9730addd32cb2def960c57aac84bcef83229d984c5', 'RUNNING');
 CREATE TABLE identity_admin_guard (
     id TINYINT UNSIGNED PRIMARY KEY,
@@ -1253,17 +1253,17 @@ CREATE TABLE identity_admin_guard (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_02_identity_guard.sql:1';
 
-    -- 88/176: 20261008_02_identity_guard.sql:2
+    -- 88/177: 20261008_02_identity_guard.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_02_identity_guard.sql:2', '468a4c8459101f58f8d5dd08be0faa2545240fd099245b62a8fa181914981ce9', 'RUNNING');
 INSERT INTO identity_admin_guard (id) VALUES (1);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_02_identity_guard.sql:2';
 
-    -- 89/176: 20261008_03_catalog_genres.sql:1
+    -- 89/177: 20261008_03_catalog_genres.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_03_catalog_genres.sql:1', '3c3b793ca9dfc1f50e84c681a8316219ca0e8f83483f14dcd9f35f3d7235ae6c', 'RUNNING');
 ALTER TABLE generos ADD COLUMN status ENUM('ATIVO','INATIVO') NOT NULL DEFAULT 'ATIVO';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_03_catalog_genres.sql:1';
 
-    -- 90/176: 20261008_04_team_entries.sql:1
+    -- 90/177: 20261008_04_team_entries.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_04_team_entries.sql:1', 'e1155e5099c1948b77266fe9af098a31d39e3f5ba8108415d0caa12a57e8b11b', 'RUNNING');
 CREATE TABLE equipe_entradas (
     id_entrada BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1286,13 +1286,13 @@ CREATE TABLE equipe_entradas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_04_team_entries.sql:1';
 
-    -- 91/176: 20261008_05_internal_tasks.sql:1
+    -- 91/177: 20261008_05_internal_tasks.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_05_internal_tasks.sql:1', 'efafe79d97cde7752e704a0011aa900b4bf8ecf8d82b5b5b863c212764ae8653', 'RUNNING');
 ALTER TABLE equipes
     ADD UNIQUE KEY uk_equipes_id_sessao (id_equipe,id_sessao);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_05_internal_tasks.sql:1';
 
-    -- 92/176: 20261008_05_internal_tasks.sql:2
+    -- 92/177: 20261008_05_internal_tasks.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_05_internal_tasks.sql:2', '1b4b47225e935bffc352e1096eb93c5e527cb07df40eda810c17723a774f79ca', 'RUNNING');
 ALTER TABLE chamados
     ADD COLUMN id_equipe INT UNSIGNED NULL AFTER id_sessao,
@@ -1301,7 +1301,7 @@ ALTER TABLE chamados
     MODIFY COLUMN status ENUM('ABERTO','EM_ANDAMENTO','RESOLVIDO','FECHADO','CANCELADO') NOT NULL DEFAULT 'ABERTO';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_05_internal_tasks.sql:2';
 
-    -- 93/176: 20261008_05_internal_tasks.sql:3
+    -- 93/177: 20261008_05_internal_tasks.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_05_internal_tasks.sql:3', 'cce6334d3c34b4baabfd8c20b35b4b82887cfc348d87891455c4bb508f0fd211', 'RUNNING');
 CREATE TABLE chamado_eventos (
     id_evento BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1319,7 +1319,7 @@ CREATE TABLE chamado_eventos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_05_internal_tasks.sql:3';
 
-    -- 94/176: 20261008_06_notification_dedupe.sql:1
+    -- 94/177: 20261008_06_notification_dedupe.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_06_notification_dedupe.sql:1', '8c7766b76617bced041fd12c890d281be30d1501155e8130ef145814ba0de532', 'RUNNING');
 ALTER TABLE notificacoes
     ADD COLUMN dedupe_key VARCHAR(191) NULL AFTER tipo,
@@ -1327,7 +1327,7 @@ ALTER TABLE notificacoes
     ADD KEY idx_notificacoes_usuario_id (id_usuario,id_notificacao);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_06_notification_dedupe.sql:1';
 
-    -- 95/176: 20261008_07_supplier_cnpj.sql:1
+    -- 95/177: 20261008_07_supplier_cnpj.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_07_supplier_cnpj.sql:1', 'bd3b1430a0db9b13621160d2b8973079803915b87f8962b5e1446d4deafec36a', 'RUNNING');
 ALTER TABLE fornecedores
     ADD COLUMN cnpj_normalizado CHAR(14) CHARACTER SET ascii COLLATE ascii_bin
@@ -1335,7 +1335,7 @@ ALTER TABLE fornecedores
     ADD UNIQUE KEY uk_fornecedores_cnpj_normalizado (cnpj_normalizado);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_07_supplier_cnpj.sql:1';
 
-    -- 96/176: 20261008_08_supplier_products.sql:1
+    -- 96/177: 20261008_08_supplier_products.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_08_supplier_products.sql:1', 'b4de42ae96c0c229a6239c9f436739cac489d378102574ada7975cf7bac5fcf3', 'RUNNING');
 CREATE TABLE fornecedor_locais (
     id_fornecedor INT UNSIGNED NOT NULL,
@@ -1349,7 +1349,7 @@ CREATE TABLE fornecedor_locais (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_08_supplier_products.sql:1';
 
-    -- 97/176: 20261008_08_supplier_products.sql:2
+    -- 97/177: 20261008_08_supplier_products.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_08_supplier_products.sql:2', 'ce11b93da57d6bbba2ea5ffd3c9a93557b0c9a0c0483153434bcdb2ccb90b772', 'RUNNING');
 ALTER TABLE equipamentos
     ADD COLUMN patrimonio_normalizado VARCHAR(100)
@@ -1357,7 +1357,7 @@ ALTER TABLE equipamentos
     ADD UNIQUE KEY uk_equipamentos_patrimonio_normalizado (patrimonio_normalizado);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_08_supplier_products.sql:2';
 
-    -- 98/176: 20261008_09_combo_location.sql:1
+    -- 98/177: 20261008_09_combo_location.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261008_09_combo_location.sql:1', 'b2c234a713e40d7fc64e68f19f7663a93db72d1addb279a52322e3a1b1f3992a', 'RUNNING');
 ALTER TABLE combos
     ADD COLUMN id_local INT UNSIGNED NULL AFTER id_combo,
@@ -1365,14 +1365,14 @@ ALTER TABLE combos
     ADD CONSTRAINT fk_combos_local FOREIGN KEY (id_local) REFERENCES locais(id_local);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261008_09_combo_location.sql:1';
 
-    -- 99/176: 20261009_10_inventory_reservations.sql:1
+    -- 99/177: 20261009_10_inventory_reservations.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_10_inventory_reservations.sql:1', 'a7f80c266f3ee32673698a8051ddef2ae0de4f83c3fe3b4594c67c8eba548309', 'RUNNING');
 ALTER TABLE insumos
     ADD COLUMN quantidade_reservada INT NOT NULL DEFAULT 0 AFTER quantidade,
     ADD CONSTRAINT chk_insumos_reserva CHECK (quantidade_reservada >= 0 AND quantidade_reservada <= quantidade);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_10_inventory_reservations.sql:1';
 
-    -- 100/176: 20261009_10_inventory_reservations.sql:2
+    -- 100/177: 20261009_10_inventory_reservations.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_10_inventory_reservations.sql:2', '0f94e61a6913d5a34892629cd7ee3544a5b69b2c8d40f4283c10b40a5ffe2339', 'RUNNING');
 CREATE TABLE estoque_reservas (
     id_reserva BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1390,7 +1390,7 @@ CREATE TABLE estoque_reservas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_10_inventory_reservations.sql:2';
 
-    -- 101/176: 20261009_10_inventory_reservations.sql:3
+    -- 101/177: 20261009_10_inventory_reservations.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_10_inventory_reservations.sql:3', 'e469a66216cd79c9da78eb91746f83bf2d0692f01bdcb3cf761c6fab7ef4c2e8', 'RUNNING');
 ALTER TABLE movimentacoes_estoque
     ADD COLUMN id_reserva BIGINT UNSIGNED NULL AFTER id_equipamento,
@@ -1398,7 +1398,7 @@ ALTER TABLE movimentacoes_estoque
     ADD CONSTRAINT fk_movestoque_reserva FOREIGN KEY (id_reserva) REFERENCES estoque_reservas(id_reserva);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_10_inventory_reservations.sql:3';
 
-    -- 102/176: 20261009_11_supply_logistics.sql:1
+    -- 102/177: 20261009_11_supply_logistics.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_11_supply_logistics.sql:1', '8e21f73945e463a5496d6d582dc2bd3943f22b31b756a3f4b2b92926f3680b46', 'RUNNING');
 ALTER TABLE logistica
     ADD COLUMN id_insumo_origem INT UNSIGNED NULL AFTER id_solicitacao,
@@ -1417,13 +1417,13 @@ ALTER TABLE logistica
     ADD CONSTRAINT chk_logistica_identidade CHECK (id_solicitacao IS NULL OR (COALESCE(quantidade,0) > 0 AND ((id_insumo_origem IS NOT NULL AND id_equipamento_origem IS NULL) OR (id_insumo_origem IS NULL AND id_equipamento_origem IS NOT NULL))));
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_11_supply_logistics.sql:1';
 
-    -- 103/176: 20261009_11_supply_logistics.sql:2
+    -- 103/177: 20261009_11_supply_logistics.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_11_supply_logistics.sql:2', 'cbf636f4c61641546dcf2c9fa7e355730d7e4a5729bd03aa93c2f1f37cf4eeac', 'RUNNING');
 ALTER TABLE logistica
     MODIFY COLUMN status ENUM('PENDENTE','ENVIADO','EM_TRANSITO','RECEBIDO','CANCELADO','DEVOLVIDO') DEFAULT 'PENDENTE';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_11_supply_logistics.sql:2';
 
-    -- 104/176: 20261009_11_supply_logistics.sql:3
+    -- 104/177: 20261009_11_supply_logistics.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_11_supply_logistics.sql:3', '244170f63c8f1a834f699ecd4b31b04a0b8a9d00ce7bcf880126f21c9c32af75', 'RUNNING');
 ALTER TABLE movimentacoes_estoque
     ADD COLUMN id_logistica INT UNSIGNED NULL AFTER id_reserva,
@@ -1431,38 +1431,38 @@ ALTER TABLE movimentacoes_estoque
     ADD CONSTRAINT fk_movestoque_logistica FOREIGN KEY (id_logistica) REFERENCES logistica(id_logistica);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_11_supply_logistics.sql:3';
 
-    -- 105/176: 20261009_12_pricing.sql:1
+    -- 105/177: 20261009_12_pricing.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:1', '35efbc7404bfff20cf03cd0fa0b0e9fc57d9d37e64d07b10cb398c40fef097f5', 'RUNNING');
 ALTER TABLE insumos ADD COLUMN custo_receita DECIMAL(10,2) NULL, ADD COLUMN custo_parceria DECIMAL(10,2) NULL,
     ADD CONSTRAINT chk_insumos_custos CHECK ((custo_receita IS NULL OR custo_receita >= 0) AND (custo_parceria IS NULL OR custo_parceria >= 0));
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:1';
 
-    -- 106/176: 20261009_12_pricing.sql:2
+    -- 106/177: 20261009_12_pricing.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:2', '2bf79faf4b32951a1b54330126a7aea192bf271f89c7c97c7ed55f58cf32e8e2', 'RUNNING');
 ALTER TABLE sessoes ADD COLUMN custo_local_dia DECIMAL(10,2) NULL, ADD COLUMN custo_exibicao DECIMAL(10,2) NULL,
     ADD CONSTRAINT chk_sessoes_custos CHECK ((custo_local_dia IS NULL OR custo_local_dia >= 0) AND (custo_exibicao IS NULL OR custo_exibicao >= 0));
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:2';
 
-    -- 107/176: 20261009_12_pricing.sql:3
+    -- 107/177: 20261009_12_pricing.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:3', '1bb87b60dc0b644e0a29949ee722177202e42aacb83f6cf14c2c15b102bf8800', 'RUNNING');
 ALTER TABLE filmes ADD COLUMN custo_streaming_dia DECIMAL(10,2) NULL,
     ADD CONSTRAINT chk_filmes_custo_streaming CHECK (custo_streaming_dia IS NULL OR custo_streaming_dia >= 0);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:3';
 
-    -- 108/176: 20261009_12_pricing.sql:4
+    -- 108/177: 20261009_12_pricing.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:4', '10e7c08c154064cb43c85ab9af92e1494a9b9e7c1d85df9ddc9ff361c35497f2', 'RUNNING');
 ALTER TABLE combos ADD COLUMN custo_operacional DECIMAL(10,2) NULL,
     ADD CONSTRAINT chk_combos_custo CHECK (custo_operacional IS NULL OR custo_operacional >= 0);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:4';
 
-    -- 109/176: 20261009_12_pricing.sql:5
+    -- 109/177: 20261009_12_pricing.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:5', '90b7a4f55412c8568e36fff2900a59ccd9d5f59655a076d31fa6b7233dcb19b0', 'RUNNING');
 ALTER TABLE planos ADD COLUMN custo_beneficios_mensal DECIMAL(10,2) NULL, ADD COLUMN custo_beneficios_anual DECIMAL(10,2) NULL,
     ADD COLUMN combo_gratis_mes INT NOT NULL DEFAULT 0,
     ADD CONSTRAINT chk_planos_custos CHECK ((custo_beneficios_mensal IS NULL OR custo_beneficios_mensal >= 0) AND (custo_beneficios_anual IS NULL OR custo_beneficios_anual >= 0) AND combo_gratis_mes >= 0);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:5';
 
-    -- 110/176: 20261009_12_pricing.sql:6
+    -- 110/177: 20261009_12_pricing.sql:6
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:6', '520a9c7e1467bdee97ffc3ff5dbd6fa4f15db24d39d536013078264889b30a28', 'RUNNING');
 CREATE TABLE precificacao_parametros (
     categoria ENUM('SESSION','INPUT','COMBO','RENTAL','PLAN') PRIMARY KEY,
@@ -1477,12 +1477,12 @@ CREATE TABLE precificacao_parametros (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:6';
 
-    -- 111/176: 20261009_12_pricing.sql:7
+    -- 111/177: 20261009_12_pricing.sql:7
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:7', '6412b48d1d890509356e8f3e2cd83df4521fd7f9acf5b5a38227b06a622d6411', 'RUNNING');
 INSERT INTO precificacao_parametros(categoria) VALUES ('SESSION'),('INPUT'),('COMBO'),('RENTAL'),('PLAN');
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:7';
 
-    -- 112/176: 20261009_12_pricing.sql:8
+    -- 112/177: 20261009_12_pricing.sql:8
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:8', '0f4cffe2d43c6346ae0899dcb7de714ef3a98ef2f315c7817c6d3fee1d152983', 'RUNNING');
 CREATE TABLE plano_beneficios (
     id_plano INT UNSIGNED NOT NULL,
@@ -1494,7 +1494,7 @@ CREATE TABLE plano_beneficios (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:8';
 
-    -- 113/176: 20261009_12_pricing.sql:9
+    -- 113/177: 20261009_12_pricing.sql:9
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:9', 'ed9980d3cc490e50a83f484ef28f77384ed2eabf9ad62bab9b89c5d87167b189', 'RUNNING');
 CREATE TABLE promocoes_precificacao (
     id_promocao INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1511,7 +1511,7 @@ CREATE TABLE promocoes_precificacao (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:9';
 
-    -- 114/176: 20261009_12_pricing.sql:10
+    -- 114/177: 20261009_12_pricing.sql:10
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:10', '42da751c073dbb6440e798e6c916e6463d0913fa0b456fc3062b6a1be357e77b', 'RUNNING');
 CREATE TABLE cupom_utilizacoes (
     id_pedido BIGINT UNSIGNED PRIMARY KEY,
@@ -1526,14 +1526,14 @@ CREATE TABLE cupom_utilizacoes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:10';
 
-    -- 115/176: 20261009_12_pricing.sql:11
+    -- 115/177: 20261009_12_pricing.sql:11
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:11', '3a17aa91d79b4db2aa95880ffea96e62c5654403d581fc31ba0159e5b6862673', 'RUNNING');
 INSERT INTO cupom_utilizacoes(id_pedido,id_cupom,desconto_bps,status)
     SELECT id_pedido,id_cupom,CAST(ROUND(desconto*100,0) AS UNSIGNED),'CONFIRMADO' FROM pedidos JOIN cupons USING(id_cupom)
     WHERE id_cupom IS NOT NULL AND pedidos.status <> 'CANCELADO';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:11';
 
-    -- 116/176: 20261009_12_pricing.sql:12
+    -- 116/177: 20261009_12_pricing.sql:12
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_12_pricing.sql:12', 'e214f0def844cf22ce3efb5df3d283f5c82a171e9c68d76d4d56be5900ddcf54', 'RUNNING');
 CREATE TABLE pedido_precificacao (
     id_pedido BIGINT UNSIGNED PRIMARY KEY,
@@ -1545,7 +1545,7 @@ CREATE TABLE pedido_precificacao (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_12_pricing.sql:12';
 
-    -- 117/176: 20261009_13_payment_methods.sql:1
+    -- 117/177: 20261009_13_payment_methods.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_13_payment_methods.sql:1', '1ca72a67fec1103e88182439a0855a6e7700b84b09536d5ea21660fba1d0a8c5', 'RUNNING');
 ALTER TABLE metodos_pagamento
     ADD COLUMN provider VARCHAR(40) NULL,
@@ -1559,7 +1559,7 @@ ALTER TABLE metodos_pagamento
     ADD KEY idx_metodos_dono_ativo(id_usuario,ativo);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_13_payment_methods.sql:1';
 
-    -- 118/176: 20261009_13_payment_methods.sql:2
+    -- 118/177: 20261009_13_payment_methods.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_13_payment_methods.sql:2', '9ae0ecff88967b1181049f1511d94b2bc515e92c04bf31ba436db64491308f9a', 'RUNNING');
 CREATE TABLE pagamento_intencoes (
     id_intencao BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1583,7 +1583,7 @@ CREATE TABLE pagamento_intencoes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_13_payment_methods.sql:2';
 
-    -- 119/176: 20261009_14_payments.sql:1
+    -- 119/177: 20261009_14_payments.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_14_payments.sql:1', 'a578d43243bff5153c157262839918f7db651f4b5dd29f94b9527236bad3c119', 'RUNNING');
 ALTER TABLE pagamento_intencoes
     ADD COLUMN provider VARCHAR(40) NULL,
@@ -1595,7 +1595,7 @@ ALTER TABLE pagamento_intencoes
     ADD KEY idx_intencao_provider_ref(provider,provider_ref);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_14_payments.sql:1';
 
-    -- 120/176: 20261009_14_payments.sql:2
+    -- 120/177: 20261009_14_payments.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_14_payments.sql:2', '5b597400a6b3f3fb7756d7e5a4daafb7b706f12b8a67188b649f08f55110cb03', 'RUNNING');
 ALTER TABLE pagamentos
     ADD COLUMN id_intencao BIGINT UNSIGNED NULL,
@@ -1603,7 +1603,7 @@ ALTER TABLE pagamentos
     ADD CONSTRAINT fk_pagamentos_intencao FOREIGN KEY(id_intencao) REFERENCES pagamento_intencoes(id_intencao);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_14_payments.sql:2';
 
-    -- 121/176: 20261009_14_payments.sql:3
+    -- 121/177: 20261009_14_payments.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261009_14_payments.sql:3', '040b640b4c6ecd8f484ed5470759528a8d619333e47d7b22a73765ebdd810a86', 'RUNNING');
 CREATE TABLE pagamento_gateway_eventos (
     id_gateway_evento BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1624,12 +1624,12 @@ CREATE TABLE pagamento_gateway_eventos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261009_14_payments.sql:3';
 
-    -- 122/176: 20261010_15_refunds.sql:1
+    -- 122/177: 20261010_15_refunds.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_15_refunds.sql:1', '9529d9dc70f47667a6558f15f34e00665d84b58f7b11a53641493c0f85ba7b72', 'RUNNING');
 ALTER TABLE pagamentos MODIFY COLUMN status ENUM('PENDENTE','APROVADO','RECUSADO','PARCIALMENTE_ESTORNADO','ESTORNADO') DEFAULT 'PENDENTE';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_15_refunds.sql:1';
 
-    -- 123/176: 20261010_15_refunds.sql:2
+    -- 123/177: 20261010_15_refunds.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_15_refunds.sql:2', '8e649522a829cc402ff5325743a57ad80732e0387b5a5c04ce864bda5404c4d0', 'RUNNING');
 CREATE TABLE reembolso_solicitacoes (
     id_reembolso BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1659,7 +1659,7 @@ CREATE TABLE reembolso_solicitacoes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_15_refunds.sql:2';
 
-    -- 124/176: 20261010_16_seat_occupancy.sql:1
+    -- 124/177: 20261010_16_seat_occupancy.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_16_seat_occupancy.sql:1', '7c93f2824cf9aca894a0721361679f26cf7562e4f8977e4fc15badb81381f425', 'RUNNING');
 CREATE TABLE assento_ocupacoes (
     id_ocupacao BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1682,7 +1682,7 @@ CREATE TABLE assento_ocupacoes (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_16_seat_occupancy.sql:1';
 
-    -- 125/176: 20261010_16_seat_occupancy.sql:2
+    -- 125/177: 20261010_16_seat_occupancy.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_16_seat_occupancy.sql:2', 'a8fb18382d594075530051f132f358a8bbec7d4fd9e4b77cdb24736f914da361', 'RUNNING');
 INSERT INTO assento_ocupacoes (id_sessao,id_assento,id_pedido,id_item,estado,expira_em)
 SELECT ip.id_sessao,ip.id_assento,ip.id_pedido,ip.id_item,'CONFIRMADA',NULL
@@ -1690,7 +1690,7 @@ FROM itens_pedido ip JOIN pedidos p ON p.id_pedido=ip.id_pedido
 WHERE ip.id_sessao IS NOT NULL AND p.status IN ('PAGO','FINALIZADO');
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_16_seat_occupancy.sql:2';
 
-    -- 126/176: 20261010_16_seat_occupancy.sql:3
+    -- 126/177: 20261010_16_seat_occupancy.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_16_seat_occupancy.sql:3', 'ada660273edeba31d575e5d7a5075734d83beaa391032e12b54baa28b7cba2eb', 'RUNNING');
 INSERT INTO assento_ocupacoes (id_sessao,id_assento,id_pedido,id_item,estado,expira_em)
 SELECT ip.id_sessao,ip.id_assento,ip.id_pedido,NULL,'RESERVADA',DATE_ADD(p.data_pedido,INTERVAL 15 MINUTE)
@@ -1699,43 +1699,43 @@ WHERE ip.id_sessao IS NOT NULL AND p.status IN ('EM_ANDAMENTO','AGUARDANDO_PAGAM
   AND DATE_ADD(p.data_pedido,INTERVAL 15 MINUTE)>UTC_TIMESTAMP(3);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_16_seat_occupancy.sql:3';
 
-    -- 127/176: 20261010_16_seat_occupancy.sql:4
+    -- 127/177: 20261010_16_seat_occupancy.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_16_seat_occupancy.sql:4', '08db9486fbf7b5cf3e07533563a0d9b45d0cdb1a36f8b87db3493bad84c8f364', 'RUNNING');
 ALTER TABLE itens_pedido ADD KEY ix_itens_sessao_assento_historico (id_sessao,id_assento);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_16_seat_occupancy.sql:4';
 
-    -- 128/176: 20261010_16_seat_occupancy.sql:5
+    -- 128/177: 20261010_16_seat_occupancy.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_16_seat_occupancy.sql:5', 'a91f3883d1862141bddc232d5b2224197d26e598df8dcd99c45622a783dc847a', 'RUNNING');
 ALTER TABLE itens_pedido DROP INDEX uk_sessao_assento;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_16_seat_occupancy.sql:5';
 
-    -- 129/176: 20261010_17_streaming_purchase_pricing.sql:1
+    -- 129/177: 20261010_17_streaming_purchase_pricing.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_17_streaming_purchase_pricing.sql:1', '99f69732b1e4740f8d7646c7c7a0ed14ba97f23496495030814763f9b1d4b0d0', 'RUNNING');
 ALTER TABLE filmes ADD COLUMN custo_streaming_compra DECIMAL(10,2) NULL,
     ADD CONSTRAINT chk_filmes_custo_compra CHECK (custo_streaming_compra IS NULL OR custo_streaming_compra >= 0);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_17_streaming_purchase_pricing.sql:1';
 
-    -- 130/176: 20261010_17_streaming_purchase_pricing.sql:2
+    -- 130/177: 20261010_17_streaming_purchase_pricing.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_17_streaming_purchase_pricing.sql:2', '40c5ea9b524231740fb6758e3ea8d3cd4346ddd48a2109b04bbdbd06a28e1e52', 'RUNNING');
 ALTER TABLE precificacao_parametros MODIFY categoria ENUM('SESSION','INPUT','COMBO','RENTAL','PURCHASE','PLAN') NOT NULL;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_17_streaming_purchase_pricing.sql:2';
 
-    -- 131/176: 20261010_17_streaming_purchase_pricing.sql:3
+    -- 131/177: 20261010_17_streaming_purchase_pricing.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_17_streaming_purchase_pricing.sql:3', 'edec6834ef48fd9f96d4ec05b467231a1ec89cde98b4bb666ddb2c315c5a3617', 'RUNNING');
 INSERT INTO precificacao_parametros(categoria) VALUES ('PURCHASE');
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_17_streaming_purchase_pricing.sql:3';
 
-    -- 132/176: 20261010_17_streaming_purchase_pricing.sql:4
+    -- 132/177: 20261010_17_streaming_purchase_pricing.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_17_streaming_purchase_pricing.sql:4', '1427f4a72b0e72a0fa636328eb0f96567ca9e4d746b0fc30d710c3af5942a4c5', 'RUNNING');
 ALTER TABLE plano_beneficios MODIFY categoria ENUM('SESSION','INPUT','COMBO','RENTAL','PURCHASE') NOT NULL;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_17_streaming_purchase_pricing.sql:4';
 
-    -- 133/176: 20261010_17_streaming_purchase_pricing.sql:5
+    -- 133/177: 20261010_17_streaming_purchase_pricing.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_17_streaming_purchase_pricing.sql:5', '7685710ed8e3cff3405ff6cc4fdd99096d00ee2c8e558a7ef3edf92c7a5fc44e', 'RUNNING');
 ALTER TABLE promocoes_precificacao MODIFY categoria ENUM('SESSION','INPUT','COMBO','RENTAL','PURCHASE','PLAN') NOT NULL;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_17_streaming_purchase_pricing.sql:5';
 
-    -- 134/176: 20261010_18_checkout_expiry.sql:1
+    -- 134/177: 20261010_18_checkout_expiry.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_18_checkout_expiry.sql:1', 'ece6d0bb237668377e1673ad25ee77e3aa11191daba2441dd21dba221204d1c2', 'RUNNING');
 ALTER TABLE pedidos
     ADD COLUMN checkout_key VARCHAR(120) COLLATE utf8mb4_bin NULL,
@@ -1748,12 +1748,12 @@ ALTER TABLE pedidos
        (checkout_key IS NOT NULL AND checkout_hash IS NOT NULL AND checkout_expira_em IS NOT NULL));
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_18_checkout_expiry.sql:1';
 
-    -- 135/176: 20261010_18_checkout_expiry.sql:2
+    -- 135/177: 20261010_18_checkout_expiry.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_18_checkout_expiry.sql:2', '3f18f60b4503954d9f7f87b4cda772499c5d783455f72abe09627edf250c6f06', 'RUNNING');
 ALTER TABLE cupom_utilizacoes MODIFY expira_em DATETIME(3) NULL;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_18_checkout_expiry.sql:2';
 
-    -- 136/176: 20261010_19_tickets.sql:1
+    -- 136/177: 20261010_19_tickets.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_19_tickets.sql:1', '130bd0d2472e2af3f38c635f93860a90512b7bd93c5b8f1ee1bcbd30097b482b', 'RUNNING');
 ALTER TABLE itens_pedido
     ADD COLUMN id_sessao_retirada INT UNSIGNED NULL,
@@ -1762,7 +1762,7 @@ ALTER TABLE itens_pedido
     ADD CONSTRAINT chk_itens_sessao_retirada CHECK (id_sessao_retirada IS NULL OR id_combo IS NOT NULL);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_19_tickets.sql:1';
 
-    -- 137/176: 20261010_19_tickets.sql:2
+    -- 137/177: 20261010_19_tickets.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_19_tickets.sql:2', '1ad7b4da30e106bd96c355bf149fdff8bc5be6fe28b112a261b938bfee869d60', 'RUNNING');
 ALTER TABLE tickets
     ADD COLUMN unidade INT UNSIGNED NOT NULL DEFAULT 1,
@@ -1782,7 +1782,7 @@ ALTER TABLE tickets
     ADD CONSTRAINT chk_ticket_saida CHECK ((saida_em IS NULL AND saida_por IS NULL) OR (saida_em IS NOT NULL AND saida_por IS NOT NULL AND status='UTILIZADO' AND tipo='INGRESSO_SESSAO'));
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_19_tickets.sql:2';
 
-    -- 138/176: 20261010_20_ticket_passages.sql:1
+    -- 138/177: 20261010_20_ticket_passages.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_20_ticket_passages.sql:1', 'cd5303fe1c59f8ccfb4571c41b9afb6c0edd08511f6e66a95f4c380cacb81fb5', 'RUNNING');
 CREATE TABLE ticket_passagens (
     id_passagem BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1797,21 +1797,21 @@ CREATE TABLE ticket_passagens (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_20_ticket_passages.sql:1';
 
-    -- 139/176: 20261010_20_ticket_passages.sql:2
+    -- 139/177: 20261010_20_ticket_passages.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_20_ticket_passages.sql:2', '39f6bb35c1efdd9520f90aa09cf50709c9919c9073d291f1fd5cc2274c0498da', 'RUNNING');
 INSERT INTO ticket_passagens(id_ticket,tipo,ocorrido_em,id_usuario_staff,meia_comprovacao)
 SELECT id_ticket,'ENTRADA',COALESCE(data_utilizacao,data_geracao,UTC_TIMESTAMP(3)),conferido_por,meia_comprovacao
 FROM tickets WHERE tipo='INGRESSO_SESSAO' AND status='UTILIZADO';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_20_ticket_passages.sql:2';
 
-    -- 140/176: 20261010_20_ticket_passages.sql:3
+    -- 140/177: 20261010_20_ticket_passages.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_20_ticket_passages.sql:3', '34d6323e7134879e75348acfb037f857ff27db5d2515cdf1e66172809b65a97e', 'RUNNING');
 INSERT INTO ticket_passagens(id_ticket,tipo,ocorrido_em,id_usuario_staff)
 SELECT id_ticket,'SAIDA',saida_em,saida_por
 FROM tickets WHERE tipo='INGRESSO_SESSAO' AND status='UTILIZADO' AND saida_em IS NOT NULL;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_20_ticket_passages.sql:3';
 
-    -- 141/176: 20261010_21_streaming_rental_snapshot.sql:1
+    -- 141/177: 20261010_21_streaming_rental_snapshot.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_21_streaming_rental_snapshot.sql:1', '3163785b7a2faadfaca45ff23dc07bd4313b0fb4ab3343fa2cda25bd34b57c90', 'RUNNING');
 ALTER TABLE itens_pedido
     ADD COLUMN dias_acesso_aluguel_snapshot INT UNSIGNED NULL,
@@ -1821,7 +1821,7 @@ ALTER TABLE itens_pedido
     );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_21_streaming_rental_snapshot.sql:1';
 
-    -- 142/176: 20261010_22_plan_contracts.sql:1
+    -- 142/177: 20261010_22_plan_contracts.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_22_plan_contracts.sql:1', '71469de2894868aa44082be24ca33d77dfb15aab9b9aefa3880dad1a4fecbe6c', 'RUNNING');
 ALTER TABLE planos
     ADD COLUMN acesso_catalogo BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1830,7 +1830,7 @@ ALTER TABLE planos
     ADD CONSTRAINT chk_planos_limite_membros CHECK (limite_membros BETWEEN 1 AND 100);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_22_plan_contracts.sql:1';
 
-    -- 143/176: 20261010_22_plan_contracts.sql:2
+    -- 143/177: 20261010_22_plan_contracts.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_22_plan_contracts.sql:2', '2f88fc9e67e069f4b3a52654941c73400b086b5751ffa3b0307e015e7f08c507', 'RUNNING');
 ALTER TABLE assinaturas
     ADD COLUMN chave_contratacao VARCHAR(120) COLLATE utf8mb4_bin NULL,
@@ -1842,7 +1842,7 @@ ALTER TABLE assinaturas
     ADD CONSTRAINT chk_assinatura_preco_contratado CHECK (preco_contratado IS NULL OR preco_contratado > 0);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_22_plan_contracts.sql:2';
 
-    -- 144/176: 20261010_22_plan_contracts.sql:3
+    -- 144/177: 20261010_22_plan_contracts.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261010_22_plan_contracts.sql:3', '07aec56fa34ca4795ef20e309858bbe6311f85885f2d059af128e6fd80d5c368', 'RUNNING');
 CREATE TABLE beneficio_resgates (
     id_resgate BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1859,7 +1859,7 @@ CREATE TABLE beneficio_resgates (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261010_22_plan_contracts.sql:3';
 
-    -- 145/176: 20261011_23_plan_participants.sql:1
+    -- 145/177: 20261011_23_plan_participants.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_23_plan_participants.sql:1', '27dea6094b3ca905a5cb623dc1ffd4f6a58169f68e066728ef438eeca7244390', 'RUNNING');
 CREATE TABLE assinatura_participantes (
     id_assinatura INT UNSIGNED NOT NULL,
@@ -1874,14 +1874,14 @@ CREATE TABLE assinatura_participantes (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_23_plan_participants.sql:1';
 
-    -- 146/176: 20261011_23_plan_participants.sql:2
+    -- 146/177: 20261011_23_plan_participants.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_23_plan_participants.sql:2', '4261a7cf9b57c168c3ba5cd74e248a9910b57cc3ad00f070ad3eb9b7b494395e', 'RUNNING');
 INSERT INTO assinatura_participantes (id_assinatura,id_usuario,status,entrada_em)
 SELECT id_assinatura,id_usuario_convidado,'ATIVO',COALESCE(data_resposta,data_convite)
 FROM convites_plano WHERE status='ACEITO';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_23_plan_participants.sql:2';
 
-    -- 147/176: 20261011_23_plan_participants.sql:3
+    -- 147/177: 20261011_23_plan_participants.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_23_plan_participants.sql:3', '3c0ae1816d471ca93d81903404b574d0b0e9cfb939491e8232f95e4b1547954b', 'RUNNING');
 CREATE TABLE assinatura_participante_eventos (
     id_evento BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1896,21 +1896,21 @@ CREATE TABLE assinatura_participante_eventos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_23_plan_participants.sql:3';
 
-    -- 148/176: 20261011_23_plan_participants.sql:4
+    -- 148/177: 20261011_23_plan_participants.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_23_plan_participants.sql:4', '2440388e47b0e6874ce933c2fa6b725400c9d50b98899749de6f4b530a9ba88d', 'RUNNING');
 INSERT INTO assinatura_participante_eventos (id_assinatura,id_usuario,id_ator,evento,criado_em)
 SELECT v.id_assinatura,v.id_usuario_convidado,v.id_usuario_convidado,'ENTROU',COALESCE(v.data_resposta,v.data_convite)
 FROM convites_plano v WHERE v.status='ACEITO';
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_23_plan_participants.sql:4';
 
-    -- 149/176: 20261011_23_plan_participants.sql:5
+    -- 149/177: 20261011_23_plan_participants.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_23_plan_participants.sql:5', '8eeb1c5d12364e62a04eb4eb118499763c42578d446a4084e0556be38fb153a8', 'RUNNING');
 ALTER TABLE assinaturas
     ADD COLUMN tipo_divisao_proximo ENUM('TITULAR_PAGA','DIVISAO_IGUAL') NULL,
     ADD COLUMN tipo_divisao_efetiva_em DATE NULL;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_23_plan_participants.sql:5';
 
-    -- 150/176: 20261011_23_plan_participants.sql:6
+    -- 150/177: 20261011_23_plan_participants.sql:6
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_23_plan_participants.sql:6', '756900baa5b4048a9d001494fece5a133b9e11f882139be53a2e6bab22d3d20d', 'RUNNING');
 CREATE TABLE assinatura_rateio_propostas (
     id_proposta BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1927,7 +1927,7 @@ CREATE TABLE assinatura_rateio_propostas (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_23_plan_participants.sql:6';
 
-    -- 151/176: 20261011_23_plan_participants.sql:7
+    -- 151/177: 20261011_23_plan_participants.sql:7
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_23_plan_participants.sql:7', 'b973534f6abbeed249ab47cdbda722c18145c712c6abeaaebc078e0ee5f73e88', 'RUNNING');
 CREATE TABLE assinatura_rateio_consensos (
     id_proposta BIGINT UNSIGNED NOT NULL,
@@ -1940,7 +1940,7 @@ CREATE TABLE assinatura_rateio_consensos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_23_plan_participants.sql:7';
 
-    -- 152/176: 20261011_24_subscription_billing.sql:1
+    -- 152/177: 20261011_24_subscription_billing.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_24_subscription_billing.sql:1', '5d44af4515e873f43ac8099a8a72753ddedf6db9c9f44c07f3c7cf941fe19ca5', 'RUNNING');
 ALTER TABLE assinatura_cobrancas
     ADD COLUMN juros_mora DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -1950,19 +1950,19 @@ ALTER TABLE assinatura_cobrancas
     ADD CONSTRAINT chk_cobrancas_encargos CHECK (juros_mora >= 0);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_24_subscription_billing.sql:1';
 
-    -- 153/176: 20261011_24_subscription_billing.sql:2
+    -- 153/177: 20261011_24_subscription_billing.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_24_subscription_billing.sql:2', '3f9583b8023758d0029261370a903058e5e962b90c99950ebda46375d1c66b00', 'RUNNING');
 ALTER TABLE assinaturas
     ADD COLUMN suspenso_por_cobranca BOOLEAN NOT NULL DEFAULT FALSE;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_24_subscription_billing.sql:2';
 
-    -- 154/176: 20261011_24_subscription_billing.sql:3
+    -- 154/177: 20261011_24_subscription_billing.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_24_subscription_billing.sql:3', '0a7412bb351b80048a3d0b1a2e8095c38de90fb5866dadaed4364de3ee98fca4', 'RUNNING');
 ALTER TABLE assinatura_participantes
     ADD COLUMN suspenso_por_cobranca BOOLEAN NOT NULL DEFAULT FALSE;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_24_subscription_billing.sql:3';
 
-    -- 155/176: 20261011_24_subscription_billing.sql:4
+    -- 155/177: 20261011_24_subscription_billing.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_24_subscription_billing.sql:4', 'a3dd92440846636699d099008c18c3d3eed4ea975db5e4f3476544abfe0e1ca5', 'RUNNING');
 CREATE TABLE assinatura_ciclos (
     id_ciclo BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1979,7 +1979,7 @@ CREATE TABLE assinatura_ciclos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_24_subscription_billing.sql:4';
 
-    -- 156/176: 20261011_24_subscription_billing.sql:5
+    -- 156/177: 20261011_24_subscription_billing.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_24_subscription_billing.sql:5', 'b9c213c159270419b7d656fa3d112705728ceb3adf8baa533f4077994a151be1', 'RUNNING');
 CREATE TABLE assinatura_cobranca_marcos (
     id_marco BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1991,13 +1991,13 @@ CREATE TABLE assinatura_cobranca_marcos (
 );
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_24_subscription_billing.sql:5';
 
-    -- 157/176: 20261011_25_newsletter_management.sql:1
+    -- 157/177: 20261011_25_newsletter_management.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_25_newsletter_management.sql:1', '6df9490793a056d19c5adadab905abb0b25cf9d5011239e2b8d0fd9063ae8276', 'RUNNING');
 ALTER TABLE newsletter_tokens
     MODIFY COLUMN finalidade ENUM('CONFIRMACAO','DESCADASTRO','GESTAO') NOT NULL;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_25_newsletter_management.sql:1';
 
-    -- 158/176: 20261011_26_newsletter_delivery_suppression.sql:1
+    -- 158/177: 20261011_26_newsletter_delivery_suppression.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_26_newsletter_delivery_suppression.sql:1', 'b1c717c858babe733a8b15a0d790504e2c1c94c21d033db738bbafbd992919a0', 'RUNNING');
 CREATE TABLE newsletter_bloqueios (
     id_inscrito INT UNSIGNED PRIMARY KEY,
@@ -2009,7 +2009,7 @@ CREATE TABLE newsletter_bloqueios (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_26_newsletter_delivery_suppression.sql:1';
 
-    -- 159/176: 20261011_27_support_history.sql:1
+    -- 159/177: 20261011_27_support_history.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_27_support_history.sql:1', 'b1400612d94a70393533e9d7719002d602afa19e14259e28c5ae4cd771d0e3c3', 'RUNNING');
 ALTER TABLE suporte
     ADD COLUMN prazo_resposta_em DATETIME NULL,
@@ -2018,14 +2018,14 @@ ALTER TABLE suporte
     ADD KEY idx_suporte_fila (status, prazo_resposta_em, id_suporte);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_27_support_history.sql:1';
 
-    -- 160/176: 20261011_27_support_history.sql:2
+    -- 160/177: 20261011_27_support_history.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_27_support_history.sql:2', '672d827363eafbd22a18cf3db86640f68b0609e807f2438f4cf71b292eae12c7', 'RUNNING');
 UPDATE suporte SET prazo_resposta_em=DATE_ADD(data_abertura,INTERVAL 5 DAY),
     ultima_interacao_em=data_abertura
 WHERE prazo_resposta_em IS NULL;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_27_support_history.sql:2';
 
-    -- 161/176: 20261011_27_support_history.sql:3
+    -- 161/177: 20261011_27_support_history.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_27_support_history.sql:3', '4d378d9131be0e66ca85f4afed453d5325f1547c69003fc632ff1a834f2d560c', 'RUNNING');
 CREATE TABLE suporte_mensagens (
     id_mensagem BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -2041,21 +2041,21 @@ CREATE TABLE suporte_mensagens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_27_support_history.sql:3';
 
-    -- 162/176: 20261011_27_support_history.sql:4
+    -- 162/177: 20261011_27_support_history.sql:4
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_27_support_history.sql:4', 'b416aec10e058f73379865ec2c5e27d714e29d3b501964b77ec9dcea60afc532', 'RUNNING');
 INSERT INTO suporte_mensagens(id_suporte,id_autor,papel,mensagem,registrada_em,origem)
 SELECT id_suporte,id_cliente,'CLIENTE',mensagem,data_abertura,'LEGADO_ABERTURA'
 FROM suporte WHERE mensagem IS NOT NULL AND CHAR_LENGTH(TRIM(mensagem))>0;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_27_support_history.sql:4';
 
-    -- 163/176: 20261011_27_support_history.sql:5
+    -- 163/177: 20261011_27_support_history.sql:5
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_27_support_history.sql:5', 'f5f8537efbe6bdfbb2ee0796245144324b58b6cc529e695fa3faddb1045b5897', 'RUNNING');
 INSERT INTO suporte_mensagens(id_suporte,id_autor,papel,mensagem,registrada_em,origem)
 SELECT id_suporte,id_atendente,'ADMIN',resposta,NULL,'LEGADO_RESPOSTA'
 FROM suporte WHERE resposta IS NOT NULL AND CHAR_LENGTH(TRIM(resposta))>0;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_27_support_history.sql:5';
 
-    -- 164/176: 20261011_27_support_history.sql:6
+    -- 164/177: 20261011_27_support_history.sql:6
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_27_support_history.sql:6', '0110700d72c155646fe467dd8cf76fd1082b2e5dfa38c078b0a189ffa0cda3b5', 'RUNNING');
 CREATE TABLE suporte_atendimentos (
     id_atendimento BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -2074,7 +2074,7 @@ CREATE TABLE suporte_atendimentos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_27_support_history.sql:6';
 
-    -- 165/176: 20261011_28_content_contracts.sql:1
+    -- 165/177: 20261011_28_content_contracts.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_28_content_contracts.sql:1', '4cac7f0de507ad0221013bc863c0cbbd0cb6db3d5b4adb6eb2daa2b296f97392', 'RUNNING');
 CREATE TABLE conteudos_publicados (
     id_conteudo BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -2091,7 +2091,7 @@ CREATE TABLE conteudos_publicados (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_28_content_contracts.sql:1';
 
-    -- 166/176: 20261011_28_content_contracts.sql:2
+    -- 166/177: 20261011_28_content_contracts.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_28_content_contracts.sql:2', 'bbff071cdf71d51a5c413e99d62e0c4ae6a34e1857abe69a8cae068a66754810', 'RUNNING');
 CREATE TABLE pedido_contratos (
     id_pedido BIGINT UNSIGNED PRIMARY KEY,
@@ -2102,22 +2102,22 @@ CREATE TABLE pedido_contratos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_28_content_contracts.sql:2';
 
-    -- 167/176: 20261011_29_admin_reports.sql:1
+    -- 167/177: 20261011_29_admin_reports.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_29_admin_reports.sql:1', '243b0f6ebaf4563b5ccab3d52fdce9922688e889557621ff0bde0ec41ff9a6d0', 'RUNNING');
 ALTER TABLE pagamentos ADD KEY idx_pagamentos_relatorio (data_pagamento,status,id_pedido,id_cobranca);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_29_admin_reports.sql:1';
 
-    -- 168/176: 20261011_29_admin_reports.sql:2
+    -- 168/177: 20261011_29_admin_reports.sql:2
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_29_admin_reports.sql:2', '5ec47d467804dd00824ac0eac3922ad69476d4022879f331a7041e63f01eca33', 'RUNNING');
 ALTER TABLE reembolso_solicitacoes ADD KEY idx_reembolsos_relatorio (respondido_em,status,id_pagamento);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_29_admin_reports.sql:2';
 
-    -- 169/176: 20261011_29_admin_reports.sql:3
+    -- 169/177: 20261011_29_admin_reports.sql:3
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_29_admin_reports.sql:3', '891d3219f2208259345bd5339f68d68b3156ec8bfb4eb229ab425013c781ad5c', 'RUNNING');
 ALTER TABLE auditoria_eventos ADD KEY idx_auditoria_relatorio (occurred_at,id_auditoria);
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_29_admin_reports.sql:3';
 
-    -- 170/176: 20261011_30_order_manual_cancellation.sql:1
+    -- 170/177: 20261011_30_order_manual_cancellation.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261011_30_order_manual_cancellation.sql:1', 'e38ca4804bf0ec38f80f8ae3915e4712ec132757b25a508214144638156bbba8', 'RUNNING');
 CREATE TABLE pedido_cancelamentos (
     id_cancelamento BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -2132,7 +2132,7 @@ CREATE TABLE pedido_cancelamentos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261011_30_order_manual_cancellation.sql:1';
 
-    -- 171/176: 20261025_31_streaming_profiles.sql:1
+    -- 171/177: 20261025_31_streaming_profiles.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261025_31_streaming_profiles.sql:1', '6999c4069cb2d69c22ca137ce439f259d3878538321e30ab53f9cfb55c56f976', 'RUNNING');
 CREATE TABLE streaming_perfis (
     id_perfil INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -2149,7 +2149,7 @@ CREATE TABLE streaming_perfis (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261025_31_streaming_profiles.sql:1';
 
-    -- 172/176: 20261025_32_streaming_favorites.sql:1
+    -- 172/177: 20261025_32_streaming_favorites.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261025_32_streaming_favorites.sql:1', 'b339267661d0c26635c6d3bc101139689a765217c03b259f5b0a2bbd7031d635', 'RUNNING');
 CREATE TABLE streaming_favoritos (
     id_favorito BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -2163,7 +2163,7 @@ CREATE TABLE streaming_favoritos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261025_32_streaming_favorites.sql:1';
 
-    -- 173/176: 20261025_33_streaming_progress.sql:1
+    -- 173/177: 20261025_33_streaming_progress.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261025_33_streaming_progress.sql:1', '4b4946e15d7ae4af42c30319bee454ec936a94e99c2791b8659214547b651821', 'RUNNING');
 CREATE TABLE streaming_progresso (
     id_progresso BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -2182,12 +2182,12 @@ CREATE TABLE streaming_progresso (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261025_33_streaming_progress.sql:1';
 
-    -- 174/176: 20261025_34_input_retail_publication.sql:1
+    -- 174/177: 20261025_34_input_retail_publication.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261025_34_input_retail_publication.sql:1', '5af9d8d316fa159d213d7ca4dae0f9165991c751f238fd9c0f8f8e8e1f2b102c', 'RUNNING');
 ALTER TABLE insumos ADD COLUMN venda_avulsa BOOLEAN NOT NULL DEFAULT FALSE;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261025_34_input_retail_publication.sql:1';
 
-    -- 175/176: 20261026_35_promotional_content.sql:1
+    -- 175/177: 20261026_35_promotional_content.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261026_35_promotional_content.sql:1', '4e615dbf4587b130995e2202fc9301e4aaa228ec8f80f1fb2006dc7c81631efa', 'RUNNING');
 CREATE TABLE conteudos_promocionais (
  id_conteudo INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -2203,7 +2203,7 @@ CREATE TABLE conteudos_promocionais (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261026_35_promotional_content.sql:1';
 
-    -- 176/176: 20261026_36_streaming_profile_photos.sql:1
+    -- 176/177: 20261026_36_streaming_profile_photos.sql:1
     INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261026_36_streaming_profile_photos.sql:1', 'b54b9c755caf29e885004b9c7a4a6ae3a71b412dafa75e80fc71bae7bd539ccc', 'RUNNING');
 CREATE TABLE streaming_perfil_fotos (
  id_perfil INT UNSIGNED NOT NULL PRIMARY KEY,
@@ -2217,6 +2217,18 @@ CREATE TABLE streaming_perfil_fotos (
 ) ENGINE=InnoDB;
     UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261026_36_streaming_profile_photos.sql:1';
 
+    -- 177/177: 20261031_37_supervisor_locations.sql:1
+    INSERT INTO schema_migrations (name, checksum, status) VALUES ('20261031_37_supervisor_locations.sql:1', '370860109bfff453d61a8985a7e8bf57573aeeb7aaee21f40cff60f7455828e3', 'RUNNING');
+CREATE TABLE supervisor_locais (
+    id_supervisor INT UNSIGNED NOT NULL PRIMARY KEY,
+    id_local INT UNSIGNED NOT NULL,
+    atribuido_em DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    KEY idx_supervisor_locais_local (id_local),
+    CONSTRAINT fk_supervisor_locais_usuario FOREIGN KEY (id_supervisor) REFERENCES usuarios(id_usuario),
+    CONSTRAINT fk_supervisor_locais_local FOREIGN KEY (id_local) REFERENCES locais(id_local)
+);
+    UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '20261031_37_supervisor_locations.sql:1';
+
     DO RELEASE_LOCK(CONCAT(DATABASE(), ':cineastra:migrate'));
     SET install_lock_acquired = 0;
 END$$
@@ -2224,6 +2236,1049 @@ DELIMITER ;
 
 CALL _cineastra_install();
 DROP PROCEDURE _cineastra_install;
+
+-- Associações dos filmes de streaming quando o catálogo de apresentação já estiver presente.
+INSERT INTO filme_generos (id_filme, id_genero)
+SELECT f.id_filme, g.id_genero
+FROM filmes f JOIN generos g ON g.nome = 'Ação'
+WHERE f.titulo = 'Eclipse Carmesim' AND f.status = 'ATIVO' AND g.status = 'ATIVO'
+  AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+INSERT INTO filme_generos (id_filme, id_genero)
+SELECT f.id_filme, g.id_genero
+FROM filmes f JOIN generos g ON g.nome = 'Ficção Científica'
+WHERE f.titulo = 'Eclipse Carmesim' AND f.status = 'ATIVO' AND g.status = 'ATIVO'
+  AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+INSERT INTO filme_generos (id_filme, id_genero)
+SELECT f.id_filme, g.id_genero
+FROM filmes f JOIN generos g ON g.nome = 'Drama'
+WHERE f.titulo = 'O Último Farol' AND f.status = 'ATIVO' AND g.status = 'ATIVO'
+  AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+INSERT INTO filme_generos (id_filme, id_genero)
+SELECT f.id_filme, g.id_genero
+FROM filmes f JOIN generos g ON g.nome = 'Animação'
+WHERE f.titulo = 'Pequenos Heróis do Mar' AND f.status = 'ATIVO' AND g.status = 'ATIVO'
+  AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+INSERT INTO filme_generos (id_filme, id_genero)
+SELECT f.id_filme, g.id_genero
+FROM filmes f JOIN generos g ON g.nome = 'Documentário'
+WHERE f.titulo = 'Vozes do Sertão' AND f.status = 'ATIVO' AND g.status = 'ATIVO'
+  AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+
+-- Conta de validação do streaming. Credenciais: usuariotesteStreaming.txt.
+INSERT INTO usuarios (nome, email, senha, cpf, data_nascimento, tipo_usuario, status)
+SELECT 'Cliente Streaming TCC', 'streaming.tcc.mvy1swu5@cineastra.example', '$2b$12$T7qqW8YWrpzPVPU/iH/FhueP6d3UvkI53nzopqWxtrMRmJOw.vt4e', '90229367051', '1995-06-15', 'CLIENTE', 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email_normalizado = 'streaming.tcc.mvy1swu5@cineastra.example' OR cpf_normalizado = '90229367051');
+INSERT INTO streaming_perfis (id_usuario, nome, nome_chave, avatar, infantil, selecionado)
+SELECT u.id_usuario, 'Meu cinema', 'meu cinema', 'astronauta', FALSE, TRUE FROM usuarios u
+WHERE u.email_normalizado = 'streaming.tcc.mvy1swu5@cineastra.example' AND NOT EXISTS (SELECT 1 FROM streaming_perfis p WHERE p.id_usuario = u.id_usuario AND p.nome_chave = 'meu cinema');
+INSERT INTO streaming_favoritos (id_perfil, id_filme)
+SELECT p.id_perfil, f.id_filme FROM streaming_perfis p
+JOIN usuarios u ON u.id_usuario = p.id_usuario AND u.email_normalizado = 'streaming.tcc.mvy1swu5@cineastra.example'
+JOIN filmes f ON f.titulo IN ('Eclipse Carmesim', 'O Último Farol') AND f.disponivel_streaming = TRUE
+WHERE p.nome_chave = 'meu cinema' AND NOT EXISTS (SELECT 1 FROM streaming_favoritos sf WHERE sf.id_perfil = p.id_perfil AND sf.id_filme = f.id_filme);
+INSERT INTO streaming_progresso (id_perfil, id_filme, posicao_segundos, duracao_segundos, concluido, versao)
+SELECT p.id_perfil, f.id_filme, 120, f.duracao * 60, FALSE, 1 FROM streaming_perfis p
+JOIN usuarios u ON u.id_usuario = p.id_usuario AND u.email_normalizado = 'streaming.tcc.mvy1swu5@cineastra.example'
+JOIN filmes f ON f.titulo = 'Eclipse Carmesim' AND f.disponivel_streaming = TRUE AND f.duracao * 60 >= 120
+WHERE p.nome_chave = 'meu cinema' AND NOT EXISTS (SELECT 1 FROM streaming_progresso sp WHERE sp.id_perfil = p.id_perfil AND sp.id_filme = f.id_filme);
+
+-- Planos representativos para apresentação e contratação pelo fluxo normal.
+INSERT INTO planos (nome, descricao, valor_mensal, valor_anual, limite_membros, acesso_catalogo, custo_beneficios_mensal, custo_beneficios_anual, combo_gratis_mes, ativo)
+SELECT 'Básico', 'Sua experiência no cinema com 5% de desconto em ingressos. Plano individual.', 19.90, 199.00, 1, FALSE, 10.00, 100.00, 0, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Básico');
+
+INSERT INTO planos (nome, descricao, valor_mensal, valor_anual, limite_membros, acesso_catalogo, custo_beneficios_mensal, custo_beneficios_anual, combo_gratis_mes, ativo)
+SELECT 'Família', 'Compartilhe o cinema com até 4 membros, 10% de desconto em ingressos e 5% em combos.', 39.90, 399.00, 4, FALSE, 20.00, 200.00, 0, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Família');
+
+INSERT INTO planos (nome, descricao, valor_mensal, valor_anual, limite_membros, acesso_catalogo, custo_beneficios_mensal, custo_beneficios_anual, combo_gratis_mes, ativo)
+SELECT 'Plus', 'Cinema e streaming para até 4 membros, com acesso ao catálogo, 15% de desconto em ingressos e 10% em combos.', 59.90, 599.00, 4, TRUE, 30.00, 300.00, 0, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Plus');
+
+INSERT INTO plano_beneficios (id_plano, categoria, desconto_bps)
+SELECT p.id_plano, b.categoria, b.desconto_bps
+FROM planos p
+JOIN (
+    SELECT 'Básico' AS nome, 'SESSION' AS categoria, 500 AS desconto_bps
+    UNION ALL SELECT 'Família', 'SESSION', 1000
+    UNION ALL SELECT 'Família', 'COMBO', 500
+    UNION ALL SELECT 'Plus', 'SESSION', 1500
+    UNION ALL SELECT 'Plus', 'COMBO', 1000
+) b ON b.nome = p.nome
+WHERE NOT EXISTS (SELECT 1 FROM plano_beneficios pb WHERE pb.id_plano = p.id_plano AND pb.categoria = b.categoria);
+
+-- Concessão anual do Plus à conta indicada, sem renovação automática ou cobrança.
+-- Em uma instalação nova, aplica-se somente se a conta já estiver cadastrada.
+INSERT INTO assinaturas (id_usuario, id_plano, inicio, fim, periodicidade, tipo_divisao, status, renovacao_automatica, chave_contratacao, contratacao_hash, contrato_snapshot, preco_contratado, limite_membros_contratado)
+SELECT u.id_usuario, p.id_plano, UTC_DATE(), DATE_SUB(DATE_ADD(UTC_DATE(), INTERVAL 1 YEAR), INTERVAL 1 DAY),
+       'ANUAL', 'TITULAR_PAGA', 'ATIVA', FALSE, 'concessao-plus-kevin-20261102', SHA2('concessao-plus-kevin-20261102', 256),
+       JSON_OBJECT('id', CAST(p.id_plano AS CHAR), 'name', p.nome, 'description', p.descricao,
+                   'monthlyPrice', CAST(p.valor_mensal AS CHAR), 'annualPrice', CAST(p.valor_anual AS CHAR),
+                   'maxMembers', p.limite_membros, 'catalogAccess', JSON_EXTRACT('true', '$'),
+                   'freeComboId', NULL, 'freeCombosPerMonth', 0,
+                   'discounts', JSON_OBJECT('SESSION', 1500, 'COMBO', 1000), 'active', JSON_EXTRACT('true', '$')),
+       p.valor_anual, p.limite_membros
+FROM usuarios u JOIN planos p ON p.nome = 'Plus' AND p.ativo = TRUE AND p.acesso_catalogo = TRUE
+WHERE u.email_normalizado = 'kevinvoa@gmail.com' AND u.tipo_usuario = 'CLIENTE' AND u.status = 'ATIVO'
+  AND NOT EXISTS (SELECT 1 FROM assinaturas a WHERE a.id_usuario = u.id_usuario
+                 AND (a.chave_contratacao = 'concessao-plus-kevin-20261102'
+                      OR (a.status IN ('PENDENTE', 'ATIVA') AND (a.fim IS NULL OR a.fim >= UTC_DATE()))));
+
+INSERT INTO assinatura_cobrancas (id_assinatura, id_usuario, competencia, valor_devido, status, data_vencimento)
+SELECT a.id_assinatura, a.id_usuario, DATE_FORMAT(a.inicio, '%Y-%m-01'), 0.00, 'ISENTO', a.inicio
+FROM assinaturas a JOIN usuarios u ON u.id_usuario = a.id_usuario
+WHERE u.email_normalizado = 'kevinvoa@gmail.com' AND a.chave_contratacao = 'concessao-plus-kevin-20261102'
+  AND NOT EXISTS (SELECT 1 FROM assinatura_cobrancas ac WHERE ac.id_assinatura = a.id_assinatura);
+
+-- Filme real do catálogo: imagens promocionais Disney/Pixar e trailer oficial.
+-- Fontes: https://www.disney.com.br/filmes/divertidamente-2
+-- https://www.youtube.com/watch?v=yAZxx8t9zig
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Divertida Mente 2', 'Riley entra na adolescência e suas emoções precisam dividir a sala de comando com Ansiedade, Inveja, Tédio e Vergonha. Uma nova fase muda a forma como ela enxerga a si mesma.', 96, 'L', '2024-06-20', 'Kelsey Mann', '/images/streaming/divertida-mente-2/poster.jpg', 'https://www.youtube.com/watch?v=yAZxx8t9zig', FALSE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo = 'Divertida Mente 2');
+
+UPDATE filmes SET imagem = '/images/streaming/divertida-mente-2/poster.jpg', trailer = 'https://www.youtube.com/watch?v=yAZxx8t9zig', disponivel_streaming = TRUE, status = 'ATIVO'
+WHERE titulo = 'Divertida Mente 2';
+
+INSERT INTO filmes_imagens (id_filme, tipo, url, texto_alternativo, ordem, principal)
+SELECT f.id_filme, i.tipo, i.url, i.texto, i.ordem, FALSE
+FROM filmes f JOIN (
+    SELECT 'CAPA' AS tipo, '/images/streaming/divertida-mente-2/poster.jpg' AS url, 'Pôster oficial de Divertida Mente 2, Disney/Pixar' AS texto, 0 AS ordem
+    UNION ALL SELECT 'BANNER', '/images/streaming/divertida-mente-2/banner.jpg', 'Personagens de Divertida Mente 2 em arte oficial Disney/Pixar', 0
+    UNION ALL SELECT 'ALTERNATIVA', '/images/streaming/divertida-mente-2/cena.jpg', 'Arte promocional de Divertida Mente 2, Disney/Pixar', 1
+) i ON TRUE
+WHERE f.titulo = 'Divertida Mente 2'
+  AND NOT EXISTS (SELECT 1 FROM filmes_imagens fi WHERE fi.id_filme = f.id_filme AND fi.url = i.url);
+
+INSERT INTO filme_generos (id_filme, id_genero)
+SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Comédia') AND g.status = 'ATIVO'
+WHERE f.titulo = 'Divertida Mente 2'
+  AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+
+-- BEGIN CINEASTRA_CATALOGO_100
+-- 100 filmes reais: títulos e sinopses em português, cartazes e metadados do catálogo público.
+-- Fonte dos metadados: https://github.com/CrawlFeeds/movies-datasets
+-- Classificações indicativas representativas para apresentação; não são certificações oficiais.
+-- Trailers do YouTube associados ao filme no TMDB e disponíveis na consulta de metadados. Não disponibiliza arquivos dos filmes.
+SET NAMES utf8mb4;
+START TRANSACTION;
+INSERT INTO generos (nome, status) SELECT 'Ação', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Ação');
+INSERT INTO generos (nome, status) SELECT 'Crime', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Crime');
+INSERT INTO generos (nome, status) SELECT 'Suspense', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Suspense');
+INSERT INTO generos (nome, status) SELECT 'Drama', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Drama');
+INSERT INTO generos (nome, status) SELECT 'Comédia', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Comédia');
+INSERT INTO generos (nome, status) SELECT 'Romance', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Romance');
+INSERT INTO generos (nome, status) SELECT 'Aventura', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Aventura');
+INSERT INTO generos (nome, status) SELECT 'Fantasia', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Fantasia');
+INSERT INTO generos (nome, status) SELECT 'Ficção Científica', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Ficção Científica');
+INSERT INTO generos (nome, status) SELECT 'Mistério', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Mistério');
+INSERT INTO generos (nome, status) SELECT 'Animação', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Animação');
+INSERT INTO generos (nome, status) SELECT 'Família', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Família');
+INSERT INTO generos (nome, status) SELECT 'Terror', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Terror');
+INSERT INTO generos (nome, status) SELECT 'História', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'História');
+INSERT INTO generos (nome, status) SELECT 'Guerra', 'ATIVO' WHERE NOT EXISTS (SELECT 1 FROM generos WHERE nome = 'Guerra');
+
+-- 1/100: The Dark Knight
+-- Trailer: Batman - O Cavaleiro das Trevas :: Trailer Final (dublado) | Canal: Warner Bros. Pictures Brasil
+-- Fonte: https://www.themoviedb.org/movie/155/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Batman: O Cavaleiro das Trevas', 'Batman enfrenta o Coringa, que transforma Gotham em palco de caos e dilemas.', 152, '12', '2008-07-16', 'Christopher Nolan', 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg', 'https://www.youtube.com/watch?v=oFJ7Yry2p18', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Batman: O Cavaleiro das Trevas', 'The Dark Knight'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Crime', 'Suspense') WHERE f.titulo IN ('Batman: O Cavaleiro das Trevas', 'The Dark Knight') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=oFJ7Yry2p18' WHERE titulo IN ('Batman: O Cavaleiro das Trevas', 'The Dark Knight');
+
+-- 2/100: Fight Club
+-- Trailer: Fight Club | #TBT Trailer | 20th Century FOX | Canal: 20th Century Studios
+-- Fonte: https://www.themoviedb.org/movie/550/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Clube da Luta', 'Um homem insatisfeito cria um clube de lutas com um vendedor enigmático.', 139, '18', '1999-10-15', 'David Fincher', 'https://image.tmdb.org/t/p/w500/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg', 'https://www.youtube.com/watch?v=BdJKm16Co6M', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Clube da Luta', 'Fight Club'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Suspense') WHERE f.titulo IN ('Clube da Luta', 'Fight Club') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=BdJKm16Co6M' WHERE titulo IN ('Clube da Luta', 'Fight Club');
+
+-- 3/100: Pulp Fiction
+-- Trailer: Pulp Fiction | Official Trailer (HD) - John Travolta, Uma Thurman, Samuel L. Jackson | MIRAMAX | Canal: Miramax
+-- Fonte: https://www.themoviedb.org/movie/680/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Pulp Fiction: Tempo de Violência', 'Criminosos de Los Angeles se cruzam em histórias de violência e escolhas inesperadas.', 154, '18', '1994-09-10', 'Quentin Tarantino', 'https://image.tmdb.org/t/p/w500/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg', 'https://www.youtube.com/watch?v=tGpTpVyI_OQ', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Pulp Fiction: Tempo de Violência', 'Pulp Fiction'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Suspense', 'Crime', 'Comédia') WHERE f.titulo IN ('Pulp Fiction: Tempo de Violência', 'Pulp Fiction') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=tGpTpVyI_OQ' WHERE titulo IN ('Pulp Fiction: Tempo de Violência', 'Pulp Fiction');
+
+-- 4/100: Forrest Gump
+-- Trailer: FORREST GUMP | Official 25th Anniversary Trailer | Paramount Movies | Canal: Paramount Movies
+-- Fonte: https://www.themoviedb.org/movie/13/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Forrest Gump: O Contador de Histórias', 'Um homem de coração generoso atravessa acontecimentos marcantes da história americana.', 142, '12', '1994-06-23', 'Robert Zemeckis', 'https://image.tmdb.org/t/p/w500/Cw4hIUIAmSYfK9QfaUW5igp9La.jpg', 'https://www.youtube.com/watch?v=Mj9IA9tTfio', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Forrest Gump: O Contador de Histórias', 'Forrest Gump'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Comédia', 'Drama', 'Romance') WHERE f.titulo IN ('Forrest Gump: O Contador de Histórias', 'Forrest Gump') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=Mj9IA9tTfio' WHERE titulo IN ('Forrest Gump: O Contador de Histórias', 'Forrest Gump');
+
+-- 5/100: Harry Potter and the Philosopher's Stone
+-- Trailer: Harry Potter and the Philosopher's Stone | Official Trailer | Canal: Harry Potter
+-- Fonte: https://www.themoviedb.org/movie/671/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Harry Potter e a Pedra Filosofal', 'Um menino descobre que é bruxo e começa seus estudos em Hogwarts.', 152, 'L', '2001-11-16', 'Chris Columbus', 'https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg', 'https://www.youtube.com/watch?v=l91Km49W9qI', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Harry Potter e a Pedra Filosofal', 'Harry Potter and the Philosopher\'s Stone'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia') WHERE f.titulo IN ('Harry Potter e a Pedra Filosofal', 'Harry Potter and the Philosopher\'s Stone') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=l91Km49W9qI' WHERE titulo IN ('Harry Potter e a Pedra Filosofal', 'Harry Potter and the Philosopher\'s Stone');
+
+-- 6/100: Iron Man
+-- Trailer: Homem de Ferro | Trailer Oficial Dublado (HD) | Canal: Marvel Geek 
+-- Fonte: https://www.themoviedb.org/movie/1726/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Homem de Ferro', 'Após ser sequestrado, um inventor cria uma armadura e repensa seu legado.', 126, '12', '2008-04-30', 'Jon Favreau', 'https://image.tmdb.org/t/p/w500/78lPtwv72eTNqFW9COBYI0dWDJa.jpg', 'https://www.youtube.com/watch?v=j_Ez4QVs_1g', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Homem de Ferro', 'Iron Man'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Ficção Científica', 'Aventura') WHERE f.titulo IN ('Homem de Ferro', 'Iron Man') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=j_Ez4QVs_1g' WHERE titulo IN ('Homem de Ferro', 'Iron Man');
+
+-- 7/100: The Matrix
+-- Trailer: The Matrix | 4K Trailer | Warner Bros. Entertainment | Canal: Warner Bros. Entertainment
+-- Fonte: https://www.themoviedb.org/movie/603/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Matrix', 'Um programador descobre que a realidade esconde um sistema de controle.', 136, '14', '1999-03-31', 'Lana Wachowski, Lilly Wachowski', 'https://image.tmdb.org/t/p/w500/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg', 'https://www.youtube.com/watch?v=nUEQNVV3Gfs', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Matrix', 'The Matrix'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Ficção Científica') WHERE f.titulo IN ('Matrix', 'The Matrix') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=nUEQNVV3Gfs' WHERE titulo IN ('Matrix', 'The Matrix');
+
+-- 8/100: The Lord of the Rings: The Fellowship of the Ring
+-- Trailer: O Senhor dos Anéis  A sociedade do Anel 2001 - Trailer (Legendado) | Canal: Velox Tickets
+-- Fonte: https://www.themoviedb.org/movie/120/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Senhor dos Anéis: A Sociedade do Anel', 'Frodo inicia uma jornada para destruir um anel capaz de dominar a Terra-média.', 179, '12', '2001-12-18', 'Peter Jackson', 'https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg', 'https://www.youtube.com/watch?v=0i86oM1nHjM', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Senhor dos Anéis: A Sociedade do Anel', 'The Lord of the Rings: The Fellowship of the Ring'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia', 'Ação') WHERE f.titulo IN ('O Senhor dos Anéis: A Sociedade do Anel', 'The Lord of the Rings: The Fellowship of the Ring') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=0i86oM1nHjM' WHERE titulo IN ('O Senhor dos Anéis: A Sociedade do Anel', 'The Lord of the Rings: The Fellowship of the Ring');
+
+-- 9/100: Titanic
+-- Trailer: Titanic | Trailer Oficial Legendado | Canal: 20th Century Studios Brasil
+-- Fonte: https://www.themoviedb.org/movie/597/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Titanic', 'Dois jovens de mundos diferentes se apaixonam durante a viagem do Titanic.', 194, '12', '1997-12-18', 'James Cameron', 'https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg', 'https://www.youtube.com/watch?v=IH6_CA_ocqY', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Titanic', 'Titanic'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Romance') WHERE f.titulo IN ('Titanic', 'Titanic') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=IH6_CA_ocqY' WHERE titulo IN ('Titanic', 'Titanic');
+
+-- 10/100: The Lord of the Rings: The Return of the King
+-- Trailer: Lord of the Rings: The Return of the King - Original Theatrical Trailer | Canal: Warner Bros. Rewind
+-- Fonte: https://www.themoviedb.org/movie/122/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Senhor dos Anéis: O Retorno do Rei', 'A batalha pela Terra-média chega ao fim enquanto Frodo se aproxima de Mordor.', 201, '12', '2003-12-17', 'Peter Jackson', 'https://image.tmdb.org/t/p/w500/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg', 'https://www.youtube.com/watch?v=KOQSQaGgJxs', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Senhor dos Anéis: O Retorno do Rei', 'The Lord of the Rings: The Return of the King'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia', 'Ação') WHERE f.titulo IN ('O Senhor dos Anéis: O Retorno do Rei', 'The Lord of the Rings: The Return of the King') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=KOQSQaGgJxs' WHERE titulo IN ('O Senhor dos Anéis: O Retorno do Rei', 'The Lord of the Rings: The Return of the King');
+
+-- 11/100: The Lord of the Rings: The Two Towers
+-- Trailer: Lord of the Rings: The Two Towers - Original Theatrical Trailer | Canal: Warner Bros. Rewind
+-- Fonte: https://www.themoviedb.org/movie/121/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Senhor dos Anéis: As Duas Torres', 'A sociedade se divide enquanto seus integrantes enfrentam novas ameaças.', 179, '12', '2002-12-18', 'Peter Jackson', 'https://image.tmdb.org/t/p/w500/5VTN0pR8gcqV3EPUHHfMGnJYN9L.jpg', 'https://www.youtube.com/watch?v=Y4neBR0h39c', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Senhor dos Anéis: As Duas Torres', 'The Lord of the Rings: The Two Towers'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia', 'Ação') WHERE f.titulo IN ('O Senhor dos Anéis: As Duas Torres', 'The Lord of the Rings: The Two Towers') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=Y4neBR0h39c' WHERE titulo IN ('O Senhor dos Anéis: As Duas Torres', 'The Lord of the Rings: The Two Towers');
+
+-- 12/100: Harry Potter and the Chamber of Secrets
+-- Trailer: Harry Potter and the Chamber of Secrets | Official Trailer | Canal: Harry Potter
+-- Fonte: https://www.themoviedb.org/movie/672/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Harry Potter e a Câmara Secreta', 'Harry investiga ataques misteriosos durante seu segundo ano em Hogwarts.', 161, 'L', '2002-11-13', 'Chris Columbus', 'https://image.tmdb.org/t/p/w500/sdEOH0992YZ0QSxgXNIGLq1ToUi.jpg', 'https://www.youtube.com/watch?v=nE11U5iBnH0', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Harry Potter e a Câmara Secreta', 'Harry Potter and the Chamber of Secrets'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia') WHERE f.titulo IN ('Harry Potter e a Câmara Secreta', 'Harry Potter and the Chamber of Secrets') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=nE11U5iBnH0' WHERE titulo IN ('Harry Potter e a Câmara Secreta', 'Harry Potter and the Chamber of Secrets');
+
+-- 13/100: Harry Potter and the Prisoner of Azkaban
+-- Trailer: Harry Potter and the Prisoner of Azkaban - Trailer | Canal: YouTube Movies
+-- Fonte: https://www.themoviedb.org/movie/673/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Harry Potter e o Prisioneiro de Azkaban', 'A fuga de um prisioneiro revela segredos ligados ao passado de Harry.', 141, 'L', '2004-05-31', 'Alfonso Cuarón', 'https://image.tmdb.org/t/p/w500/aWxwnYoe8p2d2fcxOqtvAtJ72Rw.jpg', 'https://www.youtube.com/watch?v=R69laoH02xg', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Harry Potter e o Prisioneiro de Azkaban', 'Harry Potter and the Prisoner of Azkaban'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia') WHERE f.titulo IN ('Harry Potter e o Prisioneiro de Azkaban', 'Harry Potter and the Prisoner of Azkaban') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=R69laoH02xg' WHERE titulo IN ('Harry Potter e o Prisioneiro de Azkaban', 'Harry Potter and the Prisoner of Azkaban');
+
+-- 14/100: Se7en
+-- Trailer: Seven | Official Trailer 4K Ultra HD | Warner Bros. Entertainment | Canal: Warner Bros. Entertainment
+-- Fonte: https://www.themoviedb.org/movie/807/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Seven: Os Sete Crimes Capitais', 'Dois detetives perseguem um assassino que organiza seus crimes pelos pecados capitais.', 127, '18', '1995-09-22', 'David Fincher', 'https://image.tmdb.org/t/p/w500/191nKfP0ehp3uIvWqgPbFmI4lv9.jpg', 'https://www.youtube.com/watch?v=KPOuJGkpblk', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Seven: Os Sete Crimes Capitais', 'Se7en'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Crime', 'Mistério', 'Suspense') WHERE f.titulo IN ('Seven: Os Sete Crimes Capitais', 'Se7en') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=KPOuJGkpblk' WHERE titulo IN ('Seven: Os Sete Crimes Capitais', 'Se7en');
+
+-- 15/100: The Godfather
+-- Trailer: O Poderoso Chefão | Aniversário de 50 Anos | Trailer Oficial | Paramount Pictures Brasil | Canal: Paramount Brasil
+-- Fonte: https://www.themoviedb.org/movie/238/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Poderoso Chefão', 'A família Corleone enfrenta mudanças de poder no mundo do crime organizado.', 175, '14', '1972-03-14', 'Francis Ford Coppola', 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', 'https://www.youtube.com/watch?v=0v6MO0EB7UY', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Poderoso Chefão', 'The Godfather'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Crime') WHERE f.titulo IN ('O Poderoso Chefão', 'The Godfather') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=0v6MO0EB7UY' WHERE titulo IN ('O Poderoso Chefão', 'The Godfather');
+
+-- 16/100: Captain America: The First Avenger
+-- Trailer: Captain America: The First Avenger - Trailer | Canal: Marvel Entertainment
+-- Fonte: https://www.themoviedb.org/movie/1771/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Capitão América: O Primeiro Vingador', 'Steve Rogers participa de um experimento e se torna um símbolo de resistência.', 124, '12', '2011-07-22', 'Joe Johnston', 'https://image.tmdb.org/t/p/w500/vSNxAJTlD0r02V9sPYpOjqDZXUK.jpg', 'https://www.youtube.com/watch?v=JerVrbLldXw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Capitão América: O Primeiro Vingador', 'Captain America: The First Avenger'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Aventura', 'Ficção Científica') WHERE f.titulo IN ('Capitão América: O Primeiro Vingador', 'Captain America: The First Avenger') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=JerVrbLldXw' WHERE titulo IN ('Capitão América: O Primeiro Vingador', 'Captain America: The First Avenger');
+
+-- 17/100: Star Wars
+-- Trailer: Star Wars Episode IV: A New Hope - Trailer | Canal: Star Wars
+-- Fonte: https://www.themoviedb.org/movie/11/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Star Wars: Uma Nova Esperança', 'Luke Skywalker se une a uma rebelião contra o Império Galáctico.', 121, 'L', '1977-05-25', 'George Lucas', 'https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg', 'https://www.youtube.com/watch?v=vZ734NWnAHA', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Star Wars: Uma Nova Esperança', 'Star Wars'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Ação', 'Ficção Científica') WHERE f.titulo IN ('Star Wars: Uma Nova Esperança', 'Star Wars') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=vZ734NWnAHA' WHERE titulo IN ('Star Wars: Uma Nova Esperança', 'Star Wars');
+
+-- 18/100: Pirates of the Caribbean: The Curse of the Black Pearl
+-- Trailer: Piratas do Caribe - A Maldição do Pérola Negra Trailer Dublado Português 720p | Canal: yoshimitsumovies
+-- Fonte: https://www.themoviedb.org/movie/22/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Piratas do Caribe: A Maldição do Pérola Negra', 'Um ferreiro se alia a Jack Sparrow para enfrentar uma tripulação amaldiçoada.', 143, '12', '2003-07-09', 'Gore Verbinski', 'https://image.tmdb.org/t/p/w500/poHwCZeWzJCShH7tOjg8RIoyjcw.jpg', 'https://www.youtube.com/watch?v=DGnatLS9Ohw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Piratas do Caribe: A Maldição do Pérola Negra', 'Pirates of the Caribbean: The Curse of the Black Pearl'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia', 'Ação') WHERE f.titulo IN ('Piratas do Caribe: A Maldição do Pérola Negra', 'Pirates of the Caribbean: The Curse of the Black Pearl') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=DGnatLS9Ohw' WHERE titulo IN ('Piratas do Caribe: A Maldição do Pérola Negra', 'Pirates of the Caribbean: The Curse of the Black Pearl');
+
+-- 19/100: Harry Potter and the Goblet of Fire
+-- Trailer: Harry Potter and the Goblet of Fire - Trailer | Canal: Warner On Demand
+-- Fonte: https://www.themoviedb.org/movie/674/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Harry Potter e o Cálice de Fogo', 'Harry é escolhido para um torneio perigoso entre escolas de magia.', 157, '12', '2005-11-16', 'Mike Newell', 'https://image.tmdb.org/t/p/w500/fECBtHlr0RB3foNHDiCBXeg9Bv9.jpg', 'https://www.youtube.com/watch?v=PFWAOnvMd1Q', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Harry Potter e o Cálice de Fogo', 'Harry Potter and the Goblet of Fire'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia') WHERE f.titulo IN ('Harry Potter e o Cálice de Fogo', 'Harry Potter and the Goblet of Fire') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=PFWAOnvMd1Q' WHERE titulo IN ('Harry Potter e o Cálice de Fogo', 'Harry Potter and the Goblet of Fire');
+
+-- 20/100: Back to the Future
+-- Trailer: Back to the Future | Official Rerelease Trailer | Park Circus | Canal: Park Circus
+-- Fonte: https://www.themoviedb.org/movie/105/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'De Volta para o Futuro', 'Um adolescente viaja ao passado e precisa garantir o encontro dos próprios pais.', 116, 'L', '1985-07-03', 'Robert Zemeckis', 'https://image.tmdb.org/t/p/w500/vN5B5WgYscRGcQpVhHl6p9DDTP0.jpg', 'https://www.youtube.com/watch?v=C-4Pr9kBtGc', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('De Volta para o Futuro', 'Back to the Future'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Comédia', 'Ficção Científica') WHERE f.titulo IN ('De Volta para o Futuro', 'Back to the Future') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=C-4Pr9kBtGc' WHERE titulo IN ('De Volta para o Futuro', 'Back to the Future');
+
+-- 21/100: Gladiator
+-- Trailer: GLADIATOR | Official Trailer | Paramount Movies | Canal: Paramount Movies
+-- Fonte: https://www.themoviedb.org/movie/98/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Gladiador', 'Um general traído busca justiça como gladiador na Roma antiga.', 155, '16', '2000-05-04', 'Ridley Scott', 'https://image.tmdb.org/t/p/w500/wN2xWp1eIwCKOD0BHTcErTBv1Uq.jpg', 'https://www.youtube.com/watch?v=P5ieIbInFpg', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Gladiador', 'Gladiator'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Drama', 'Aventura') WHERE f.titulo IN ('Gladiador', 'Gladiator') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=P5ieIbInFpg' WHERE titulo IN ('Gladiador', 'Gladiator');
+
+-- 22/100: Harry Potter and the Order of the Phoenix
+-- Trailer: Harry Potter and the Order of the Phoenix - Original 2007 Theatrical Trailer | Canal: Warner Bros. Rewind
+-- Fonte: https://www.themoviedb.org/movie/675/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Harry Potter e a Ordem da Fênix', 'Harry reúne seus colegas para enfrentar a crescente ameaça de Voldemort.', 138, '12', '2007-07-08', 'David Yates', 'https://image.tmdb.org/t/p/w500/5aOyriWkPec0zUDxmHFP9qMmBaj.jpg', 'https://www.youtube.com/watch?v=WIj9DYJ5EKk', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Harry Potter e a Ordem da Fênix', 'Harry Potter and the Order of the Phoenix'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia') WHERE f.titulo IN ('Harry Potter e a Ordem da Fênix', 'Harry Potter and the Order of the Phoenix') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=WIj9DYJ5EKk' WHERE titulo IN ('Harry Potter e a Ordem da Fênix', 'Harry Potter and the Order of the Phoenix');
+
+-- 23/100: Harry Potter and the Half-Blood Prince
+-- Trailer: Harry Potter e o Enigma do Príncipe - Trailer Final (dublado) | Canal: Warner Bros. Pictures Brasil
+-- Fonte: https://www.themoviedb.org/movie/767/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Harry Potter e o Enigma do Príncipe', 'Segredos do passado ajudam Harry a compreender seu maior inimigo.', 153, '12', '2009-07-15', 'David Yates', 'https://image.tmdb.org/t/p/w500/z7uo9zmQdQwU5ZJHFpv2Upl30i1.jpg', 'https://www.youtube.com/watch?v=xqfiYZ6ohnQ', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Harry Potter e o Enigma do Príncipe', 'Harry Potter and the Half-Blood Prince'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia') WHERE f.titulo IN ('Harry Potter e o Enigma do Príncipe', 'Harry Potter and the Half-Blood Prince') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=xqfiYZ6ohnQ' WHERE titulo IN ('Harry Potter e o Enigma do Príncipe', 'Harry Potter and the Half-Blood Prince');
+
+-- 24/100: Spider-Man
+-- Trailer: Official Trailer (HD) | Spider-Man 2002 | Canal: Spider-Man
+-- Fonte: https://www.themoviedb.org/movie/557/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Homem-Aranha', 'Peter Parker aprende a equilibrar sua vida com a responsabilidade de ser um herói.', 121, '12', '2002-05-01', 'Sam Raimi', 'https://image.tmdb.org/t/p/w500/nXdAh5vUwERL4WGVMaee8RoDEAS.jpg', 'https://www.youtube.com/watch?v=nwyO5Ue6JUQ', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Homem-Aranha', 'Spider-Man'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Ficção Científica') WHERE f.titulo IN ('Homem-Aranha', 'Spider-Man') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=nwyO5Ue6JUQ' WHERE titulo IN ('Homem-Aranha', 'Spider-Man');
+
+-- 25/100: Finding Nemo
+-- Trailer: Procurando Nemo 3D: Trailer Oficial - Disney Pixar | Canal: Walt Disney Studios BR
+-- Fonte: https://www.themoviedb.org/movie/12/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Procurando Nemo', 'Um peixe atravessa o oceano com uma companheira esquecida para encontrar seu filho.', 100, 'L', '2003-05-30', 'Andrew Stanton', 'https://image.tmdb.org/t/p/w500/5lc6nQc0VhWFYFbNv016xze8Jvy.jpg', 'https://www.youtube.com/watch?v=lJhvtAt_1Nk', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Procurando Nemo', 'Finding Nemo'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Família', 'Aventura') WHERE f.titulo IN ('Procurando Nemo', 'Finding Nemo') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=lJhvtAt_1Nk' WHERE titulo IN ('Procurando Nemo', 'Finding Nemo');
+
+-- 26/100: Toy Story
+-- Trailer: Toy Story | Original Trailer | Disney+ | Canal: Disney Plus
+-- Fonte: https://www.themoviedb.org/movie/862/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Toy Story', 'Dois brinquedos rivais precisam cooperar para voltar ao seu dono.', 81, 'L', '1995-11-22', 'John Lasseter', 'https://image.tmdb.org/t/p/w500/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg', 'https://www.youtube.com/watch?v=CxwTLktovTU', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Toy Story', 'Toy Story'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Família', 'Comédia', 'Animação', 'Aventura') WHERE f.titulo IN ('Toy Story', 'Toy Story') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=CxwTLktovTU' WHERE titulo IN ('Toy Story', 'Toy Story');
+
+-- 27/100: Monsters, Inc.
+-- Trailer: Monstros S.A. 3D: Trailer Oficial | Canal: Walt Disney Studios BR
+-- Fonte: https://www.themoviedb.org/movie/585/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Monstros S.A.', 'Dois monstros descobrem que uma criança pode mudar o funcionamento de sua cidade.', 92, 'L', '2001-11-01', 'Pete Docter', 'https://image.tmdb.org/t/p/w500/wFSpyMsp7H0ttERbxY7Trlv8xry.jpg', 'https://www.youtube.com/watch?v=iRh2kF-1X2E', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Monstros S.A.', 'Monsters, Inc.'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Comédia', 'Família', 'Fantasia') WHERE f.titulo IN ('Monstros S.A.', 'Monsters, Inc.') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=iRh2kF-1X2E' WHERE titulo IN ('Monstros S.A.', 'Monsters, Inc.');
+
+-- 28/100: The Green Mile
+-- Trailer: The Green Mile | 4K Trailer | Warner Bros. Entertainment | Canal: Warner Bros. Entertainment
+-- Fonte: https://www.themoviedb.org/movie/497/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'À Espera de um Milagre', 'Um agente penitenciário conhece um condenado com um dom extraordinário.', 189, '16', '1999-12-10', 'Frank Darabont', 'https://image.tmdb.org/t/p/w500/8VG8fDNiy50H4FedGwdSVUPoaJe.jpg', 'https://www.youtube.com/watch?v=Bg7epsq0OIQ', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('À Espera de um Milagre', 'The Green Mile'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Fantasia', 'Drama', 'Crime') WHERE f.titulo IN ('À Espera de um Milagre', 'The Green Mile') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=Bg7epsq0OIQ' WHERE titulo IN ('À Espera de um Milagre', 'The Green Mile');
+
+-- 29/100: Kill Bill: Vol. 1
+-- Trailer: Kill Bill Volume 1 (2003) Theatrical Trailer [5.1] [4K] [FTD-1288] | Canal: FT Depot
+-- Fonte: https://www.themoviedb.org/movie/24/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Kill Bill: Volume 1', 'Uma mulher desperta do coma e inicia uma jornada de vingança.', 111, '18', '2003-10-10', 'Quentin Tarantino', 'https://image.tmdb.org/t/p/w500/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg', 'https://www.youtube.com/watch?v=sXwXk3jcrfU', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Kill Bill: Volume 1', 'Kill Bill: Vol. 1'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Crime') WHERE f.titulo IN ('Kill Bill: Volume 1', 'Kill Bill: Vol. 1') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=sXwXk3jcrfU' WHERE titulo IN ('Kill Bill: Volume 1', 'Kill Bill: Vol. 1');
+
+-- 30/100: The Shining
+-- Trailer: The Shining - Official Trailer [1980] HD | Canal: Stanley Kubrick
+-- Fonte: https://www.themoviedb.org/movie/694/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Iluminado', 'Uma família passa o inverno isolada em um hotel marcado por forças sombrias.', 144, '16', '1980-05-23', 'Stanley Kubrick', 'https://image.tmdb.org/t/p/w500/uAR0AWqhQL1hQa69UDEbb2rE5Wx.jpg', 'https://www.youtube.com/watch?v=S014oGZiSdI', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Iluminado', 'The Shining'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Terror', 'Suspense') WHERE f.titulo IN ('O Iluminado', 'The Shining') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=S014oGZiSdI' WHERE titulo IN ('O Iluminado', 'The Shining');
+
+-- 31/100: Shrek
+-- Trailer: Shrek | 25th Anniversary Trailer | Canal: Universal Pictures
+-- Fonte: https://www.themoviedb.org/movie/808/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Shrek', 'Um ogro parte em uma missão para recuperar a tranquilidade de seu pântano.', 90, 'L', '2001-05-18', 'Andrew Adamson, Vicky Jenson', 'https://image.tmdb.org/t/p/w500/iB64vpL3dIObOtMZgX3RqdVdQDc.jpg', 'https://www.youtube.com/watch?v=ppDwfm6e498', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Shrek', 'Shrek'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Comédia', 'Fantasia', 'Aventura', 'Família') WHERE f.titulo IN ('Shrek', 'Shrek') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=ppDwfm6e498' WHERE titulo IN ('Shrek', 'Shrek');
+
+-- 32/100: Spirited Away
+-- Trailer: Spirited Away - Official Trailer | Canal: Crunchyroll Store Australia
+-- Fonte: https://www.themoviedb.org/movie/129/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'A Viagem de Chihiro', 'Uma menina entra em um mundo de espíritos e tenta salvar seus pais.', 125, 'L', '2001-07-20', 'Hayao Miyazaki', 'https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', 'https://www.youtube.com/watch?v=ByXuk9QqQkk', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('A Viagem de Chihiro', 'Spirited Away'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Família', 'Fantasia') WHERE f.titulo IN ('A Viagem de Chihiro', 'Spirited Away') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=ByXuk9QqQkk' WHERE titulo IN ('A Viagem de Chihiro', 'Spirited Away');
+
+-- 33/100: Jurassic Park
+-- Trailer: Jurassic Park 3D - Trailer | Canal: Universal Pictures Brasil
+-- Fonte: https://www.themoviedb.org/movie/329/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Jurassic Park: O Parque dos Dinossauros', 'Uma visita a um parque de dinossauros se transforma em uma luta pela sobrevivência.', 127, 'L', '1993-06-11', 'Steven Spielberg', 'https://image.tmdb.org/t/p/w500/b1xCNnyrPebIc7EWNZIa6jhb1Ww.jpg', 'https://www.youtube.com/watch?v=YizU376o3tQ', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Jurassic Park: O Parque dos Dinossauros', 'Jurassic Park'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Ficção Científica') WHERE f.titulo IN ('Jurassic Park: O Parque dos Dinossauros', 'Jurassic Park') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=YizU376o3tQ' WHERE titulo IN ('Jurassic Park: O Parque dos Dinossauros', 'Jurassic Park');
+
+-- 34/100: The Prestige
+-- Trailer: The Prestige - Trailer | Canal: YouTube Movies
+-- Fonte: https://www.themoviedb.org/movie/1124/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Grande Truque', 'Dois mágicos transformam sua rivalidade em uma obsessão cada vez mais perigosa.', 130, '14', '2006-10-19', 'Christopher Nolan', 'https://image.tmdb.org/t/p/w500/Ag2B2KHKQPukjH7WutmgnnSNurZ.jpg', 'https://www.youtube.com/watch?v=ijXruSzfGEc', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Grande Truque', 'The Prestige'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Mistério', 'Ficção Científica') WHERE f.titulo IN ('O Grande Truque', 'The Prestige') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=ijXruSzfGEc' WHERE titulo IN ('O Grande Truque', 'The Prestige');
+
+-- 35/100: Schindler's List
+-- Trailer: A Lista de Schindler (25º Aniversário) - Trailer Oficial (Universal Pictures) HD | Canal: Universal Pictures Brasil
+-- Fonte: https://www.themoviedb.org/movie/424/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'A Lista de Schindler', 'Um industrial tenta proteger trabalhadores judeus durante o Holocausto.', 195, '14', '1993-12-15', 'Steven Spielberg', 'https://image.tmdb.org/t/p/w500/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg', 'https://www.youtube.com/watch?v=RQfPCRUz6lw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('A Lista de Schindler', 'Schindler\'s List'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'História', 'Guerra') WHERE f.titulo IN ('A Lista de Schindler', 'Schindler\'s List') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=RQfPCRUz6lw' WHERE titulo IN ('A Lista de Schindler', 'Schindler\'s List');
+
+-- 36/100: Saving Private Ryan
+-- Trailer: Saving Private Ryan - Trailer | Canal: YouTube Movies
+-- Fonte: https://www.themoviedb.org/movie/857/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Resgate do Soldado Ryan', 'Uma equipe atravessa os campos de batalha para encontrar um soldado desaparecido.', 169, '14', '1998-07-24', 'Steven Spielberg', 'https://image.tmdb.org/t/p/w500/uqx37cS8cpHg8U35f9U5IBlrCV3.jpg', 'https://www.youtube.com/watch?v=RYExstiQlLc', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Resgate do Soldado Ryan', 'Saving Private Ryan'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Guerra', 'Drama', 'História') WHERE f.titulo IN ('O Resgate do Soldado Ryan', 'Saving Private Ryan') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=RYExstiQlLc' WHERE titulo IN ('O Resgate do Soldado Ryan', 'Saving Private Ryan');
+
+-- 37/100: Pirates of the Caribbean: Dead Man's Chest
+-- Trailer: Pirates of the Caribbean Dead Man's Chest Trailer HD | Canal: Goran Mrdalj
+-- Fonte: https://www.themoviedb.org/movie/58/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Piratas do Caribe: O Baú da Morte', 'Jack Sparrow precisa enfrentar uma dívida antiga com o temido Davy Jones.', 151, '12', '2006-07-06', 'Gore Verbinski', 'https://image.tmdb.org/t/p/w500/uXEqmloGyP7UXAiphJUu2v2pcuE.jpg', 'https://www.youtube.com/watch?v=9SFWn9taQTw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Piratas do Caribe: O Baú da Morte', 'Pirates of the Caribbean: Dead Man\'s Chest'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Fantasia', 'Ação') WHERE f.titulo IN ('Piratas do Caribe: O Baú da Morte', 'Pirates of the Caribbean: Dead Man\'s Chest') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=9SFWn9taQTw' WHERE titulo IN ('Piratas do Caribe: O Baú da Morte', 'Pirates of the Caribbean: Dead Man\'s Chest');
+
+-- 38/100: Catch Me If You Can
+-- Trailer: Catch Me If You Can - Trailer | Canal: Paramount Movies
+-- Fonte: https://www.themoviedb.org/movie/640/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Prenda-me Se For Capaz', 'Um jovem falsificador desafia as autoridades enquanto um agente tenta capturá-lo.', 141, '12', '2002-12-16', 'Steven Spielberg', 'https://image.tmdb.org/t/p/w500/ctjEj2xM32OvBXCq8zAdK3ZrsAj.jpg', 'https://www.youtube.com/watch?v=71rDQ7z4eFg', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Prenda-me Se For Capaz', 'Catch Me If You Can'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Crime') WHERE f.titulo IN ('Prenda-me Se For Capaz', 'Catch Me If You Can') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=71rDQ7z4eFg' WHERE titulo IN ('Prenda-me Se For Capaz', 'Catch Me If You Can');
+
+-- 39/100: Alien
+-- Trailer: Alien | #TBT Trailer | 20th Century FOX | Canal: Alien Anthology
+-- Fonte: https://www.themoviedb.org/movie/348/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Alien: O Oitavo Passageiro', 'A tripulação de uma nave encontra uma forma de vida mortal no espaço.', 117, '14', '1979-05-25', 'Ridley Scott', 'https://image.tmdb.org/t/p/w500/vfrQk5IPloGg1v9Rzbh2Eg3VGyM.jpg', 'https://www.youtube.com/watch?v=L2VWfWC-wI4', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Alien: O Oitavo Passageiro', 'Alien'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Terror', 'Ficção Científica') WHERE f.titulo IN ('Alien: O Oitavo Passageiro', 'Alien') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=L2VWfWC-wI4' WHERE titulo IN ('Alien: O Oitavo Passageiro', 'Alien');
+
+-- 40/100: Spider-Man 2
+-- Trailer: Spider-man 2 (2004) - Trailer | Canal: Sony Pics at Home
+-- Fonte: https://www.themoviedb.org/movie/558/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Homem-Aranha 2', 'Peter Parker enfrenta o Doutor Octopus enquanto questiona sua vida como herói.', 127, 'L', '2004-06-25', 'Sam Raimi', 'https://image.tmdb.org/t/p/w500/aGuvNAaaZuWXYQQ6N2v7DeuP6mB.jpg', 'https://www.youtube.com/watch?v=3jBFwltrxJw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Homem-Aranha 2', 'Spider-Man 2'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Aventura', 'Ficção Científica') WHERE f.titulo IN ('Homem-Aranha 2', 'Spider-Man 2') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=3jBFwltrxJw' WHERE titulo IN ('Homem-Aranha 2', 'Spider-Man 2');
+
+-- 41/100: Eternal Sunshine of the Spotless Mind
+-- Trailer: Eternal Sunshine of the Spotless Mind Original Trailer Uncut (35mm Scan 4K) | Canal: Kyle's Archive
+-- Fonte: https://www.themoviedb.org/movie/38/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Brilho Eterno de uma Mente sem Lembranças', 'Um casal tenta apagar as memórias de um relacionamento que terminou.', 108, '14', '2004-03-19', 'Michel Gondry', 'https://image.tmdb.org/t/p/w500/5MwkWH9tYHv3mV9OdYTMR5qreIz.jpg', 'https://www.youtube.com/watch?v=c2e-bj6qy8Y', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Brilho Eterno de uma Mente sem Lembranças', 'Eternal Sunshine of the Spotless Mind'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ficção Científica', 'Drama', 'Romance') WHERE f.titulo IN ('Brilho Eterno de uma Mente sem Lembranças', 'Eternal Sunshine of the Spotless Mind') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=c2e-bj6qy8Y' WHERE titulo IN ('Brilho Eterno de uma Mente sem Lembranças', 'Eternal Sunshine of the Spotless Mind');
+
+-- 42/100: Memento
+-- Trailer: Memento | Official Restoration Trailer [4K] | Canal: Umbrella Entertainment
+-- Fonte: https://www.themoviedb.org/movie/77/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Amnésia', 'Um homem com perda de memória recente busca pistas sobre um crime.', 113, '16', '2000-10-11', 'Christopher Nolan', 'https://image.tmdb.org/t/p/w500/nzlv62aC0octS5AklAiWpXLX9Z0.jpg', 'https://www.youtube.com/watch?v=Wyc9TpJxf4A', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Amnésia', 'Memento'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Mistério', 'Suspense') WHERE f.titulo IN ('Amnésia', 'Memento') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=Wyc9TpJxf4A' WHERE titulo IN ('Amnésia', 'Memento');
+
+-- 43/100: The Departed
+-- Trailer: The Departed | 4K Ultra HD Official Trailer | Warner Bros. Entertainment | Canal: Warner Bros. Entertainment
+-- Fonte: https://www.themoviedb.org/movie/1422/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Os Infiltrados', 'Um policial e um criminoso infiltrados tentam descobrir a identidade um do outro.', 151, '16', '2006-10-04', 'Martin Scorsese', 'https://image.tmdb.org/t/p/w500/nT97ifVT2J1yMQmeq20Qblg61T.jpg', 'https://www.youtube.com/watch?v=r-MiSNsCdQ4', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Os Infiltrados', 'The Departed'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Suspense', 'Crime') WHERE f.titulo IN ('Os Infiltrados', 'The Departed') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=r-MiSNsCdQ4' WHERE titulo IN ('Os Infiltrados', 'The Departed');
+
+-- 44/100: Léon: The Professional
+-- Trailer: Leon: The Professional - Official Trailer | Canal: Madman Films
+-- Fonte: https://www.themoviedb.org/movie/101/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Profissional', 'Uma jovem encontra proteção com um assassino profissional e busca justiça.', 111, '14', '1994-09-14', 'Luc Besson', 'https://image.tmdb.org/t/p/w500/bxB2q91nKYp8JNzqE7t7TWBVupB.jpg', 'https://www.youtube.com/watch?v=Nq101UyQyTo', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Profissional', 'Léon: The Professional'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Crime', 'Drama', 'Ação') WHERE f.titulo IN ('O Profissional', 'Léon: The Professional') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=Nq101UyQyTo' WHERE titulo IN ('O Profissional', 'Léon: The Professional');
+
+-- 45/100: Charlie and the Chocolate Factory
+-- Trailer: Charlie and the Chocolate Factory Trailer | Canal: Warner Bros. Rewind
+-- Fonte: https://www.themoviedb.org/movie/118/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'A Fantástica Fábrica de Chocolate', 'Um menino visita uma fábrica misteriosa comandada pelo excêntrico Willy Wonka.', 115, 'L', '2005-07-13', 'Tim Burton', 'https://image.tmdb.org/t/p/w500/iKP6wg3c6COUe8gYutoGG7qcPnO.jpg', 'https://www.youtube.com/watch?v=p6JAQ2aoXm0', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('A Fantástica Fábrica de Chocolate', 'Charlie and the Chocolate Factory'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Comédia', 'Família', 'Fantasia') WHERE f.titulo IN ('A Fantástica Fábrica de Chocolate', 'Charlie and the Chocolate Factory') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=p6JAQ2aoXm0' WHERE titulo IN ('A Fantástica Fábrica de Chocolate', 'Charlie and the Chocolate Factory');
+
+-- 46/100: V for Vendetta
+-- Trailer: V For Vendetta (Trailer) | Canal: DC
+-- Fonte: https://www.themoviedb.org/movie/752/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'V de Vingança', 'Um homem mascarado inspira resistência contra um governo autoritário.', 132, '16', '2006-02-23', 'James McTeigue', 'https://image.tmdb.org/t/p/w500/1avD1JeaRiJX5M4ahPdZPypGoGN.jpg', 'https://www.youtube.com/watch?v=IHVzzxrPt1c', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('V de Vingança', 'V for Vendetta'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Suspense', 'Ficção Científica') WHERE f.titulo IN ('V de Vingança', 'V for Vendetta') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=IHVzzxrPt1c' WHERE titulo IN ('V de Vingança', 'V for Vendetta');
+
+-- 47/100: Reservoir Dogs
+-- Trailer: Reservoir Dogs official trailer HD | Canal: Park Circus
+-- Fonte: https://www.themoviedb.org/movie/500/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Cães de Aluguel', 'Após um assalto fracassado, criminosos desconfiam de um traidor no grupo.', 99, '18', '1992-09-02', 'Quentin Tarantino', 'https://image.tmdb.org/t/p/w500/xi8Iu6qyTfyZVDVy60raIOYJJmk.jpg', 'https://www.youtube.com/watch?v=2KLZ4fSXtgI', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Cães de Aluguel', 'Reservoir Dogs'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Crime', 'Suspense') WHERE f.titulo IN ('Cães de Aluguel', 'Reservoir Dogs') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=2KLZ4fSXtgI' WHERE titulo IN ('Cães de Aluguel', 'Reservoir Dogs');
+
+-- 48/100: Spider-Man 3
+-- Trailer: Spider-man 3 (2007) - Trailer | Canal: Sony Pics at Home
+-- Fonte: https://www.themoviedb.org/movie/559/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Homem-Aranha 3', 'Novos inimigos e uma força sombria desafiam o equilíbrio de Peter Parker.', 139, '12', '2007-05-01', 'Sam Raimi', 'https://image.tmdb.org/t/p/w500/qFmwhVUoUSXjkKRmca5yGDEXBIj.jpg', 'https://www.youtube.com/watch?v=wPosLpgMtTY', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Homem-Aranha 3', 'Spider-Man 3'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Aventura', 'Ficção Científica') WHERE f.titulo IN ('Homem-Aranha 3', 'Spider-Man 3') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=wPosLpgMtTY' WHERE titulo IN ('Homem-Aranha 3', 'Spider-Man 3');
+
+-- 49/100: Cars
+-- Trailer: Cars (2006) Theatrical Trailer #1 [4K] [5.1] [FTD-0683] | Canal: FT Depot
+-- Fonte: https://www.themoviedb.org/movie/920/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Carros', 'Um carro de corrida descobre o valor da amizade em uma pequena cidade.', 117, 'L', '2006-06-08', 'John Lasseter', 'https://image.tmdb.org/t/p/w500/2Touk3m5gzsqr1VsvxypdyHY5ci.jpg', 'https://www.youtube.com/watch?v=dMaU2ixutGg', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Carros', 'Cars'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Aventura', 'Comédia', 'Família') WHERE f.titulo IN ('Carros', 'Cars') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=dMaU2ixutGg' WHERE titulo IN ('Carros', 'Cars');
+
+-- 50/100: Kill Bill: Vol. 2
+-- Trailer: Kill Bill: Vol. 2 Official Trailer #1 - (2004) HD | Canal: Movieclips
+-- Fonte: https://www.themoviedb.org/movie/393/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Kill Bill: Volume 2', 'A jornada de vingança da Noiva se aproxima de seu confronto decisivo.', 136, '16', '2004-04-16', 'Quentin Tarantino', 'https://image.tmdb.org/t/p/w500/2yhg0mZQMhDyvUQ4rG1IZ4oIA8L.jpg', 'https://www.youtube.com/watch?v=q2h6EFk36kI', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Kill Bill: Volume 2', 'Kill Bill: Vol. 2'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Crime', 'Suspense') WHERE f.titulo IN ('Kill Bill: Volume 2', 'Kill Bill: Vol. 2') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=q2h6EFk36kI' WHERE titulo IN ('Kill Bill: Volume 2', 'Kill Bill: Vol. 2');
+
+-- 51/100: Blade Runner
+-- Trailer: Blade Runner | 30th Anniversary Trailer | Warner Bros. Entertainment | Canal: Warner Bros. Entertainment
+-- Fonte: https://www.themoviedb.org/movie/78/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Blade Runner: O Caçador de Androides', 'Um investigador persegue seres artificiais e questiona o significado da humanidade.', 118, '14', '1982-06-25', 'Ridley Scott', 'https://image.tmdb.org/t/p/w500/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg', 'https://www.youtube.com/watch?v=iYhJ7Mf2Oxs', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Blade Runner: O Caçador de Androides', 'Blade Runner'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ficção Científica', 'Drama', 'Suspense') WHERE f.titulo IN ('Blade Runner: O Caçador de Androides', 'Blade Runner') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=iYhJ7Mf2Oxs' WHERE titulo IN ('Blade Runner: O Caçador de Androides', 'Blade Runner');
+
+-- 52/100: Toy Story 2
+-- Trailer: Toy Story 2 (1999) Trailer #1 | Movieclips Classic Trailers | Canal: Rotten Tomatoes Classic Trailers
+-- Fonte: https://www.themoviedb.org/movie/863/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Toy Story 2', 'Os brinquedos organizam um resgate quando Woody é levado por um colecionador.', 92, 'L', '1999-10-30', 'John Lasseter', 'https://image.tmdb.org/t/p/w500/4rbcp3ng8n1MKHjpeqW0L7Fnpzz.jpg', 'https://www.youtube.com/watch?v=xNWSGRD5CzU', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Toy Story 2', 'Toy Story 2'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Comédia', 'Família') WHERE f.titulo IN ('Toy Story 2', 'Toy Story 2') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=xNWSGRD5CzU' WHERE titulo IN ('Toy Story 2', 'Toy Story 2');
+
+-- 53/100: Men in Black
+-- Trailer: Men In Black (1997) - Trailer | Canal: Sony Pics at Home
+-- Fonte: https://www.themoviedb.org/movie/607/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'MIB: Homens de Preto', 'Dois agentes monitoram visitantes de outros planetas que vivem entre os humanos.', 98, 'L', '1997-07-02', 'Barry Sonnenfeld', 'https://image.tmdb.org/t/p/w500/uLOmOF5IzWoyrgIF5MfUnh5pa1X.jpg', 'https://www.youtube.com/watch?v=HYUd7AOw_lk', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('MIB: Homens de Preto', 'Men in Black'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Aventura', 'Comédia', 'Ficção Científica') WHERE f.titulo IN ('MIB: Homens de Preto', 'Men in Black') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=HYUd7AOw_lk' WHERE titulo IN ('MIB: Homens de Preto', 'Men in Black');
+
+-- 54/100: 300
+-- Trailer: 300: A Ascensão do Império - Trailer Oficial 1 (leg) [HD] | 7 de março nos cinemas | Canal: Warner Bros. Pictures Brasil
+-- Fonte: https://www.themoviedb.org/movie/1271/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT '300', 'Guerreiros espartanos enfrentam um exército muito maior em uma passagem estratégica.', 117, '18', '2007-03-07', 'Zack Snyder', 'https://image.tmdb.org/t/p/w500/h7Lcio0c9ohxPhSZg42eTlKIVVY.jpg', 'https://www.youtube.com/watch?v=hIL3nTSwvXs', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('300', '300'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Aventura', 'Guerra') WHERE f.titulo IN ('300', '300') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=hIL3nTSwvXs' WHERE titulo IN ('300', '300');
+
+-- 55/100: The Terminator
+-- Trailer: THE TERMINATOR (1984) | Official Trailer | MGM | Canal: Amazon MGM Studios
+-- Fonte: https://www.themoviedb.org/movie/218/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Exterminador do Futuro', 'Uma mulher é perseguida por um assassino enviado do futuro.', 108, '14', '1984-10-26', 'James Cameron', 'https://image.tmdb.org/t/p/w500/qvktm0BHcnmDpul4Hz01GIazWPr.jpg', 'https://www.youtube.com/watch?v=nGrW-OR2uDk', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Exterminador do Futuro', 'The Terminator'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Suspense', 'Ficção Científica') WHERE f.titulo IN ('O Exterminador do Futuro', 'The Terminator') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=nGrW-OR2uDk' WHERE titulo IN ('O Exterminador do Futuro', 'The Terminator');
+
+-- 56/100: GoodFellas
+-- Trailer: Goodfellas - Trailer | Canal: Warner On Demand
+-- Fonte: https://www.themoviedb.org/movie/769/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Os Bons Companheiros', 'Um jovem entra no crime organizado e acompanha a ascensão e a queda de seus aliados.', 145, '16', '1990-09-12', 'Martin Scorsese', 'https://image.tmdb.org/t/p/w500/9OkCLM73MIU2CrKZbqiT8Ln1wY2.jpg', 'https://www.youtube.com/watch?v=qWhS8Pjf-9c', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Os Bons Companheiros', 'GoodFellas'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Crime') WHERE f.titulo IN ('Os Bons Companheiros', 'GoodFellas') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=qWhS8Pjf-9c' WHERE titulo IN ('Os Bons Companheiros', 'GoodFellas');
+
+-- 57/100: Ice Age
+-- Trailer: Ice Age (2002) Trailer #1 | Movieclips Classic Trailers | Canal: Rotten Tomatoes Classic Trailers
+-- Fonte: https://www.themoviedb.org/movie/425/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'A Era do Gelo', 'Animais improváveis se unem para devolver um bebê humano à sua família.', 81, 'L', '2002-03-14', 'Chris Wedge', 'https://image.tmdb.org/t/p/w500/gLhHHZUzeseRXShoDyC4VqLgsNv.jpg', 'https://www.youtube.com/watch?v=i4noiCRJRoE', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('A Era do Gelo', 'Ice Age'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Comédia', 'Família', 'Aventura') WHERE f.titulo IN ('A Era do Gelo', 'Ice Age') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=i4noiCRJRoE' WHERE titulo IN ('A Era do Gelo', 'Ice Age');
+
+-- 58/100: Life Is Beautiful
+-- Trailer: Life is Beautiful (1998) Official Trailer - Robert Benigni Movie HD | Canal: Rotten Tomatoes Classic Trailers
+-- Fonte: https://www.themoviedb.org/movie/637/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'A Vida É Bela', 'Um pai usa a imaginação para proteger seu filho dos horrores da guerra.', 116, 'L', '1997-12-20', 'Roberto Benigni', 'https://image.tmdb.org/t/p/w500/74hLDKjD5aGYOotO6esUVaeISa2.jpg', 'https://www.youtube.com/watch?v=pAYEQP8gx3w', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('A Vida É Bela', 'Life Is Beautiful'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Comédia', 'Drama') WHERE f.titulo IN ('A Vida É Bela', 'Life Is Beautiful') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=pAYEQP8gx3w' WHERE titulo IN ('A Vida É Bela', 'Life Is Beautiful');
+
+-- 59/100: The Godfather Part II
+-- Trailer: The Godfather Part II - Trailer | Canal: Paramount Movies
+-- Fonte: https://www.themoviedb.org/movie/240/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Poderoso Chefão: Parte II', 'As trajetórias de Vito e Michael revelam a formação e as tensões da família Corleone.', 202, '14', '1974-12-20', 'Francis Ford Coppola', 'https://image.tmdb.org/t/p/w500/hek3koDUyRQk7FIhPXsa6mT2Zc3.jpg', 'https://www.youtube.com/watch?v=9O1Iy9od7-A', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Poderoso Chefão: Parte II', 'The Godfather Part II'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Crime') WHERE f.titulo IN ('O Poderoso Chefão: Parte II', 'The Godfather Part II') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=9O1Iy9od7-A' WHERE titulo IN ('O Poderoso Chefão: Parte II', 'The Godfather Part II');
+
+-- 60/100: Back to the Future Part II
+-- Trailer: Trailer BR - De Volta Para o Futuro 2 [RESTAURADO] | Canal: BTTFBrasilFan
+-- Fonte: https://www.themoviedb.org/movie/165/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'De Volta para o Futuro II', 'Marty e Doc atravessam diferentes épocas para corrigir mudanças na história.', 108, 'L', '1989-11-22', 'Robert Zemeckis', 'https://image.tmdb.org/t/p/w500/hQq8xZe5uLjFzSBt4LanNP7SQjl.jpg', 'https://www.youtube.com/watch?v=o7GYCOOS1pc', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('De Volta para o Futuro II', 'Back to the Future Part II'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Comédia', 'Ficção Científica') WHERE f.titulo IN ('De Volta para o Futuro II', 'Back to the Future Part II') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=o7GYCOOS1pc' WHERE titulo IN ('De Volta para o Futuro II', 'Back to the Future Part II');
+
+-- 61/100: Good Will Hunting
+-- Trailer: Good Will Hunting | Official Trailer (HD) Robin Williams, Matt Damon, Ben Affleck | MIRAMAX | Canal: Miramax
+-- Fonte: https://www.themoviedb.org/movie/489/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Gênio Indomável', 'Um jovem com talento para a matemática precisa enfrentar seus conflitos pessoais.', 127, '14', '1997-12-05', 'Gus Van Sant', 'https://image.tmdb.org/t/p/w500/z2FnLKpFi1HPO7BEJxdkv6hpJSU.jpg', 'https://www.youtube.com/watch?v=ReIJ1lbL-Q8', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Gênio Indomável', 'Good Will Hunting'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama') WHERE f.titulo IN ('Gênio Indomável', 'Good Will Hunting') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=ReIJ1lbL-Q8' WHERE titulo IN ('Gênio Indomável', 'Good Will Hunting');
+
+-- 62/100: The Devil Wears Prada
+-- Trailer: The Devil Wears Prada (2006) Trailer #1 | Movieclips Classic Trailers | Canal: Rotten Tomatoes Classic Trailers
+-- Fonte: https://www.themoviedb.org/movie/350/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Diabo Veste Prada', 'Uma assistente aprende a lidar com as exigências de uma poderosa editora de moda.', 109, 'L', '2006-06-29', 'David Frankel', 'https://image.tmdb.org/t/p/w500/8912AsVuS7Sj915apArUFbv6F9L.jpg', 'https://www.youtube.com/watch?v=6ZOZwUQKu3E', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Diabo Veste Prada', 'The Devil Wears Prada'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Comédia') WHERE f.titulo IN ('O Diabo Veste Prada', 'The Devil Wears Prada') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=6ZOZwUQKu3E' WHERE titulo IN ('O Diabo Veste Prada', 'The Devil Wears Prada');
+
+-- 63/100: A Clockwork Orange
+-- Trailer: A Clockwork Orange | Masterpiece Trailer | Warner Bros. Entertainment | Canal: Warner Bros. Entertainment
+-- Fonte: https://www.themoviedb.org/movie/185/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Laranja Mecânica', 'Um jovem violento é submetido a um tratamento experimental de comportamento.', 137, '18', '1971-10-28', 'Stanley Kubrick', 'https://image.tmdb.org/t/p/w500/4sHeTAp65WrSSuc05nRBKddhBxO.jpg', 'https://www.youtube.com/watch?v=vN-1Mup0UI0', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Laranja Mecânica', 'A Clockwork Orange'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ficção Científica', 'Crime') WHERE f.titulo IN ('Laranja Mecânica', 'A Clockwork Orange') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=vN-1Mup0UI0' WHERE titulo IN ('Laranja Mecânica', 'A Clockwork Orange');
+
+-- 64/100: Edward Scissorhands
+-- Trailer: Edward Scissorhands (1990) Original Trailer [FHD] | Canal: HD Retro Trailers
+-- Fonte: https://www.themoviedb.org/movie/162/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Edward Mãos de Tesoura', 'Um jovem com tesouras no lugar das mãos tenta encontrar seu lugar em uma comunidade.', 105, 'L', '1990-12-07', 'Tim Burton', 'https://image.tmdb.org/t/p/w500/e0FqKFvGPdQNWG8tF9cZBtev9Em.jpg', 'https://www.youtube.com/watch?v=S8bBjpUBbro', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Edward Mãos de Tesoura', 'Edward Scissorhands'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Fantasia', 'Drama', 'Romance') WHERE f.titulo IN ('Edward Mãos de Tesoura', 'Edward Scissorhands') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=S8bBjpUBbro' WHERE titulo IN ('Edward Mãos de Tesoura', 'Edward Scissorhands');
+
+-- 65/100: Raiders of the Lost Ark
+-- Trailer: INDIANA JONES E OS CAÇADORES DA ARCA PERDIDA | Official Trailer | Paramount Movies | Canal: Paramount Entertainment Brasil
+-- Fonte: https://www.themoviedb.org/movie/85/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Indiana Jones e os Caçadores da Arca Perdida', 'Um arqueólogo disputa com forças nazistas a descoberta de uma relíquia antiga.', 115, 'L', '1981-06-12', 'Steven Spielberg', 'https://image.tmdb.org/t/p/w500/ceG9VzoRAVGwivFU403Wc3AHRys.jpg', 'https://www.youtube.com/watch?v=JsxYJs4UyJI', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Indiana Jones e os Caçadores da Arca Perdida', 'Raiders of the Lost Ark'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Ação') WHERE f.titulo IN ('Indiana Jones e os Caçadores da Arca Perdida', 'Raiders of the Lost Ark') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=JsxYJs4UyJI' WHERE titulo IN ('Indiana Jones e os Caçadores da Arca Perdida', 'Raiders of the Lost Ark');
+
+-- 66/100: Shrek 2
+-- Trailer: Shrek 2 - Official Trailer 2004 [HD] | Canal: Animation Trailers
+-- Fonte: https://www.themoviedb.org/movie/809/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Shrek 2', 'Shrek e Fiona visitam a família dela e enfrentam expectativas sobre seu casamento.', 92, 'L', '2004-05-19', 'Andrew Adamson, Kelly Asbury, Conrad Vernon', 'https://image.tmdb.org/t/p/w500/2yYP0PQjG8zVqturh1BAqu2Tixl.jpg', 'https://www.youtube.com/watch?v=dB7a9utApIQ', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Shrek 2', 'Shrek 2'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Comédia', 'Família', 'Fantasia', 'Romance') WHERE f.titulo IN ('Shrek 2', 'Shrek 2') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=dB7a9utApIQ' WHERE titulo IN ('Shrek 2', 'Shrek 2');
+
+-- 67/100: Taxi Driver
+-- Trailer: Taxi Driver - official reissue trailer | Canal: Park Circus
+-- Fonte: https://www.themoviedb.org/movie/103/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Taxi Driver', 'Um taxista solitário percorre Nova York enquanto se afasta cada vez mais da sociedade.', 114, '16', '1976-02-09', 'Martin Scorsese', 'https://image.tmdb.org/t/p/w500/ekstpH614fwDX8DUln1a2Opz0N8.jpg', 'https://www.youtube.com/watch?v=S7ORyD-e7-0', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Taxi Driver', 'Taxi Driver'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Crime', 'Drama') WHERE f.titulo IN ('Taxi Driver', 'Taxi Driver') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=S7ORyD-e7-0' WHERE titulo IN ('Taxi Driver', 'Taxi Driver');
+
+-- 68/100: Donnie Darko
+-- Trailer: Donnie Darko - Official Trailer | Canal: Madman Films
+-- Fonte: https://www.themoviedb.org/movie/141/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Donnie Darko', 'Um adolescente passa a receber mensagens sobre um possível fim do mundo.', 114, '14', '2001-01-19', 'Richard Kelly', 'https://image.tmdb.org/t/p/w500/j2AtZFsflxiluaNtajMTI0Avm8C.jpg', 'https://www.youtube.com/watch?v=bzLn8sYeM9o', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Donnie Darko', 'Donnie Darko'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Fantasia', 'Drama', 'Mistério') WHERE f.titulo IN ('Donnie Darko', 'Donnie Darko') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=bzLn8sYeM9o' WHERE titulo IN ('Donnie Darko', 'Donnie Darko');
+
+-- 69/100: Scarface
+-- Trailer: Scarface Trailer - Own it on Blu-ray  September 6, 2011 | Canal: Universal Pictures At Home
+-- Fonte: https://www.themoviedb.org/movie/111/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Scarface', 'Um imigrante constrói um império do crime movido por ambição e violência.', 170, '18', '1983-12-09', 'Brian De Palma', 'https://image.tmdb.org/t/p/w500/iQ5ztdjvteGeboxtmRdXEChJOHh.jpg', 'https://www.youtube.com/watch?v=QyM1mQHz_2U', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Scarface', 'Scarface'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Crime', 'Drama') WHERE f.titulo IN ('Scarface', 'Scarface') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=QyM1mQHz_2U' WHERE titulo IN ('Scarface', 'Scarface');
+
+-- 70/100: American Beauty
+-- Trailer: American Beauty - Trailer | Canal: YouTube Movies
+-- Fonte: https://www.themoviedb.org/movie/14/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Beleza Americana', 'Uma família suburbana enfrenta desejos, frustrações e mudanças inesperadas.', 122, '18', '1999-09-15', 'Sam Mendes', 'https://image.tmdb.org/t/p/w500/wby9315QzVKdW9BonAefg8jGTTb.jpg', 'https://www.youtube.com/watch?v=3ycmmJ6rxA8', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Beleza Americana', 'American Beauty'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama') WHERE f.titulo IN ('Beleza Americana', 'American Beauty') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=3ycmmJ6rxA8' WHERE titulo IN ('Beleza Americana', 'American Beauty');
+
+-- 71/100: The Sixth Sense
+-- Trailer: The Sixth Sense Trailer HD | Canal: FilmTrailersChannel
+-- Fonte: https://www.themoviedb.org/movie/745/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Sexto Sentido', 'Um psicólogo acompanha um menino que afirma ver pessoas mortas.', 107, '12', '1999-08-06', 'M. Night Shyamalan', 'https://image.tmdb.org/t/p/w500/vOyfUXNFSnaTk7Vk5AjpsKTUWsu.jpg', 'https://www.youtube.com/watch?v=VG9AGf66tXM', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Sexto Sentido', 'The Sixth Sense'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Mistério', 'Suspense', 'Drama') WHERE f.titulo IN ('O Sexto Sentido', 'The Sixth Sense') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=VG9AGf66tXM' WHERE titulo IN ('O Sexto Sentido', 'The Sixth Sense');
+
+-- 72/100: The Incredible Hulk
+-- Trailer: The Incredible Hulk - Trailer | Canal: Universal Pictures At Home
+-- Fonte: https://www.themoviedb.org/movie/1724/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Incrível Hulk', 'Bruce Banner busca uma cura enquanto tenta controlar uma transformação poderosa.', 114, '10', '2008-06-12', 'Louis Leterrier', 'https://image.tmdb.org/t/p/w500/gKzYx79y0AQTL4UAk1cBQJ3nvrm.jpg', 'https://www.youtube.com/watch?v=dz6eBeW19Lg', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Incrível Hulk', 'The Incredible Hulk'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ficção Científica', 'Ação', 'Aventura') WHERE f.titulo IN ('O Incrível Hulk', 'The Incredible Hulk') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=dz6eBeW19Lg' WHERE titulo IN ('O Incrível Hulk', 'The Incredible Hulk');
+
+-- 73/100: Dead Poets Society
+-- Trailer: Dead Poets Society ≣ 1989 ≣ Trailer | Canal: TrailerTrackerEnglish
+-- Fonte: https://www.themoviedb.org/movie/207/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Sociedade dos Poetas Mortos', 'Um professor incentiva seus alunos a encontrar sua própria voz por meio da poesia.', 129, '12', '1989-06-02', 'Peter Weir', 'https://image.tmdb.org/t/p/w500/tNvKkSnnn4Z6RCBThyK1gfCSSvv.jpg', 'https://www.youtube.com/watch?v=rLCJaTDdWtw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Sociedade dos Poetas Mortos', 'Dead Poets Society'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama') WHERE f.titulo IN ('Sociedade dos Poetas Mortos', 'Dead Poets Society') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=rLCJaTDdWtw' WHERE titulo IN ('Sociedade dos Poetas Mortos', 'Dead Poets Society');
+
+-- 74/100: 2001: A Space Odyssey
+-- Trailer: 2001: Odisseia no Espaço - Trailer Oficial Legendado Português | Canal: WarnerBrosPortugal
+-- Fonte: https://www.themoviedb.org/movie/62/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT '2001: Uma Odisseia no Espaço', 'Uma missão espacial e um computador avançado desafiam a compreensão humana.', 149, 'L', '1968-04-02', 'Stanley Kubrick', 'https://image.tmdb.org/t/p/w500/ve72VxNqjGM69Uky4WTo2bK6rfq.jpg', 'https://www.youtube.com/watch?v=7E9CD3Hucws', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('2001: Uma Odisseia no Espaço', '2001: A Space Odyssey'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ficção Científica', 'Mistério', 'Aventura') WHERE f.titulo IN ('2001: Uma Odisseia no Espaço', '2001: A Space Odyssey') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=7E9CD3Hucws' WHERE titulo IN ('2001: Uma Odisseia no Espaço', '2001: A Space Odyssey');
+
+-- 75/100: American History X
+-- Trailer: American History X (1998) Original Trailer [HD] | Canal: HD Retro Trailers
+-- Fonte: https://www.themoviedb.org/movie/73/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'A Outra História Americana', 'Dois irmãos enfrentam as consequências do extremismo e da violência racial.', 119, '18', '1998-07-01', 'Tony Kaye', 'https://image.tmdb.org/t/p/w500/x2drgoXYZ8484lqyDj7L1CEVR4T.jpg', 'https://www.youtube.com/watch?v=el6JxnW2Tyg', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('A Outra História Americana', 'American History X'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama') WHERE f.titulo IN ('A Outra História Americana', 'American History X') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=el6JxnW2Tyg' WHERE titulo IN ('A Outra História Americana', 'American History X');
+
+-- 76/100: Ocean's Eleven
+-- Trailer: Oceans Eleven (2001) - Original Theatrical Trailer | Canal: Warner Bros. Rewind
+-- Fonte: https://www.themoviedb.org/movie/161/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Onze Homens e um Segredo', 'Um grupo de especialistas planeja um assalto ousado a cassinos de Las Vegas.', 116, '12', '2001-12-07', 'Steven Soderbergh', 'https://image.tmdb.org/t/p/w500/hQQCdZrsHtZyR6NbKH2YyCqd2fR.jpg', 'https://www.youtube.com/watch?v=n3epi9hPbqQ', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Onze Homens e um Segredo', 'Ocean\'s Eleven'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Suspense', 'Crime') WHERE f.titulo IN ('Onze Homens e um Segredo', 'Ocean\'s Eleven') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=n3epi9hPbqQ' WHERE titulo IN ('Onze Homens e um Segredo', 'Ocean\'s Eleven');
+
+-- 77/100: Home Alone
+-- Trailer: Home Alone Official Trailer | Canal: Park Circus
+-- Fonte: https://www.themoviedb.org/movie/771/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Esqueceram de Mim', 'Um menino fica sozinho em casa e precisa enfrentar dois ladrões.', 103, 'L', '1990-11-16', 'Chris Columbus', 'https://image.tmdb.org/t/p/w500/onTSipZ8R3bliBdKfPtsDuHTdlL.jpg', 'https://www.youtube.com/watch?v=dzdpqRGA1qc', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Esqueceram de Mim', 'Home Alone'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Comédia', 'Família') WHERE f.titulo IN ('Esqueceram de Mim', 'Home Alone') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=dzdpqRGA1qc' WHERE titulo IN ('Esqueceram de Mim', 'Home Alone');
+
+-- 78/100: Amélie
+-- Trailer: Amélie | Official Trailer (HD) - Audrey Tautou | MIRAMAX | Canal: Miramax
+-- Fonte: https://www.themoviedb.org/movie/194/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Fabuloso Destino de Amélie Poulain', 'Uma jovem parisiense decide transformar discretamente a vida das pessoas ao seu redor.', 122, '14', '2001-04-25', 'Jean-Pierre Jeunet', 'https://image.tmdb.org/t/p/w500/nSxDa3M9aMvGVLoItzWTepQ5h5d.jpg', 'https://www.youtube.com/watch?v=2UT5xaAfxWU', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Fabuloso Destino de Amélie Poulain', 'Amélie'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Comédia', 'Romance') WHERE f.titulo IN ('O Fabuloso Destino de Amélie Poulain', 'Amélie') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=2UT5xaAfxWU' WHERE titulo IN ('O Fabuloso Destino de Amélie Poulain', 'Amélie');
+
+-- 79/100: American Psycho
+-- Trailer: American Psycho - Trailer | Canal: LionsgateVOD
+-- Fonte: https://www.themoviedb.org/movie/1359/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Psicopata Americano', 'Um executivo de aparência perfeita esconde impulsos violentos e uma vida perturbadora.', 102, '18', '2000-04-13', 'Mary Harron', 'https://image.tmdb.org/t/p/w500/9uGHEgsiUXjCNq8wdq4r49YL8A1.jpg', 'https://www.youtube.com/watch?v=5YnGhW4UEhc', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Psicopata Americano', 'American Psycho'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Suspense', 'Drama', 'Crime') WHERE f.titulo IN ('Psicopata Americano', 'American Psycho') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=5YnGhW4UEhc' WHERE titulo IN ('Psicopata Americano', 'American Psycho');
+
+-- 80/100: Die Hard
+-- Trailer: Die Hard | 30th Anniversary Trailer | 20th Century FOX | Canal: 20th Century Studios
+-- Fonte: https://www.themoviedb.org/movie/562/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Duro de Matar', 'Um policial tenta impedir um grupo armado que tomou um edifício e fez reféns.', 132, '14', '1988-07-15', 'John McTiernan', 'https://image.tmdb.org/t/p/w500/7Bjd8kfmDSOzpmhySpEhkUyK2oH.jpg', 'https://www.youtube.com/watch?v=gYWvwkXreaI', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Duro de Matar', 'Die Hard'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Suspense') WHERE f.titulo IN ('Duro de Matar', 'Die Hard') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=gYWvwkXreaI' WHERE titulo IN ('Duro de Matar', 'Die Hard');
+
+-- 81/100: The Big Lebowski
+-- Trailer: Official Trailer | The Big Lebowski | Screen Bites | Canal: Screen Bites
+-- Fonte: https://www.themoviedb.org/movie/115/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Grande Lebowski', 'Um homem tranquilo é envolvido em um caso de identidade trocada e chantagem.', 117, '16', '1998-03-06', 'Joel Coen, Ethan Coen', 'https://image.tmdb.org/t/p/w500/3bv6WAp6BSxxYvB5ozKFUYuRA8C.jpg', 'https://www.youtube.com/watch?v=cd-go0oBF4Y', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Grande Lebowski', 'The Big Lebowski'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Comédia', 'Crime') WHERE f.titulo IN ('O Grande Lebowski', 'The Big Lebowski') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=cd-go0oBF4Y' WHERE titulo IN ('O Grande Lebowski', 'The Big Lebowski');
+
+-- 82/100: Aladdin
+-- Trailer: Aladdin - Walt Disney -  Trailer 1992 (35mm frame by frame) | Canal: UniversTrailers
+-- Fonte: https://www.themoviedb.org/movie/812/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Aladdin', 'Um jovem encontra uma lâmpada mágica e tenta conquistar um novo destino.', 91, 'L', '1992-11-25', 'Ron Clements, John Musker', 'https://image.tmdb.org/t/p/w500/eLFfl7vS8dkeG1hKp5mwbm37V83.jpg', 'https://www.youtube.com/watch?v=YN7C1657K1E', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Aladdin', 'Aladdin'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Animação', 'Família', 'Aventura', 'Fantasia', 'Romance') WHERE f.titulo IN ('Aladdin', 'Aladdin') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=YN7C1657K1E' WHERE titulo IN ('Aladdin', 'Aladdin');
+
+-- 83/100: E.T. the Extra-Terrestrial
+-- Trailer: E.T. The Extra-Terrestrial - Trailer | Canal: Universal Pictures At Home
+-- Fonte: https://www.themoviedb.org/movie/601/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'E.T.: O Extraterrestre', 'Um menino faz amizade com um visitante de outro planeta e tenta ajudá-lo a voltar para casa.', 115, 'L', '1982-06-11', 'Steven Spielberg', 'https://image.tmdb.org/t/p/w500/an0nD6uq6byfxXCfk6lQBzdL2J1.jpg', 'https://www.youtube.com/watch?v=wZNInG8kSiA', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('E.T.: O Extraterrestre', 'E.T. the Extra-Terrestrial'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Ficção Científica', 'Família') WHERE f.titulo IN ('E.T.: O Extraterrestre', 'E.T. the Extra-Terrestrial') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=wZNInG8kSiA' WHERE titulo IN ('E.T.: O Extraterrestre', 'E.T. the Extra-Terrestrial');
+
+-- 84/100: The Matrix Reloaded
+-- Trailer: The Matrix Reloaded - Original Theatrical Trailer | Canal: Warner Bros. Rewind
+-- Fonte: https://www.themoviedb.org/movie/604/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Matrix Reloaded', 'Neo e seus aliados buscam respostas enquanto a resistência humana enfrenta uma nova ofensiva.', 138, '14', '2003-05-15', 'Lana Wachowski, Lilly Wachowski', 'https://image.tmdb.org/t/p/w500/aA5qHS0FbSXO8PxcxUIHbDrJyuh.jpg', 'https://www.youtube.com/watch?v=zmYE3tg26Qc', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Matrix Reloaded', 'The Matrix Reloaded'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Ação', 'Suspense', 'Ficção Científica') WHERE f.titulo IN ('Matrix Reloaded', 'The Matrix Reloaded') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=zmYE3tg26Qc' WHERE titulo IN ('Matrix Reloaded', 'The Matrix Reloaded');
+
+-- 85/100: The Fifth Element
+-- Trailer: The Fifth Element Trailer | TNT | Canal: TNT
+-- Fonte: https://www.themoviedb.org/movie/18/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Quinto Elemento', 'Um motorista se envolve em uma missão para impedir uma ameaça cósmica.', 126, '12', '1997-05-02', 'Luc Besson', 'https://image.tmdb.org/t/p/w500/fPtlCO1yQtnoLHOwKtWz7db6RGU.jpg', 'https://www.youtube.com/watch?v=FrEf8XHToGI', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Quinto Elemento', 'The Fifth Element'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ficção Científica', 'Ação', 'Aventura') WHERE f.titulo IN ('O Quinto Elemento', 'The Fifth Element') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=FrEf8XHToGI' WHERE titulo IN ('O Quinto Elemento', 'The Fifth Element');
+
+-- 86/100: Madagascar
+-- Trailer: MADAGASCAR | Official Trailer | Canal: Universal Kids
+-- Fonte: https://www.themoviedb.org/movie/953/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Madagascar', 'Animais de um zoológico deixam Nova York e precisam se adaptar à vida selvagem.', 86, 'L', '2005-05-25', 'Eric Darnell, Tom McGrath', 'https://image.tmdb.org/t/p/w500/zMpJY5CJKUufG9OTw0In4eAFqPX.jpg', 'https://www.youtube.com/watch?v=fq5zU9T_Hl4', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Madagascar', 'Madagascar'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Animação', 'Comédia', 'Família') WHERE f.titulo IN ('Madagascar', 'Madagascar') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=fq5zU9T_Hl4' WHERE titulo IN ('Madagascar', 'Madagascar');
+
+-- 87/100: Jaws
+-- Trailer: Jaws | Official Rerelease Trailer | Park Circus | Canal: Park Circus
+-- Fonte: https://www.themoviedb.org/movie/578/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Tubarão', 'Uma cidade litorânea enfrenta os ataques de um enorme tubarão.', 124, '14', '1975-06-20', 'Steven Spielberg', 'https://image.tmdb.org/t/p/w500/lxM6kqilAdpdhqUl2biYp5frUxE.jpg', 'https://www.youtube.com/watch?v=YIhxgIZJSbk', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Tubarão', 'Jaws'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Terror', 'Suspense', 'Aventura') WHERE f.titulo IN ('Tubarão', 'Jaws') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=YIhxgIZJSbk' WHERE titulo IN ('Tubarão', 'Jaws');
+
+-- 88/100: Back to the Future Part III
+-- Trailer: BACK TO THE FUTURE PART III (1990) | Theatrical Trailer | Amblin | Canal: Amblin Entertainment
+-- Fonte: https://www.themoviedb.org/movie/196/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'De Volta para o Futuro III', 'Marty viaja ao Velho Oeste para resgatar Doc e encontrar um caminho de volta.', 119, 'L', '1990-05-25', 'Robert Zemeckis', 'https://image.tmdb.org/t/p/w500/crzoVQnMzIrRfHtQw0tLBirNfVg.jpg', 'https://www.youtube.com/watch?v=DTdBq1fQOBU', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('De Volta para o Futuro III', 'Back to the Future Part III'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Comédia', 'Ficção Científica') WHERE f.titulo IN ('De Volta para o Futuro III', 'Back to the Future Part III') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=DTdBq1fQOBU' WHERE titulo IN ('De Volta para o Futuro III', 'Back to the Future Part III');
+
+-- 89/100: The Chronicles of Narnia: The Lion, the Witch and the Wardrobe
+-- Trailer: The Chronicles of Narnia: The Lion, the Witch and the Wardrobe (2005) Trailer | Canal: Movie Trailer Locker
+-- Fonte: https://www.themoviedb.org/movie/411/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa', 'Quatro irmãos atravessam um guarda-roupa e encontram um reino sob o domínio de uma feiticeira.', 143, '10', '2005-12-07', 'Andrew Adamson', 'https://image.tmdb.org/t/p/w500/iREd0rNCjYdf5Ar0vfaW32yrkm.jpg', 'https://www.youtube.com/watch?v=3mKPrxjwF7A', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa', 'The Chronicles of Narnia: The Lion, the Witch and the Wardrobe'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Família', 'Fantasia') WHERE f.titulo IN ('As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa', 'The Chronicles of Narnia: The Lion, the Witch and the Wardrobe') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=3mKPrxjwF7A' WHERE titulo IN ('As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa', 'The Chronicles of Narnia: The Lion, the Witch and the Wardrobe');
+
+-- 90/100: Bruce Almighty
+-- Trailer: Todo Poderoso 2003 Trailer Oficial Legendado | Canal: SóTrailers
+-- Fonte: https://www.themoviedb.org/movie/310/videos?language=pt-BR&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Todo Poderoso', 'Um homem recebe poderes extraordinários e descobre as dificuldades de atender a todos.', 101, 'L', '2003-05-23', 'Tom Shadyac', 'https://image.tmdb.org/t/p/w500/wqkWrOFtYnZSvIMu8Lsmz7WIvKC.jpg', 'https://www.youtube.com/watch?v=9BqL0M3DZ1E', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Todo Poderoso', 'Bruce Almighty'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Fantasia', 'Comédia') WHERE f.titulo IN ('Todo Poderoso', 'Bruce Almighty') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=9BqL0M3DZ1E' WHERE titulo IN ('Todo Poderoso', 'Bruce Almighty');
+
+-- 91/100: Full Metal Jacket
+-- Trailer: Full Metal Jacket - Official Trailer [1987] HD | Canal: Stanley Kubrick
+-- Fonte: https://www.themoviedb.org/movie/600/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Nascido para Matar', 'Soldados passam por treinamento e enfrentam os conflitos da Guerra do Vietnã.', 117, '18', '1987-06-26', 'Stanley Kubrick', 'https://image.tmdb.org/t/p/w500/kMKyx1k8hWWscYFnPbnxxN4Eqo4.jpg', 'https://www.youtube.com/watch?v=3Un-WBlVHPw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Nascido para Matar', 'Full Metal Jacket'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Guerra') WHERE f.titulo IN ('Nascido para Matar', 'Full Metal Jacket') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=3Un-WBlVHPw' WHERE titulo IN ('Nascido para Matar', 'Full Metal Jacket');
+
+-- 92/100: Pan's Labyrinth
+-- Trailer: PAN'S LABYRINTH - Official Trailer - Directed by Guillermo del Toro | Canal: StudiocanalUK
+-- Fonte: https://www.themoviedb.org/movie/1417/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Labirinto do Fauno', 'Uma menina encontra um mundo fantástico em meio à violência da Espanha do pós-guerra.', 118, '16', '2006-10-11', 'Guillermo del Toro', 'https://image.tmdb.org/t/p/w500/z7xXihu5wHuSMWymq5VAulPVuvg.jpg', 'https://www.youtube.com/watch?v=jVZRnnVSQ8k', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Labirinto do Fauno', 'Pan\'s Labyrinth'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Fantasia', 'Drama', 'Guerra') WHERE f.titulo IN ('O Labirinto do Fauno', 'Pan\'s Labyrinth') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=jVZRnnVSQ8k' WHERE titulo IN ('O Labirinto do Fauno', 'Pan\'s Labyrinth');
+
+-- 93/100: One Flew Over the Cuckoo's Nest
+-- Trailer: One Flew Over the Cuckoo's Nest | 4K Restoration - Official UK Trailer | Canal: Curzon
+-- Fonte: https://www.themoviedb.org/movie/510/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Um Estranho no Ninho', 'Um novo paciente desafia as regras de uma instituição psiquiátrica.', 135, '14', '1975-11-19', 'Miloš Forman', 'https://image.tmdb.org/t/p/w500/kjWsMh72V6d8KRLV4EOoSJLT1H7.jpg', 'https://www.youtube.com/watch?v=F4da9uRIg8c', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Um Estranho no Ninho', 'One Flew Over the Cuckoo\'s Nest'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama') WHERE f.titulo IN ('Um Estranho no Ninho', 'One Flew Over the Cuckoo\'s Nest') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=F4da9uRIg8c' WHERE titulo IN ('Um Estranho no Ninho', 'One Flew Over the Cuckoo\'s Nest');
+
+-- 94/100: The Usual Suspects
+-- Trailer: The Usual Suspects - Trailer | Canal: Paramount Movies Digital
+-- Fonte: https://www.themoviedb.org/movie/629/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Os Suspeitos', 'Um interrogatório tenta esclarecer a ligação entre criminosos e um misterioso chefe do crime.', 106, '14', '1995-07-19', 'Bryan Singer', 'https://image.tmdb.org/t/p/w500/99X2SgyFunJFXGAYnDv3sb9pnUD.jpg', 'https://www.youtube.com/watch?v=x3t0Nc6fg7w', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Os Suspeitos', 'The Usual Suspects'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Crime', 'Suspense') WHERE f.titulo IN ('Os Suspeitos', 'The Usual Suspects') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=x3t0Nc6fg7w' WHERE titulo IN ('Os Suspeitos', 'The Usual Suspects');
+
+-- 95/100: The Mask
+-- Trailer: The Mask | Theatrical Trailer | Warner Bros. Rewind | Canal: Warner Bros. Rewind
+-- Fonte: https://www.themoviedb.org/movie/854/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'O Máskara', 'Um bancário encontra uma máscara que libera uma personalidade com poderes extraordinários.', 101, 'L', '1994-07-29', 'Chuck Russell', 'https://image.tmdb.org/t/p/w500/jPC2eYub74zwf2tPGVtzSlBW6Oy.jpg', 'https://www.youtube.com/watch?v=hOqVRwGVUkA', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('O Máskara', 'The Mask'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Comédia', 'Fantasia', 'Crime', 'Romance') WHERE f.titulo IN ('O Máskara', 'The Mask') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=hOqVRwGVUkA' WHERE titulo IN ('O Máskara', 'The Mask');
+
+-- 96/100: Mr. & Mrs. Smith
+-- Trailer: Mr And Mrs Smith Teaser [HD] | Canal: FilmTrailersChannel
+-- Fonte: https://www.themoviedb.org/movie/787/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Sr. e Sra. Smith', 'Um casal descobre que ambos escondem carreiras como assassinos profissionais.', 120, '14', '2005-06-07', 'Doug Liman', 'https://image.tmdb.org/t/p/w500/kjD700RtyhveN3ZbOnSvUSne0Qj.jpg', 'https://www.youtube.com/watch?v=TWB_icm5M38', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Sr. e Sra. Smith', 'Mr. & Mrs. Smith'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Comédia', 'Drama', 'Suspense') WHERE f.titulo IN ('Sr. e Sra. Smith', 'Mr. & Mrs. Smith') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=TWB_icm5M38' WHERE titulo IN ('Sr. e Sra. Smith', 'Mr. & Mrs. Smith');
+
+-- 97/100: Braveheart
+-- Trailer: Braveheart - Trailer | Canal: Paramount Movies
+-- Fonte: https://www.themoviedb.org/movie/197/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Coração Valente', 'Um guerreiro lidera uma revolta pela liberdade da Escócia.', 178, '16', '1995-05-24', 'Mel Gibson', 'https://image.tmdb.org/t/p/w500/or1gBugydmjToAEq7OZY0owwFk.jpg', 'https://www.youtube.com/watch?v=nMft5QDOHek', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Coração Valente', 'Braveheart'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Ação', 'Drama', 'História', 'Guerra') WHERE f.titulo IN ('Coração Valente', 'Braveheart') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=nMft5QDOHek' WHERE titulo IN ('Coração Valente', 'Braveheart');
+
+-- 98/100: Troy
+-- Trailer: Troy | Official Trailer | 4K | Canal: Arrow Video
+-- Fonte: https://www.themoviedb.org/movie/652/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Troia', 'Uma disputa entre reinos leva heróis e exércitos ao cerco de Troia.', 163, '14', '2004-05-13', 'Wolfgang Petersen', 'https://image.tmdb.org/t/p/w500/a07wLy4ONfpsjnBqMwhlWTJTcm.jpg', 'https://www.youtube.com/watch?v=P8xLgg-MNKw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Troia', 'Troy'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Guerra', 'Ação', 'História') WHERE f.titulo IN ('Troia', 'Troy') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=P8xLgg-MNKw' WHERE titulo IN ('Troia', 'Troy');
+
+-- 99/100: A Beautiful Mind
+-- Trailer: A Beautiful Mind - Trailer | Canal: YouTube Movies
+-- Fonte: https://www.themoviedb.org/movie/453/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Uma Mente Brilhante', 'Um matemático enfrenta desafios pessoais enquanto desenvolve seu trabalho.', 135, '10', '2001-12-14', 'Ron Howard', 'https://image.tmdb.org/t/p/w500/rEIg5yJdNOt9fmX4P8gU9LeNoTQ.jpg', 'https://www.youtube.com/watch?v=WFJgUm7iOKw', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Uma Mente Brilhante', 'A Beautiful Mind'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Drama', 'Romance') WHERE f.titulo IN ('Uma Mente Brilhante', 'A Beautiful Mind') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=WFJgUm7iOKw' WHERE titulo IN ('Uma Mente Brilhante', 'A Beautiful Mind');
+
+-- 100/100: Indiana Jones and the Last Crusade
+-- Trailer: Indiana Jones and the Last Crusade (1989) | Trailer | Paramount Pictures Australia | Canal: Paramount Pictures Australia
+-- Fonte: https://www.themoviedb.org/movie/89/videos?language=en-US&active_nav_item=Trailers
+INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
+SELECT 'Indiana Jones e a Última Cruzada', 'Indiana Jones procura seu pai e uma relíquia lendária em uma nova aventura.', 127, 'L', '1989-05-24', 'Steven Spielberg', 'https://image.tmdb.org/t/p/w500/sizg1AU8f8JDZX4QIgE4pjUMBvx.jpg', 'https://www.youtube.com/watch?v=xV7qk3nuoUU', TRUE, TRUE, 'ATIVO'
+WHERE NOT EXISTS (SELECT 1 FROM filmes WHERE titulo IN ('Indiana Jones e a Última Cruzada', 'Indiana Jones and the Last Crusade'));
+INSERT INTO filme_generos (id_filme, id_genero) SELECT f.id_filme, g.id_genero FROM filmes f JOIN generos g ON g.nome IN ('Aventura', 'Ação') WHERE f.titulo IN ('Indiana Jones e a Última Cruzada', 'Indiana Jones and the Last Crusade') AND NOT EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_filme = f.id_filme AND fg.id_genero = g.id_genero);
+UPDATE filmes SET trailer = 'https://www.youtube.com/watch?v=xV7qk3nuoUU' WHERE titulo IN ('Indiana Jones e a Última Cruzada', 'Indiana Jones and the Last Crusade');
+COMMIT;
+-- END CINEASTRA_CATALOGO_100
 
 SELECT DATABASE() AS banco, COUNT(*) AS migrations_aplicadas
 FROM schema_migrations WHERE status = 'APPLIED';

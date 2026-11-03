@@ -6,7 +6,19 @@
 .header h1 { font-size: clamp(30px, 3.5vw, 46px); font-weight: 800; line-height: 1.12; letter-spacing: -.035em; text-wrap: balance; }
 .header h1 span { color: var(--primary); }
 .header p { color: var(--muted-foreground); margin-top: 12px; font-size: 14px; }
-.layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); align-items: start; gap: 32px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(300px, .8fr); align-items: start; gap: 34px; margin-top: 24px; }
+.primaryPanel { min-width: 0; min-height: 560px; padding: 54px clamp(16px, 4vw, 54px); border-top: 2px dashed var(--border); border-bottom: 2px dashed var(--border); }
+.pageTitle { max-width: 20ch; font-size: clamp(30px, 3.4vw, 48px); font-weight: 850; line-height: 1.1; letter-spacing: -.035em; text-wrap: balance; }
+.pageTitle span { color: var(--primary); }
+.lead { margin-top: 13px; color: var(--muted-foreground); font-size: 14px; line-height: 1.5; }
+.methodGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: clamp(50px, 8vw, 112px); }
+.methodTicket { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 13px; min-height: 150px; padding: 22px 20px; overflow: hidden; border: 1px solid var(--border); border-bottom: 2px dashed var(--primary); border-radius: 12px; background: var(--card); color: var(--foreground); text-align: center; text-decoration: none; transition: border-color .18s ease-out, background-color .18s ease-out, transform .18s ease-out; }
+.methodTicket::before, .methodTicket::after { content: ""; position: absolute; top: calc(50% - 10px); width: 11px; height: 20px; background: var(--background); border: 1px solid var(--border); }
+.methodTicket::before { left: -1px; border-left: 0; border-radius: 0 11px 11px 0; }.methodTicket::after { right: -1px; border-right: 0; border-radius: 11px 0 0 11px; }
+.methodTicket > svg:first-child { color: var(--primary); }.methodTicket strong { font-size: 20px; }
+.methodTicket:hover { border-color: var(--primary); background: color-mix(in oklch, var(--primary) 7%, var(--card)); transform: translateY(-2px); }
+.methodDisabled { opacity: .55; cursor: not-allowed; }.methodDisabled:hover { transform: none; border-color: var(--border); background: var(--card); }
+.selectionHint { margin-top: 23px; color: var(--muted-foreground); font-size: 12px; }
 .detailsPanel { border: 1px solid var(--border); border-radius: 16px; padding: 30px; background: var(--card); min-width: 0; }
 .sectionTitle { font-size: 19px; font-weight: 750; letter-spacing: -.02em; }
 .hint { margin: 7px 0 24px; font-size: 12px; line-height: 1.6; color: var(--muted-foreground); }
@@ -32,7 +44,9 @@
 .addCard { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; border-style: dashed; background: transparent; color: var(--foreground); font-size: 12px; }
 .addCard svg { color: var(--primary); }
 .addCard small { font-size: 10px; color: var(--muted-foreground); }
-.summary { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 26px; position: sticky; top: 100px; }
+.summary { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 30px 26px; position: sticky; top: 100px; min-width: 0; }
+.summary::before, .summary::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; border: 1px solid var(--border); background: var(--background); }
+.summary::before { top: -1px; border-top: 0; border-radius: 0 0 12px 12px; }.summary::after { bottom: -1px; border-bottom: 0; border-radius: 12px 12px 0 0; }
 .summaryHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 24px; }
 .summaryHeading h2 { font-size: 23px; font-weight: 750; letter-spacing: -.02em; }
 .summaryHeading > span { font-size: 12px; color: var(--muted-foreground); }
@@ -57,7 +71,16 @@
 .cardForm { display: grid; gap: 18px; }
 .dialogActions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .error { margin-top: 14px; color: var(--destructive); font-size: 13px; line-height: 1.5; }
+.consent { margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--border); scroll-margin-top: 100px; }.consent h3 { margin-bottom: 12px; font-size: 14px; font-weight: 700; }
+.document { border-top: 1px solid var(--border); padding: 10px 0; font-size: 12px; }.document summary { cursor: pointer; font-weight: 650; }.document p { margin-top: 10px; max-height: 160px; overflow-y: auto; white-space: pre-wrap; color: var(--muted-foreground); line-height: 1.5; }
+.acceptance { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; font-size: 12px; line-height: 1.5; cursor: pointer; }.acceptance input { margin-top: 2px; accent-color: var(--primary); }
+.inlineLink, .paymentResult a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.paymentResult { display: grid; gap: 6px; margin-top: 20px; padding: 16px; border: 1px dashed var(--primary); border-radius: 12px; font-size: 13px; }.paymentResult strong { font-size: 15px; }.paymentResult a { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; }
+.payButton { width: 100%; min-height: 48px; margin-top: 22px; border-radius: 999px; font-weight: 700; }
+.formDivider { border-top: 1px dashed var(--border); }.cardForm { margin-top: 36px; gap: 30px; }
+.pixPanel { margin-top: 40px; max-width: 470px; }.qrFrame { display: grid; place-items: center; width: max-content; margin: 24px 0 18px; padding: 16px; border-radius: 14px; background: #fff; }.pixTimer { color: var(--primary); font-size: 17px; font-weight: 750; font-variant-numeric: tabular-nums; }.retryButton { margin-top: 14px; padding: 10px 16px; border: 1px solid var(--primary); border-radius: 999px; color: var(--primary); font-weight: 700; }
+.page :is(a, button, input, select, summary):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .page ::selection { background: var(--primary); color: var(--primary-foreground); }
-@media (max-width: 950px) { .layout { grid-template-columns: minmax(0,1.35fr) minmax(280px,1fr); gap: 20px; } .detailsPanel, .summary { padding: 22px; } .cards { grid-template-columns: 1fr; } .addressFields { grid-template-columns: 1fr; } }
-@media (max-width: 720px) { .page { padding: 24px 16px 40px; } .layout { grid-template-columns: 1fr; } .summary { position: static; } .fields { grid-template-columns: 1fr; gap: 18px; } .header { margin: 24px 0; } .bankCard { min-height: 155px; } }
+@media (max-width: 1050px) { .layout { grid-template-columns: minmax(0,1.3fr) minmax(280px,1fr); gap: 20px; } .primaryPanel { padding: 36px 18px; } .methodGrid { grid-template-columns: 1fr; margin-top: 40px; } .methodTicket { min-height: 112px; } .summary { padding: 22px; } .addressFields { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 720px) { .page { padding: 24px 16px 40px; } .layout { grid-template-columns: 1fr; } .primaryPanel { min-height: auto; padding: 36px 8px 46px; } .methodGrid { gap: 12px; } .summary { position: static; } .fields, .addressFields { grid-template-columns: 1fr; gap: 18px; } }
 @media (prefers-reduced-motion: reduce) { .bankCard, .addCard { transition: none; } }

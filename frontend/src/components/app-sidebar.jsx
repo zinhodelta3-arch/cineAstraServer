@@ -2,80 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-
-import {
-  ChevronDown,
-  LayoutDashboard,
-  LoaderCircle,
-  LogOut,
-  Package,
-  UserRound,
-} from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, LoaderCircle, LogOut, Search, UserRound } from "lucide-react";
 import { AppearanceSelector } from "@/components/appearance-selector";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import styles from "./app-sidebar.module.css";
 
-const DEFAULT_ITEMS = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Produtos",
-    icon: Package,
-    children: [
-      {
-        label: "Todos os produtos",
-        href: "/dashboard/produtos",
-      },
-      {
-        label: "Combos",
-        href: "/dashboard/produtos/combos",
-      },
-      {
-        label: "Insumos",
-        href: "/dashboard/produtos/insumos",
-      },
-    ],
-  },
-];
-
-const FOCUS_CLASSES =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card";
+const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+const isCurrent = (pathname, href) => Boolean(href && (pathname === href || !['/unidade', '/fornecedor'].includes(href) && pathname.startsWith(`${href}/`)));
 
 function useThemeLogo() {
   const [logo, setLogo] = useState("/CineAstralogou.png");
 
   useEffect(() => {
     const root = document.documentElement;
-
     function updateLogo() {
-      const theme = (
-        root.getAttribute("data-theme") || ""
-      ).toLowerCase();
-
-      if (/catp|latte|frappe|macchiato/.test(theme)) {
-        setLogo("/Catp.png");
-      } else if (theme.includes("mocha")) {
-        setLogo("/Mocha.png");
-      } else if (theme.includes("violet")) {
-        setLogo("/Violet.png");
-      } else {
-        setLogo("/CineAstralogou.png");
-      }
+      const theme = (root.getAttribute("data-theme") || "").toLowerCase();
+      if (/catp|latte|frappe|macchiato/.test(theme)) setLogo("/Catp.png");
+      else if (theme.includes("mocha")) setLogo("/Mocha.png");
+      else if (theme.includes("violet")) setLogo("/Violet.png");
+      else setLogo("/CineAstralogou.png");
     }
-
     updateLogo();
-
     const observer = new MutationObserver(updateLogo);
-
-    observer.observe(root, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
-
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
     return () => observer.disconnect();
   }, []);
 
@@ -84,324 +34,113 @@ function useThemeLogo() {
 
 function getInitials(user) {
   const name = user?.name?.trim();
-
-  if (name) {
-    const parts = name.split(/\s+/);
-
-    return (
-      parts[0].charAt(0) +
-      (parts.length > 1 ? parts[parts.length - 1].charAt(0) : "")
-    ).toUpperCase();
-  }
-
-  return user?.email?.trim().charAt(0).toUpperCase() || "";
+  if (!name) return <UserRound size={18} aria-hidden="true" />;
+  const parts = name.split(/\s+/);
+  return (parts[0][0] + (parts.length > 1 ? parts.at(-1)[0] : "")).toUpperCase();
 }
 
-function NavigationItem({ item, pathname }) {
+function NavigationItem({ item, pathname, collapsed, searching }) {
   const Icon = item.icon;
-  const hasChildren = Boolean(item.children?.length);
+  const children = item.children ?? [];
+  const hasChildren = children.length > 0;
+  const selected = isCurrent(pathname, item.href) || children.some((child) => isCurrent(pathname, child.href));
+  const [open, setOpen] = useState(selected);
+  useEffect(() => { if (selected || searching) setOpen(true); }, [selected, searching]);
+  const itemClass = `${styles.navItem} ${selected ? styles.navItemActive : ""} ${collapsed ? styles.navItemCollapsed : ""}`;
+  if (!hasChildren && !item.href) return null;
 
-  const active = item.href === pathname;
-  const activeChild = Boolean(
-    item.children?.some((child) => child.href === pathname)
-  );
+  if (!hasChildren) return <li>
+    <Link href={item.href} className={itemClass} aria-current={selected ? "page" : undefined} aria-label={collapsed ? item.label : undefined} title={collapsed ? item.label : undefined}>
+      {Icon && <Icon size={18} strokeWidth={1.8} aria-hidden="true" />}
+      {!collapsed && <span>{item.label}</span>}
+    </Link>
+  </li>;
 
-  function linkClasses(selected) {
-    return [
-      "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5",
-      "text-sm font-semibold transition-colors",
-      "motion-reduce:transition-none",
-      FOCUS_CLASSES,
-      selected
-        ? "bg-primary text-primary-foreground"
-        : "text-card-foreground hover:bg-muted",
-    ].join(" ");
-  }
+  if (collapsed) return <li>
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<button type="button" className={itemClass} aria-label={`Abrir ${item.label}`} title={item.label} />}>
+        {Icon && <Icon size={18} strokeWidth={1.8} aria-hidden="true" />}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="right" align="start" className={styles.flyout} aria-label={item.label}>
+        <p className={styles.flyoutTitle}>{item.label}</p>
+        <DropdownMenuItem render={<Link href={item.href} />} className={styles.flyoutLink} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</DropdownMenuItem>
+        {children.map((child) => <DropdownMenuItem key={child.href} render={<Link href={child.href} />} className={styles.flyoutLink} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</DropdownMenuItem>)}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </li>;
 
-  if (!hasChildren) {
-    return (
-      <li>
-        <Link
-          href={item.href}
-          aria-current={active ? "page" : undefined}
-          className={linkClasses(active)}
-        >
-          {Icon && (
-            <Icon
-              aria-hidden="true"
-              className="size-[18px] shrink-0"
-              strokeWidth={1.75}
-            />
-          )}
-
-          <span className="min-w-0 break-words">
-            {item.label}
-          </span>
-        </Link>
-      </li>
-    );
-  }
-
-  return (
-    <li>
-      <details
-        key={`${item.label}-${pathname}`}
-        open={activeChild || undefined}
-        className="group"
-      >
-        <summary
-          className={[
-            linkClasses(activeChild),
-            "cursor-pointer list-none",
-            "[&::-webkit-details-marker]:hidden",
-          ].join(" ")}
-        >
-          {Icon && (
-            <Icon
-              aria-hidden="true"
-              className="size-[18px] shrink-0"
-              strokeWidth={1.75}
-            />
-          )}
-
-          <span className="min-w-0 flex-1 break-words">
-            {item.label}
-          </span>
-
-          <ChevronDown
-            aria-hidden="true"
-            className="
-              size-4 shrink-0 transition-transform
-              group-open:rotate-180
-              motion-reduce:transition-none
-            "
-          />
-        </summary>
-
-        <ul className="ml-5 mt-2 space-y-1 border-l border-border pl-3">
-          {item.children.map((child) => {
-            const selected = pathname === child.href;
-
-            return (
-              <li key={child.href}>
-                <Link
-                  href={child.href}
-                  aria-current={selected ? "page" : undefined}
-                  className={[
-                    "flex min-h-10 items-center gap-2",
-                    "rounded-md px-3 py-2 text-sm",
-                    "transition-colors motion-reduce:transition-none",
-                    FOCUS_CLASSES,
-                    selected
-                      ? "bg-primary/10 font-semibold text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  ].join(" ")}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={[
-                      "size-1.5 shrink-0 rounded-full",
-                      selected
-                        ? "bg-primary"
-                        : "bg-current opacity-40",
-                    ].join(" ")}
-                  />
-
-                  <span className="min-w-0 break-words">
-                    {child.label}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </details>
-    </li>
-  );
+  return <li>
+    <div className={styles.navGroup}>
+      <Link href={item.href} className={itemClass} aria-current={pathname === item.href ? "page" : undefined}>
+        {Icon && <Icon size={18} strokeWidth={1.8} aria-hidden="true" />}
+        <span>{item.label}</span>
+      </Link>
+      <button type="button" className={styles.groupToggle} onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={`${open ? "Recolher" : "Expandir"} subcategorias de ${item.label}`}><ChevronDown className={styles.groupChevron} size={15} aria-hidden="true" /></button>
+    </div>
+    {open && <ul className={styles.subnav}>{children.map((child) => <li key={child.href}>
+        <Link href={child.href} className={`${styles.subnavLink} ${isCurrent(pathname, child.href) ? styles.subnavActive : ""}`} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</Link>
+      </li>)}</ul>}
+  </li>;
 }
 
-export function AppSidebar({
-  items = DEFAULT_ITEMS,
-  user,
-  onLogout,
-  loggingOut = false,
-  className = "",
-}) {
+export function AppSidebar({ items = [], user, onLogout, loggingOut = false, collapsed = false, onToggle, onNavigate, mobile = false, className = "", homeHref = "/admin/dashboard", areaLabel = "Administração" }) {
   const pathname = usePathname();
   const logo = useThemeLogo();
-  const initials = getInitials(user);
+  const [query, setQuery] = useState("");
+  const searchRef = useRef(null);
+  const focusSearchOnOpen = useRef(false);
+  const search = normalize(query.trim());
+  const visibleItems = items.map((item) => {
+    if (!search) return item;
+    if (normalize(item.label).includes(search)) return item;
+    const children = item.children?.filter((child) => normalize(child.label).includes(search));
+    return children?.length ? { ...item, children } : null;
+  }).filter(Boolean);
 
-  return (
-    <aside
-      aria-label="Menu lateral"
-      className={[
-        "relative isolate flex h-dvh w-72 max-w-full shrink-0 flex-col",
-        "overflow-hidden rounded-r-[2rem]",
-        "border border-border bg-card text-card-foreground",
-        className,
-      ].join(" ")}
-    >
-      {/* Borda decorativa de película */}
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none absolute inset-y-7 right-2
-          w-2 border-x border-border
-        "
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(to bottom, var(--border) 0 1px, transparent 1px 8px)",
-        }}
-      />
+  useEffect(() => {
+    if (!collapsed && focusSearchOnOpen.current) {
+      focusSearchOnOpen.current = false;
+      searchRef.current?.focus();
+    }
+  }, [collapsed]);
 
-      {/* Logo */}
-      <div className="mr-5 border-b border-dashed border-border px-5 py-6">
-        <Link
-          href="/"
-          aria-label="CineAstra — Página inicial"
-          className={[
-            "flex min-h-12 items-center rounded-lg px-2",
-            FOCUS_CLASSES,
-          ].join(" ")}
-        >
-          <img
-            src={logo}
-            alt="CineAstra"
-            width={180}
-            height={48}
-            className="
-              h-12 w-full max-w-45
-              object-contain object-left
-            "
-          />
-        </Link>
+  function toggle() {
+    if (!collapsed) setQuery("");
+    onToggle?.();
+  }
+
+  function expandForSearch() {
+    focusSearchOnOpen.current = true;
+    onToggle?.();
+  }
+
+  return <aside aria-label={`Menu lateral de ${areaLabel}`} className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""} ${mobile ? styles.mobile : ""} ${className}`} onClick={(event) => { if (event.target.closest("a")) onNavigate?.(); }}>
+    <div className={styles.brand}>
+      <Link href={homeHref} className={styles.brandLink} aria-label="CineAstra — Início" title={collapsed ? "CineAstra" : undefined}>
+        <img src={logo} alt="" width={38} height={38} className={styles.logo} />
+        {!collapsed && <span className={styles.wordmark}>cine<span>astra.</span></span>}
+      </Link>
+      {!mobile && <button type="button" className={styles.collapseToggle} onClick={toggle} aria-label={collapsed ? "Expandir menu" : "Recolher menu"} aria-expanded={!collapsed} title={collapsed ? "Expandir menu" : "Recolher menu"}>{collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}</button>}
+    </div>
+
+    <nav className={styles.navigation} aria-label={`Navegação de ${areaLabel}`}>
+      {collapsed ? <button type="button" className={styles.searchButton} onClick={expandForSearch} aria-label="Expandir menu e buscar" title="Buscar páginas"><Search size={18} aria-hidden="true" /></button>
+        : <label className={styles.searchField}><Search size={17} aria-hidden="true" /><span className="sr-only">Buscar página no menu</span><input ref={searchRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar página" /></label>}
+      {!collapsed && <p className={styles.sectionLabel}>Navegação</p>}
+      <ul className={styles.navList}>{visibleItems.map((item) => <NavigationItem key={item.href || item.label} item={item} pathname={pathname} collapsed={collapsed} searching={Boolean(search)} />)}</ul>
+      {!collapsed && !visibleItems.length && <p className={styles.noResults}>Nenhuma página encontrada.</p>}
+    </nav>
+
+    <footer className={styles.footer}>
+      <div className={styles.appearance}>{!collapsed && <span>Aparência</span>}<AppearanceSelector /></div>
+      <div className={styles.profile} title={collapsed ? user?.name || "Administrador" : undefined}>
+        <span className={styles.avatar} aria-hidden="true">{getInitials(user)}</span>
+        {!collapsed && <span className={styles.profileText}><strong>{user?.name || "Usuário"}</strong><small>{areaLabel}</small></span>}
       </div>
-
-      {/* Navegação com rolagem independente */}
-      <nav
-        aria-label="Navegação principal"
-        className="
-          min-h-0 flex-1 overflow-y-auto overscroll-contain
-          py-6 pl-4 pr-7
-          [scrollbar-color:var(--border)_transparent]
-          [scrollbar-width:thin]
-        "
-      >
-        <p className="mb-3 px-3 text-xs font-medium text-muted-foreground">
-          Navegação
-        </p>
-
-        <ul className="space-y-2">
-          {items.map((item) => (
-            <NavigationItem
-              key={item.href || item.label}
-              item={item}
-              pathname={pathname}
-            />
-          ))}
-        </ul>
-      </nav>
-
-      {/* Aparência e conta */}
-      <footer className="mr-5 shrink-0 border-t border-dashed border-border">
-        <div className="flex min-h-16 items-center justify-between gap-3 px-5 py-3">
-          <span className="text-sm font-medium text-muted-foreground">
-            Aparência
-          </span>
-
-          <AppearanceSelector />
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="mx-5 h-px bg-border/70"
-        />
-
-        {/* Avatar, nome e e-mail */}
-        <div className="flex items-center gap-3 px-5 pb-4 pt-5">
-          <div
-            aria-hidden="true"
-            className="
-              flex size-11 shrink-0 select-none
-              items-center justify-center rounded-full
-              bg-primary/10 text-sm font-semibold text-primary
-              ring-1 ring-inset ring-primary/15
-            "
-          >
-            {initials || (
-              <UserRound
-                className="size-5"
-                strokeWidth={1.75}
-              />
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p
-              title={user?.name || "Minha conta"}
-              className="
-                truncate text-sm font-semibold
-                leading-5 text-card-foreground
-              "
-            >
-              {user?.name || "Minha conta"}
-            </p>
-
-            <p
-              title={user?.email || undefined}
-              className="
-                mt-0.5 truncate text-xs
-                leading-5 text-muted-foreground
-              "
-            >
-              {user?.email || "E-mail não informado"}
-            </p>
-          </div>
-        </div>
-
-        {/* Ação de saída */}
-        <div className="px-5 pb-5">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onLogout}
-            disabled={!onLogout || loggingOut}
-            aria-busy={loggingOut}
-            className="
-              min-h-11 w-full justify-start gap-3 rounded-lg
-              border border-border/70 bg-transparent px-3
-              text-sm font-medium text-muted-foreground shadow-none
-              transition-colors
-              hover:border-destructive/25
-              hover:bg-destructive/10 hover:text-destructive
-              focus-visible:border-ring
-              focus-visible:ring-2 focus-visible:ring-ring/50
-              disabled:pointer-events-none disabled:opacity-50
-              motion-reduce:transition-none
-            "
-          >
-            {loggingOut ? (
-              <LoaderCircle
-                aria-hidden="true"
-                className="
-                  size-4 shrink-0 animate-spin
-                  motion-reduce:animate-none
-                "
-              />
-            ) : (
-              <LogOut
-                aria-hidden="true"
-                className="size-4 shrink-0"
-                strokeWidth={1.75}
-              />
-            )}
-
-            <span aria-live="polite">
-              {loggingOut ? "Saindo..." : "Sair da conta"}
-            </span>
-          </Button>
-        </div>
-      </footer>
-    </aside>
-  );
+      <button type="button" className={styles.logout} onClick={onLogout} disabled={!onLogout || !user || loggingOut} aria-busy={loggingOut} aria-label={collapsed ? "Sair da conta" : undefined} title={collapsed ? "Sair da conta" : undefined}>
+        {loggingOut ? <LoaderCircle className={styles.loadingIcon} size={17} aria-hidden="true" /> : <LogOut size={17} strokeWidth={1.8} aria-hidden="true" />}
+        {!collapsed && <span>{loggingOut ? "Saindo…" : "Sair da conta"}</span>}
+      </button>
+    </footer>
+  </aside>;
 }

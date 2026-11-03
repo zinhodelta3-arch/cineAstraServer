@@ -8,7 +8,7 @@ export default function PosterTile({ movie, onSelect, inList }) {
       <Art movie={movie} variant="poster" className="absolute inset-0 size-full object-cover" />
       <span className="absolute top-1.5 left-1.5 f-display text-[11px] font-black tracking-[0.18em] text-primary bg-black/60 px-1 rounded-xs leading-tight">CINEASTRA</span>
       {inList && <span className="absolute top-1.5 right-1.5 size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center"><Check className="size-3" /></span>}
-      <span className="absolute inset-x-0 bottom-0 p-2 bg-linear-to-t from-background to-transparent text-left opacity-0 group-hover:opacity-100 transition-opacity">
+      <span className="absolute inset-x-0 bottom-0 p-2 bg-linear-to-t from-background to-transparent text-left opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity">
         <span className={`block text-[11px] font-semibold ${ACCENT}`}>{movie.genre}</span>
         <span className="block text-[11px] text-foreground">{movie.duration} · {movie.age}</span>
       </span>

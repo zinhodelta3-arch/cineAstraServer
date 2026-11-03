@@ -30,7 +30,7 @@ export default function CinemaCart() {
               <div className="pt-3"><Button variant="outline" onClick={goBack}><ArrowLeft className="size-4" /> Voltar</Button></div>
             </section>
 
-<CartSummary {...summary} />
+<CartSummary items={items} {...summary} />
           </div>
         )}
       </div>

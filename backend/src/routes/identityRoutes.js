@@ -26,6 +26,8 @@ export const identityOperations = [
     ['post', '/api/admin/users', 'adminCreate', 'adminUser', 'admin', 'register', false, 201],
     ['get', '/api/admin/users/{id}', 'adminGet', null, 'admin'],
     ['patch', '/api/admin/users/{id}/access', 'adminAccess', 'accessChange', 'admin', 'twoFactor'],
+    ['get', '/api/admin/users/{id}/location', 'getSupervisorLocation', null, 'admin', null, false, 200, 'adminSupervisorLocation'],
+    ['patch', '/api/admin/users/{id}/location', 'setSupervisorLocation', 'supervisorLocation', 'admin', 'twoFactor', false, 200, 'adminSupervisorLocation'],
     ['get', '/api/admin/privacy-requests/{id}', 'privacyStatus', null, 'admin'],
     ['get', '/api/users/me/children', 'list_own_children', null, 'private', null, false, 200, 'children'],
     ['get', '/api/users/me/children/{id}/controls', 'getParental', null, 'private', null, false, 200, 'parental'],

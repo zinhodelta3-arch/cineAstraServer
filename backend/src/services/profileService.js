@@ -124,6 +124,28 @@ export function createProfileService({ identity, config, providers }) {
         async adminGet(id, context) {
             return transaction(async c => { if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); const u = await model.user(id, c); if (!u) throw ApiError.naoEncontrado(); return userDto(u); }, context);
         },
+        async adminSupervisorLocation(id, input, context) {
+            return transaction(async c => {
+                if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
+                const supervisor = await model.user(id, c, input !== null);
+                if (!supervisor) throw ApiError.naoEncontrado();
+                if (supervisor.tipo_usuario !== 'SUPERVISOR' || supervisor.status !== 'ATIVO') throw new ApiError('Selecione um supervisor ativo', 409, null, 'IDENTITY_CONFLICT');
+                const current = await model.supervisorLocation(c, id);
+                if (input !== null && input.localId !== (current ? idString(current.id_local) : null)) {
+                    if (input.localId !== null) {
+                        const local = await model.location(c, input.localId);
+                        if (!local || local.status !== 'ATIVO') throw new ApiError('Selecione um cinema ativo', 409, null, 'IDENTITY_CONFLICT');
+                    }
+                    const activeTeams = await model.activeSupervisorTeamLocations(c, id);
+                    if (activeTeams.some(team => input.localId === null || idString(team.id_local) !== input.localId)) throw new ApiError('Transfira ou finalize as equipes ativas deste supervisor antes de alterar o cinema', 409, null, 'IDENTITY_CONFLICT');
+                    if (input.localId === null) await model.clearSupervisorLocation(c, id);
+                    else await model.setSupervisorLocation(c, id, input.localId);
+                    await audit(c, 'IDENTITY.SUPERVISOR_LOCATION_CHANGED', id, context);
+                }
+                const selected = input !== null && input.localId !== (current ? idString(current.id_local) : null) ? await model.supervisorLocation(c, id) : current;
+                return { supervisorId: idString(id), localId: selected ? idString(selected.id_local) : null, localName: selected?.local_nome ?? null };
+            }, context);
+        },
         async authorization(id, authorizationId, context) {
             return transaction(async c => {
                 await activeActor(c, context);
@@ -141,6 +163,7 @@ export function createProfileService({ identity, config, providers }) {
                 if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
                 const u = await model.user(id, c);
                 if (!u) throw ApiError.naoEncontrado();
+                if (u.tipo_usuario === 'SUPERVISOR' && input.role && input.role !== 'SUPERVISOR' && (await model.activeSupervisorTeamLocations(c, id)).length) throw new ApiError('Transfira ou finalize as equipes ativas antes de alterar o perfil do supervisor', 409, null, 'IDENTITY_CONFLICT');
                 if (u.tipo_usuario === 'ADMIN' && ((input.role && input.role !== 'ADMIN') || (input.status && input.status !== 'ATIVO')) && Number((await model.adminCount(c)).total) <= 1) throw new ApiError('Último administrador ativo', 409, null, 'LAST_ADMIN');
                 // Nunca reativar uma solicitação de exclusão por PATCH de privilégios.
                 if (input.status === 'ATIVO' && u.status !== 'ATIVO') throw new ApiError('Reativação exige revisão de identidade e privacidade', 409, null, 'REACTIVATION_REQUIRES_REVIEW');
@@ -148,6 +171,7 @@ export function createProfileService({ identity, config, providers }) {
                 if (input.role) patch.tipo_usuario = input.role;
                 if (input.status) patch.status = input.status;
                 await model.updateUser(c, id, patch);
+                if (u.tipo_usuario === 'SUPERVISOR' && input.role && input.role !== 'SUPERVISOR') await model.clearSupervisorLocation(c, id);
                 await model.revoke(c, id); await model.invalidateChallenges(c, id); await model.invalidateRecovery(c, id);
                 await audit(c, 'IDENTITY.ACCESS_CHANGED', id, context);
                 return userDto(await model.user(id, c));

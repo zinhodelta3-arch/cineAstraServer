@@ -18,11 +18,32 @@ export function interval(row) {
 export function sessionDto(row) {
     const { end } = interval(row);
     return { id_sessao: idString(row.id_sessao), id_filme: idString(row.id_filme), id_sala: idString(row.id_sala), id_local: idString(row.id_local),
+        titulo_filme: row.titulo_filme ?? null, nome_sala: row.nome_sala ?? null, nome_local: row.nome_local ?? null,
         data: row.data, data_fim: day(end), horario_inicio: row.horario_inicio, horario_fim: row.horario_fim,
         idioma: row.idioma, preco_inteira: moneyString(row.preco_inteira), status: row.status };
 }
 export function createSessionService({ model, identity }) {
-    async function admin(c, context) { if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); }
+    async function unitLocation(c, context) {
+        const actor = await identity.activeActor(c, context);
+        if (actor.tipo_usuario !== 'SUPERVISOR') throw ApiError.acessoNegado();
+        const location = await model.supervisorLocation(actor.id_usuario, c);
+        if (!location) throw ApiError.acessoNegado();
+        return idString(location.id_local);
+    }
+    async function authorize(c, context, localId, unit) {
+        if (unit) {
+            if (await unitLocation(c, context) !== idString(localId)) throw ApiError.acessoNegado();
+        } else if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
+    }
+    async function initialRow(kind, id, context, unit) {
+        if (!unit) return found(await model[kind](id));
+        return identity.transaction(async c => {
+            const localId = await unitLocation(c, context);
+            const row = await model[kind](id, c);
+            if (!row || idString(row.id_local) !== localId) throw ApiError.acessoNegado();
+            return row;
+        }, context);
+    }
     async function lockedRoom(c, roomId, expectedLocalId) {
         const local = found(await model.local(expectedLocalId, c, true));
         const room = found(await model.room(roomId, c, true));
@@ -46,11 +67,29 @@ export function createSessionService({ model, identity }) {
             if (current.start < occupied.end + HOUR && occupied.start < current.end + HOUR) throw conflict('Intervalo mínimo de uma hora entre sessões no mesmo local');
         }
     }
-    async function mutate(operation, context) { return identity.transaction(async c => { await admin(c, context); return operation(c); }, context); }
+    async function mutate(operation, context, localId, unit) { return identity.transaction(async c => { await authorize(c, context, localId, unit); return operation(c); }, context); }
     return {
+        async filmAvailability(filmId) { return { locations: (await model.filmAvailability(filmId)).map(row => ({ localId: idString(row.id_local), sessions: Number(row.session_count), formats: row.formats?.split(' · ') ?? [] })) }; },
+        async availableDays(filmId, localId) { return { days: (await model.availableDays(filmId, localId)).map(row => row.date.slice(0, 10)) }; },
         async list(q, isAdmin = false) {
             const rows = await model.list(q, isAdmin), items = rows.slice(0, q.limit);
             return { items: items.map(sessionDto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1).id_sessao) : null } };
+        },
+        async unitList(q, context) {
+            return identity.transaction(async c => {
+                const localId = await unitLocation(c, context);
+                if (q.localId && idString(q.localId) !== localId) throw ApiError.acessoNegado();
+                const scoped = { ...q, localId }, rows = await model.list(scoped, true, c), items = rows.slice(0, scoped.limit);
+                return { items: items.map(sessionDto), pagination: { limit: scoped.limit, nextCursor: rows.length > scoped.limit ? idString(items.at(-1).id_sessao) : null } };
+            }, context);
+        },
+        async unitGet(id, context) {
+            return identity.transaction(async c => {
+                const localId = await unitLocation(c, context);
+                const session = found(await model.session(id, c));
+                if (idString(session.id_local) !== localId) throw ApiError.acessoNegado();
+                return sessionDto(session);
+            }, context);
         },
         async seats(id) {
             const rows=await model.seatAvailability(id),session=found(rows[0]);
@@ -59,8 +98,8 @@ export function createSessionService({ model, identity }) {
                     number:row.numero,type:row.tipo,availability:row.disponibilidade}))};
         },
         async get(id, isAdmin = false) { return sessionDto(found(isAdmin ? await model.session(id) : await model.publicSession(id))); },
-        async create(input, context) {
-            const initial = found(await model.room(input.id_sala));
+        async create(input, context, unit = false) {
+            const initial = await initialRow('room', input.id_sala, context, unit);
             return mutate(async c => {
                 const { local, room } = await lockedRoom(c, input.id_sala, initial.id_local);
                 const row = { ...input, status: 'AGENDADA' };
@@ -69,10 +108,10 @@ export function createSessionService({ model, identity }) {
                 const id = await model.insert(c, row);
                 await identity.audit(c, 'SESSION.CREATED', id, context);
                 return sessionDto(found(await model.session(id, c)));
-            }, context);
+            }, context, initial.id_local, unit);
         },
-        async patch(id, input, context) {
-            const initial = found(await model.session(id));
+        async patch(id, input, context, unit = false) {
+            const initial = await initialRow('session', id, context, unit);
             if (input.status && Object.keys(input).length > 1) throw ApiError.validacao('Status deve ser alterado separadamente');
             return mutate(async c => {
                 const { local, room } = await lockedRoom(c, initial.id_sala, initial.id_local);
@@ -94,10 +133,10 @@ export function createSessionService({ model, identity }) {
                 await model.update(c, id, input);
                 await identity.audit(c, 'SESSION.CHANGED', id, context);
                 return sessionDto(found(await model.session(id, c)));
-            }, context);
+            }, context, initial.id_local, unit);
         },
-        async cancel(id, context) {
-            const initial = found(await model.session(id));
+        async cancel(id, context, unit = false) {
+            const initial = await initialRow('session', id, context, unit);
             return mutate(async c => {
                 const { room } = await lockedRoom(c, initial.id_sala, initial.id_local);
                 const previous = found(await model.sessionForUpdate(id, c));
@@ -106,7 +145,7 @@ export function createSessionService({ model, identity }) {
                 if (!['AGENDADA', 'EM_CARTAZ'].includes(previous.status) || await model.hasItems(id, c)) throw conflict('Sessão não pode ser cancelada');
                 await model.update(c, id, { status: 'CANCELADA' });
                 await identity.audit(c, 'SESSION.CANCELLED', id, context);
-            }, context);
+            }, context, initial.id_local, unit);
         }
     };
 }

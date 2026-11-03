@@ -19,6 +19,11 @@ export function createIdentityModel(database) {
     }
     return {
         user: (id, c = database, lock = false) => one(c, `SELECT ${USER} FROM usuarios WHERE id_usuario = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
+        supervisorLocation: (c, id) => one(c, 'SELECT sl.id_local,l.nome AS local_nome FROM supervisor_locais sl JOIN locais l ON l.id_local = sl.id_local WHERE sl.id_supervisor = ? FOR UPDATE', [id]),
+        location: (c, id) => one(c, 'SELECT id_local,nome,status FROM locais WHERE id_local = ?', [id]),
+        activeSupervisorTeamLocations: (c, id) => rows(c, "SELECT sa.id_local FROM equipes e JOIN sessoes s ON s.id_sessao = e.id_sessao JOIN salas sa ON sa.id_sala = s.id_sala WHERE e.id_supervisor = ? AND e.status = 'ATIVA' FOR UPDATE", [id]),
+        setSupervisorLocation: (c, id, localId) => c.execute('INSERT INTO supervisor_locais (id_supervisor,id_local) VALUES (?,?) ON DUPLICATE KEY UPDATE id_local = VALUES(id_local), atribuido_em = CURRENT_TIMESTAMP(3)', [id, localId]),
+        clearSupervisorLocation: (c, id) => c.execute('DELETE FROM supervisor_locais WHERE id_supervisor = ?', [id]),
         byEmail: email => one(database, `SELECT ${USER} FROM usuarios WHERE email_normalizado = ?`, [email]),
         createUser: (c, u) => insert(c, 'INSERT INTO usuarios (nome,email,cpf,data_nascimento,senha,tipo_usuario,status) VALUES (?,?,?,?,?,?,?)', [u.name, u.email, u.cpf, u.dateOfBirth, u.hash, u.role, u.status]),
         async updateUser(c, id, input) { const [set, values] = assignments(input, ['nome', 'email', 'telefone', 'senha', 'tipo_usuario', 'status']); await c.execute(`UPDATE usuarios SET ${set} WHERE id_usuario = ?`, [...values, id]); },

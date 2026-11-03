@@ -4,7 +4,7 @@ import { idString } from '../utils/dto.js';
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'TASK_CONFLICT');
 const active = team => team.status === 'ATIVA' && ['AGENDADA','EM_CARTAZ'].includes(team.sessao_status);
-const manager = (actor, team) => actor.tipo === 'ADMIN' || actor.tipo === 'SUPERVISOR' && actor.id === idString(team.id_supervisor);
+const manager = (_actor, team) => team.canManage === true;
 const taskDto = row => ({ id_chamado: idString(row.id_chamado), id_criador: idString(row.id_criador), id_responsavel: row.id_responsavel == null ? null : idString(row.id_responsavel), id_sessao: idString(row.id_sessao), id_equipe: idString(row.id_equipe), titulo: row.titulo, descricao: row.descricao ?? null, prioridade: row.prioridade, status: row.status, data_abertura: row.data_abertura, data_fechamento: row.data_fechamento ?? null });
 const eventDto = row => ({ id_evento: idString(row.id_evento), id_chamado: idString(row.id_chamado), id_ator: idString(row.id_ator), acao: row.acao, status_anterior: row.status_anterior ?? null, status_novo: row.status_novo, id_responsavel: row.id_responsavel == null ? null : idString(row.id_responsavel), criado_em: row.criado_em });
 const page = (rows, q, dto, key) => { const items = rows.slice(0, q.limit); return { items: items.map(dto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1)[key]) : null } }; };
@@ -16,9 +16,11 @@ export function createTaskService({ model, identity }) {
     };
     async function access(c, teamId, actor, lock = false) {
         const team = found(await model.team(teamId, c, lock));
-        const member = manager(actor, team) ? null : await model.membership(teamId, actor.id, c);
-        if (!manager(actor, team) && !(actor.tipo === 'COLABORADOR' && member?.status === 'ATIVO' && member?.usuario_status === 'ATIVO' && member?.tipo_usuario === 'COLABORADOR' && member?.funcao?.trim())) throw ApiError.acessoNegado();
-        return team;
+        const location = actor.tipo === 'SUPERVISOR' ? await model.supervisorLocation(actor.id, c) : null;
+        const canManage = actor.tipo === 'ADMIN' || actor.tipo === 'SUPERVISOR' && location && idString(location.id_local) === idString(team.id_local);
+        const member = canManage ? null : await model.membership(teamId, actor.id, c);
+        if (!canManage && !(actor.tipo === 'COLABORADOR' && member?.status === 'ATIVO' && member?.usuario_status === 'ATIVO' && member?.tipo_usuario === 'COLABORADOR' && member?.funcao?.trim())) throw ApiError.acessoNegado();
+        return { ...team, canManage: Boolean(canManage) };
     }
     async function eligibleMember(c, teamId, userId) {
         const member = await model.membership(teamId, userId, c);
@@ -104,7 +106,7 @@ export function createTaskService({ model, identity }) {
         async close(teamId, id, context) {
             return mutate(teamId, context, async (c, actor, team) => {
                 const task = await taskInTeam(c, team, id, true);
-                if (!manager(actor, team) && (task.id_responsavel == null || actor.id !== idString(task.id_responsavel))) throw ApiError.acessoNegado();
+                if (!manager(actor, team) && actor.id !== idString(task.id_criador) && (task.id_responsavel == null || actor.id !== idString(task.id_responsavel))) throw ApiError.acessoNegado();
                 if (task.status !== 'RESOLVIDO') throw conflict('Transição inválida');
                 await model.update(c, teamId, id, { status: 'FECHADO', data_fechamento: new Date() });
                 await record(c, id, actor, 'FECHADO', 'RESOLVIDO', 'FECHADO', task.id_responsavel, context);

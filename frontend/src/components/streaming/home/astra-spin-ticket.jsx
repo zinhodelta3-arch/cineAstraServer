@@ -30,8 +30,6 @@ export default function AstraSpinTicket({ result, inList, onPlay, onDetails, onT
   const { entry, reasons, fit, context } = result;
 
   const h = hash(entry.id);
-  const room = String((h % 9) + 1).padStart(2, "0");
-  const seat = `${"ABCDEFGH"[(h >> 3) % 8]}${((h >> 6) % 14) + 1}`;
   const code = `AS-${String(h % 1000000).padStart(6, "0")}`;
   const date = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 
@@ -109,10 +107,10 @@ export default function AstraSpinTicket({ result, inList, onPlay, onDetails, onT
           <span className="absolute -right-3 -top-3 size-6 rounded-full bg-background md:-bottom-3 md:-left-3 md:right-auto md:top-auto" aria-hidden="true" />
 
           <dl className="grid grid-cols-4 gap-3 md:grid-cols-2">
-            <StubItem label="Sala" value={room} />
-            <StubItem label="Poltrona" value={seat} />
+            <StubItem label="Filme" value={entry.id} />
+            <StubItem label="Duração" value={entry.minutes ? formatMinutes(entry.minutes) : "—"} />
             <StubItem label="Data" value={date} />
-            <StubItem label="Sessão" value="Agora" />
+            <StubItem label="Escolha" value="AstraSpin" />
           </dl>
 
           <div className="mt-auto">

@@ -24,6 +24,7 @@
 .ca-steps .is-current > span { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
 .ca-steps .is-done > span { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
 .ca-checkout-grid { display: grid; grid-template-areas: "ingressos resumo"; grid-template-columns: minmax(0, 1fr) 322px; gap: 0; align-items: start; }
+.ca-checkout-grid > aside { grid-area: resumo; }
 .ca-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: .12em; font-weight: 800; line-height: 1.5; color: var(--primary); }
 .ca-period { color: var(--primary); }
 .ca-summary { grid-area: resumo; border: 1px solid var(--border); background: var(--card); position: sticky; top: 24px; border-radius: 12px; z-index: 2; overflow: hidden; }
@@ -196,6 +197,7 @@
   .ca-checkout-shell { padding: 0 22px; }
   .ca-checkout-topbar { min-height: 84px; }
   .ca-checkout-grid { grid-template-areas: "ingressos" "resumo"; grid-template-columns: minmax(0, 1fr); }
+  .ca-checkout-grid > aside { position: static; grid-row: 2; margin-top: 35px; }
   .ca-summary { position: static; grid-row: 2; margin-top: 35px; }
   .ca-ticket-stage { grid-row: 1; min-height: 0; }
   .ca-ticket-stage-content { padding: 14px 0 0; }

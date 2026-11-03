@@ -21,6 +21,7 @@ export function createIdentityController(identity, profile) {
         preferences: json((r, c) => profile.preferences(r.method === 'GET' ? null : r.input, c)),
         adminCreate: async (req, res) => { const data = await profile.adminCreate(req.input, context(req)); res.location(`/api/admin/users/${data.id}`); success(res, data, 201); },
         adminAccess: json((r, c) => profile.adminAccess(r.params.id, r.input, c)),
+        adminSupervisorLocation: json((r, c) => profile.adminSupervisorLocation(r.params.id, r.method === 'GET' ? null : r.input, c)),
         adminGet: json((r, c) => profile.adminGet(r.params.id, c)),
         authorization: json((r, c) => profile.authorization(r.params.id, r.params.authorizationId, c)),
         privacyStatus: json((r, c) => profile.privacyStatus(r.params.id, c)),

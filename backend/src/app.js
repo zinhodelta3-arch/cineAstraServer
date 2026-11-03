@@ -182,6 +182,14 @@ import {createReportModel} from './models/reportModel.js';
 import {createReportService} from './services/reportService.js';
 import {createReportController} from './controllers/reportController.js';
 import {reportRoutes} from './routes/reportRoutes.js';
+import {createSalesModel} from './models/salesModel.js';
+import {createSalesService} from './services/salesService.js';
+import {createSalesController} from './controllers/salesController.js';
+import {salesRoutes} from './routes/salesRoutes.js';
+import {createAdminStreamingModel} from './models/adminStreamingModel.js';
+import {createAdminStreamingService} from './services/adminStreamingService.js';
+import {createAdminStreamingController} from './controllers/adminStreamingController.js';
+import {adminStreamingRoutes} from './routes/adminStreamingRoutes.js';
 
 const specification = JSON.parse(readFileSync(new URL('./docs/openapi.json', import.meta.url), 'utf8'));
 
@@ -208,15 +216,15 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     }, methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'], exposedHeaders: ['X-Request-Id', 'Retry-After'], credentials: false, maxAge: 600 }));
     const inventory=createInventoryService({ model: createInventoryModel(database), identity });
-    const pricing=createPricingService({ model: createPricingModel(database), identity });
+    const pricing=createPricingService({ model: createPricingModel(database), identity, simulated: paymentProvider.name==='simulado' });
     const orderModel=createOrderModel();
-    const orders=createOrderService({model:orderModel,identity,pricing});
+    const orders=createOrderService({model:orderModel,identity,pricing,selfDeclaredAge:paymentProvider.name==='simulado'&&config.identity.allowSelfDeclaredAge});
     const tickets=createTicketService({model:createTicketModel(database),identity});
-    const streaming=createStreamingService({model:createStreamingModel(),identity,provider:streamingProvider});
+    const streaming=createStreamingService({model:createStreamingModel(),identity,provider:streamingProvider,selfDeclaredAge:paymentProvider.name==='simulado'&&config.identity.allowSelfDeclaredAge});
     const notifications = createNotificationService({ model: createNotificationModel(database), identity });
     const billing=createSubscriptionBillingService({model:createSubscriptionBillingModel(database),identity,notifications,ipca:ipcaProvider});
     app.locals.billing=billing;
-    const content=createContentService({model:createContentModel(),identity});
+    const content=createContentService({model:createContentModel(),identity,simulated:paymentProvider.name==='simulado'});
     const plans=createPlanService({model:createPlanModel(),identity,billing,contracts:content});
     const participation=createParticipationService({model:createParticipationModel(),identity,notifications});
     const checkout=createCheckoutService({model:orderModel,orders,identity,pricing,inventory,seats:createSeatOccupancyService(),tickets,streaming,contracts:content});
@@ -256,6 +264,8 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(supportRoutes(createSupportController(support),dependencies));
     app.use(contentRoutes(createContentController(content,createAssistantService({identity,support,provider:assistantProvider})),dependencies));
     app.use(reportRoutes(createReportController(createReportService({model:createReportModel(),identity,allowedRoutes:Object.keys(specification.paths).map(path=>path.replace(/\{(\w+)\}/g,':$1'))})),dependencies));
+    app.use(salesRoutes(createSalesController(createSalesService({model:createSalesModel(),identity})),dependencies));
+    app.use(adminStreamingRoutes(createAdminStreamingController(createAdminStreamingService({model:createAdminStreamingModel(),identity})),dependencies));
     app.use(catalogRoutes(createCatalogController(createCatalogService({ model: createCatalogModel(database), identity, mediaHosts: config.catalog?.mediaHosts ?? [] })), dependencies));
     const staging = createImageStorage({ ...config.imageUpload, enforceOwner: true });
     app.use(imageUploadRoutes(createImageUploadController(createImageUploadService({

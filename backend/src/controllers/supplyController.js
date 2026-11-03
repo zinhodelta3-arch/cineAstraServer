@@ -1,6 +1,7 @@
 import { success } from '../utils/dto.js';
 const context=req=>({actor:req.usuario,signal:req.signal,requestId:req.res.locals.requestId});
 export function createSupplyController(service){return {
+    sources:async(req,res)=>success(res,await service.sources(req.supplyQuery,context(req))),
     stock:async(req,res)=>success(res,await service.stock(req.supplyQuery,context(req))),
     requests:async(req,res)=>success(res,await service.requests(req.supplyQuery,context(req))),
     request:async(req,res)=>success(res,await service.request(req.params.id,context(req))),
