@@ -1,0 +1,34 @@
+CineAstra · Dados de operação
+
+ARQUIVOS
+01_inserts.sql: carga organizada por dependências das tabelas.
+02_tabelas.csv: cobertura das 92 tabelas do schema.
+logins.txt: contas separadas por tipo, com suas respectivas senhas.
+
+IMPORTAÇÃO
+1. Faça backup do banco de destino.
+2. Instale o schema completo usando database/cineastra-install.sql, seguindo as instruções desse arquivo. Não execute o instalador sobre um banco existente.
+3. Depois da instalação, execute 01_inserts.sql uma única vez no banco selecionado. Não use --force.
+   mysql --default-character-set=utf8mb4 -u SEU_USUARIO -p NOME_DO_BANCO < inserts/01_inserts.sql
+4. Mantenha o modo estrito e as chaves estrangeiras habilitados. Se houver erro, interrompa e faça ROLLBACK antes de investigar. Não prossiga até COMMIT após um erro.
+
+ORGANIZAÇÃO
+São 19 contas com senhas individuais e hash bcrypt: administradores, supervisores, colaboradores, fornecedores e clientes.
+O catálogo reaproveita os 100 filmes já utilizados no projeto. Todos ficam disponíveis no cinema e no streaming; o streaming utiliza os trailers cadastrados.
+A programação contém sessões futuras para os 100 filmes, três cinemas, nove salas e 720 assentos.
+O pacote também inclui bilheteria anterior com ingressos utilizados, produtos, combos, estoque, fornecedores, equipes, chamados, suporte, planos, pagamentos, conteúdo institucional e perfis de streaming com histórico.
+As datas operacionais são calculadas a partir da data de importação. O arquivo usa uma transação e IDs reservados a partir de 900001 para os novos registros.
+Não reaplique: os IDs e referências comerciais pertencem a este pacote. Em uma base já utilizada, confira previamente se a faixa de IDs, e-mails, CPFs, códigos e versões já estão ocupados.
+Gêneros, filmes e planos existentes são reutilizados por nome e título; benefícios já cadastrados nos planos são preservados. Os filmes reutilizados são habilitados também para o cinema; vínculos de gêneros e capas principais já cadastrados são preservados. As senhas de outras contas existentes não são alteradas.
+O histórico schema_migrations permanece sob controle do instalador. O registro de proteção administrativa e os parâmetros de precificação existentes são preservados.
+As sessões de autenticação e registros de recuperação estão revogados, consumidos ou expirados. Não há chaves de autenticação de terceiros neste pacote.
+Os eventos de newsletter e outbox estão concluídos; a carga não agenda disparos de mensagens.
+
+ACESSO
+Use logins.txt para consultar as contas. Esse arquivo contém senhas e está excluído localmente do Git. Ele não deve ser publicado.
+O SQL contém somente hashes das senhas.
+A autenticação, os serviços externos e a disponibilidade dos trailers continuam dependendo das configurações do projeto.
+
+REVISÃO
+Foram conferidos estaticamente os nomes de colunas, campos obrigatórios, enums, limites de texto, referências internas e ordem das dependências.
+A carga foi importada no banco local. Consulte IMPORTACAO.txt e 03_importacao.csv. Não reaplique neste banco.

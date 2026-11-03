@@ -1,0 +1,19 @@
+CineAstra · Resultado da importação
+
+Data: 02/11/2026, 23:31:31 (São Paulo)
+Banco local: cineastra
+Estado: CONFIRMADA
+
+19 contas ativas adicionadas.
+100 filmes existentes reutilizados, habilitados no cinema e no streaming.
+110 sessões adicionadas, incluindo 100 futuras e 10 encerradas.
+720 assentos adicionados.
+58 tickets adicionados.
+
+Backup anterior à carga:
+C:/Users/kevin/.codex/backups/cineastra-db-2026-11-03T02-29-16-669Z/antes-inserts.sql
+
+03_importacao.csv contém as contagens antes e depois por tabela.
+Os logins estão em logins.txt.
+O histórico de migrations foi preservado.
+Não reaplique 01_inserts.sql neste banco.
