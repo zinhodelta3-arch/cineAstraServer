@@ -29,6 +29,7 @@ export function createTicketService({model,identity}){
             const qty=Number(item.quantidade);
             if(!Number.isSafeInteger(qty)||qty<1||qty>100||((count+=qty)>500))return null;
             const type=typeOf(item);
+            if(type==='INGRESSO_SESSAO'&&qty!==1)return null;
             if(type==='RETIRADA_INSUMO'&&item.id_combo&&!item.id_sessao_retirada)return null;
             let expiresAt=null;
             if(item.id_sessao||item.id_sessao_retirada){

@@ -9,6 +9,7 @@ const imageId = (value) => typeof value === "string" && /^[1-9]\d{0,19}$/.test(v
 
 function targetFor(method, parts, search) {
   const [kind, second, third, fourth] = parts;
+  if (kind === 'inputs' && second === 'categories' && parts.length === 2 && method === 'GET') return `/inputs/categories${search}`;
   if (["inputs", "combos"].includes(kind) && id(second) && third === "images") {
     const base = kind === "inputs" ? `/inputs/${second}/images` : `/admin/combos/${second}/images`;
     if (parts.length === 3 && ["GET", "POST"].includes(method)) return `${method === "GET" ? `/admin/${kind}/${second}/images` : base}${method === "GET" ? search : ""}`;

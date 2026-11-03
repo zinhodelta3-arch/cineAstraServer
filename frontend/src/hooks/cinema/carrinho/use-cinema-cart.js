@@ -24,7 +24,8 @@ export default function useCinemaCart(){
   }catch(e){if(!abort.signal.aborted)setState({key,quote:null,pending:false,error:e.message});}
  };
  const items=cart.items.map(item=>{
-  const line=current.quote?.lines.find(line=>line.category===item.purchaseKind&&line.id===item.sourceId);
+  const index=input?.lines.findIndex(line=>line.kind===item.purchaseKind&&line.id===item.sourceId&&(line.kind!=='SESSION'||line.seatId===item.seatId));
+  const line=index>=0?current.quote?.lines[index]:null;
   return {...item,price:line?Number(line.unitPrice):item.price,quoted:Boolean(line)};
  });
  return {items,itemCount:cart.itemCount,total:current.quote?Number(current.quote.total):cart.total,

@@ -8,13 +8,13 @@ export function useCinemaMovies(){
  const [selectedMovie,setSelectedMovie]=useState(null),[sessionMovie,setSessionMovie]=useState(null);
  const suggestionsId=useId();
  useEffect(()=>{const timer=setTimeout(()=>setSearch(query),300);return()=>clearTimeout(timer);},[query]);
- const films=usePublicList(cinemaCatalogPath(search,genre));
+ const films=usePublicList(cinemaCatalogPath(search,genre,section));
  const genreList=usePublicList('/genres?limit=100');
  const movies=films.items.map(f=>cinemaMovie(f));
  const searching=query!==search;
  return {section,genre,query,selectedMovie,sessionMovie,suggestionsId,films,genreList,searching,
   genres:[{value:'Todos',label:'Todos'},...genreList.items.map(g=>({value:g.id_genero,label:g.nome}))],
-  visibleMovies:searching?[]:movies.filter(m=>m.status===section),suggestions:movies,
+  visibleMovies:searching?[]:movies,suggestions:movies,
   activeLabel:SECTIONS.find(s=>s.value===section)?.label,
   setGenre,setQuery,setSelectedMovie,setSessionMovie,
   changeDetailsOpen:open=>{if(!open)setSelectedMovie(null);},

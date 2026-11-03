@@ -20,6 +20,7 @@ export function createOrderService({model,identity,pricing,selfDeclaredAge=false
         const seen=new Set(),stock=new Map();
         const addStock=(id,count)=>stock.set(id,(stock.get(id)??0n)+BigInt(count));
         for(const line of input.lines){
+            if(line.kind==='STREAMING'&&line.mode==='COMPRA')throw new ApiError('Novas compras de filmes estão desativadas; consulte o aluguel',409,null,'STREAMING_PURCHASE_DISABLED');
             const key=`${line.kind}:${line.id}:${line.mode??''}:${line.seatId??''}`;
             if(seen.has(key))throw ApiError.validacao('Item duplicado');seen.add(key);
             if(line.kind==='SESSION'){
@@ -48,7 +49,7 @@ export function createOrderService({model,identity,pricing,selfDeclaredAge=false
                 if(ageOn(user.data_nascimento,new Date().toISOString().slice(0,10))<ageLimit[film.classificacao])throw new ApiError('Idade abaixo da classificação do filme',403,null,'AGE_RESTRICTION');
             }
         }
-        for(const [id,count] of stock){const row=found(await model.stock(c,id));if(count>2147483647n||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO'||BigInt(row.quantidade)-BigInt(row.quantidade_reservada)<count)throw conflict('Estoque insuficiente no local');}
+        for(const [id,count] of stock){const row=found(await model.stock(c,id));if(count>2147483647n||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO')throw conflict('Insumo indisponível no local');if(BigInt(row.quantidade)-BigInt(row.quantidade_reservada)<count)throw new ApiError('Estoque insuficiente no local',409,null,'INSUFFICIENT_STOCK');}
         const quote=await pricing.quoteOnConnection(c,pricingInput(input),context);
         return {...quote,fees:'0.00',guardianAuthorizationRequired:proof.faixa_etaria==='ATE_16',finalizable:quote.finalizable&&proof.faixa_etaria!=='ATE_16'};
     }

@@ -10,7 +10,10 @@ export async function readSessionResponse(response) {
   throw new Error(`O servidor retornou uma resposta inválida (HTTP ${response.status}).`);
  }
  if (!response.ok) {
-  throw new Error(typeof data.message === 'string' ? data.message : `Não foi possível concluir a operação (HTTP ${response.status}).`);
+  const error = new Error(typeof data.message === 'string' ? data.message : `Não foi possível concluir a operação (HTTP ${response.status}).`);
+  error.status = response.status;
+  error.code = typeof data.code === 'string' ? data.code : null;
+  throw error;
  }
  return data;
 }

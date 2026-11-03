@@ -2,6 +2,7 @@ import { success } from '../utils/dto.js';
 const context = req => ({ actor: req.usuario, signal: req.signal, requestId: req.res.locals.requestId });
 export function createProductController(service) {
     return {
+        categories: async (req, res, type) => success(res, await service.categories(type, req.productQuery, context(req))),
         list: async (req, res, type) => success(res, await service.list(type, req.productQuery, context(req))),
         get: async (req, res, type) => success(res, await service.get(type, req.params.id, context(req))),
         create: async (req, res, type) => { const data = await service.create(type, req.input, context(req)); res.location(`/api/${type}/${data[type === 'inputs' ? 'id_insumo' : 'id_equipamento']}`); success(res, data, 201); },

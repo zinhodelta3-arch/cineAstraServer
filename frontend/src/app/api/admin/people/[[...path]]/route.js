@@ -12,7 +12,7 @@ function target(method, parts, search) {
   const [group, second, third] = parts;
   if (group === 'users') {
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/admin/users${method === 'GET' ? search : ''}`;
-    if (parts.length === 2 && userId(second) && method === 'GET') return `/admin/users/${second}`;
+    if (parts.length === 2 && userId(second) && ['GET', 'PATCH'].includes(method)) return `/admin/users/${second}`;
     if (parts.length === 3 && userId(second) && third === 'access' && method === 'PATCH') return `/admin/users/${second}/access`;
     if (parts.length === 3 && userId(second) && third === 'location' && ['GET', 'PATCH'].includes(method)) return `/admin/users/${second}/location`;
   }

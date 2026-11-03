@@ -22,7 +22,7 @@ export default function PaymentSummary({ payment, method }) {
     {offerLoading && <p role="status" className={styles.summaryHint}>Consultando preço e disponibilidade…</p>}
     {offerError && <p role="alert" className={styles.error}>{offerError}</p>}
     {!session.loading && !session.user && <p className={styles.summaryHint}><Link href="/auth/login" className={styles.inlineLink}>Entre na sua conta</Link> para finalizar.</p>}
-    {offer && !offer.finalizable && <p role="alert" className={styles.error}>A oferta não pode ser finalizada. Revise o carrinho.</p>}
+    {offer && !offer.finalizable && <p role="alert" className={styles.error}>{offer.guardianAuthorizationRequired ? "Esta compra exige autorização do responsável." : offer.lines?.some(line => line.catalogOutOfSync) ? "O cinema precisa atualizar o preço de um dos itens." : "A oferta não pode ser finalizada. Revise o carrinho."}</p>}
     {!method && offer?.contract && <div id="payment-consent" className={styles.consent}>
       <h3>Antes de escolher</h3>
       {[offer.contract.business, offer.contract.terms, offer.contract.privacy].map(document => <details key={document.slug} className={styles.document}><summary>{document.title}</summary><p>{document.body.text}</p></details>)}

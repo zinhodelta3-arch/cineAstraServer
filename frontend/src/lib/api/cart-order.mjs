@@ -16,6 +16,7 @@ export function cartOrder(items,coupon=''){
  const couponCode=coupon.trim().toUpperCase();
  if(couponCode&&!/^[A-Z0-9_-]{1,50}$/.test(couponCode))throw new Error('Cupom inválido. Use até 50 letras, números, hífen ou sublinhado.');
  if(lines.size>50)throw new Error('O limite é de 50 produtos diferentes por pedido.');
+ if([...lines.values()].reduce((sum,line)=>sum+line.quantity,0)>500)throw new Error('O limite total do pedido é de 500 unidades.');
  return {localId,lines:[...lines.values()],...(couponCode?{couponCode}:{})};
 }
 export function validCartOrder(body){

@@ -16,7 +16,7 @@ export function createSupportService({model,identity,notifications}){
     return {
         create:(input,context)=>tx(context,async c=>{const a=await actor(c,context);if(a.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();const id=await model.create(c,a.id_usuario,input);await model.append(c,id,a.id_usuario,'CLIENTE',input.message);await identity.audit(c,'SUPPORT.OPENED',id,context);return dto(await model.support(c,id));}),
         ownList:(query,context)=>tx(context,async c=>{const a=await actor(c,context);if(a.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();return page(await model.ownerList(c,a.id_usuario,query.limit,query.cursor),query.limit,dto,'id_suporte');}),
-        adminQueue:(query,context)=>tx(context,async c=>{const a=await actor(c,context);if(a.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();return page(await model.queue(c,query.limit,query.cursor),query.limit,dto,'id_suporte');}),
+        adminQueue:(query,context)=>tx(context,async c=>{const a=await actor(c,context);if(a.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();return page(await model.queue(c,query.limit,query.cursor,query.status),query.limit,dto,'id_suporte');}),
         get:(id,context)=>tx(context,async c=>dto((await access(c,id,context)).row)),
         messages:(id,query,context)=>tx(context,async c=>{await access(c,id,context);return page(await model.messages(c,id,query.limit,query.cursor),query.limit,messageDto,'id_mensagem');}),
         async message(id,input,context){const result=await tx(context,async c=>{

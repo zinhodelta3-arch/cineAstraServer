@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, CheckCheck, CircleCheck, ListChecks, Pencil, Plus, UserRoundCheck, X } from 'lucide-react';
 import { useSession } from '@/hooks/auth/use-session';
 import { useUnitAction, useUnitContext, useUnitList, useUnitTeam } from '@/hooks/unit/use-unit-data';
@@ -16,10 +16,12 @@ export default function UnitTasks() {
   const context = useUnitContext();
   const { teams, teamId, setTeamId, team } = useUnitTeam();
   const [status, setStatus] = useState('');
+  const [assignedOnly, setAssignedOnly] = useState(false);
+  useEffect(() => { setAssignedOnly(new URLSearchParams(window.location.search).get('assigned') === 'me'); }, []);
   const [editing, setEditing] = useState(null);
   const [assigning, setAssigning] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
-  const list = useUnitList(teamId ? `/${teamId}/chamados?limit=20${status ? `&status=${status}` : ''}` : null);
+  const list = useUnitList(teamId ? `/${teamId}/chamados?limit=20${assignedOnly ? '&assigned=me' : ''}${status ? `&status=${status}` : ''}` : null);
   const members = useUnitList(supervisor && teamId ? `/${teamId}/members?limit=100` : null);
   const actions = useUnitAction(list.reload);
 
@@ -51,7 +53,7 @@ export default function UnitTasks() {
   return <UnitLayout title="Chamados" description="Registre e acompanhe o trabalho operacional da sua equipe." location={context.locations.map(row => row.nome).join(' · ')}>
     <UnitFeedback error={actions.error || context.error} notice={actions.notice} />
     <section className={styles.panel} aria-labelledby="tasks-title"><div className={styles.panelHeader}><div><h2 id="tasks-title">Chamados da equipe</h2><p>Os colaboradores editam seus próprios chamados e acompanham a resolução.</p></div><button type="button" className={styles.button} onClick={() => openForm()} disabled={!teamId || team?.status !== 'ATIVA'}><Plus size={16} />Novo chamado</button></div><div className={styles.body}>
-      <div className={styles.toolbar}><label className={`${styles.field} ${styles.selector}`}>Equipe<select className={styles.select} value={teamId} onChange={event => { setTeamId(event.target.value); setEditing(null); setAssigning(null); setFormOpen(false); }} disabled={!teams.items.length && !team}>{team && !teams.items.some(row => row.id_equipe === teamId) && <option value={teamId}>{team.nome} · sessão #{team.id_sessao}</option>}{teams.items.map(row => <option key={row.id_equipe} value={row.id_equipe}>{row.nome} · sessão #{row.id_sessao}</option>)}</select></label><label className={styles.field}>Status<select className={styles.select} value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos</option>{statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label></div>
+      <div className={styles.toolbar}><label className={`${styles.field} ${styles.selector}`}>Equipe<select className={styles.select} value={teamId} onChange={event => { setTeamId(event.target.value); setEditing(null); setAssigning(null); setFormOpen(false); }} disabled={!teams.items.length && !team}>{team && !teams.items.some(row => row.id_equipe === teamId) && <option value={teamId}>{team.nome} · sessão #{team.id_sessao}</option>}{teams.items.map(row => <option key={row.id_equipe} value={row.id_equipe}>{row.nome} · sessão #{row.id_sessao}</option>)}</select></label><label className={styles.field}><span><input type="checkbox" checked={assignedOnly} onChange={event => setAssignedOnly(event.target.checked)} /> Atribuídos a mim</span></label><label className={styles.field}>Status<select className={styles.select} value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos</option>{statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label></div>
       <UnitListState list={teams} empty="Você ainda não tem equipes vinculadas. Aceite um convite na página Equipes para começar." />
       {teamId && <><UnitListState list={list} empty="Nenhum chamado encontrado nesta equipe." />{list.items.length > 0 && <ul className={styles.list}>{list.items.map(row => <li key={row.id_chamado}><div><strong>{row.titulo}</strong><small>#{row.id_chamado} · {label(row.prioridade)} · aberto em {dateTime(row.data_abertura)}</small>{row.descricao && <p className={styles.muted}>{row.descricao}</p>}</div><div className={styles.row}><span className={styles.badge}>{label(row.status)}</span>{team?.status === 'ATIVA' && <div className={styles.actionRow}>
         {canEdit(row) && <button type="button" className={styles.iconButton} title="Editar chamado" aria-label={`Editar chamado ${row.titulo}`} onClick={() => openForm(row)}><Pencil size={16} /></button>}

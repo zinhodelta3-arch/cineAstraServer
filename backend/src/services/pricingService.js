@@ -45,6 +45,7 @@ export function createPricingService({model,identity,simulated=false}){
         }
         const lines=[];let total=0n;
         for(const line of input.lines){
+            if(line.category==='PURCHASE')throw new ApiError('Novas compras de filmes estão desativadas; consulte o aluguel',409,null,'STREAMING_PURCHASE_DISABLED');
             const p=found(await model.parameter(line.category,c));
             const row=found(await model.product(line.category,line.id,c,lockCoupon));
             if(!available(line.category,row)||(line.category==='INPUT'&&actor.tipo_usuario!=='ADMIN'&&!row.venda_avulsa))throw conflict('Item indisponível');
@@ -110,7 +111,6 @@ export function createPricingService({model,identity,simulated=false}){
             await admin(c,context);
             const p=found(await model.parameter(category,c,true)),row=found(await model.product(category,id,c,true));
             if(!available(category,row))throw conflict('Item indisponível');
-            if(await model.referenced(category,id,c))throw conflict('Preço de item já vendido não pode ser republicado');
             const parts=category==='COMBO'?await model.comboParts(id,c):null;
             const monthly=basePrice(costFor(category,row,parts,p,'MONTHLY'),p.markup_bps);
             const annual=category==='PLAN'?basePrice(costFor(category,row,parts,p,'ANNUAL'),p.markup_bps):null;

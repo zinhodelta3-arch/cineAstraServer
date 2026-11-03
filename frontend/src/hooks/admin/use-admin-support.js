@@ -40,15 +40,15 @@ export function useAdminSupport() {
   useEffect(() => {
     const abort = new AbortController();
     const generation = ++queueGeneration.current;
-    setQueue((current) => ({ ...current, loading: true, error: null }));
-    request("", undefined, abort.signal).then((data) => {
+    setQueue({ ...emptyQueue, loading: true });
+    request(`?status=${status === 'Todos' ? 'ALL' : status}`, undefined, abort.signal).then((data) => {
       if (!Array.isArray(data.items)) throw new Error("A fila retornou dados inválidos.");
       if (!abort.signal.aborted && generation === queueGeneration.current) setQueue({ items: data.items, nextCursor: data.pagination?.nextCursor ?? null, loading: false, loadingMore: false, error: null });
     }).catch((cause) => {
       if (!abort.signal.aborted && generation === queueGeneration.current) setQueue((current) => ({ ...current, loading: false, loadingMore: false, error: cause.message }));
     });
     return () => abort.abort();
-  }, [queueRevision]);
+  }, [queueRevision, status]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -84,7 +84,7 @@ export function useAdminSupport() {
     const generation = queueGeneration.current;
     setQueue((current) => ({ ...current, loadingMore: true, error: null }));
     try {
-      const data = await request(`?cursor=${encodeURIComponent(cursor)}`);
+      const data = await request(`?cursor=${encodeURIComponent(cursor)}&status=${status === 'Todos' ? 'ALL' : status}`);
       if (!Array.isArray(data.items) || data.pagination?.nextCursor === cursor) throw new Error("Não foi possível carregar mais chamados.");
       if (generation === queueGeneration.current) setQueue((current) => ({ ...current, items: [...current.items, ...data.items], nextCursor: data.pagination?.nextCursor ?? null, loadingMore: false }));
     } catch (cause) {

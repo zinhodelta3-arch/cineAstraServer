@@ -27,6 +27,7 @@ export function createCatalogModel(database) {
             if (!admin || q.status) { where.push('f.status = ?'); args.push(admin ? q.status : 'ATIVO'); }
             if (q.titulo) { where.push("f.titulo LIKE ? ESCAPE '!'"); args.push(`%${q.titulo.replace(/[!%_]/g, v => `!${v}`)}%`); }
             if (q.classificacao) { where.push('f.classificacao = ?'); args.push(q.classificacao); }
+            if (q.upcoming !== undefined) where.push(q.upcoming ? 'f.data_lancamento > UTC_DATE()' : '(f.data_lancamento IS NULL OR f.data_lancamento <= UTC_DATE())');
             for (const [key, column] of [['cinema', 'disponivel_cinema'], ['streaming', 'disponivel_streaming']]) if (q[key] !== undefined) { where.push(`f.${column} = ?`); args.push(q[key]); }
             if (q.genreId) { where.push(`EXISTS (SELECT 1 FROM filme_generos fg JOIN generos g ON g.id_genero = fg.id_genero WHERE fg.id_filme = f.id_filme AND fg.id_genero = ?${admin ? '' : " AND g.status = 'ATIVO'"})`); args.push(q.genreId); }
             return rows(database, `SELECT ${selection(admin)} FROM filmes f WHERE ${where.join(' AND ')} ORDER BY f.id_filme LIMIT ${pageLimit(q.limit)}`, args);

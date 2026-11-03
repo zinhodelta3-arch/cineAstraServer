@@ -121,6 +121,20 @@ export function createProfileService({ identity, config, providers }) {
                 return userDto(await model.user(id, c));
             }, context);
         },
+        async adminPatch(id, input, context) {
+            return transaction(async c => {
+                await model.adminGuard(c);
+                for (const userId of [...new Set([id, context.actor.id])].sort((a, b) => BigInt(a) < BigInt(b) ? -1 : 1)) await model.user(userId, c, true);
+                if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
+                if (!await model.user(id, c, true)) throw ApiError.naoEncontrado();
+                const patch = {};
+                if (input.name !== undefined) patch.nome = input.name;
+                if (input.phone !== undefined) patch.telefone = input.phone;
+                await model.updateUser(c, id, patch);
+                await audit(c, 'IDENTITY.PROFILE_CHANGED_BY_ADMIN', id, context);
+                return userDto(await model.user(id, c));
+            }, context);
+        },
         async adminGet(id, context) {
             return transaction(async c => { if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); const u = await model.user(id, c); if (!u) throw ApiError.naoEncontrado(); return userDto(u); }, context);
         },

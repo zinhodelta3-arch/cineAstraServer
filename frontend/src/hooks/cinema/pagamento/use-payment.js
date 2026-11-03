@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { useSession } from "@/hooks/auth/use-session";
 import { cartOrder } from "@/lib/api/cart-order.mjs";
+import { operationKey } from "@/lib/api/operation-key.mjs";
 import { readSessionResponse } from "@/lib/auth/session-response.mjs";
 
 const EMPTY_DETAILS = { name: "", phone: "", email: "", street: "", number: "", complement: "", district: "", city: "", state: "", country: "BR", postalCode: "" };
@@ -30,11 +31,11 @@ function savedKey(name) {
   try {
     const existing = sessionStorage.getItem(name);
     if (existing) { transientKeys.set(name, existing); return existing; }
-    const created = crypto.randomUUID();
-    sessionStorage.setItem(name, created);
-    transientKeys.set(name, created);
-    return created;
-  } catch { const created = crypto.randomUUID(); transientKeys.set(name, created); return created; }
+  } catch { /* A chave em memória continua disponível se o armazenamento falhar. */ }
+  const created = operationKey();
+  transientKeys.set(name, created);
+  try { sessionStorage.setItem(name, created); } catch { /* Reutiliza a chave em memória. */ }
+  return created;
 }
 function clearSavedKey(name) { transientKeys.delete(name); try { sessionStorage.removeItem(name); } catch { /* Armazenamento opcional. */ } }
 
@@ -192,7 +193,8 @@ export default function usePayment(method = null) {
   }, [method, ready, offerHash, result?.paymentId]);
 
   const items = cart.items.map(item => {
-    const line = offer?.lines?.find(line => line.category === item.purchaseKind && line.id === item.sourceId);
+    const index = input?.lines.findIndex(line => line.kind === item.purchaseKind && line.id === item.sourceId && (line.kind !== 'SESSION' || line.seatId === item.seatId));
+    const line = index >= 0 ? offer?.lines?.[index] : null;
     return { ...item, price: line ? Number(line.unitPrice) : item.price };
   });
   const paid = ["PAGO", "FINALIZADO"].includes(result?.orderStatus);

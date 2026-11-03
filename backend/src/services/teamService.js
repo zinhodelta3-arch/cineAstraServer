@@ -4,7 +4,7 @@ import { idString } from '../utils/dto.js';
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'TEAM_CONFLICT');
 const activeSession = row => ['AGENDADA','EM_CARTAZ'].includes(row?.status ?? row?.sessao_status);
-export const teamDto = row => ({ id_equipe: idString(row.id_equipe), id_supervisor: idString(row.id_supervisor), id_sessao: idString(row.id_sessao), nome: row.nome, status: row.status });
+export const teamDto = row => ({ id_equipe: idString(row.id_equipe), id_supervisor: idString(row.id_supervisor), id_sessao: idString(row.id_sessao), nome: row.nome, status: row.status, ...(Object.hasOwn(row, 'minha_funcao') ? { myFunction: row.minha_funcao ?? null } : {}) });
 export const memberDto = row => ({ id_equipe_membro: idString(row.id_equipe_membro), id_equipe: idString(row.id_equipe), id_usuario: idString(row.id_usuario), funcao: row.funcao ?? null, data_entrada: row.data_entrada, status: row.status });
 export const entryDto = row => ({ id_entrada: idString(row.id_entrada), id_equipe: idString(row.id_equipe), id_usuario: idString(row.id_usuario), id_emissor: idString(row.id_emissor), tipo: row.tipo, funcao_proposta: row.funcao_proposta ?? null, status: row.status, criado_em: row.criado_em, decidido_em: row.decidido_em ?? null });
 export function createTeamService({ model, identity, notifications }) {

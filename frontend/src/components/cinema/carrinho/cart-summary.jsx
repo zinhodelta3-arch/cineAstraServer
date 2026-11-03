@@ -25,6 +25,6 @@ export default function CartSummary({ items, itemCount, total, quote, pending, e
     {issue && <p role="alert" className="mt-4 text-xs text-destructive">{issue}</p>}
     {error && <p role="alert" className="mt-4 text-xs text-destructive">{error}</p>}
     {session.loading ? <p role="status" className="mt-4 text-xs">Verificando sua conta…</p> : !session.user ? <Link className="mt-4 block text-xs text-primary underline" href="/auth/login">Entrar para consultar preço e estoque</Link> : session.user.role !== "CLIENTE" ? <p className="mt-4 text-xs">Use uma conta de cliente para consultar o pedido.</p> : <Button className="mt-4 w-full" onClick={calculate} disabled={pending || Boolean(issue)}>{pending ? "Consultando…" : quote ? "Atualizar cotação" : "Consultar preço e estoque"}</Button>}
-    {quote && <p role="status" className="mt-4 text-xs leading-5">{quote.guardianAuthorizationRequired ? "Esta compra precisa de autorização do responsável." : quote.finalizable ? "Cotação recebida. Os produtos ainda não estão reservados." : "A API não autorizou a finalização desta cotação."}</p>}
+    {quote && <p role="status" className="mt-4 text-xs leading-5">{quote.guardianAuthorizationRequired ? "Esta compra precisa de autorização do responsável." : quote.lines?.some(line => line.catalogOutOfSync) ? "O cinema precisa atualizar o preço de um dos itens." : quote.finalizable ? "Cotação recebida. Os produtos ainda não estão reservados." : "A API não autorizou a finalização desta cotação."}</p>}
   </ResumoCompra>;
 }

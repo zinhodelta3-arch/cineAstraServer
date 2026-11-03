@@ -4,6 +4,7 @@ import { validateBody } from '../validators/identityValidators.js';
 import { productParams, productQuery, productSchemas } from '../validators/productValidators.js';
 
 const productOps = ['inputs','equipment'].flatMap(type => [
+    { method: 'get', path: `/api/${type}/categories`, operationId: `list_${type}_categories`, action: 'categories', type },
     { method: 'get', path: `/api/${type}`, operationId: `list_${type}`, action: 'list', type },
     { method: 'post', path: `/api/${type}`, operationId: `create_${type}`, action: 'create', type },
     { method: 'get', path: `/api/${type}/{id}`, operationId: `get_${type}`, action: 'get', type },
@@ -23,6 +24,7 @@ export function productRoutes(controller, { auth }) {
         const middleware = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, r.admin ? allowRoles('ADMIN') : allowRoles('ADMIN','FORNECEDOR')];
         if (r.path.includes('{')) middleware.push(productParams);
         if (['list','grants','myGrants'].includes(r.action)) middleware.push(productQuery(r.type ? productSchemas[r.type].query : productSchemas.grantQuery));
+        if (r.action === 'categories') middleware.push(productQuery(productSchemas.categoriesQuery));
         if (['create','patch','grant'].includes(r.action)) middleware.push(validateBody(r.type ? productSchemas[r.type][r.action] : productSchemas.grant));
         router[r.method](r.path.replace(/\{(\w+)\}/g, ':$1'), ...middleware, (req, res) => controller[r.action](req, res, r.type));
     }

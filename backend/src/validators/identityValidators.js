@@ -28,6 +28,7 @@ export const schemas = {
     contact: strict({ tipo: z.enum(['TELEFONE', 'WHATSAPP', 'EMAIL_SECUNDARIO']), valor: z.string().trim().min(3).max(150), principal: z.boolean().default(false) }).refine(v => v.tipo === 'EMAIL_SECUNDARIO' ? z.email().safeParse(v.valor).success : /^\+?[\d ()-]{8,20}$/.test(v.valor)),
     preferences: nonEmpty(strict({ tema: z.enum(['CLARO', 'ESCURO', 'SISTEMA']).optional(), tamanho_fonte: z.enum(['PEQUENO', 'MEDIO', 'GRANDE', 'MUITO_GRANDE']).optional(), alto_contraste: z.boolean().optional(), modo_acessibilidade: z.boolean().optional(), idioma: z.literal('pt-BR').optional(), aparencia: z.enum(['cineastra', 'violet-bloom', 'mocha-mousse', 'catppucin']).optional() })),
     adminUser: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, role: z.enum(['FORNECEDOR', 'SUPERVISOR', 'COLABORADOR', 'ADMIN']) }),
+    adminProfile: nonEmpty(strict({ name: name.optional(), phone: z.string().regex(/^\+?[\d ()-]{8,20}$/).nullable().optional() })),
     accessChange: nonEmpty(strict({ role: z.enum(['CLIENTE', 'FORNECEDOR', 'SUPERVISOR', 'COLABORADOR', 'ADMIN']).optional(), status: z.enum(['ATIVO', 'INATIVO', 'BLOQUEADO']).optional() })),
     supervisorLocation: strict({ localId: z.string().regex(/^[1-9]\d{0,9}$/).refine(v => BigInt(v) <= 4294967295n).nullable() }),
     parental: nonEmpty(strict({ compras_permitidas: z.boolean().optional(), assinaturas_permitidas: z.boolean().optional(), limite_minutos_diarios: z.number().int().min(1).max(1440).optional() })),

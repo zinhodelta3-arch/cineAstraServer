@@ -1,4 +1,5 @@
 import 'server-only';
+import { commerceErrors } from '@/lib/api/commerce-errors.mjs';
 import { registrationErrorMessage } from './registration-errors.mjs';
 import { resolveApiBase } from '@/lib/api/api-base.mjs';
 import { cookies } from 'next/headers';
@@ -12,6 +13,7 @@ export async function backendAuth(path, { token, body, idempotencyKey, method = 
  catch { throw new AuthError(503, 'Não foi possível conectar ao serviço de autenticação.'); }
  const payload = response.status === 204 ? null : await response.json().catch(() => null);
  if (!response.ok) {
+  if (response.status >= 400 && response.status < 500 && Object.hasOwn(commerceErrors, payload?.code)) throw new AuthError(response.status, commerceErrors[payload.code], payload.code);
   if (/^\/streaming\/(?:films\/\d+|\d+)\/play$/.test(path) && response.status === 403 && ['STREAMING_ACCESS_REQUIRED', 'AGE_VERIFICATION_REQUIRED', 'AGE_RESTRICTION'].includes(payload?.code)) throw new AuthError(403, 'Reprodução não permitida.', payload.code);
   if (response.status === 422 && path === '/auth/register') throw new AuthError(422, registrationErrorMessage(payload));
   if (response.status === 404 && path.startsWith('/teams/collaborator?')) throw new AuthError(404, 'Colaborador ativo não encontrado com este e-mail.');

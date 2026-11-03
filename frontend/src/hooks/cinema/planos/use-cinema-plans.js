@@ -1,4 +1,5 @@
 "use client";
+import {operationKey} from '@/lib/api/operation-key.mjs';
 import {useEffect,useRef,useState} from 'react';
 import {Ticket} from 'lucide-react';
 import {usePublicList} from '@/hooks/cinema/home/use-public-list';
@@ -63,7 +64,7 @@ export default function useCinemaPlans(){
   try{
    let key=keys.current.get(storageKey);
    if(!key){try{key=sessionStorage.getItem(storageKey);}catch{/* Memory fallback. */}}
-   if(!key)key=crypto.randomUUID();
+   if(!key)key=operationKey();
    keys.current.set(storageKey,key);
    try{sessionStorage.setItem(storageKey,key);}catch{/* Memory fallback. */}
    const data=await request('subscribe',body,undefined,key);

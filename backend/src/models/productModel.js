@@ -9,6 +9,13 @@ export function createProductModel(database) {
     const rows = async (c, sql, params = []) => (await c.execute(sql, params))[0];
     const one = async (c, sql, params = []) => (await rows(c, sql, params))[0] ?? null;
     return {
+        categories(type, q, supplierId, c = database) {
+            const s = spec(type), where = ["categoria IS NOT NULL", "TRIM(categoria) <> ''"], args = [];
+            if (supplierId) { where.push('id_fornecedor=?'); args.push(supplierId); }
+            if (q.cursor) { where.push('categoria>?'); args.push(q.cursor); }
+            args.push(q.limit + 1);
+            return rows(c, `SELECT DISTINCT categoria FROM ${s.table} WHERE ${where.join(' AND ')} ORDER BY categoria LIMIT ?`, args);
+        },
         supplier: (id, c = database, lock = false) => one(c, `SELECT f.id_fornecedor,f.id_usuario,f.status,u.tipo_usuario,u.status AS usuario_status FROM fornecedores f JOIN usuarios u ON u.id_usuario = f.id_usuario WHERE f.id_fornecedor = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
         supplierByUser: (id, c = database) => one(c, 'SELECT f.id_fornecedor,f.id_usuario,f.status,u.tipo_usuario,u.status AS usuario_status FROM fornecedores f JOIN usuarios u ON u.id_usuario = f.id_usuario WHERE f.id_usuario = ?', [id]),
         local: (id, c = database, lock = false) => one(c, `SELECT id_local,status FROM locais WHERE id_local = ?${lock ? ' FOR UPDATE' : ''}`, [id]),

@@ -20,6 +20,8 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
             const previous=await model.checkoutByKey(c,actor.id_usuario,key);
             if(previous){if(previous.checkout_hash!==hash)throw conflict('Chave reutilizada com conteúdo diferente');return dto(previous);}
             const quote=await orders.quoteOnConnection(c,input,context);
+            if(quote.guardianAuthorizationRequired)throw new ApiError('Este pedido exige autorização vigente do responsável',403,null,'GUARDIAN_AUTHORIZATION_REQUIRED');
+            if(quote.lines.some(line=>line.catalogOutOfSync))throw new ApiError('O preço publicado precisa ser atualizado pelo cinema',409,null,'CATALOG_PRICE_OUT_OF_SYNC');
             if(!quote.finalizable)throw conflict('Cotação não finalizável; confira idade, meia e preço');
             if(quote.total==='0.00')throw conflict('Total deve ser positivo');
             const contract=contracts?await contracts.contract(c,input,quote):null;

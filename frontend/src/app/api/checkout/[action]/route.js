@@ -3,13 +3,14 @@ import { cookies } from 'next/headers';
 import { backendAuth, AuthError, SESSION_COOKIE } from '@/lib/auth/server';
 import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 import { validCartOrder } from '@/lib/api/cart-order.mjs';
+import { commerceErrors } from '@/lib/api/commerce-errors.mjs';
 import { randomUUID } from 'node:crypto';
 
 const json = (body, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const id = value => typeof value === 'string' && /^[1-9]\d{0,19}$/.test(value) && BigInt(value) <= 18446744073709551615n;
 const smallId = value => typeof value === 'string' && /^[1-9]\d{0,9}$/.test(value) && BigInt(value) <= 4294967295n;
 const key = value => typeof value === 'string' && /^[A-Za-z0-9._:-]{8,120}$/.test(value);
-const failure = error => json({ message: error.code === 'AGE_VERIFICATION_REQUIRED' ? 'Sua conta precisa de uma verificação de idade vigente para finalizar a compra.' : error.code === 'AGE_RESTRICTION' ? 'A classificação etária de um filme não permite esta compra.' : error instanceof AuthError ? error.message : 'Não foi possível processar a compra.' }, error instanceof AuthError ? error.status : 503);
+const failure = error => json({ code: error.code ?? null, message: commerceErrors[error.code] ?? (error.code === 'AGE_VERIFICATION_REQUIRED' ? 'Sua conta precisa de uma verificação de idade vigente para finalizar a compra.' : error.code === 'AGE_RESTRICTION' ? 'A classificação etária de um filme não permite esta compra.' : error instanceof AuthError ? error.message : 'Não foi possível processar a compra.') }, error instanceof AuthError ? error.status : 503);
 
 export async function GET(request, { params }) {
   const action = (await params).action;
@@ -54,7 +55,9 @@ export async function POST(request, { params }) {
     if (!validCartOrder(order)) return json({ message: 'Confira os itens do carrinho.' }, 422);
     if (action === 'quote') {
       if (acceptance !== undefined) return json({ message: 'Cotação inválida.' }, 422);
-      return json(await backendAuth('/orders/quote', { token, method: 'POST', body: order }));
+      const quote = await backendAuth('/orders/quote', { token, method: 'POST', body: order });
+      if (!Array.isArray(quote.lines) || quote.lines.length !== order.lines.length || quote.lines.some((line, index) => line.category !== order.lines[index].kind || line.id !== order.lines[index].id || line.quantity !== order.lines[index].quantity || line.unitPrice == null)) throw new AuthError(503, 'Cotação incompatível com os itens do pedido.');
+      return json(quote);
     }
     if (!acceptance || acceptance.accepted !== true || typeof acceptance.offerHash !== 'string' || !/^[a-f0-9]{64}$/.test(acceptance.offerHash)) return json({ message: 'Aceite da oferta obrigatório.' }, 422);
     const idempotencyKey = request.headers.get('Idempotency-Key');

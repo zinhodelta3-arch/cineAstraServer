@@ -16,6 +16,7 @@ const film = z.object({
 }).strict();
 const paging = { limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: catalogId.optional() };
 const query = z.object({ ...paging, titulo: z.string().trim().min(1).max(200).optional(), genreId: catalogId.optional(),
+    upcoming: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
     classificacao: z.enum(['L', '10', '12', '14', '16', '18']).optional(),
     cinema: z.enum(['true', 'false']).transform(v => v === 'true').optional(), streaming: z.enum(['true', 'false']).transform(v => v === 'true').optional()
 }).strict();

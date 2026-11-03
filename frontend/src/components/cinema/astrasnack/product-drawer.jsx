@@ -19,7 +19,7 @@ export default function ProductDrawer({snack:s}){
    {!s.session.user?<Link href="/auth/login" className="font-semibold text-primary underline">Entrar para cotar e adicionar ao carrinho</Link>:p.inStock!==false?<>
     {!s.currentQuote&&<p role="status">Consultando preço…</p>}
     {s.currentQuote?.error&&<div role="alert"><p>{s.currentQuote.error}</p><Button variant="outline" onClick={s.retry}>Tentar novamente</Button></div>}
-    {s.currentQuote&&!s.currentQuote.error&&<><p className="mb-2 flex justify-between">Subtotal cotado<strong>{s.productTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></p>{!s.currentQuote.finalizable&&<p role="status">O preço precisa ser atualizado pelo cinema antes da compra.</p>}</>}
+    {s.currentQuote&&!s.currentQuote.error&&<><p className="mb-2 flex justify-between">Subtotal cotado<strong>{s.productTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></p>{!s.currentQuote.finalizable&&<p role="status">{s.currentQuote.catalogOutOfSync ? 'O preço precisa ser atualizado pelo cinema antes da compra.' : 'Esta cotação ainda não permite a compra. Atualize o produto e tente novamente.'}</p>}</>}
     <Button className="mt-4 w-full" disabled={!s.canAdd} onClick={s.handleAddToCart}>Adicionar ao carrinho</Button><p className="mt-3 text-xs text-muted-foreground">Adicionar não reserva estoque. O checkout confirma os valores e a disponibilidade.</p>
    </>:null}
   </div></>}

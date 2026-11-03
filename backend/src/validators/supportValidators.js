@@ -9,3 +9,4 @@ export const supportMessage=body(z.object({message:text(10000),mode:z.enum(['ASY
 export const supportAssign=body(z.object({attendantId:id}).strict());
 export function supportId(req,res,next){if(!id.safeParse(req.params.id).success)throw ApiError.validacao('ID inválido');next();}
 export function supportPage(req,res,next){const result=z.object({limit:z.coerce.number().int().min(1).max(100).default(20),cursor:cursor.default('0')}).strict().safeParse(req.query);if(!result.success)throw ApiError.validacao('Paginação inválida');req.supportPage=result.data;next();}
+export function supportQueuePage(req,res,next){const result=z.object({limit:z.coerce.number().int().min(1).max(100).default(20),cursor:cursor.default('0'),status:z.enum(['ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO','ALL']).optional()}).strict().safeParse(req.query);if(!result.success)throw ApiError.validacao('Paginação ou status inválido');req.supportPage=result.data;next();}

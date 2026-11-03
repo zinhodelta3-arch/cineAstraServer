@@ -25,6 +25,13 @@ export function createProductService({ model, identity }) {
         catch (error) { if (error.code === 'ER_DUP_ENTRY') throw conflict('Patrimônio ou cadastro duplicado'); throw error; }
     }
     return {
+        async categories(type, q, context) {
+            return transaction(context, async (c, u) => {
+                const supplierId = u.tipo === 'FORNECEDOR' ? idString((await ownSupplier(c, u.id)).id_fornecedor) : null;
+                const rows = await model.categories(type, q, supplierId, c), items = rows.slice(0, q.limit);
+                return { items: items.map(row => ({ name: row.categoria })), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? items.at(-1).categoria : null } };
+            });
+        },
         async list(type, q, context) {
             const u = role(context);
             let supplierId = null;

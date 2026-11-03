@@ -20,7 +20,7 @@ function TicketList({ support }) {
     </header>
     <div className={styles.filters}>
       <label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Buscar chamado</span><input type="search" value={support.query} onChange={(event) => support.setQuery(event.target.value)} placeholder="Buscar chamado" /></label>
-      <label className={styles.statusFilter}><span className="sr-only">Filtrar status</span><select value={support.status} onChange={(event) => support.setStatus(event.target.value)}><option value="Todos">Todos</option><option value="ABERTO">Abertos</option><option value="EM_ATENDIMENTO">Em atendimento</option></select></label>
+      <label className={styles.statusFilter}><span className="sr-only">Filtrar status</span><select value={support.status} onChange={(event) => support.setStatus(event.target.value)}><option value="Todos">Todos</option><option value="ABERTO">Abertos</option><option value="EM_ATENDIMENTO">Em atendimento</option><option value="RESOLVIDO">Resolvidos</option><option value="FECHADO">Fechados</option></select></label>
     </div>
     <div className={styles.queueBody}>
       {support.queue.loading && !support.queue.items.length && <p className={styles.listState} role="status">Carregando chamados…</p>}

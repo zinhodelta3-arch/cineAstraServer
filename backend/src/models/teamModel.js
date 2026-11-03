@@ -26,7 +26,9 @@ export function createTeamModel(database) {
                 where.push("(EXISTS (SELECT 1 FROM equipe_membros m WHERE m.id_equipe = e.id_equipe AND m.id_usuario = ? AND m.status = 'ATIVO') OR EXISTS (SELECT 1 FROM equipe_entradas en WHERE en.id_equipe = e.id_equipe AND en.id_usuario = ? AND en.tipo = 'CONVITE' AND en.status = 'PENDENTE'))");
                 args.push(actor.id, actor.id);
             }
-            return rows(database, `SELECT ${teamFields} FROM equipes e JOIN sessoes s ON s.id_sessao = e.id_sessao JOIN salas sa ON sa.id_sala = s.id_sala WHERE ${where.join(' AND ')} ORDER BY e.id_equipe LIMIT ${q.limit + 1}`, args);
+            const ownFunction = actor.tipo === 'COLABORADOR' ? ", (SELECT m.funcao FROM equipe_membros m WHERE m.id_equipe=e.id_equipe AND m.id_usuario=? AND m.status='ATIVO' LIMIT 1) AS minha_funcao" : '';
+            if (ownFunction) args.unshift(actor.id);
+            return rows(database, `SELECT ${teamFields}${ownFunction} FROM equipes e JOIN sessoes s ON s.id_sessao = e.id_sessao JOIN salas sa ON sa.id_sala = s.id_sala WHERE ${where.join(' AND ')} ORDER BY e.id_equipe LIMIT ${q.limit + 1}`, args);
         },
         async create(c, data) { const [r] = await c.execute("INSERT INTO equipes (id_supervisor,id_sessao,nome,status) VALUES (?,?,?,'ATIVA')", [data.supervisorId, data.sessionId, data.nome]); return idString(r.insertId); },
         update(c, id, input) { const keys = Object.keys(input); if (!keys.length || keys.some(k => !['nome','status','id_supervisor'].includes(k))) throw new TypeError('Campos inválidos'); return c.execute(`UPDATE equipes SET ${keys.map(k => `${k} = ?`).join(',')} WHERE id_equipe = ?`, [...keys.map(k => input[k]), id]); },

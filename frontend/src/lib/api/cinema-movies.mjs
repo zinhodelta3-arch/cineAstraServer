@@ -3,9 +3,10 @@ export function cinemaMovie(film, today = new Date().toLocaleDateString('sv-SE',
  const releaseDate=film.data_lancamento?.slice(0,10)||null;
  return {id:String(film.id_filme),title:film.titulo,synopsis:film.descricao||'Sinopse ainda não informada.',poster:publicAsset(film.imagem),duration:film.duracao,age:film.classificacao,releaseDate,status:releaseDate&&releaseDate>today?'em-breve':'em-cartaz',genres:[],sessions:[],formats:[],director:film.diretor,trailer:safeLink(film.trailer)};
 }
-export function cinemaCatalogPath(query, genre) {
+export function cinemaCatalogPath(query, genre, section) {
  const params=new URLSearchParams({cinema:'true',limit:'20'});
  if(query.trim())params.set('titulo',query.trim());
  if(genre!=='Todos')params.set('genreId',genre);
+ if(section)params.set('upcoming',String(section==='em-breve'));
  return `/films?${params}`;
 }

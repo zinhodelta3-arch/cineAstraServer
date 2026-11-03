@@ -13,6 +13,6 @@ export async function POST(request){
   if(!body||!['INPUT','COMBO'].includes(body.kind)||typeof body.id!=='string'||! /^[1-9]\d{0,9}$/.test(body.id)||!Number.isInteger(body.quantity)||body.quantity<1||body.quantity>100)return json({message:'Confira o produto e a quantidade (1 a 100).'},422);
   const quote=await backendAuth('/pricing/quote',{token,method:'POST',body:{lines:[{category:body.kind,id:body.id,quantity:body.quantity}]}});
   const line=quote.lines?.[0];if(!line||line.id!==body.id||line.quantity!==body.quantity)throw new AuthError(503,'Cotação inválida.');
-  return json({unitPrice:line.unitPrice,total:quote.total,finalizable:quote.finalizable===true,quotedAt:quote.quotedAt});
+  return json({unitPrice:line.unitPrice,total:quote.total,finalizable:quote.finalizable===true,catalogOutOfSync:line.catalogOutOfSync===true,quotedAt:quote.quotedAt});
  }catch(e){return json({message:e instanceof AuthError?e.message:'Não foi possível cotar o produto.'},e instanceof AuthError?e.status:503);}
 }

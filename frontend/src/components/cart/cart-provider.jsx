@@ -12,7 +12,7 @@ export function CartProvider({ children }) {
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]")
-      if (Array.isArray(saved)) setItems(saved.filter((item) => item && item.id && Number(item.quantity) > 0))
+      if (Array.isArray(saved)) setItems(saved.filter((item) => item && item.id && Number.isFinite(Number(item.quantity)) && Number(item.quantity) > 0).map(item => ({ ...item, quantity: Number(item.quantity) })))
     } catch {
       // Mantém o carrinho vazio se o armazenamento estiver indisponível.
     } finally {
@@ -30,7 +30,7 @@ export function CartProvider({ children }) {
   }, [items, hydrated])
 
   const addItem = useCallback((product, quantity = 1) => {
-    const amount = Math.max(1, Number(quantity) || 1)
+    const amount = product.purchaseKind === 'SESSION' ? 1 : Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)))
     const item = {
       id: String(product.id),
       type: product.type || "snack",
@@ -43,17 +43,18 @@ export function CartProvider({ children }) {
       ...(product.sourceId && product.localId && ["INPUT", "COMBO", "SESSION"].includes(product.purchaseKind) ? {sourceId:String(product.sourceId),localId:String(product.localId),purchaseKind:product.purchaseKind,...(product.purchaseKind === "SESSION" && product.seatId ? {seatId:String(product.seatId)} : {})} : {}),
     }
     setItems((current) => {
-      const existing = current.find((entry) => entry.id === item.id && entry.type === item.type && entry.details === item.details)
-      if (existing) return current.map((entry) => entry === existing ? { ...entry, quantity: entry.quantity + amount } : entry)
+      const existing = current.find((entry) => item.purchaseKind === 'SESSION' ? entry.purchaseKind === 'SESSION' && entry.sourceId === item.sourceId && entry.seatId === item.seatId : entry.id === item.id && entry.type === item.type && entry.details === item.details)
+      if (existing) return current.map((entry) => entry === existing ? { ...entry, quantity: item.purchaseKind === 'SESSION' ? 1 : Math.min(100, entry.quantity + amount) } : entry)
       return [...current, { ...item, quantity: amount }]
     })
   }, [])
 
   const updateQuantity = useCallback((id, type, details, quantity) => {
     const amount = Number(quantity)
+    if (!Number.isFinite(amount)) return
     setItems((current) => amount <= 0
       ? current.filter((item) => !(item.id === id && item.type === type && item.details === details))
-      : current.map((item) => item.id === id && item.type === type && item.details === details ? { ...item, quantity: Math.max(1, Math.floor(amount)) } : item))
+      : current.map((item) => item.id === id && item.type === type && item.details === details ? { ...item, quantity: item.purchaseKind === 'SESSION' ? 1 : Math.min(100, Math.max(1, Math.floor(amount))) } : item))
   }, [])
 
   const removeItem = useCallback((id, type, details = "") => {

@@ -17,6 +17,8 @@ async function handle(request, { params }) {
     if (user?.role !== "ADMIN") return json({ message: "Acesso restrito à administração." }, 403);
     const parts = (await params).path ?? [];
     const cursor = new URL(request.url).searchParams.get("cursor") ?? "0";
+    const statusFilter = new URL(request.url).searchParams.get('status');
+    if (statusFilter && !['ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO','ALL'].includes(statusFilter)) return json({ message: 'Status inválido.' }, 422);
     if (!validCursor(cursor) || (parts.length && !validId(parts[0]))) return json({ message: "Chamado ou página inválida." }, 422);
 
     let body = {};
@@ -29,7 +31,7 @@ async function handle(request, { params }) {
 
     let target;
     if (request.method === "GET") {
-      if (!parts.length) target = `/admin/support?limit=50&cursor=${cursor}`;
+      if (!parts.length) target = `/admin/support?limit=50&cursor=${cursor}${statusFilter ? `&status=${statusFilter}` : ''}`;
       else if (parts.length === 1) target = `/support/${parts[0]}`;
       else if (parts.length === 2 && parts[1] === "messages") target = `/support/${parts[0]}/messages?limit=100&cursor=${cursor}`;
     } else if (parts.length === 2) {

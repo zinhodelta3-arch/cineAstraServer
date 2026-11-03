@@ -30,6 +30,7 @@ export function createStreamingService({model,identity,provider,selfDeclaredAge=
         return items.every(validItem);
     }
     async function ensureSellable(c,lines){
+        if(lines.some(line=>line.kind==='STREAMING'&&line.mode==='COMPRA'))throw new ApiError('Novas compras de filmes estão desativadas; consulte o aluguel',409,null,'STREAMING_PURCHASE_DISABLED');
         if(!lines.some(line=>line.kind==='STREAMING'))return;
         ready();
         for(const line of lines.filter(x=>x.kind==='STREAMING')){

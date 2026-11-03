@@ -10,7 +10,7 @@ import ListStatus from './list-status';
 import { useCinemaHome } from '@/hooks/cinema/home/use-cinema-home';
 import { filmCard } from '@/lib/api/public-api.mjs';
 export default function CinemaHome() {
- const { catalog, popular, movies, nowPlaying, comingSoon, bookingMovie, setBookingMovie } = useCinemaHome();
+ const { catalog, upcoming, popular, movies, nowPlaying, comingSoon, bookingMovie, setBookingMovie } = useCinemaHome();
  const featuredMovies = popular.items.map(filmCard);
  return <div className="ca-root min-h-screen bg-background text-foreground transition-colors duration-300">
   <CinemaStyles />
@@ -20,6 +20,7 @@ export default function CinemaHome() {
    {nowPlaying.length > 0 && <MovieCarousel id="em-cartaz" title="No catálogo" movies={nowPlaying} onSelectMovie={setBookingMovie} />}
    {comingSoon.length > 0 && <MovieCarousel id="em-breve" title="Em breve" movies={comingSoon} soon onSelectMovie={setBookingMovie} />}
    <div className="mx-auto max-w-[1600px] px-5 md:px-8"><ListStatus list={catalog} empty="Nenhum filme de cinema publicado no momento." more="Carregar mais filmes" /></div>
+   <div className="mx-auto max-w-[1600px] px-5 md:px-8" aria-label="Lançamentos futuros"><ListStatus list={upcoming} empty="Nenhum lançamento futuro cadastrado." more="Carregar mais lançamentos" /></div>
   </div>
   <SectionDivider />
   <div className="bg-background py-8"><MovieCarousel id="destaques" title="Destaques" movies={featuredMovies} onSelectMovie={setBookingMovie} /><div className="mx-auto max-w-[1600px] px-5 md:px-8"><ListStatus list={popular} empty="Nenhum filme assistido para destacar ainda." /></div></div>

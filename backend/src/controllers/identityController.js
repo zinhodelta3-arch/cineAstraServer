@@ -23,6 +23,7 @@ export function createIdentityController(identity, profile) {
         adminAccess: json((r, c) => profile.adminAccess(r.params.id, r.input, c)),
         adminSupervisorLocation: json((r, c) => profile.adminSupervisorLocation(r.params.id, r.method === 'GET' ? null : r.input, c)),
         adminGet: json((r, c) => profile.adminGet(r.params.id, c)),
+        adminPatch: json((r, c) => profile.adminPatch(r.params.id, r.input, c)),
         authorization: json((r, c) => profile.authorization(r.params.id, r.params.authorizationId, c)),
         privacyStatus: json((r, c) => profile.privacyStatus(r.params.id, c)),
         children: json((r,c)=>profile.children(r.childrenQuery,c)),

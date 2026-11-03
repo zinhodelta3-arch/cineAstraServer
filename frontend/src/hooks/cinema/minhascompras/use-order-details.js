@@ -1,4 +1,5 @@
 "use client";
+import {operationKey} from '@/lib/api/operation-key.mjs';
 import {useRef,useState} from 'react';
 import usePurchaseResource,{purchaseRequest} from './use-purchase-resource';
 import {purchaseSummary} from '@/lib/api/purchases.mjs';
@@ -19,7 +20,7 @@ export default function useOrderDetails(order,onChanged){
  const cancel=async()=>{
   if(lock.current)return;lock.current=true;setPending(true);setError('');
   try{
-   if(!cancelKey.current)cancelKey.current=crypto.randomUUID();
+   if(!cancelKey.current)cancelKey.current=operationKey();
    const data=await purchaseRequest(order.orderId+'/cancel',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':cancelKey.current},body:'{}'});
    if(data.status!=='CANCELADO')throw new Error('Confirmação de cancelamento indisponível.');
    setConfirm(false);setNotice('Pedido cancelado. Isso não confirma um estorno.');refresh();
