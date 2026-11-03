@@ -1,5 +1,6 @@
 import {createHash} from 'node:crypto';
 import {ApiError} from '../utils/ApiError.js';
+import {createAgePolicy} from './agePolicyService.js';
 import {idString} from '../utils/dto.js';
 import {cents} from './pricingMath.js';
 import {cycleEnd} from './subscriptionBillingMath.js';
@@ -11,7 +12,7 @@ const planDto=(row,benefits,admin=false)=>({id:idString(row.id_plano),name:row.n
 const subscriptionDto=(row,charge=null)=>({id:idString(row.id_assinatura),planId:idString(row.id_plano),period:row.periodicidade,divisionMode:row.tipo_divisao??'TITULAR_PAGA',status:row.status,autoRenew:Boolean(row.renovacao_automatica),startsOn:row.inicio,endsOn:row.fim,contractPrice:row.preco_contratado,contract:snapshot(row.contrato_snapshot),...(charge?{chargeId:idString(charge.id_cobranca),chargeStatus:charge.status,paymentPath:'/api/payments'}:{})});
 const page=(rows,limit,key,map)=>({items:rows.slice(0,limit).map(map),pagination:{limit,nextCursor:rows.length>limit?idString(rows[limit-1][key]):null}});
 const positivePrice=(price,cost)=>price!=null&&cost!=null&&cents(price)>0n&&cents(price)*8000n>=cents(cost)*10000n;
-export function createPlanService({model,identity,billing,contracts}){
+export function createPlanService({model,identity,billing,contracts,agePolicy=createAgePolicy()}){
     async function admin(c,context){const a=await identity.activeActor(c,context);if(a.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();return a;}
     async function client(c,context){const a=await identity.activeActor(c,context);if(a.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();return a;}
     async function view(c,row,isAdmin=false){return planDto(row,await model.benefits(c,row.id_plano),isAdmin);}
@@ -66,8 +67,7 @@ export function createPlanService({model,identity,billing,contracts}){
         await model.lockUser(c,user.id_usuario);
         const prior=await model.byKey(c,user.id_usuario,key);
         if(prior){if(prior.contratacao_hash!==hash)throw conflict('Chave de contratação reutilizada');const row=found(await model.subscription(c,prior.id_assinatura));return subscriptionDto(row,await model.firstCharge(c,row.id_assinatura));}
-        const age=await model.age(c,user.id_usuario);
-        if(!age||age.faixa_etaria==='ATE_16')throw ApiError.acessoNegado();
+        agePolicy.requireIndependent(user,await model.age(c,user.id_usuario));
         if(await model.activeForUser(c,user.id_usuario))throw conflict('Titular já possui assinatura ativa ou pendente');
         const plan=found(await model.plan(c,input.planId,true));
         if(!plan.ativo)throw conflict('Plano indisponível');

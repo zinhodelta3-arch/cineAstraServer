@@ -6,7 +6,15 @@ const found=row=>{if(!row)throw ApiError.naoEncontrado();return row;};
 const conflict=message=>new ApiError(message,409,null,'PRICING_CONFLICT');
 const fields={inputs:['custo_receita','custo_parceria'],sessions:['custo_local_dia','custo_exibicao'],films:['custo_streaming_dia','custo_streaming_compra'],combos:['custo_operacional'],plans:['custo_beneficios_mensal','custo_beneficios_anual','combo_gratis_mes']};
 const periodMoney=(value)=>{if(value==null)throw conflict('Custo não cadastrado');return cents(value);};
-export const publicPricingQuote=({couponId,...quote})=>({...quote,lines:quote.lines.map(({cost,belowCost,belowMargin,projectedBelowMargin,parameters,planId,...line})=>line)});
+export const publicPricingQuote=({couponId,...quote})=>({...quote,lines:quote.lines.map(({cost,suggestedPrice,belowCost,belowMargin,projectedBelowMargin,parameters,planId,...line})=>line)});
+const catalogPriced=category=>category==='INPUT'||category==='COMBO';
+function catalogBase(row,cost){
+    if(typeof row.published!=='string'||!/^(0|[1-9]\d{0,7})\.\d{2}$/.test(row.published))throw conflict('Preço cadastrado ausente ou inválido');
+    const price=cents(row.published);
+    if(price===0n)throw conflict('Preço cadastrado deve ser positivo');
+    if(price<cost)throw conflict('Preço cadastrado abaixo do custo; revise o preço ou os custos do produto');
+    return price;
+}
 const paramDto=r=>({category:r.categoria,markupBps:r.markup_bps,minMarginBps:r.margem_alerta_bps,discountCapBps:r.teto_desconto_bps,referenceOccupancy:r.ocupacao_referencia,halfProjectionBps:r.meia_projecao_bps,comboStepBps:r.combo_passo_bps,updatedAt:r.atualizado_em});
 const promoDto=r=>({id:idString(r.id_promocao),name:r.nome,category:r.categoria,discountBps:r.desconto_bps,publicGeneral:Boolean(r.publico_geral),startsAt:r.inicio,endsAt:r.fim,active:Boolean(r.ativo)});
 const couponDto=r=>({id:idString(r.id_cupom),code:r.codigo,discountPercent:r.desconto,expiresOn:r.validade,usageLimit:r.limite_uso,active:Boolean(r.ativo)});
@@ -53,7 +61,8 @@ export function createPricingService({model,identity,simulated=false}){
             if(parts?.some(x=>x.status!=='DISPONIVEL'))throw conflict('Componente indisponível');
             const publishedSessionFallback=simulated&&line.category==='SESSION'&&(row.custo_local_dia==null||row.custo_exibicao==null)&&row.published!=null;
             const cost=publishedSessionFallback?0n:costFor(line.category,row,parts,p,line.period);
-            const base=publishedSessionFallback?cents(String(row.published)):basePrice(cost,p.markup_bps);
+            const suggested=publishedSessionFallback?cents(String(row.published)):basePrice(cost,p.markup_bps);
+            const base=catalogPriced(line.category)?catalogBase(row,cost):suggested;
             const promotions=await model.activePromotions(line.category,c);
             const publicBps=promotions.filter(x=>x.publico_geral).reduce((n,x)=>n+x.desconto_bps,0);
             const privatePromoBps=promotions.filter(x=>!x.publico_geral).reduce((n,x)=>n+x.desconto_bps,0);
@@ -65,7 +74,9 @@ export function createPricingService({model,identity,simulated=false}){
             const subtotal=quoted.price*BigInt(line.quantity);total+=subtotal;
             const published=line.category==='PLAN'?(line.period==='ANNUAL'?row.valor_anual:row.valor_mensal):row.published;
             if(published==null)throw conflict('Preço público não configurado');
-            lines.push({category:line.category,id:idString(line.id),quantity:line.quantity,period:line.category==='PLAN'?line.period??'MONTHLY':null,cost:money(cost),base:money(base),publishedPrice:published??null,catalogOutOfSync:!publishedSessionFallback&&published!=null&&published!==money(base),publicPrice:line.category==='SESSION'?money(quoted.publicPrice):null,halfPrice:line.category==='SESSION'?money(quoted.halfPrice):null,benefit:line.category==='SESSION'?quoted.benefit:quoted.discountBps?'DESCONTO':'INTEIRA',unitPrice:money(quoted.price),subtotal:money(subtotal),discountBps:quoted.discountBps,discountCapped:quoted.discountCapped,belowCost:line.category==='SESSION'?quoted.belowCost:false,belowMargin:quoted.belowMargin,projectedBelowMargin:line.category==='SESSION'?quoted.projectedBelowMargin:false,referenceOccupancy:line.category==='SESSION'?Math.min(p.ocupacao_referencia,row.capacidade):null,halfEligibilityUnverified:line.category==='SESSION'&&Boolean(line.halfPreview)&&!trustedHalf,promotionIds:promotions.map(x=>idString(x.id_promocao)),planId:plan?idString(plan.id_plano):null,parameters:paramDto(p)});
+            // Sugestão administrativa; não altera a base cadastrada nem é exposta na cotação pública.
+            const suggestion=catalogPriced(line.category)?{suggestedPrice:money(suggested)}:{};
+            lines.push({...suggestion,category:line.category,id:idString(line.id),quantity:line.quantity,period:line.category==='PLAN'?line.period??'MONTHLY':null,cost:money(cost),base:money(base),publishedPrice:published??null,catalogOutOfSync:!publishedSessionFallback&&published!=null&&published!==money(base),publicPrice:line.category==='SESSION'?money(quoted.publicPrice):null,halfPrice:line.category==='SESSION'?money(quoted.halfPrice):null,benefit:line.category==='SESSION'?quoted.benefit:quoted.discountBps?'DESCONTO':'INTEIRA',unitPrice:money(quoted.price),subtotal:money(subtotal),discountBps:quoted.discountBps,discountCapped:quoted.discountCapped,belowCost:line.category==='SESSION'?quoted.belowCost:false,belowMargin:quoted.belowMargin,projectedBelowMargin:line.category==='SESSION'?quoted.projectedBelowMargin:false,referenceOccupancy:line.category==='SESSION'?Math.min(p.ocupacao_referencia,row.capacidade):null,halfEligibilityUnverified:line.category==='SESSION'&&Boolean(line.halfPreview)&&!trustedHalf,promotionIds:promotions.map(x=>idString(x.id_promocao)),planId:plan?idString(plan.id_plano):null,parameters:paramDto(p)});
         }
         return {lines,total:money(total),couponId:coupon?idString(coupon.id_cupom):null,couponCode:coupon?.codigo??null,couponDiscountBps:couponBps,finalizable:!lines.some(x=>x.halfEligibilityUnverified||x.catalogOutOfSync),quotedAt:new Date().toISOString()};
     }
@@ -112,11 +123,14 @@ export function createPricingService({model,identity,simulated=false}){
             const p=found(await model.parameter(category,c,true)),row=found(await model.product(category,id,c,true));
             if(!available(category,row))throw conflict('Item indisponível');
             const parts=category==='COMBO'?await model.comboParts(id,c):null;
-            const monthly=basePrice(costFor(category,row,parts,p,'MONTHLY'),p.markup_bps);
+            if(catalogPriced(category)&&parts?.some(part=>part.status!=='DISPONIVEL'))throw conflict('Componente indisponível');
+            const cost=costFor(category,row,parts,p,'MONTHLY');
+            const suggested=basePrice(cost,p.markup_bps);
+            const monthly=catalogPriced(category)?catalogBase(row,cost):suggested;
             const annual=category==='PLAN'?basePrice(costFor(category,row,parts,p,'ANNUAL'),p.markup_bps):null;
-            await model.publishPrice(c,category,id,money(monthly),annual===null?null:money(annual));
-            await identity.audit(c,'PRICING.PUBLISHED',id,context);
-            return {category,id:idString(id),price:money(monthly),annualPrice:annual===null?null:money(annual)};
+            if(!catalogPriced(category))await model.publishPrice(c,category,id,money(monthly),annual===null?null:money(annual));
+            await identity.audit(c,catalogPriced(category)?'PRICING.CATALOG_PRICE_CONFIRMED':'PRICING.PUBLISHED',id,context);
+            return {category,id:idString(id),price:money(monthly),annualPrice:annual===null?null:money(annual),...(catalogPriced(category)?{priceSource:'CATALOG',suggestedPrice:money(suggested)}:{})};
         });},
         async promotions(context){return tx(context,async c=>{await admin(c,context);return (await model.promotions(c)).map(promoDto);});},
         async createPromotion(input,context){return tx(context,async c=>{await admin(c,context);const id=await model.createPromotion(c,input);await identity.audit(c,'PRICING.PROMOTION_CREATED',id,context);return promoDto(found(await model.promotion(id,c)));});},

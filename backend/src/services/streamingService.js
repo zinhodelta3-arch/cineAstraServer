@@ -2,9 +2,9 @@ import {ApiError} from '../utils/ApiError.js';
 import {idString} from '../utils/dto.js';
 import {instant} from './identityService.js';
 import {youtubeTrailerId} from '../utils/youtubeTrailer.js';
+import {ageOn,createAgePolicy} from './agePolicyService.js';
 
 const ageLimit={L:0,'10':10,'12':12,'14':14,'16':16,'18':18};
-const ageOn=(birth,on)=>{if(!birth)return -1;const b=String(birth).slice(0,10),d=String(on).slice(0,10);return Number(d.slice(0,4))-Number(b.slice(0,4))-(d.slice(5)<b.slice(5)?1:0);};
 const conflict=message=>new ApiError(message,409,null,'STREAMING_CONFLICT');
 const date=value=>value?new Date(instant(value)).toISOString():null;
 const available=(row,now)=>['PAGO','FINALIZADO'].includes(row.pedido_status)&&row.status==='ATIVO'&&instant(row.data_inicio)<=now&&(!row.data_expiracao||instant(row.data_expiracao)>now);
@@ -17,12 +17,11 @@ function trailerPlayback(value){
     const videoId=youtubeTrailerId(value);
     return videoId?{kind:'youtube',url:`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`,expiresAt:new Date(Date.now()+60000).toISOString()}:null;
 }
-export function createStreamingService({model,identity,provider,selfDeclaredAge=false}){
+export function createStreamingService({model,identity,provider,selfDeclaredAge=false,agePolicy=createAgePolicy({allowSelfDeclaredAge:selfDeclaredAge})}){
     async function actor(c,context){const a=await identity.activeActor(c,context);if(a.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();return a;}
     async function checkAge(c,user,classification){
         const age=ageOn(user.data_nascimento,new Date().toISOString().slice(0,10));
-        const proof=await model.age(c,user.id_usuario) ?? (selfDeclaredAge&&age>=0?{faixa_etaria:age>16?'MAIOR_16':'ATE_16'}:null);
-        if(!proof)throw new ApiError('Confira a verificação de idade da sua conta.',403,null,'AGE_VERIFICATION_REQUIRED');
+        const proof=agePolicy.resolve(user,await model.age(c,user.id_usuario));
         if(proof.faixa_etaria==='ATE_16'||age<(ageLimit[classification]??Infinity))throw new ApiError('Sua conta não atende à classificação etária deste filme.',403,null,'AGE_RESTRICTION');
     }
     async function canGrant(c,orderId){

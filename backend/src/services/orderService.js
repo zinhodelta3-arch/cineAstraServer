@@ -3,20 +3,19 @@ import {idString} from '../utils/dto.js';
 import {instant} from './identityService.js';
 import {interval} from './sessionService.js';
 import {operationalOrder} from './orderOperationalStatus.js';
+import {ageOn,createAgePolicy} from './agePolicyService.js';
 
 const found=row=>{if(!row)throw ApiError.naoEncontrado();return row;};
 const conflict=message=>new ApiError(message,409,null,'ORDER_CONFLICT');
-const ageOn=(birth,on)=>{if(!birth)return -1;const b=String(birth).slice(0,10),d=String(on).slice(0,10);return Number(d.slice(0,4))-Number(b.slice(0,4))-(d.slice(5)<b.slice(5)?1:0);};
 const ageLimit={L:0,'10':10,'12':12,'14':14,'16':16,'18':18};
 const category=line=>line.kind==='STREAMING'?(line.mode==='COMPRA'?'PURCHASE':'RENTAL'):line.kind;
 export const pricingInput=input=>({couponCode:input.couponCode,lines:input.lines.map(line=>({category:category(line),id:line.id,quantity:line.quantity,...(line.halfPreview?{halfPreview:true}:{})}))});
 
-export function createOrderService({model,identity,pricing,selfDeclaredAge=false}){
+export function createOrderService({model,identity,pricing,selfDeclaredAge=false,agePolicy=createAgePolicy({allowSelfDeclaredAge:selfDeclaredAge})}){
     async function quoteOnConnection(c,input,context){
         const user=await identity.activeActor(c,context);
         if(user.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
-        const proof=await model.age(c,user.id_usuario) ?? (selfDeclaredAge&&ageOn(user.data_nascimento,new Date().toISOString().slice(0,10))>=0?{faixa_etaria:ageOn(user.data_nascimento,new Date().toISOString().slice(0,10))>16?'MAIOR_16':'ATE_16'}:null);
-        if(!proof)throw new ApiError('Verificação de idade vigente necessária para cotar este pedido',403,null,'AGE_VERIFICATION_REQUIRED');
+        const proof=agePolicy.resolve(user,await model.age(c,user.id_usuario));
         const seen=new Set(),stock=new Map();
         const addStock=(id,count)=>stock.set(id,(stock.get(id)??0n)+BigInt(count));
         for(const line of input.lines){

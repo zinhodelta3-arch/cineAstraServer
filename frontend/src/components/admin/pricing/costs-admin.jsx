@@ -31,6 +31,7 @@ const itemName = (kind, item) => {
 
 export default function CostsAdmin() {
   const [kind, setKind] = useState('plans');
+  const catalogPrice = kind === 'inputs' || kind === 'combos';
   const [id, setId] = useState('');
   const [query, setQuery] = useState('');
   const [resource, setResource] = useState(null);
@@ -93,7 +94,7 @@ export default function CostsAdmin() {
   async function publish() {
     if (!resource || lock.current) return;
     lock.current = true; setPending(true); setError('');
-    try { const result = await pricingRequest(`publish/${category}/${id}`, { method: 'POST' }); setPublished(result); setNotice('Preço publicado.'); setConfirm(false); }
+    try { const result = await pricingRequest(`publish/${category}/${id}`, { method: 'POST' }); setPublished(result); setNotice(result.priceSource === 'CATALOG' ? 'Preço cadastrado validado e mantido.' : 'Preço publicado.'); setConfirm(false); }
     catch (cause) { setError(cause.message); }
     finally { lock.current = false; setPending(false); }
   }
@@ -118,12 +119,12 @@ export default function CostsAdmin() {
       {items.nextCursor && <button type="button" className={styles.secondary} onClick={items.loadMore} disabled={items.loadingMore || pending}>{items.loadingMore ? 'Carregando…' : 'Carregar mais itens'}</button>}
     </section>
     {error && !resource && <p className={styles.error} role="alert">{error}</p>}
-    {resource && <section className={styles.panel} aria-labelledby="costs-title"><header className={styles.panelHeader}><div><h2 id="costs-title">{labels[kind]} #{id}</h2><p>Salve os custos antes de publicar um novo preço.</p></div></header>
+    {resource && <section className={styles.panel} aria-labelledby="costs-title"><header className={styles.panelHeader}><div><h2 id="costs-title">{labels[kind]} #{id}</h2><p>{catalogPrice ? 'O preço de venda é definido no cadastro do produto. Custos e markup orientam a sugestão de preço.' : 'Salve os custos antes de publicar um novo preço.'}</p></div></header>
       <form className={`${styles.form} ${styles.pricingForm}`} onSubmit={save}>{fields[kind].map(field => <label key={field.key}>{field.label}{field.count ? <input name={field.key} type="number" min="0" max="1" defaultValue={resource[field.key] ?? 0} required /> : <input name={field.key} inputMode="decimal" defaultValue={resource[field.key] ?? ''} placeholder={kind === 'films' ? 'Opcional' : '0.00'} required={kind !== 'films'} />}</label>)}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Salvando…' : 'Salvar custos'}</button></div></form>
-      <div className={styles.pricingPublish}><label>Categoria do preço<select value={category} onChange={event => setCategory(event.target.value)}>{categoriesByKind[kind].map(value => <option key={value} value={value}>{categories[value]}</option>)}</select></label><button type="button" className={styles.secondary} onClick={() => { setConfirm(true); setError(''); }} disabled={pending}><Send size={16} aria-hidden="true" />Publicar preço</button></div>
-      {published && <p className={styles.notice} role="status">{categories[published.category]}: {money(published.price)}{published.annualPrice != null ? ` · Anual: ${money(published.annualPrice)}` : ''}</p>}
+      <div className={styles.pricingPublish}><label>Categoria do preço<select value={category} onChange={event => setCategory(event.target.value)}>{categoriesByKind[kind].map(value => <option key={value} value={value}>{categories[value]}</option>)}</select></label><button type="button" className={styles.secondary} onClick={() => { setConfirm(true); setError(''); }} disabled={pending}><Send size={16} aria-hidden="true" />{catalogPrice ? 'Validar preço cadastrado' : 'Publicar preço'}</button></div>
+      {published && <p className={styles.notice} role="status">{categories[published.category]}: {money(published.price)}{published.suggestedPrice != null && <> · Sugestão por custos e markup: {money(published.suggestedPrice)}</>}{published.annualPrice != null ? ` · Anual: ${money(published.annualPrice)}` : ''}</p>}
       {error && <p className={styles.error} role="alert">{error}</p>}
     </section>}
-    <Dialog open={confirm} onOpenChange={value => { if (!value && !lock.current) setConfirm(false); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>Publicar preço</DialogTitle><DialogDescription className={styles.dialogDescription}>O preço de {categories[category]?.toLocaleLowerCase('pt-BR')} para {labels[kind]?.toLocaleLowerCase('pt-BR')} #{id} será calculado com os custos e parâmetros atuais.</DialogDescription><div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={() => setConfirm(false)} disabled={pending}>Cancelar</button><button type="button" className={styles.primary} onClick={publish} disabled={pending}>{pending ? 'Publicando…' : 'Confirmar publicação'}</button></div>{error && <p className={styles.error} role="alert">{error}</p>}</DialogContent></Dialog>
+    <Dialog open={confirm} onOpenChange={value => { if (!value && !lock.current) setConfirm(false); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{catalogPrice ? 'Validar preço cadastrado' : 'Publicar preço'}</DialogTitle><DialogDescription className={styles.dialogDescription}>{catalogPrice ? 'O preço cadastrado será validado contra os custos e mantido. A sugestão por markup não substituirá o valor de venda.' : <>O preço de {categories[category]?.toLocaleLowerCase('pt-BR')} para {labels[kind]?.toLocaleLowerCase('pt-BR')} #{id} será calculado com os custos e parâmetros atuais.</>}</DialogDescription><div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={() => setConfirm(false)} disabled={pending}>Cancelar</button><button type="button" className={styles.primary} onClick={publish} disabled={pending}>{pending ? 'Processando…' : catalogPrice ? 'Confirmar validação' : 'Confirmar publicação'}</button></div>{error && <p className={styles.error} role="alert">{error}</p>}</DialogContent></Dialog>
   </PricingLayout>;
 }

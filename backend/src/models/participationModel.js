@@ -4,7 +4,7 @@ const rows=async(c,sql,args=[])=> (await c.execute(sql,args))[0];
 const one=async(c,sql,args=[])=> (await rows(c,sql,args))[0]??null;
 export function createParticipationModel(){return {
   subscription:(c,id,lock=false)=>one(c,`SELECT id_assinatura,id_usuario,status,periodicidade,tipo_divisao,tipo_divisao_proximo,tipo_divisao_efetiva_em,preco_contratado,limite_membros_contratado,inicio,fim FROM assinaturas WHERE id_assinatura=?${lock?' FOR UPDATE':''}`,[id]),
-  user:(c,id)=>one(c,"SELECT u.id_usuario,u.status,u.tipo_usuario,v.faixa_etaria FROM usuarios u LEFT JOIN verificacoes_idade v ON v.id_verificacao=(SELECT MAX(x.id_verificacao) FROM verificacoes_idade x WHERE x.id_usuario=u.id_usuario AND x.expiracao>UTC_TIMESTAMP(3)) WHERE u.id_usuario=?",[id]),
+  user:(c,id)=>one(c,"SELECT u.id_usuario,u.status,u.tipo_usuario,u.data_nascimento,v.faixa_etaria FROM usuarios u LEFT JOIN verificacoes_idade v ON v.id_verificacao=(SELECT MAX(x.id_verificacao) FROM verificacoes_idade x WHERE x.id_usuario=u.id_usuario AND x.expiracao>UTC_TIMESTAMP(3)) WHERE u.id_usuario=?",[id]),
   participants:(c,id)=>rows(c,'SELECT id_usuario,status,entrada_em,saida_em,atualizado_em FROM assinatura_participantes WHERE id_assinatura=? ORDER BY id_usuario',[id]),
   participant:(c,id,userId)=>one(c,'SELECT id_usuario,status FROM assinatura_participantes WHERE id_assinatura=? AND id_usuario=?',[id,userId]),
   activeCount:(c,id)=>one(c,"SELECT COUNT(*) AS total FROM assinatura_participantes WHERE id_assinatura=? AND status IN ('ATIVO','SUSPENSO')",[id]),

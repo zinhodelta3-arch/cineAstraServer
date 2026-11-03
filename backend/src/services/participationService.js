@@ -1,4 +1,5 @@
 import {ApiError} from '../utils/ApiError.js';
+import {createAgePolicy} from './agePolicyService.js';
 import {idString} from '../utils/dto.js';
 import {cents,money} from './pricingMath.js';
 import {chargeTotal} from './subscriptionBillingMath.js';
@@ -25,7 +26,7 @@ export function divideCents(total,users,mode,ownerId){
   const base=total/BigInt(unique.length),remainder=total%BigInt(unique.length);
   return unique.map((userId,index)=>({userId,amount:money(base+(BigInt(index)<remainder?1n:0n))}));
 }
-export function createParticipationService({model,identity,notifications}){
+export function createParticipationService({model,identity,notifications,agePolicy=createAgePolicy()}){
   const tx=(ctx,fn)=>identity.transaction(fn,ctx);
   async function actor(c,ctx){const a=await identity.activeActor(c,ctx);if(a.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();return a;}
   async function owner(c,id,ctx){const a=await actor(c,ctx),s=found(await model.subscription(c,id,true));if(!same(s.id_usuario,a.id_usuario))throw ApiError.naoEncontrado();return {a,s};}
@@ -40,7 +41,8 @@ export function createParticipationService({model,identity,notifications}){
     const {a,s}=await owner(c,id,ctx);
     if(s.status!=='ATIVA'||same(userId,a.id_usuario))throw conflict('Assinatura ou destinatário inelegível');
     const target=found(await model.user(c,userId));
-    if(target.tipo_usuario!=='CLIENTE'||target.status!=='ATIVO'||!target.faixa_etaria||target.faixa_etaria==='ATE_16')throw ApiError.acessoNegado();
+    if(target.tipo_usuario!=='CLIENTE'||target.status!=='ATIVO')throw ApiError.acessoNegado();
+    agePolicy.requireIndependent(target,target.faixa_etaria?{faixa_etaria:target.faixa_etaria}:null);
     const count=Number((await model.activeCount(c,id)).total)+Number((await model.pendingCount(c,id)).total)+1;
     if(count>=Number(s.limite_membros_contratado))throw conflict('Limite do plano atingido');
     const member=await model.participant(c,id,userId);
@@ -64,7 +66,8 @@ export function createParticipationService({model,identity,notifications}){
       const count=Number((await model.activeCount(c,s.id_assinatura)).total)+1;
       if(count>=Number(s.limite_membros_contratado))throw conflict('Limite do plano atingido');
       const target=found(await model.user(c,a.id_usuario));
-      if(target.status!=='ATIVO'||!target.faixa_etaria||target.faixa_etaria==='ATE_16')throw ApiError.acessoNegado();
+      if(target.status!=='ATIVO')throw ApiError.acessoNegado();
+      agePolicy.requireIndependent(target,target.faixa_etaria?{faixa_etaria:target.faixa_etaria}:null);
       await model.upsertParticipant(c,s.id_assinatura,a.id_usuario);
       await model.event(c,s.id_assinatura,a.id_usuario,a.id_usuario,'ENTROU');
     }
