@@ -104,6 +104,10 @@ import { createComboModel } from './models/comboModel.js';
 import { createComboService } from './services/comboService.js';
 import { createComboController } from './controllers/comboController.js';
 import { comboRoutes } from './routes/comboRoutes.js';
+import { createSupplierTransportModel } from './models/supplierTransportModel.js';
+import { createSupplierTransportService } from './services/supplierTransportService.js';
+import { createSupplierTransportController } from './controllers/supplierTransportController.js';
+import { supplierTransportRoutes } from './routes/supplierTransportRoutes.js';
 import { createInventoryModel } from './models/inventoryModel.js';
 import { createInventoryService } from './services/inventoryService.js';
 import { createInventoryController } from './controllers/inventoryController.js';
@@ -295,6 +299,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
         }
     })), dependencies));
     app.use(comboRoutes(createComboController(createComboService({ model: createComboModel(database), identity })), dependencies));
+    app.use(supplierTransportRoutes(createSupplierTransportController(createSupplierTransportService({ model: createSupplierTransportModel(), identity })), dependencies));
     app.use(inventoryRoutes(createInventoryController(inventory), dependencies));
     app.use(supplyRoutes(createSupplyController(createSupplyService({ model: createSupplyModel(database), identity })), dependencies));
     app.use(pricingRoutes(createPricingController(pricing), dependencies));

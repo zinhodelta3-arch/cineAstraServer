@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { unitReadLocation } from './unitReadScope.js';
 import { idString, moneyString } from '../utils/dto.js';
 
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
@@ -42,17 +43,18 @@ export function createComboService({ model, identity }) {
             return {items:page.map(row=>({id_combo:idString(row.id_combo),id_local:row.id_local==null?null:idString(row.id_local),nome:row.nome,descricao:row.descricao??null,preco:moneyString(row.preco),ativo:Boolean(row.ativo),data_cadastro:row.data_cadastro??null,itemCount:Number(row.item_count)})),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(page.at(-1).id_combo):null}};
         }); },
         async adminGet(id, context) { return transact(context,c=>detail(id,c)); },
-        async unitList(q, context) { return transact(context, async c => {
-            const localId = await unitLocation(c, context);
+        async unitList(q, context) { return identity.transaction(async c => {
+            const localId = await unitReadLocation(c, await identity.activeActor(c, context), q.localId);
             if (q.localId && idString(q.localId) !== localId) throw ApiError.acessoNegado();
             const rows = await model.adminList(c, { ...q, localId }), page = rows.slice(0, q.limit);
             return { items: page.map(row => ({ id_combo: idString(row.id_combo), id_local: idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, preco: moneyString(row.preco), ativo: Boolean(row.ativo), itemCount: Number(row.item_count) })), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(page.at(-1).id_combo) : null } };
-        }, true); },
-        async unitGet(id, context) { return transact(context, async c => {
+        }, context); },
+        async unitGet(id, context) { return identity.transaction(async c => {
             const row = found(await model.combo(id, c));
-            await unitScope(c, context, row.id_local);
+            if(row.id_local==null)throw ApiError.acessoNegado();
+            await unitReadLocation(c, await identity.activeActor(c, context), row.id_local);
             return detail(id, c);
-        }, true); },
+        }, context); },
         async create(input, context, unitAccess = false) {
             return transact(context, async c => {
                 if (unitAccess) await unitScope(c, context, input.localId);

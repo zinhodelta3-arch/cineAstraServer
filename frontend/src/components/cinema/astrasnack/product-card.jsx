@@ -1,6 +1,7 @@
 "use client";
 
 import { Popcorn } from "lucide-react";
+import ProductPrice from './product-price';
 
 export default function ProductCard({ product, onOpen }) {
   return (
@@ -29,8 +30,12 @@ export default function ProductCard({ product, onOpen }) {
         </div>
         <h3 className="font-bold">{product.name}</h3>
         <p className="line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
-        <div className="flex items-center justify-between pt-2">
-          <span className="font-black">R$ {Number(product.price).toFixed(2).replace(".", ",")}</span>
+        <div className="flex flex-wrap items-end justify-between gap-2 pt-2">
+          {product.inStock===false?<span className="text-sm text-muted-foreground">Indisponível</span>:product.requiresQuote?(
+            product.pricing?.error?<span className="text-xs text-muted-foreground">Não foi possível cotar. Abra os detalhes para tentar novamente.</span>:
+            product.pricing?<ProductPrice price={product.pricing.unitPrice} originalPrice={product.pricing.originalPrice} discountSources={product.pricing.discountSources} note="Preço para sua conta, sem cupom"/>:
+            <span role="status" className="text-xs text-muted-foreground">Consultando preço…</span>
+          ):<ProductPrice price={product.price} note="Preço de catálogo. Entre para consultar descontos."/>}
           <span className="text-xs font-semibold text-primary">Ver detalhes →</span>
         </div>
       </div>

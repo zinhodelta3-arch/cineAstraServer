@@ -18332,7 +18332,7 @@
           "Estoque"
         ],
         "summary": "get input balance",
-        "description": "ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público.",
+        "description": "ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público. Supervisor consulta a própria unidade; colaborador consulta somente unidades vinculadas à sua equipe, sem permissão para movimentos manuais.",
         "security": [
           {
             "bearerAuth": []
@@ -18421,7 +18421,7 @@
           "Estoque"
         ],
         "summary": "get equipment balance",
-        "description": "ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público.",
+        "description": "ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público. Supervisor consulta a própria unidade; colaborador consulta somente unidades vinculadas à sua equipe, sem permissão para movimentos manuais.",
         "security": [
           {
             "bearerAuth": []
@@ -18510,7 +18510,7 @@
           "Estoque"
         ],
         "summary": "list inventory movements",
-        "description": "ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público.",
+        "description": "ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público. Supervisor consulta a própria unidade; colaborador consulta somente unidades vinculadas à sua equipe, sem permissão para movimentos manuais.",
         "security": [
           {
             "bearerAuth": []
@@ -18783,7 +18783,7 @@
           "Estoque"
         ],
         "summary": "list inventory alerts",
-        "description": "ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público.",
+        "description": "ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público. Supervisor consulta a própria unidade; colaborador consulta somente unidades vinculadas à sua equipe, sem permissão para movimentos manuais.",
         "security": [
           {
             "bearerAuth": []
@@ -20861,13 +20861,32 @@
           "Precificação"
         ],
         "summary": "list pricing promotions",
-        "description": "ADMIN autenticado com 2FA. Alterações de custos e benefícios não alteram pedidos já cotados.",
+        "description": "ADMIN autenticado com 2FA. Alterações de custos e benefícios não alteram pedidos já cotados. Sem parâmetros retorna a lista legada (até 100 registros); com limit ou cursor retorna items e pagination.",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Sucesso",
@@ -20884,10 +20903,50 @@
                       ]
                     },
                     "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PricingPromotion"
-                      }
+                      "oneOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PricingPromotion"
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "items",
+                            "pagination"
+                          ],
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/PricingPromotion"
+                              }
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "limit",
+                                "nextCursor"
+                              ],
+                              "properties": {
+                                "limit": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100
+                                },
+                                "nextCursor": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,9}$",
+                                  "nullable": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
                     },
                     "requestId": {
                       "type": "string",
@@ -21473,13 +21532,32 @@
           "Precificação"
         ],
         "summary": "list pricing coupons",
-        "description": "ADMIN autenticado com 2FA. Alterações de custos e benefícios não alteram pedidos já cotados.",
+        "description": "ADMIN autenticado com 2FA. Alterações de custos e benefícios não alteram pedidos já cotados. Sem parâmetros retorna a lista legada (até 100 registros); com limit ou cursor retorna items e pagination.",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Sucesso",
@@ -21496,10 +21574,50 @@
                       ]
                     },
                     "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PricingCoupon"
-                      }
+                      "oneOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PricingCoupon"
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "items",
+                            "pagination"
+                          ],
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/PricingCoupon"
+                              }
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "limit",
+                                "nextCursor"
+                              ],
+                              "properties": {
+                                "limit": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100
+                                },
+                                "nextCursor": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,9}$",
+                                  "nullable": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
                     },
                     "requestId": {
                       "type": "string",
@@ -39747,6 +39865,515 @@
           }
         }
       }
+    },
+    "/api/suppliers/me/transports": {
+      "get": {
+        "operationId": "list_supplier_transports",
+        "tags": [
+          "Fornecedores"
+        ],
+        "summary": "list supplier transports",
+        "description": "FORNECEDOR ativo autenticado. A empresa é obtida pela sessão; consultas e alterações são limitadas aos seus transportes. DELETE inativa, preservando o cadastro. Identificação é opcional e única dentro do fornecedor; PATCH pode reativar o registro.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ATIVO",
+                "INATIVO"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 120,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupplierTransportPage"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "create_supplier_transport",
+        "tags": [
+          "Fornecedores"
+        ],
+        "summary": "create supplier transport",
+        "description": "FORNECEDOR ativo autenticado. A empresa é obtida pela sessão; consultas e alterações são limitadas aos seus transportes. DELETE inativa, preservando o cadastro. Identificação é opcional e única dentro do fornecedor; PATCH pode reativar o registro.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupplierTransport"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "minLength": 1
+                  },
+                  "tipo": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 1
+                  },
+                  "identificacao": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "nullable": true
+                  },
+                  "observacao": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "nome",
+                  "tipo"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/suppliers/me/transports/{id}": {
+      "get": {
+        "operationId": "get_supplier_transport",
+        "tags": [
+          "Fornecedores"
+        ],
+        "summary": "get supplier transport",
+        "description": "FORNECEDOR ativo autenticado. A empresa é obtida pela sessão; consultas e alterações são limitadas aos seus transportes. DELETE inativa, preservando o cadastro. Identificação é opcional e única dentro do fornecedor; PATCH pode reativar o registro.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupplierTransport"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "update_supplier_transport",
+        "tags": [
+          "Fornecedores"
+        ],
+        "summary": "update supplier transport",
+        "description": "FORNECEDOR ativo autenticado. A empresa é obtida pela sessão; consultas e alterações são limitadas aos seus transportes. DELETE inativa, preservando o cadastro. Identificação é opcional e única dentro do fornecedor; PATCH pode reativar o registro.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupplierTransport"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "minLength": 1
+                  },
+                  "tipo": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 1
+                  },
+                  "identificacao": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "nullable": true
+                  },
+                  "observacao": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "nullable": true
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ATIVO",
+                      "INATIVO"
+                    ]
+                  }
+                },
+                "required": [],
+                "minProperties": 1
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "archive_supplier_transport",
+        "tags": [
+          "Fornecedores"
+        ],
+        "summary": "archive supplier transport",
+        "description": "FORNECEDOR ativo autenticado. A empresa é obtida pela sessão; consultas e alterações são limitadas aos seus transportes. DELETE inativa, preservando o cadastro. Identificação é opcional e única dentro do fornecedor; PATCH pode reativar o registro.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Transporte inativado."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -43860,6 +44487,19 @@
               "type": "string",
               "pattern": "^[1-9][0-9]{0,9}$"
             }
+          },
+          "discountSources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "PROMOTION",
+                "SUBSCRIPTION",
+                "COUPON",
+                "COMBO"
+              ]
+            },
+            "description": "Presente em INPUT e COMBO. Origens consideradas no desconto combinado; vazio quando não há redução efetiva. Tetos e piso de custo podem limitar o desconto. O valor efetivo é base menos unitPrice."
           }
         },
         "required": [
@@ -44110,6 +44750,19 @@
           },
           "parameters": {
             "$ref": "#/components/schemas/PricingParameter"
+          },
+          "discountSources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "PROMOTION",
+                "SUBSCRIPTION",
+                "COUPON",
+                "COMBO"
+              ]
+            },
+            "description": "Presente em INPUT e COMBO. Origens consideradas no desconto combinado; vazio quando não há redução efetiva. Tetos e piso de custo podem limitar o desconto. O valor efetivo é base menos unitPrice."
           }
         },
         "required": [
@@ -47641,6 +48294,100 @@
             "nullable": true
           }
         }
+      },
+      "SupplierTransport": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id_transporte": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "id_fornecedor": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "tipo": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1
+          },
+          "identificacao": {
+            "type": "string",
+            "maxLength": 40,
+            "nullable": true
+          },
+          "observacao": {
+            "type": "string",
+            "maxLength": 2000,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id_transporte",
+          "id_fornecedor",
+          "nome",
+          "tipo",
+          "identificacao",
+          "observacao",
+          "status",
+          "criado_em",
+          "atualizado_em"
+        ]
+      },
+      "SupplierTransportPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SupplierTransport"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "nextCursor": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]{0,9}$",
+                "nullable": true
+              }
+            },
+            "required": [
+              "limit",
+              "nextCursor"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ]
       }
     },
     "responses": {

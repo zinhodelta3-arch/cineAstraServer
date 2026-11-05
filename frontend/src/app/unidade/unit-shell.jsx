@@ -27,7 +27,7 @@ export default function UnitShell({ children, initialUser }) {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const areaLabel = session.user?.role === 'SUPERVISOR' ? 'Supervisão da unidade' : 'Equipe da unidade';
-  const sidebar = props => <AppSidebar items={session.user?.role === 'SUPERVISOR' ? supervisorItems : teamItems} user={session.user} onLogout={session.logout} loggingOut={session.pending} homeHref="/unidade" areaLabel={areaLabel} {...props} />;
+  const sidebar = props => <AppSidebar items={supervisorItems} user={session.user} onLogout={session.logout} loggingOut={session.pending} homeHref="/unidade" areaLabel={areaLabel} {...props} />;
   return <div className={styles.shell}>
     <a className={styles.skip} href="#unit-content">Pular para o conteúdo</a>
     <div className={styles.desktop}>{sidebar({ collapsed, onToggle: () => setCollapsed(value => !value) })}</div>

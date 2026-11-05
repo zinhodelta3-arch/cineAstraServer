@@ -12,7 +12,7 @@ export function createLogQueue(write, { limit = 200, reportFailure = report } = 
             while (queue.length) {
                 const item = queue.shift();
                 try { await write(item); metrics.written++; }
-                catch { metrics.failed++; reportFailure('http_log_write_failed', { count: metrics.failed }); }
+                catch (error) { metrics.failed++; reportFailure('http_log_write_failed', { count: metrics.failed, error }); }
             }
         } finally { active = false; }
     }

@@ -9,6 +9,10 @@ const id = value => typeof value === 'string' && /^[1-9]\d{0,9}$/.test(value) &&
 function target(method, parts, search) {
   const [group, second, third] = parts;
   if (group === 'me' && parts.length === 1 && method === 'GET') return '/suppliers/me';
+  if (group === 'transports') {
+    if (parts.length === 1 && ['GET','POST'].includes(method)) return `/suppliers/me/transports${method==='GET'?search:''}`;
+    if (parts.length === 2 && id(second) && ['GET','PATCH','DELETE'].includes(method)) return `/suppliers/me/transports/${second}`;
+  }
   if (group === 'locations') {
     if (parts.length === 1 && method === 'GET') return `/suppliers/me/locations${search}`;
     if (parts.length === 2 && id(second) && method === 'GET') return `/locations/${second}`;

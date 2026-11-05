@@ -17,7 +17,7 @@ export const sessionOperations = [
 ];
 export function sessionRoutes(controller, { auth }) {
     const router = Router();
-    const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, allowRoles('SUPERVISOR'), sessionParams];
+    const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, (req,res,next)=>allowRoles(...(req.method==='GET'?['SUPERVISOR','COLABORADOR']:['SUPERVISOR']))(req,res,next), sessionParams];
     router.get('/api/unit/sessions', ...unitAccess, sessionQuery(sessionSchemas.adminQuery), controller.unitList);
     router.get('/api/unit/sessions/:id', ...unitAccess, controller.unitGet);
     router.post('/api/unit/sessions', ...unitAccess, validateBody(sessionSchemas.create), controller.unitCreate);

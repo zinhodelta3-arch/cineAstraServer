@@ -15,7 +15,7 @@ export const comboOperations = [
 ];
 export function comboRoutes(controller, { auth }) {
     const router = Router();
-    const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, allowRoles('SUPERVISOR')];
+    const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, (req,res,next)=>allowRoles(...(req.method==='GET'?['SUPERVISOR','COLABORADOR']:['SUPERVISOR']))(req,res,next)];
     router.get('/api/unit/combos', ...unitAccess, adminComboQuery, controller.unitList);
     router.get('/api/unit/combos/:id', ...unitAccess, comboParams, controller.unitGet);
     router.post('/api/unit/combos', ...unitAccess, validateBody(comboSchemas.create), controller.unitCreate);

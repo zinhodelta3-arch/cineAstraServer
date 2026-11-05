@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { unitReadLocation } from './unitReadScope.js';
 import { idString, moneyString } from '../utils/dto.js';
 
 const HOUR = 3_600_000, DAY = 24 * HOUR;
@@ -77,7 +78,7 @@ export function createSessionService({ model, identity }) {
         },
         async unitList(q, context) {
             return identity.transaction(async c => {
-                const localId = await unitLocation(c, context);
+                const localId = await unitReadLocation(c, await identity.activeActor(c, context), q.localId);
                 if (q.localId && idString(q.localId) !== localId) throw ApiError.acessoNegado();
                 const scoped = { ...q, localId }, rows = await model.list(scoped, true, c), items = rows.slice(0, scoped.limit);
                 return { items: items.map(sessionDto), pagination: { limit: scoped.limit, nextCursor: rows.length > scoped.limit ? idString(items.at(-1).id_sessao) : null } };
@@ -85,8 +86,8 @@ export function createSessionService({ model, identity }) {
         },
         async unitGet(id, context) {
             return identity.transaction(async c => {
-                const localId = await unitLocation(c, context);
                 const session = found(await model.session(id, c));
+                const localId = await unitReadLocation(c, await identity.activeActor(c, context), session.id_local);
                 if (idString(session.id_local) !== localId) throw ApiError.acessoNegado();
                 return sessionDto(session);
             }, context);

@@ -31,7 +31,7 @@ function target(parts, method, search) {
   if (section === 'requests' && parts.length === 1 && ['GET', 'POST'].includes(method)) return `/stock/requests${method === 'GET' ? search : ''}`;
   if (section === 'logistics') {
     if (parts.length === 1 && method === 'GET') return `/logistics${search}`;
-    if (parts.length === 3 && id(first) && second === 'receive' && method === 'POST') return `/logistics/${first}/receive`;
+    if (parts.length === 3 && id(first) && ['receive','return'].includes(second) && method === 'POST') return `/logistics/${first}/${second}`;
   }
   if (section === 'inventory') {
     if (first === 'movements' && parts.length === 2 && ['GET', 'POST'].includes(method)) return `/inventory/movements${method === 'GET' ? search : ''}`;
@@ -51,11 +51,13 @@ async function handle(request, { params }) {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return json({ message: 'Entre para acessar sua unidade.' }, 401);
   try {
-    if ((await currentUser())?.role !== 'SUPERVISOR') return json({ message: 'Acesso restrito ao supervisor.' }, 403);
+    const role=(await currentUser())?.role;
+    if (!['SUPERVISOR','COLABORADOR'].includes(role)) return json({ message: 'Acesso restrito à equipe da unidade.' }, 403);
     const path = target((await params).path ?? [], method, new URL(request.url).search);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
+    if(role==='COLABORADOR'&&method!=='GET'&&!(method==='POST'&&(path==='/stock/requests'||/^\/logistics\/\d+\/(receive|return)$/.test(path))))return json({message:'Este cadastro está disponível apenas para consulta.'},403);
     let body;
-    if (['POST', 'PATCH', 'PUT'].includes(method) && !/^\/logistics\/\d+\/receive$/.test(path)) {
+    if (['POST', 'PATCH', 'PUT'].includes(method) && !/^\/logistics\/\d+\/(receive|return)$/.test(path)) {
       const raw = await request.text();
       if (raw.length > 20000) return json({ message: 'Dados muito longos.' }, 413);
       try { body = JSON.parse(raw); } catch { return json({ message: 'Dados inválidos.' }, 400); }

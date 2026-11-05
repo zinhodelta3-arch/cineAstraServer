@@ -30,8 +30,9 @@ async function handle(request, { params }) {
   if (!token) return json({ message: 'Entre para acessar Precificação.' }, 401);
   try {
     if ((await currentUser())?.role !== 'ADMIN') return json({ message: 'Acesso restrito à administração.' }, 403);
-    const path = target(method, (await params).path ?? []);
+    let path = target(method, (await params).path ?? []);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
+    if(method==='GET'&&['/admin/pricing/promotions','/admin/pricing/coupons'].includes(path))path+=new URL(request.url).search;
     let body;
     if (['POST', 'PATCH', 'PUT'].includes(method) && !path.includes('/publish/')) {
       const raw = await request.text();

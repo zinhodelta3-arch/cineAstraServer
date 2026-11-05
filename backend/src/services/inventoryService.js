@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { unitReadLocation } from './unitReadScope.js';
 import { idString } from '../utils/dto.js';
 
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
@@ -10,6 +11,7 @@ const balanceDto = (kind, row) => ({ [kind === 'inputs' ? 'id_insumo' : 'id_equi
 const movementDto = row => ({ id_movimentacao: idString(row.id_movimentacao), id_insumo: row.id_insumo === null ? null : idString(row.id_insumo), id_equipamento: row.id_equipamento === null ? null : idString(row.id_equipamento), nome_item: row.nome_insumo ?? row.nome_equipamento ?? null, id_reserva: row.id_reserva === null ? null : idString(row.id_reserva), id_usuario: idString(row.id_usuario), tipo: row.tipo, quantidade: row.quantidade, motivo: row.motivo ?? null, data_movimentacao: row.data_movimentacao });
 const positive = value => Number.isInteger(value) && value > 0 && value <= 2147483647;
 export function createInventoryService({ model, identity }) {
+    const collaboratorLocation=(context,localId)=>identity.transaction(async c=>unitReadLocation(c,await identity.activeActor(c,context),localId),context);
     async function active(c, context) { const row = await identity.activeActor(c, context); if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(row.tipo_usuario)) throw ApiError.acessoNegado(); return { id: idString(row.id_usuario), role: row.tipo_usuario }; }
     async function ownSupplier(c, actor) { const row = found(await model.supplierByUser(actor.id, c)); if (row.status !== 'ATIVO') throw ApiError.acessoNegado(); return idString(row.id_fornecedor); }
     async function ownLocation(c, actor) { const row = await model.supervisorLocation(actor.id, c); if (!row) throw ApiError.acessoNegado(); return idString(row.id_local); }
@@ -59,13 +61,15 @@ export function createInventoryService({ model, identity }) {
         async balance(kind, id, context) {
             if (!['inputs','equipment'].includes(kind)) throw ApiError.validacao('Tipo inválido');
             const actor = { id: idString(context.actor.id), role: context.actor.tipo };
-            if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(actor.role)) throw ApiError.acessoNegado();
-            const row = found(await model.item(kind,id)); await scope(undefined,row,actor);
+            if (!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(actor.role)) throw ApiError.acessoNegado();
+            const row = found(await model.item(kind,id));
+            if(actor.role==='COLABORADOR')await collaboratorLocation(context,row.id_local);else await scope(undefined,row,actor);
             return balanceDto(kind,row);
         },
         async listMovements(q, context) {
             const actor = { id: idString(context.actor.id), role: context.actor.tipo };
-            if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(actor.role)) throw ApiError.acessoNegado();
+            if (!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(actor.role)) throw ApiError.acessoNegado();
+            if(actor.role==='COLABORADOR')q={...q,localId:await collaboratorLocation(context,q.localId)};
             const supplierId = actor.role === 'FORNECEDOR' ? await ownSupplier(undefined,actor) : null;
             if (actor.role === 'SUPERVISOR') {
                 const localId = await ownLocation(undefined, actor);
@@ -77,7 +81,8 @@ export function createInventoryService({ model, identity }) {
         },
         async alerts(q, context) {
             const actor = { id: idString(context.actor.id), role: context.actor.tipo };
-            if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(actor.role)) throw ApiError.acessoNegado();
+            if (!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(actor.role)) throw ApiError.acessoNegado();
+            if(actor.role==='COLABORADOR')await collaboratorLocation(context,q.localId);
             const supplierId = actor.role === 'FORNECEDOR' ? await ownSupplier(undefined,actor) : null;
             if (actor.role === 'SUPERVISOR' && await ownLocation(undefined, actor) !== idString(q.localId)) throw ApiError.acessoNegado();
             const rows = await model.alerts(q,supplierId), items = rows.slice(0,q.limit);

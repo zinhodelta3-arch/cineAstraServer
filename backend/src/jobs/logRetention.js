@@ -7,8 +7,11 @@ export function createLogRetention(model, config) {
     async function check(options) { return model.checkRetention(config.retentionMode, options); }
     const run = () => {
         running = (async () => {
-            try { if (await check()) await model.purge(); else report('log_retention_not_ready'); }
-            catch { report('log_retention_failed'); }
+            try {
+                if (await check()) report('log_retention_completed', { count: await model.purge() });
+                else report('log_retention_not_ready');
+            }
+            catch (error) { report('log_retention_failed', { error }); }
             finally { if (!stopped) { timer = setTimeout(run, config.purgeInterval); timer.unref(); } }
         })();
     };

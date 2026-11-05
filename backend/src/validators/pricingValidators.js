@@ -30,3 +30,10 @@ export function pricingParams(req,res,next){
     next();
 }
 export function pricingCostBody(req,res,next){const parsed=costShapes[req.params.kind]?.safeParse(req.body);if(!parsed?.success)throw ApiError.validacao('Custos inválidos');req.input=parsed.data;next();}
+const listQuery=z.object({limit:z.string().regex(/^[1-9]\d{0,2}$/).transform(Number).pipe(z.number().max(100)).default(20),cursor:catalogId.optional()}).strict();
+export function pricingListQuery(req,res,next){
+    if(!Object.keys(req.query).length){req.pricingQuery=null;return next();}
+    const parsed=listQuery.safeParse(req.query);
+    if(!parsed.success)throw ApiError.validacao('Paginação inválida');
+    req.pricingQuery=parsed.data;next();
+}

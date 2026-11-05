@@ -61,22 +61,30 @@ export async function startServer(config, overrides = {}) {
 
 async function main() {
     let runtime;
+    // Observa falhas fatais sem impedir a saída padrão do Node nem continuar em estado inválido.
+    process.on('uncaughtExceptionMonitor', (error, origin) => report('process_fatal_error', { error, reason: origin }));
+    process.once('exit', exitCode => report('process_exited', { exitCode }));
     try {
         loadEnvironment();
         const config = runtimeConfig();
         runtime = await startServer(config);
         console.info('CineAstra API iniciada; consulte /ready para prontidão.');
-        const stop = () => {
+        report('server_started');
+        let stopping = false;
+        const stop = reason => {
+            if (stopping) return;
+            stopping = true;
+            report('shutdown_requested', { reason });
             const force = setTimeout(() => { report('shutdown_timeout'); process.exit(1); }, config.shutdownTimeout);
-            runtime.close().then(() => { clearTimeout(force); process.exitCode = 0; }, () => { report('shutdown_failed'); process.exit(1); });
+            runtime.close().then(() => { clearTimeout(force); report('shutdown_completed'); process.exitCode = 0; }, error => { report('shutdown_failed', { error }); process.exit(1); });
         };
-        process.once('SIGINT', stop);
-        process.once('SIGTERM', stop);
+        process.once('SIGINT', () => stop('SIGINT'));
+        process.once('SIGTERM', () => stop('SIGTERM'));
     } catch (error) {
         if (error instanceof EnvironmentValidationError) {
-            console.error(JSON.stringify({ event: 'startup_failed_check_environment', fields: error.fields }));
+            report('startup_failed_check_environment', { fields: error.fields });
         } else {
-            report('startup_failed_check_environment');
+            report('startup_failed', { error });
         }
         process.exitCode = 1;
     }

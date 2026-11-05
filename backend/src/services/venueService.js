@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { unitReadLocation } from './unitReadScope.js';
 import { idString } from '../utils/dto.js';
 
 const fields = {
@@ -59,7 +60,7 @@ export function createVenueService({ model, identity }) {
         async unitList(kind, ids, q, contextValue) {
             if (!['room', 'seat'].includes(kind)) throw ApiError.acessoNegado();
             return identity.transaction(async c => {
-                await unit(c, contextValue, ids.localId);
+                await unitReadLocation(c, await identity.activeActor(c, contextValue), ids.localId);
                 await context(kind, ids, true, c);
                 return page(kind, await model.list(kind, kind === 'room' ? ids.localId : ids.roomId, q, true, c), q);
             }, contextValue);
@@ -67,7 +68,7 @@ export function createVenueService({ model, identity }) {
         async unitGet(kind, ids, contextValue) {
             if (!['room', 'seat'].includes(kind)) throw ApiError.acessoNegado();
             return identity.transaction(async c => {
-                await unit(c, contextValue, ids.localId);
+                await unitReadLocation(c, await identity.activeActor(c, contextValue), ids.localId);
                 const { hall, chair } = await context(kind, ids, true, c);
                 return venueDto(kind, kind === 'room' ? hall : chair);
             }, contextValue);

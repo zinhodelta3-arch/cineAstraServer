@@ -12,6 +12,7 @@ const sections = [
   { href: '/fornecedor/estoque', label: 'Estoque' },
   { href: '/fornecedor/solicitacoes', label: 'Solicitações' },
   { href: '/fornecedor/entregas', label: 'Entregas' },
+  { href: '/fornecedor/transportes', label: 'Transportes' },
   { href: '/fornecedor/perfil', label: 'Perfil' },
 ];
 

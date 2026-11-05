@@ -1,5 +1,5 @@
 import UnitRooms from '@/components/unit/unit-rooms';
-import { requireUnitSupervisor } from '@/lib/auth/unit-supervisor';
+import { requireUnitViewer } from '@/lib/auth/unit-supervisor';
 
 export const metadata = { title: 'Salas | Minha unidade' };
-export default async function Page() { await requireUnitSupervisor(); return <UnitRooms />; }
+export default async function Page() { const user = await requireUnitViewer(); return <UnitRooms canManage={user.role === 'SUPERVISOR'} />; }

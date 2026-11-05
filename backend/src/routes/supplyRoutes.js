@@ -20,7 +20,7 @@ export const supplyOperations=[
 ].map(([method,path,operationId,action])=>({method,path,operationId,action}));
 export function supplyRoutes(controller,{auth}){
     const router=Router();
-    router.get('/api/unit/stock/sources',(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth,allowRoles('SUPERVISOR'),supplyQuery(supplySchemas.sourcesQuery),controller.sources);
+    router.get('/api/unit/stock/sources',(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth,allowRoles('SUPERVISOR','COLABORADOR'),supplyQuery(supplySchemas.sourcesQuery),controller.sources);
     for(const r of supplyOperations){
         const middle=[(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth,allowRoles('ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR')];
         if(r.path.includes('{id}'))middle.push(supplyParams);

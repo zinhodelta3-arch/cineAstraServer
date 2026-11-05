@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { unitReadLocation } from './unitReadScope.js';
 import { idString } from '../utils/dto.js';
 
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
@@ -40,14 +41,13 @@ export function createSupplyService({model,identity}) {
     const tx=(context,work)=>identity.transaction(async c=>work(c,await actor(c,context)),context);
     return {
         async sources(q,context) { return tx(context,async(c,a)=>{
-            if(a.role!=='SUPERVISOR')throw ApiError.acessoNegado();
-            const location=await model.supervisorLocation(a.id,c);
-            if(!location)throw ApiError.acessoNegado();
-            const rows=await model.availableInputs(idString(location.id_local),q,c),items=rows.slice(0,q.limit);
+            const localId=await unitReadLocation(c,{id_usuario:a.id,tipo_usuario:a.role},q.localId);
+            const rows=await model.availableInputs(localId,q,c),items=rows.slice(0,q.limit);
             return {items:items.map(r=>({id_insumo:idString(r.id_insumo),nome:r.nome,id_local_origem:idString(r.id_local_origem),nome_origem:r.nome_origem,disponivel:r.disponivel})),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(items.at(-1).id_insumo):null}};
         }); },
         async stock(q,context) { return tx(context,async(c,a)=>{
-            if(a.role!=='ADMIN')await staff(c,a,q.sessionId,q.localId,true);
+            if(a.role==='COLABORADOR')await unitReadLocation(c,{id_usuario:a.id,tipo_usuario:a.role},q.localId);
+            else if(a.role!=='ADMIN')await staff(c,a,q.sessionId,q.localId,true);
             const local=found(await model.local(q.localId,c));if(local.status!=='ATIVO')throw conflict('Local indisponível');
             const stock=await model.stock(q.localId,c),incoming=await model.incoming(q.localId,c);
             return {id_local:q.localId,inputs:stock.inputs.map(r=>({id_insumo:idString(r.id),id_fornecedor:idString(r.id_fornecedor),nome:r.nome,quantidade:r.quantidade,disponivel:r.status==='DISPONIVEL'?r.quantidade-r.quantidade_reservada:0,status:r.status==='DISPONIVEL'&&r.quantidade-r.quantidade_reservada>0?'EM_ESTOQUE':'SEM_ESTOQUE'})),equipment:stock.equipment.map(r=>({id_equipamento:idString(r.id),id_fornecedor:idString(r.id_fornecedor),nome:r.nome,quantidade:r.quantidade,status:r.status==='DISPONIVEL'&&r.quantidade>0?'EM_ESTOQUE':'SEM_ESTOQUE'})),a_chegar:incoming.map(r=>({id_logistica:idString(r.id_logistica),id_insumo:r.id_insumo_origem==null?null:idString(r.id_insumo_origem),id_equipamento:r.id_equipamento_origem==null?null:idString(r.id_equipamento_origem),nome:r.nome,quantidade:r.quantidade,status:r.status}))};

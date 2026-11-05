@@ -5,6 +5,7 @@ import { ArrowRight, Minus, Plus, ShoppingCart, Ticket, Trash2 } from "lucide-re
 import { useCart } from "@/components/cart/cart-provider"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import ProductPrice from "@/components/cinema/astrasnack/product-price"
 
 const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
@@ -38,6 +39,7 @@ export function CartDrawer({ open, onOpenChange }) {
                   <div className="text-[9px] font-bold tracking-[.16em] text-primary uppercase">{item.category}</div>
                   <h3 className="mt-1 line-clamp-2 text-sm font-bold">{item.name}</h3>
                   {item.details && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.details}</p>}
+                  {item.purchaseKind !== 'SESSION' && <div className="mt-2 text-sm"><ProductPrice price={item.price} originalPrice={item.originalPrice} discountSources={item.discountSources} note="Por unidade · estimado" /></div>}
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
                       <Button variant="ghost" size="icon-xs" aria-label="Diminuir quantidade" onClick={() => updateQuantity(item.id, item.type, item.details, item.quantity - 1)}><Minus /></Button>

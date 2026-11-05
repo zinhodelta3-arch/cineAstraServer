@@ -8,11 +8,16 @@ export async function POST(request){
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({message:'Entre na sua conta para cotar os produtos.'},401);
  try{
-  const text=await request.text();if(text.length>1000)return json({message:'Dados excessivos.'},413);
+  const text=await request.text();if(text.length>10000)return json({message:'Dados excessivos.'},413);
   let body;try{body=JSON.parse(text);}catch{return json({message:'Dados inválidos.'},400);}
-  if(!body||!['INPUT','COMBO'].includes(body.kind)||typeof body.id!=='string'||! /^[1-9]\d{0,9}$/.test(body.id)||!Number.isInteger(body.quantity)||body.quantity<1||body.quantity>100)return json({message:'Confira o produto e a quantidade (1 a 100).'},422);
-  const quote=await backendAuth('/pricing/quote',{token,method:'POST',body:{lines:[{category:body.kind,id:body.id,quantity:body.quantity}]}});
-  const line=quote.lines?.[0];if(!line||line.id!==body.id||line.quantity!==body.quantity)throw new AuthError(503,'Cotação inválida.');
-  return json({unitPrice:line.unitPrice,total:quote.total,finalizable:quote.finalizable===true,catalogOutOfSync:line.catalogOutOfSync===true,quotedAt:quote.quotedAt});
+  const batch=Array.isArray(body?.lines),items=batch?body.lines:[body];
+  if(!items.length||items.length>50||items.some(item=>!item||!['INPUT','COMBO'].includes(item.kind)||typeof item.id!=='string'||! /^[1-9]\d{0,9}$/.test(item.id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>100))return json({message:'Confira os produtos e as quantidades (1 a 100).'},422);
+  const quote=await backendAuth('/pricing/quote',{token,method:'POST',body:{lines:items.map(item=>({category:item.kind,id:item.id,quantity:item.quantity}))}});
+  if(quote.lines?.length!==items.length)throw new AuthError(503,'Cotação inválida.');
+  const lines=quote.lines.map((line,index)=>{
+   const item=items[index];if(line.id!==item.id||line.category!==item.kind||line.quantity!==item.quantity||!/^\d+\.\d{2}$/.test(line.unitPrice)||!/^\d+\.\d{2}$/.test(line.base))throw new AuthError(503,'Cotação inválida.');
+   return {kind:line.category,id:line.id,unitPrice:line.unitPrice,originalPrice:line.base,discountSources:line.discountSources??[],total:line.subtotal,finalizable:quote.finalizable===true,catalogOutOfSync:line.catalogOutOfSync===true,quotedAt:quote.quotedAt};
+  });
+  return json(batch?{lines}:lines[0]);
  }catch(e){return json({message:e instanceof AuthError?e.message:'Não foi possível cotar o produto.'},e instanceof AuthError?e.status:503);}
 }

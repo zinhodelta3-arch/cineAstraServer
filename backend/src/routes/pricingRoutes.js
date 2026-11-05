@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { allowRoles } from '../middlewares/authMiddleware.js';
 import { validateBody } from '../validators/identityValidators.js';
-import { pricingParams,pricingCostBody,pricingSchemas } from '../validators/pricingValidators.js';
+import { pricingParams,pricingCostBody,pricingSchemas,pricingListQuery } from '../validators/pricingValidators.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const pricingOperations=[
@@ -28,6 +28,7 @@ export function pricingRoutes(controller,{auth}){
     for(const r of pricingOperations){
         const middleware=[(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth];
         if(r.admin)middleware.push(allowRoles('ADMIN'));
+        if(['promotions','coupons'].includes(r.action))middleware.push(pricingListQuery);
         if(r.path.includes('{'))middleware.push(pricingParams);
         if(r.action==='setPlanBenefit')middleware.push((req,res,next)=>{if(req.params.category==='PLAN')throw ApiError.validacao('Categoria inválida');next();});
         if(r.action==='setCosts')middleware.push(pricingCostBody);

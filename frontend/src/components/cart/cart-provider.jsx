@@ -38,13 +38,15 @@ export function CartProvider({ children }) {
       description: product.description || "",
       category: product.category || (product.type === "ticket" ? "Ingresso" : "AstraSnack"),
       price: Math.max(0, Number(product.price) || 0),
+      originalPrice: product.originalPrice ?? null,
+      discountSources: Array.isArray(product.discountSources) ? product.discountSources : [],
       image: product.image || "",
       details: product.details || "",
       ...(product.sourceId && product.localId && ["INPUT", "COMBO", "SESSION"].includes(product.purchaseKind) ? {sourceId:String(product.sourceId),localId:String(product.localId),purchaseKind:product.purchaseKind,...(product.purchaseKind === "SESSION" && product.seatId ? {seatId:String(product.seatId)} : {})} : {}),
     }
     setItems((current) => {
       const existing = current.find((entry) => item.purchaseKind === 'SESSION' ? entry.purchaseKind === 'SESSION' && entry.sourceId === item.sourceId && entry.seatId === item.seatId : entry.id === item.id && entry.type === item.type && entry.details === item.details)
-      if (existing) return current.map((entry) => entry === existing ? { ...entry, quantity: item.purchaseKind === 'SESSION' ? 1 : Math.min(100, entry.quantity + amount) } : entry)
+      if (existing) return current.map((entry) => entry === existing ? { ...entry, ...item, quantity: item.purchaseKind === 'SESSION' ? 1 : Math.min(100, entry.quantity + amount) } : entry)
       return [...current, { ...item, quantity: amount }]
     })
   }, [])
@@ -61,10 +63,21 @@ export function CartProvider({ children }) {
     setItems((current) => current.filter((item) => !(item.id === id && item.type === type && item.details === details)))
   }, [])
 
+  const updatePrices = useCallback((expectedItems, quotes) => {
+    if (quotes.length !== expectedItems.length || quotes.some(quote => !quote || !Number.isFinite(Number(quote.unitPrice)) || Number(quote.unitPrice) < 0)) return
+    // Uma resposta antiga não deve substituir itens alterados durante a consulta.
+    setItems(current => current !== expectedItems ? current : current.map((item, index) => ({
+      ...item,
+      price: Number(quotes[index].unitPrice),
+      originalPrice: quotes[index].originalPrice ?? null,
+      discountSources: Array.isArray(quotes[index].discountSources) ? quotes[index].discountSources : [],
+    })))
+  }, [])
+
   const clearCart = useCallback(() => setItems([]), [])
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const value = useMemo(() => ({ items, itemCount, total, addItem, updateQuantity, removeItem, clearCart }), [items, itemCount, total, addItem, updateQuantity, removeItem, clearCart])
+  const value = useMemo(() => ({ items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart }), [items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart])
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

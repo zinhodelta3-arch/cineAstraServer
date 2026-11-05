@@ -14,6 +14,7 @@ const items = [
   { label: 'Estoque', href: '/fornecedor/estoque', icon: Boxes },
   { label: 'Solicitações', href: '/fornecedor/solicitacoes', icon: ClipboardList },
   { label: 'Entregas', href: '/fornecedor/entregas', icon: Truck },
+  { label: 'Transportes', href: '/fornecedor/transportes', icon: Truck },
   { label: 'Perfil', href: '/fornecedor/perfil', icon: UserRound },
 ];
 

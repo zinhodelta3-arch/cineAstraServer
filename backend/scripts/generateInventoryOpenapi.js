@@ -17,6 +17,7 @@ const list = schema => obj({ items:{type:'array',items:schema},pagination:ref('P
 const errors = {400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for (const r of inventoryOperations) {
     const op = {operationId:r.operationId,tags:['Estoque'],summary:r.operationId.replaceAll('_',' '),description:'ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
+    if(r.method==='get')op.description+=' Supervisor consulta a própria unidade; colaborador consulta somente unidades vinculadas à sua equipe, sem permissão para movimentos manuais.';
     if (r.path.includes('{id}')) op.parameters.push({name:'id',in:'path',required:true,schema:intId});
     if (r.action === 'list' || r.action === 'alerts') {
         if (r.action === 'alerts') op.parameters.push({name:'localId',in:'query',required:true,schema:intId});

@@ -19,7 +19,7 @@ export const venueOperations = Object.entries(paths).flatMap(([kind, [collection
 ]);
 export function venueRoutes(controller, { auth }) {
     const router = Router();
-    const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, allowRoles('SUPERVISOR'), venueParams];
+    const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, (req,res,next)=>allowRoles(...(req.method==='GET'?['SUPERVISOR','COLABORADOR']:['SUPERVISOR']))(req,res,next), venueParams];
     for (const [kind, collection, item] of [
         ['room', '/api/unit/locations/:localId/rooms', '/api/unit/locations/:localId/rooms/:roomId'],
         ['seat', '/api/unit/locations/:localId/rooms/:roomId/seats', '/api/unit/locations/:localId/rooms/:roomId/seats/:seatId']

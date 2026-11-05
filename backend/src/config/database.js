@@ -25,7 +25,7 @@ export function createDatabase(config, suppliedPool) {
             return await Promise.race([pending, new Promise((_, reject) => {
                 timer = setTimeout(() => { expired = true; reject(ApiError.indisponivel()); }, config.timeout);
             })]);
-        } catch { throw ApiError.indisponivel(); }
+        } catch (error) { report('database_acquire_failed', { error }); throw ApiError.indisponivel(); }
         finally { clearTimeout(timer); }
     }
     async function withConnection(operation, { signal } = {}) {

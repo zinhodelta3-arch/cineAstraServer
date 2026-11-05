@@ -20,13 +20,19 @@ export default function useCinemaCart(){
   try{
    const response=await fetch('/api/cart/quote',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(input),signal:abort.signal});
    const quote=await readSessionResponse(response);
-   if(!abort.signal.aborted)setState({key,quote,pending:false,error:null});
+   if(!abort.signal.aborted){
+    cart.updatePrices(cart.items,cart.items.map(item=>{
+     const index=input.lines.findIndex(line=>line.kind===item.purchaseKind&&line.id===item.sourceId&&(line.kind!=='SESSION'||line.seatId===item.seatId));
+     return quote.lines[index];
+    }));
+    setState({key,quote,pending:false,error:null});
+   }
   }catch(e){if(!abort.signal.aborted)setState({key,quote:null,pending:false,error:e.message});}
  };
  const items=cart.items.map(item=>{
   const index=input?.lines.findIndex(line=>line.kind===item.purchaseKind&&line.id===item.sourceId&&(line.kind!=='SESSION'||line.seatId===item.seatId));
   const line=index>=0?current.quote?.lines[index]:null;
-  return {...item,price:line?Number(line.unitPrice):item.price,quoted:Boolean(line)};
+  return {...item,price:line?Number(line.unitPrice):item.price,originalPrice:line?line.originalPrice:item.originalPrice,discountSources:line?line.discountSources:item.discountSources,quoted:Boolean(line)};
  });
  return {items,itemCount:cart.itemCount,total:current.quote?Number(current.quote.total):cart.total,
   increase:item=>{if(item.purchaseKind!=='SESSION')cart.updateQuantity(item.id,item.type,item.details,Math.min(100,item.quantity+1));},
