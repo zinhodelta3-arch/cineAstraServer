@@ -113,6 +113,10 @@ test('publicação avulsa é opt-in e respeita propriedade do fornecedor', async
     assert.equal(created.body.data.venda_avulsa, false);
     const path = '/api/inputs/' + created.body.data.id_insumo;
     await f.api('patch', path, '3').send({venda_avulsa:true}).expect(403);
+    const missingCosts = await f.api('patch', path, '2').send({venda_avulsa:true}).expect(409);
+    assert.equal(missingCosts.body.code, 'PRODUCT_RETAIL_CONFLICT');
+    await f.api('patch', path, '2').send({custo_receita:'8.00'}).expect(403);
+    await f.api('patch', path).send({custo_receita:'8.00',custo_parceria:'0.00'}).expect(200);
     assert.equal((await f.api('patch', path, '2').send({venda_avulsa:true}).expect(200)).body.data.venda_avulsa, true);
     assert.equal((await f.api('patch', path).send({venda_avulsa:false}).expect(200)).body.data.venda_avulsa, false);
     await f.api('patch', path, '2').send({venda_avulsa:'true'}).expect(422);

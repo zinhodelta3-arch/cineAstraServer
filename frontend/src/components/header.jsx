@@ -5,13 +5,15 @@ import useStreamingAccess from "@/hooks/cinema/use-streaming-access"
 import SessionControls from "@/components/auth/session-controls"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { ShoppingCart, TvMinimalPlay } from "lucide-react"
 import { useCart } from "@/components/cart/cart-provider"
 import { CartDrawer } from "@/components/cart/cart-drawer"
 import { AppearanceSelector } from "@/components/appearance-selector"
+import { useAppearance } from "@/components/providers/appearance-provider"
 import { DesktopNavigation, MobileNavigation } from "@/components/header-nav"
 import { NotificationButton } from "@/components/notifications/notification-button"
+import { FloatingAssistant } from "@/components/support/floating-assistant"
 
 const LOGO_CONFIG = [
   { keywords: ["catp", "catppuccin", "latte", "frappe", "macchiato"], src: "/Catp.png" },
@@ -62,29 +64,13 @@ function TicketSeparator({ className = "" }) {
   )
 }
 
-export function Header() {
+export function Header({ showAssistant = false }) {
   const session = useSession()
   const canAccessStreaming = useStreamingAccess(session.user)
-  const [logoSrc, setLogoSrc] = useState(DEFAULT_LOGO)
+  const { appearance } = useAppearance()
+  const logoSrc = getLogoByTheme(appearance)
   const [cartOpen, setCartOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const { itemCount } = useCart()
-  const visibleItemCount = mounted ? itemCount : 0
-
-  useEffect(() => {
-    setMounted(true)
-    const updateLogo = () => {
-      setLogoSrc(getLogoByTheme(document.documentElement.getAttribute("data-theme")))
-    }
-
-    updateLogo()
-    const observer = new MutationObserver(updateLogo)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    })
-    return () => observer.disconnect()
-  }, [])
+  const { itemCount: visibleItemCount } = useCart()
 
   return (
     <>
@@ -149,6 +135,9 @@ export function Header() {
       </header>
 
       {session.user && <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />}
+      {showAssistant && !session.loading && (!session.user || session.user.role === "CLIENTE") && (
+        <FloatingAssistant key={session.user?.id ?? "visitor"} signedIn={Boolean(session.user)} />
+      )}
     </>
   )
 }

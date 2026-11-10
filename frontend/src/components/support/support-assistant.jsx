@@ -1,6 +1,7 @@
 import {Bot} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
+import {AssistantSessionLinks} from './assistant-session-links';
 export default function SupportAssistant({question,setQuestion,answer,asked,handedOff,ask,handoff,pending}){
  return <section className="rounded-2xl border border-border bg-card p-6 sm:p-8" aria-labelledby="ai-support-title">
   <div className="flex items-center gap-3 text-primary"><Bot aria-hidden="true" /><span className="text-xs font-bold uppercase tracking-widest">Assistente virtual · IA</span></div>
@@ -14,6 +15,7 @@ export default function SupportAssistant({question,setQuestion,answer,asked,hand
    <p className="break-words text-sm"><strong>Sua pergunta:</strong> {asked}</p>
    <p className="font-semibold">{answer.available?'Resposta da IA':'Assistente indisponível'}</p>
    <p className="whitespace-pre-wrap break-words text-sm leading-6">{answer.message}</p>
+   <AssistantSessionLinks sessions={answer.sessions} />
    <Button variant="outline" onClick={handoff} disabled={pending||handedOff}>{handedOff?'Encaminhado ao suporte':'Encaminhar esta dúvida ao suporte humano'}</Button>
   </div>}
  </section>;

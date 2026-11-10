@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { teamOperations } from '../src/routes/teamRoutes.js';
+import { teamLookupOperations, teamOperations } from '../src/routes/teamRoutes.js';
 
 const file = new URL('../src/docs/openapi.json', import.meta.url);
 const spec = JSON.parse(await readFile(file, 'utf8'));
@@ -12,16 +12,17 @@ const obj = (properties, required = Object.keys(properties)) => ({ type: 'object
 const nullable = schema => ({ ...schema, nullable: true });
 const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const response = data => ({ description: 'Sucesso', content: { 'application/json': { schema: obj({ success: { type: 'boolean', enum: [true] }, data, requestId: { type: 'string', format: 'uuid' } }) } } });
-spec.paths['/api/teams/context'] = { get: {
-    operationId: 'get_team_context', tags: ['Equipes'], summary: 'Consultar cinemas da unidade',
+const [context, collaborator] = teamLookupOperations;
+spec.paths[context.path] = { get: {
+    operationId: context.operationId, tags: ['Equipes'], summary: 'Consultar cinemas da unidade',
     description: 'SUPERVISOR vê o cinema atribuído; COLABORADOR vê cinemas das equipes em que possui vínculo ativo.',
     security: [{ bearerAuth: [] }], responses: {
         200: response(obj({ locations: { type: 'array', items: obj({ id_local: id, nome: str }) } })),
         401: { $ref: '#/components/responses/Unauthorized' }, 403: { $ref: '#/components/responses/Forbidden' }
     }
 } };
-spec.paths['/api/teams/collaborator'] = { get: {
-    operationId: 'find_team_collaborator', tags: ['Equipes'], summary: 'Localizar colaborador para convite',
+spec.paths[collaborator.path] = { get: {
+    operationId: collaborator.operationId, tags: ['Equipes'], summary: 'Localizar colaborador para convite',
     description: 'SUPERVISOR vinculado a um cinema localiza por e-mail exato uma conta COLABORADOR ativa; retorna somente identificador e nome.',
     security: [{ bearerAuth: [] }], parameters: [{ name: 'email', in: 'query', required: true, schema: { type: 'string', format: 'email', maxLength: 150 } }],
     responses: {
@@ -73,4 +74,4 @@ for (const r of teamOperations) {
     (spec.paths[r.path] ??= {})[r.method] = op;
 }
 await writeFile(file, `${JSON.stringify(spec, null, 2)}\n`);
-console.info(`Equipes: ${teamOperations.length} operações documentadas.`);
+console.info(`Equipes: ${teamOperations.length + teamLookupOperations.length} operações documentadas.`);

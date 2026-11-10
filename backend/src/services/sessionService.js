@@ -72,6 +72,10 @@ export function createSessionService({ model, identity }) {
     return {
         async filmAvailability(filmId) { return { locations: (await model.filmAvailability(filmId)).map(row => ({ localId: idString(row.id_local), sessions: Number(row.session_count), formats: row.formats?.split(' · ') ?? [] })) }; },
         async availableDays(filmId, localId) { return { days: (await model.availableDays(filmId, localId)).map(row => row.date.slice(0, 10)) }; },
+        async upcomingForFilm(filmId, filters) {
+            const rows = await model.upcomingForFilm(filmId, filters);
+            return { items: rows.slice(0, 6).map(sessionDto), hasMore: rows.length > 6 };
+        },
         async list(q, isAdmin = false) {
             const rows = await model.list(q, isAdmin), items = rows.slice(0, q.limit);
             return { items: items.map(sessionDto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1).id_sessao) : null } };

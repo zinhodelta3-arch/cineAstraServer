@@ -1,10 +1,15 @@
-import {writeFile} from 'node:fs/promises';
+import {readFile,writeFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import {migrationPlan} from './migrationPlan.js';
 
 // Artifact for an EMPTY schema, not a replacement for incremental migrations.
 export async function generateInstallSql() {
- const plan=await migrationPlan();
+ const [plan,initialData,catalog]=await Promise.all([
+  migrationPlan(),
+  readFile(new URL('../../database/examples/dados-iniciais.sql',import.meta.url),'utf8'),
+  readFile(new URL('../../database/examples/filmes-100.sql',import.meta.url),'utf8')
+ ]);
+ const seedBlock=[initialData,catalog].map(sql=>sql.replaceAll('\r\n','\n').trim()).join('\n\n');
  const statements=plan.map((step,index)=>{
   if(!/^[A-Za-z0-9_.:-]+$/.test(step.name)||!/^\w{64}$/.test(step.checksum)||step.sql.includes('$$'))throw new Error('Statement inválido para o consolidado');
   return `    -- ${index+1}/${plan.length}: ${step.name}\n    INSERT INTO schema_migrations (name, checksum, status) VALUES ('${step.name}', '${step.checksum}', 'RUNNING');\n${step.sql.replaceAll('\r\n','\n')};\n    UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP(3) WHERE name = '${step.name}';`;
@@ -16,7 +21,8 @@ export async function generateInstallSql() {
 -- Nao use --force, nao reaplique em banco existente e nao apague o ledger.
 -- Para atualizar banco existente, use o runner incremental e o ledger original.
 -- Requer permissoes DDL, CREATE ROUTINE e EXECUTE. Nao apaga dados nem cria usuarios.
--- Exclui CREATE DATABASE/USE, seeds historicos e eventos administrados pelo DBA.
+-- Exclui CREATE DATABASE/USE e eventos administrados pelo DBA.
+-- Os dados iniciais e o catalogo de database/examples sao carregados depois do schema.
 -- Checksums das fontes permanecem compativeis com o runner. Retencao: LOG_RETENTION_MODE=worker.
 
 SET NAMES utf8mb4;
@@ -61,6 +67,8 @@ DELIMITER ;
 
 CALL _cineastra_install();
 DROP PROCEDURE _cineastra_install;
+
+${seedBlock}
 
 SELECT DATABASE() AS banco, COUNT(*) AS migrations_aplicadas
 FROM schema_migrations WHERE status = 'APPLIED';

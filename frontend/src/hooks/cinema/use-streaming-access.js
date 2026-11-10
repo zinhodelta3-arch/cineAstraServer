@@ -43,9 +43,13 @@ export default function useStreamingAccess(user) {
         } while (cursor && !expiresAt);
 
         if (controller.signal.aborted || current !== generation) return;
-        setAccess({ userId, expiresAt });
-        if (expiresAt > Date.now()) {
-          expiryTimer = setTimeout(load, Math.min(expiresAt - Date.now(), 2147483647));
+        const remaining = expiresAt - Date.now();
+        setAccess({ userId, expiresAt: remaining > 0 ? expiresAt : 0 });
+        if (remaining > 0) {
+          expiryTimer = setTimeout(() => {
+            if (Date.now() >= expiresAt) setAccess({ userId, expiresAt: 0 });
+            void load();
+          }, Math.min(remaining, 2147483647));
         }
       } catch {
         if (!controller.signal.aborted && current === generation) setAccess({ userId, expiresAt: 0 });
@@ -63,5 +67,5 @@ export default function useStreamingAccess(user) {
     };
   }, [client, userId, pathname]);
 
-  return Boolean(client && userId && access?.userId === userId && access.expiresAt > Date.now());
+  return Boolean(client && userId && access?.userId === userId && access.expiresAt > 0);
 }

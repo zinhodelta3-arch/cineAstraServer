@@ -11,15 +11,20 @@ import { ApiError } from '../src/utils/ApiError.js';
 
 function fixture() {
     let state = {
-        team: { id_equipe: '1', id_supervisor: '1', id_sessao: '10', status: 'ATIVA', sessao_status: 'AGENDADA' },
+        team: { id_equipe: '1', id_supervisor: '1', id_sessao: '10', id_local: '20', status: 'ATIVA', sessao_status: 'AGENDADA' },
         members: [{ id_usuario: '3', status: 'ATIVO', tipo_usuario: 'COLABORADOR', usuario_status: 'ATIVO', funcao: 'Projeção' }, { id_usuario: '4', status: 'ATIVO', tipo_usuario: 'COLABORADOR', usuario_status: 'ATIVO', funcao: 'Portaria' }],
         tasks: [], events: [], audit: []
     };
     const users = new Map([['1','SUPERVISOR'],['2','SUPERVISOR'],['3','COLABORADOR'],['4','COLABORADOR'],['5','COLABORADOR'],['6','ADMIN'],['7','CLIENTE']]);
+    const supervisorLocations = new Map([['1', '20'], ['2', '21']]);
     let nextTask = 1, nextEvent = 1, serial = Promise.resolve();
     const item = id => state.tasks.find(t => t.id_chamado === String(id));
     const model = {
         async team(id) { return String(id) === '1' ? state.team : null; },
+        async supervisorLocation(id) {
+            const id_local = supervisorLocations.get(String(id));
+            return id_local ? { id_local } : null;
+        },
         async membership(id, userId) { return String(id) === '1' ? state.members.find(m => m.id_usuario === String(userId)) ?? null : null; },
         async task(teamId, id) { const t = item(id); return t?.id_equipe === String(teamId) ? t : null; },
         async list(teamId, sessionId, q, actorId) { return state.tasks.filter(t => t.id_equipe === String(teamId) && t.id_sessao === String(sessionId) && BigInt(t.id_chamado) > BigInt(q.cursor ?? '0') && (!q.status || t.status === q.status) && (!q.assigned || t.id_responsavel === actorId)); },

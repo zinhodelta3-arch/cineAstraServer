@@ -29,6 +29,6 @@ export function UnitListState({ list, empty }) {
   return null;
 }
 
-export function UnitMore({ list }) {
-  return list.nextCursor && <div className={styles.footer}><button type="button" className={styles.secondary} onClick={list.loadMore} disabled={list.loadingMore}>{list.loadingMore ? 'Carregando…' : 'Carregar mais'}</button></div>;
+export function UnitMore({ list, caption = 'Carregar mais' }) {
+  return list.nextCursor && <div className={styles.footer}><button type="button" className={styles.secondary} onClick={list.loadMore} disabled={list.loadingMore}>{list.loadingMore ? 'Carregando…' : caption}</button></div>;
 }

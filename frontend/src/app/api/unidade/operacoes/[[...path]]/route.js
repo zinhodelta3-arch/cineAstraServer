@@ -28,7 +28,12 @@ function target(parts, method, search) {
     }
   }
   if (section === 'sources' && parts.length === 1 && method === 'GET') return `/unit/stock/sources${search}`;
-  if (section === 'requests' && parts.length === 1 && ['GET', 'POST'].includes(method)) return `/stock/requests${method === 'GET' ? search : ''}`;
+  if (section === 'requests') {
+    if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/stock/requests${method === 'GET' ? search : ''}`;
+    if (parts.length === 3 && id(first) && second === 'alternatives' && method === 'GET') {
+      return `/unit/stock/requests/${first}/alternatives`;
+    }
+  }
   if (section === 'logistics') {
     if (parts.length === 1 && method === 'GET') return `/logistics${search}`;
     if (parts.length === 3 && id(first) && ['receive','return'].includes(second) && method === 'POST') return `/logistics/${first}/${second}`;

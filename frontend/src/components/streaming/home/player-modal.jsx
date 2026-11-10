@@ -12,7 +12,12 @@ const VideoPlayer = dynamic(() => import("@/components/cineastra-player/VideoPla
   loading: () => <p role="status" className="fixed inset-0 z-[1000] grid place-items-center bg-background/90 text-foreground">Carregando player…</p>,
 });
 
-export default function PlayerModal({ movie, profileId, access, onProgress, onClose, initialMode = "modal" }) {
+export default function PlayerModal(props) {
+  const { movie, profileId, access } = props;
+  return <PlaybackSession key={JSON.stringify([profileId, movie.id, access?.id])} {...props} />;
+}
+
+function PlaybackSession({ movie, profileId, access, onProgress, onClose, initialMode = "modal" }) {
   const [mode, setMode] = useState(initialMode);
   const { playback, loading, error, errorCode, saveError, savePosition } = useStreamingPlayback({ movie, profileId, access, onProgress });
 

@@ -13,19 +13,16 @@ export default function useStreamingPlayback({ movie, profileId, access, onProgr
   const saving = useRef(false);
   const pending = useRef(null);
   const lastSaved = useRef(0);
+  const filmId = movie.id;
+  const accessId = access?.id;
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setPlayback(null);
-    setError("");
-    setErrorCode(null);
-    setSaveError("");
     async function start() {
       try {
-        const target = access?.id ? `/${access.id}/play` : `/films/${movie.id}/play`;
+        const target = accessId ? `/${accessId}/play` : `/films/${filmId}/play`;
         const [saved, source] = await Promise.all([
-          streamingRequest(`/profiles/${profileId}/progress/${movie.id}`, { signal: controller.signal }).catch((cause) => {
+          streamingRequest(`/profiles/${profileId}/progress/${filmId}`, { signal: controller.signal }).catch((cause) => {
             if (cause.status === 404) return null;
             throw cause;
           }),
@@ -35,7 +32,7 @@ export default function useStreamingPlayback({ movie, profileId, access, onProgr
         if (!source?.url || !source?.expiresAt) throw new Error("Resposta inválida ao iniciar a reprodução.");
         progress.current = { positionSeconds: saved?.positionSeconds || 0, durationSeconds: saved?.durationSeconds, version: saved?.version || 0 };
         lastSaved.current = 0;
-        setPlayback({ ...source, requestedFilmId: movie.id, initialPosition: saved?.completed ? 0 : progress.current.positionSeconds });
+        setPlayback({ ...source, requestedFilmId: filmId, initialPosition: saved?.completed ? 0 : progress.current.positionSeconds });
       } catch (cause) {
         if (!controller.signal.aborted) {
           setError(cause.message || "Não foi possível iniciar a reprodução.");
@@ -45,7 +42,7 @@ export default function useStreamingPlayback({ movie, profileId, access, onProgr
     }
     void start();
     return () => controller.abort();
-  }, [movie.id, profileId, access?.id]);
+  }, [filmId, profileId, accessId]);
 
   async function savePosition(position, force = false, playbackDuration) {
     if (!playback || !Number.isFinite(position)) return;

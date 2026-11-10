@@ -16,10 +16,11 @@ import { imageUploadOperations } from '../src/routes/imageUploadRoutes.js';
 import { filmGalleryOperations } from '../src/routes/filmGalleryRoutes.js';
 import { venueOperations } from '../src/routes/venueRoutes.js';
 import { sessionOperations } from '../src/routes/sessionRoutes.js';
-import { teamOperations } from '../src/routes/teamRoutes.js';
+import { teamLookupOperations, teamOperations } from '../src/routes/teamRoutes.js';
 import { taskOperations } from '../src/routes/taskRoutes.js';
 import { notificationOperations } from '../src/routes/notificationRoutes.js';
 import { supplierOperations } from '../src/routes/supplierRoutes.js';
+import { supplierTransportOperations } from '../src/routes/supplierTransportRoutes.js';
 import { productOperations } from '../src/routes/productRoutes.js';
 import { comboOperations } from '../src/routes/comboRoutes.js';
 import { commerceGalleryOperations } from '../src/routes/commerceGalleryRoutes.js';
@@ -46,7 +47,7 @@ export async function validateOpenapi() {
     await SwaggerParser.validate(structuredClone(spec));
     const ids = new Set();
     const operations = Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, op]) => ({ path, method, op })));
-    const registered = [...streamingPhotoOperations, ...dashboardOperations, ...promotionalOperations, ...snackCatalogOperations, ...adminDirectoryOperations, ...streamingProgressOperations, ...streamingFavoriteOperations, ...streamingProfileOperations, ...infrastructureOperations, ...identityOperations, ...catalogOperations, ...imageUploadOperations, ...filmGalleryOperations, ...venueOperations, ...sessionOperations, ...teamOperations, ...taskOperations, ...notificationOperations, ...supplierOperations, ...productOperations, ...comboOperations, ...commerceGalleryOperations, ...inventoryOperations, ...supplyOperations, ...pricingOperations, ...paymentMethodOperations, ...paymentOperations, ...refundOperations, ...orderOperations, ...ticketOperations, ...streamingOperations, ...planOperations, ...participationOperations, ...newsletterOperations, ...newsletterCampaignOperations, ...newsletterDeliveryOperations, ...supportOperations, ...contentOperations, ...reportOperations];
+    const registered = [...streamingPhotoOperations, ...dashboardOperations, ...promotionalOperations, ...snackCatalogOperations, ...adminDirectoryOperations, ...streamingProgressOperations, ...streamingFavoriteOperations, ...streamingProfileOperations, ...infrastructureOperations, ...identityOperations, ...catalogOperations, ...imageUploadOperations, ...filmGalleryOperations, ...venueOperations, ...sessionOperations, ...teamLookupOperations, ...teamOperations, ...taskOperations, ...notificationOperations, ...supplierOperations, ...supplierTransportOperations, ...productOperations, ...comboOperations, ...commerceGalleryOperations, ...inventoryOperations, ...supplyOperations, ...pricingOperations, ...paymentMethodOperations, ...paymentOperations, ...refundOperations, ...orderOperations, ...ticketOperations, ...streamingOperations, ...planOperations, ...participationOperations, ...newsletterOperations, ...newsletterCampaignOperations, ...newsletterDeliveryOperations, ...supportOperations, ...contentOperations, ...reportOperations];
     if (operations.length !== registered.length) throw new Error(`OpenAPI diverge das rotas registradas: ${operations.length}/${registered.length}`);
     for (const route of registered) {
         const op = spec.paths[route.path]?.[route.method];

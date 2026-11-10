@@ -9,10 +9,12 @@ test('startup sem env falha seguro sem ouvir HTTP nem imprimir valores', () => {
     const child = spawnSync(process.execPath, ['src/server.js'], { cwd: new URL('../', import.meta.url), env: { ...process.env, JWT_SECRET: '', DB_HOST: '', DB_PASSWORD: '' }, encoding: 'utf8' });
     assert.equal(child.status, 1);
     assert.match(child.stderr, /startup_failed_check_environment/);
-    const diagnostic = JSON.parse(child.stderr.trim());
+    const events = child.stderr.trim().split(/\r?\n/).map(line => JSON.parse(line));
+    const diagnostic = events.find(({ event }) => event === 'startup_failed_check_environment');
     assert.ok(diagnostic.fields.includes('DB_PASSWORD'));
     assert.ok(diagnostic.fields.includes('DB_HOST'));
-    assert.deepEqual(Object.keys(diagnostic).sort(), ['event', 'fields']);
+    assert.deepEqual(Object.keys(diagnostic).sort(), ['event', 'fields', 'pid', 'timestamp']);
+    assert.equal(events.find(({ event }) => event === 'process_exited')?.exitCode, 1);
 });
 test('server HTTP inicializa, configura timeouts e fecha HTTP/worker/fila/pool uma vez', async () => {
     const order = [];

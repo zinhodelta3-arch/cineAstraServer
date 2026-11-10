@@ -9,7 +9,7 @@ import PlansFaq from "./plans-faq"
 import PlansSubscription from "./plans-subscription"
 
 export default function CinemaPlans() {
-  const { hero, catalog, sharing, faq, subscription } = useCinemaPlans()
+  const { hero, catalog, sharing, subscription } = useCinemaPlans()
 
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
@@ -17,7 +17,7 @@ export default function CinemaPlans() {
       <PlansCatalog {...catalog} />
       <PlansSharing {...sharing} />
       <PlansBenefits />
-      <PlansFaq {...faq} />
+      <PlansFaq />
       <PlansSubscription {...subscription} />
     </main>
   )

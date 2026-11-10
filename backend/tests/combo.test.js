@@ -22,8 +22,8 @@ function fixture() {
         async inputs(ids) { return state.inputs.filter(x => ids.includes(x.id_insumo)); },
         async items(id) { return state.items.filter(x => x.id_combo === String(id)).map(x => ({ id_insumo: x.inputId, quantidade: x.quantidade, nome: state.inputs.find(i => i.id_insumo === x.inputId).nome })); },
         async referenced(id) { return state.references.has(String(id)); },
-        async list(q) { return state.combos.filter(c => c.id_local === q.localId && BigInt(c.id_combo) > BigInt(q.cursor ?? '0') && c.ativo && state.locals.find(l => l.id_local === c.id_local)?.status === 'ATIVO' && state.items.some(i => i.id_combo === c.id_combo) && state.items.filter(i => i.id_combo === c.id_combo).every(i => { const input = state.inputs.find(x => x.id_insumo === i.inputId); return input?.id_local === c.id_local && input.status === 'DISPONIVEL' && input.fornecedor_status === 'ATIVO' && input.usuario_status === 'ATIVO' && input.tipo_usuario === 'FORNECEDOR' && input.vinculo_status === 'ATIVO'; })).slice(0, q.limit + 1); },
-        async create(c, input) { const id = String(next++); state.combos.push({ id_combo: id, id_local: input.localId, nome: input.nome, descricao: input.descricao ?? null, preco: input.preco, ativo: 1, data_cadastro: '2026-10-08 00:00:00' }); return id; },
+        async list(q) { return state.combos.filter(c => c.id_local === q.localId && BigInt(c.id_combo) > BigInt(q.cursor ?? '0') && c.ativo && c.custo_operacional != null && state.locals.find(l => l.id_local === c.id_local)?.status === 'ATIVO' && state.items.some(i => i.id_combo === c.id_combo) && state.items.filter(i => i.id_combo === c.id_combo).every(i => { const input = state.inputs.find(x => x.id_insumo === i.inputId); return input?.id_local === c.id_local && input.status === 'DISPONIVEL' && input.fornecedor_status === 'ATIVO' && input.usuario_status === 'ATIVO' && input.tipo_usuario === 'FORNECEDOR' && input.vinculo_status === 'ATIVO'; })).slice(0, q.limit + 1); },
+        async create(c, input) { const id = String(next++); state.combos.push({ id_combo: id, id_local: input.localId, nome: input.nome, descricao: input.descricao ?? null, preco: input.preco, custo_operacional: input.custo_operacional, ativo: 1, data_cadastro: '2026-10-08 00:00:00' }); return id; },
         async update(c, id, input) { Object.assign(state.combos.find(x => x.id_combo === String(id)), input); },
         async replaceItems(c, id, items) { state.items = state.items.filter(x => x.id_combo !== String(id)); state.items.push(...items.map(x => ({ ...x, id_combo: String(id) }))); }
     };
@@ -35,7 +35,8 @@ function fixture() {
 }
 
 test('combo exige itens positivos, distintos e do mesmo local; público só vê composição disponível', async () => {
-    const f = fixture(), base = { localId: '1', nome: 'Combo Pipoca', preco: '15.00' };
+    const f = fixture(), base = { localId: '1', nome: 'Combo Pipoca', preco: '15.00', custo_operacional: '0.00' };
+    await f.api('post', '/api/admin/combos').send({ localId: '1', nome: 'Sem custo informado', preco: '15.00', items: [{ inputId: '10', quantidade: 1 }] }).expect(422);
     await f.api('post', '/api/admin/combos', 'FORNECEDOR').send({ ...base, items: [{ inputId: '10', quantidade: 1 }] }).expect(403);
     await f.api('post', '/api/admin/combos').send({ ...base, items: [{ inputId: '10', quantidade: 1 }, { inputId: '10', quantidade: 2 }] }).expect(422);
     await f.api('post', '/api/admin/combos').send({ ...base, items: [{ inputId: '10', quantidade: 0 }] }).expect(422);
@@ -45,6 +46,8 @@ test('combo exige itens positivos, distintos e do mesmo local; público só vê 
     assert.equal(created.id_local, '1'); assert.equal(created.preco, '15.00'); assert.equal(created.items[0].quantidade, 2);
     const visible = await request(f.app).get('/api/combos?localId=1').expect(200);
     assert.equal(visible.body.data.items.length, 1);
+    assert.equal(created.custo_operacional, '0.00');
+    assert.equal(visible.body.data.items[0].custo_operacional, undefined);
     f.state.inputs[0].status = 'INDISPONIVEL';
     await request(f.app).get('/api/combos?localId=1').expect(200, /"items":\[\]/);
     await request(f.app).get('/api/combos/1').expect(404);
@@ -52,8 +55,9 @@ test('combo exige itens positivos, distintos e do mesmo local; público só vê 
 
 test('referência histórica congela edição/composição e arquivamento preserva linhas', async () => {
     const f = fixture();
-    await f.api('post', '/api/admin/combos').send({ localId: '1', nome: 'Combo', preco: '10.00', items: [{ inputId: '10', quantidade: 1 }] }).expect(201);
+    await f.api('post', '/api/admin/combos').send({ localId: '1', nome: 'Combo', preco: '10.00', custo_operacional: '0.00', items: [{ inputId: '10', quantidade: 1 }] }).expect(201);
     f.state.references.add('1');
+    await f.api('patch', '/api/admin/combos/1').send({ custo_operacional: '1.00' }).expect(200);
     await f.api('patch', '/api/admin/combos/1').send({ preco: '12.00' }).expect(409);
     await f.api('put', '/api/admin/combos/1/items').send({ items: [{ inputId: '10', quantidade: 3 }] }).expect(409);
     await f.api('delete', '/api/admin/combos/1').expect(204);
@@ -67,7 +71,8 @@ test('SQL de combos usa IDs parametrizados, valida local e não confunde imagem 
     const queries = [];
     const db = { async execute(sql, params) { queries.push({ sql, params }); return [[{ id_combo: 1, id_local: 1, nome: 'Combo', descricao: null, preco: '10.00', ativo: 1, data_cadastro: '2026-10-08' }]]; } };
     const model = createComboModel(db);
-    await model.combo('1'); await model.referenced('1', db);
+    await model.combo('1'); await model.referenced('1', db); await model.list({ localId: '1', limit: 1 });
     assert.ok(queries.every(q => q.sql.includes('?') && q.params?.length));
-    assert.ok(!queries.some(q => /combos_imagens/.test(q.sql)));
+    assert.match(queries[0].sql, /combos_imagens.*im.tipo='PRINCIPAL'/);
+    assert.match(queries[2].sql, /c.custo_operacional IS NOT NULL/);
 });

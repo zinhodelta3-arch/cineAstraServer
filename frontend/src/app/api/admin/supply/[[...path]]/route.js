@@ -31,6 +31,14 @@ function target(method, parts, search) {
     if (parts.length === 2 && id(second) && method === 'GET') return `/logistics/${second}`;
     if (parts.length === 3 && id(second) && ['send', 'transit', 'receive', 'return', 'cancel'].includes(third) && method === 'POST') return `/logistics/${second}/${third}`;
   }
+  if (group === 'input-links') {
+    if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/admin/logistics/input-links${method === 'GET' ? search : ''}`;
+    if (parts.length === 2 && id(second) && method === 'DELETE') return `/admin/logistics/input-links/${second}`;
+  }
+  if (group === 'logistics-routes') {
+    if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/admin/logistics/routes${method === 'GET' ? search : ''}`;
+    if (parts.length === 2 && id(second) && method === 'PATCH') return `/admin/logistics/routes/${second}`;
+  }
   return null;
 }
 

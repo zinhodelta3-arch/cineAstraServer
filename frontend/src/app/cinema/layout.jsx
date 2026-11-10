@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 export default function CinemaLayout({ children }) {
   return (
     <>
-      <Header />
+      <Header showAssistant />
       {children}
       <Footer />
     </>

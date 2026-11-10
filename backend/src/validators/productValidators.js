@@ -7,6 +7,7 @@ const description = z.string().trim().max(10000).nullable();
 const category = z.string().trim().min(1).max(100).nullable();
 const price = z.string().regex(/^(0|[1-9]\d{0,7})\.\d{2}$/);
 const count = z.number().int().min(0).max(2147483647);
+const costs = { custo_receita: price.optional(), custo_parceria: price.optional() };
 const heritage = z.string().trim().min(1).max(100).transform(v => v.toUpperCase()).nullable();
 const supplyStatus = z.enum(['DISPONIVEL','INDISPONIVEL']);
 const equipmentStatus = z.enum(['DISPONIVEL','MANUTENCAO','INDISPONIVEL']);
@@ -15,8 +16,8 @@ const page = status => z.object({ limit: z.string().regex(/^\d{1,3}$/).transform
 export const productSchemas = {
     categoriesQuery: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: z.string().min(1).max(100).optional() }).strict(),
     inputs: {
-        create: z.object({ ...common, supplierId: catalogId.optional(), localId: catalogId, quantidade_minima: count.optional(), preco: price, venda_avulsa: z.boolean().default(false) }).strict(),
-        patch: z.object({ nome: name.optional(), descricao: description.optional(), categoria: category.optional(), quantidade_minima: count.optional(), preco: price.optional(), venda_avulsa: z.boolean().optional(), status: supplyStatus.optional() }).strict().refine(v => Object.keys(v).length > 0),
+        create: z.object({ ...common, supplierId: catalogId.optional(), localId: catalogId, quantidade_minima: count.optional(), preco: price, ...costs, venda_avulsa: z.boolean().default(false) }).strict(),
+        patch: z.object({ nome: name.optional(), descricao: description.optional(), categoria: category.optional(), quantidade_minima: count.optional(), preco: price.optional(), ...costs, venda_avulsa: z.boolean().optional(), status: supplyStatus.optional() }).strict().refine(v => Object.keys(v).length > 0),
         query: page(supplyStatus)
     },
     equipment: {

@@ -44,6 +44,7 @@ const items = [
     { label: "Equipamentos", href: "/admin/suprimentos/equipamentos" },
     { label: "Solicitações", href: "/admin/suprimentos/solicitacoes" },
     { label: "Logística", href: "/admin/suprimentos/logistica" },
+    { label: "Rotas de entrega", href: "/admin/suprimentos/rotas" },
   ] },
   { label: "Usuários", href: "/admin/usuarios", icon: UsersRound, children: [
     { label: "Privacidade", href: "/admin/usuarios/privacidade" },

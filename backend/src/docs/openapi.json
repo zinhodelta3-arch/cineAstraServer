@@ -53,18 +53,6 @@
       "description": "Cadastro administrativo e consulta da própria conta de fornecedor."
     },
     {
-      "name": "Insumos",
-      "description": "Catálogo de insumos por fornecedor e local autorizado."
-    },
-    {
-      "name": "Equipamentos",
-      "description": "Catálogo de equipamentos e patrimônio."
-    },
-    {
-      "name": "Fornecedor locais",
-      "description": "Autorização operacional explícita por fornecedor e local."
-    },
-    {
       "name": "Combos",
       "description": "Composição de insumos por local; preço/desconto final pertence ao serviço comercial."
     },
@@ -79,10 +67,6 @@
     {
       "name": "Estoque",
       "description": "Saldo físico, reservado, movimentos e alerta de reposição por local."
-    },
-    {
-      "name": "Suprimentos",
-      "description": "Solicitações, envio, trânsito e recebimento de materiais."
     },
     {
       "name": "Métodos de pagamento",
@@ -168,6 +152,22 @@
     {
       "name": "Progresso de streaming",
       "description": "Histórico resumido e continuar assistindo por perfil."
+    },
+    {
+      "name": "Insumos",
+      "description": "Catálogo de insumos por fornecedor e local autorizado."
+    },
+    {
+      "name": "Equipamentos",
+      "description": "Catálogo de equipamentos e patrimônio."
+    },
+    {
+      "name": "Fornecedor locais",
+      "description": "Autorização operacional explícita por fornecedor e local."
+    },
+    {
+      "name": "Suprimentos",
+      "description": "Solicitações, envio, trânsito e recebimento de materiais."
     }
   ],
   "security": [
@@ -4069,6 +4069,118 @@
             }
           }
         ]
+      },
+      "patch": {
+        "operationId": "adminPatch",
+        "tags": [
+          "Identidade"
+        ],
+        "summary": "Atualiza nome ou telefone da conta",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Atualiza nome ou telefone da conta. Alterações de perfil de acesso e status usam a rota /access. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/IdentityUser"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMedia"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityInput_adminProfile"
+              }
+            }
+          }
+        }
       }
     },
     "/api/users/me/children/{id}/authorizations/{authorizationId}": {
@@ -13947,7 +14059,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências."
+        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
       },
       "post": {
         "operationId": "create_inputs",
@@ -14024,7 +14136,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências.",
+        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14068,6 +14180,16 @@
                     "type": "string",
                     "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
                     "description": "Preço de catálogo em decimal exato; não é custo."
+                  },
+                  "custo_receita": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
+                    "description": "Custo em decimal exato. Disponível apenas para ADMIN."
+                  },
+                  "custo_parceria": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
+                    "description": "Custo em decimal exato. Disponível apenas para ADMIN."
                   },
                   "venda_avulsa": {
                     "type": "boolean",
@@ -14172,7 +14294,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências."
+        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
       },
       "patch": {
         "operationId": "update_inputs",
@@ -14260,7 +14382,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências.",
+        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14294,6 +14416,16 @@
                     "type": "string",
                     "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
                     "description": "Preço de catálogo em decimal exato; não é custo."
+                  },
+                  "custo_receita": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
+                    "description": "Custo em decimal exato. Disponível apenas para ADMIN."
+                  },
+                  "custo_parceria": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
+                    "description": "Custo em decimal exato. Disponível apenas para ADMIN."
                   },
                   "venda_avulsa": {
                     "type": "boolean"
@@ -14370,7 +14502,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências."
+        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
       }
     },
     "/api/equipment": {
@@ -14516,7 +14648,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências."
+        "description": "FORNECEDOR consulta os próprios locais autorizados."
       },
       "post": {
         "operationId": "create_equipment",
@@ -14593,7 +14725,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências.",
+        "description": "FORNECEDOR consulta os próprios locais autorizados.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14733,7 +14865,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências."
+        "description": "FORNECEDOR consulta os próprios locais autorizados."
       },
       "patch": {
         "operationId": "update_equipment",
@@ -14821,7 +14953,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências.",
+        "description": "FORNECEDOR consulta os próprios locais autorizados.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14926,7 +15058,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências."
+        "description": "FORNECEDOR consulta os próprios locais autorizados."
       }
     },
     "/api/admin/suppliers/{supplierId}/locations": {
@@ -15379,7 +15511,7 @@
           "Combos"
         ],
         "summary": "list combo",
-        "description": "Público vê apenas combos ativos com local e insumos disponíveis. Estoque, preço final e desconto pertencem a módulos posteriores.",
+        "description": "O catálogo público lista combos ativos com custo operacional cadastrado, local ativo e insumos disponíveis.",
         "security": [],
         "parameters": [
           {
@@ -15498,7 +15630,7 @@
           "Combos"
         ],
         "summary": "get combo",
-        "description": "Público vê apenas combos ativos com local e insumos disponíveis. Estoque, preço final e desconto pertencem a módulos posteriores.",
+        "description": "O catálogo público lista combos ativos com custo operacional cadastrado, local ativo e insumos disponíveis.",
         "security": [],
         "parameters": [
           {
@@ -15616,7 +15748,7 @@
                       ]
                     },
                     "data": {
-                      "$ref": "#/components/schemas/Combo"
+                      "$ref": "#/components/schemas/ManagedCombo"
                     },
                     "requestId": {
                       "type": "string",
@@ -15670,7 +15802,7 @@
           "Combos"
         ],
         "summary": "patch combo",
-        "description": "ADMIN gerencia catálogo e composição. Combo referenciado em pedido não admite alteração; DELETE arquiva.",
+        "description": "ADMIN gerencia catálogo e composição. Em combo ativo referenciado em pedido, somente o custo operacional pode ser editado.",
         "security": [
           {
             "bearerAuth": []
@@ -15703,7 +15835,7 @@
                       ]
                     },
                     "data": {
-                      "$ref": "#/components/schemas/Combo"
+                      "$ref": "#/components/schemas/ManagedCombo"
                     },
                     "requestId": {
                       "type": "string",
@@ -15769,6 +15901,10 @@
                     "nullable": true
                   },
                   "preco": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$"
+                  },
+                  "custo_operacional": {
                     "type": "string",
                     "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$"
                   }
@@ -15869,7 +16005,7 @@
                       ]
                     },
                     "data": {
-                      "$ref": "#/components/schemas/Combo"
+                      "$ref": "#/components/schemas/ManagedCombo"
                     },
                     "requestId": {
                       "type": "string",
@@ -15966,13 +16102,18 @@
                         "quantidade"
                       ]
                     }
+                  },
+                  "custo_operacional": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$"
                   }
                 },
                 "required": [
                   "localId",
                   "nome",
                   "preco",
-                  "items"
+                  "items",
+                  "custo_operacional"
                 ]
               }
             }
@@ -16093,6 +16234,11 @@
                               "itemCount": {
                                 "type": "integer",
                                 "minimum": 0
+                              },
+                              "custo_operacional": {
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
+                                "nullable": true
                               }
                             },
                             "required": [
@@ -16103,7 +16249,8 @@
                               "preco",
                               "ativo",
                               "data_cadastro",
-                              "itemCount"
+                              "itemCount",
+                              "custo_operacional"
                             ]
                           }
                         },
@@ -16220,7 +16367,7 @@
                       ]
                     },
                     "data": {
-                      "$ref": "#/components/schemas/Combo"
+                      "$ref": "#/components/schemas/ManagedCombo"
                     },
                     "requestId": {
                       "type": "string",
@@ -18906,7 +19053,7 @@
           "Suprimentos"
         ],
         "summary": "list stock requests",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19034,7 +19181,7 @@
           "Suprimentos"
         ],
         "summary": "create stock request",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19155,7 +19302,7 @@
           "Suprimentos"
         ],
         "summary": "get stock request",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19244,7 +19391,7 @@
           "Suprimentos"
         ],
         "summary": "approve stock request",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19333,7 +19480,7 @@
           "Suprimentos"
         ],
         "summary": "refuse stock request",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19422,7 +19569,7 @@
           "Suprimentos"
         ],
         "summary": "list logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19552,7 +19699,7 @@
           "Suprimentos"
         ],
         "summary": "get logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19641,7 +19788,7 @@
           "Suprimentos"
         ],
         "summary": "send logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19730,7 +19877,7 @@
           "Suprimentos"
         ],
         "summary": "transit logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19819,7 +19966,7 @@
           "Suprimentos"
         ],
         "summary": "receive logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19908,7 +20055,7 @@
           "Suprimentos"
         ],
         "summary": "cancel logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -19997,7 +20144,7 @@
           "Suprimentos"
         ],
         "summary": "get local stock",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -20094,7 +20241,7 @@
           "Suprimentos"
         ],
         "summary": "return logistics equipment",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. Recebimento é único e gera histórico transacional. ETA não é calculado sem dados de distância/provider.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.",
         "security": [
           {
             "bearerAuth": []
@@ -33192,6 +33339,27 @@
                           "enum": [
                             "/api/assistant/handoff"
                           ]
+                        },
+                        "sessions": {
+                          "type": "array",
+                          "maxItems": 6,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,19}$"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "label"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -33247,7 +33415,7 @@
           }
         },
         "summary": "Perguntar à IA",
-        "description": "Identifica IA e oferece encaminhamento humano. Provider ausente devolve available=false; somente a dúvida textual é transmitida ao adaptador, sem ferramentas, SQL ou ações financeiras.",
+        "description": "Responde dúvidas do CineAstra e consulta horários públicos. As sessões da resposta são opcionais. Somente a dúvida textual é transmitida ao adaptador.",
         "requestBody": {
           "required": true,
           "content": {
@@ -40308,7 +40476,6 @@
                     ]
                   }
                 },
-                "required": [],
                 "minProperties": 1
               }
             }
@@ -40341,6 +40508,1113 @@
         "responses": {
           "204": {
             "description": "Transporte inativado."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/admin/logistics/routes": {
+      "get": {
+        "operationId": "list_logistics_routes",
+        "tags": [
+          "Suprimentos"
+        ],
+        "summary": "list logistics routes",
+        "description": "Exclusivo para ADMIN. Cada direção possui uma rota que pode ser editada ou inativada.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/LogisticsRoute"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "create_logistics_route",
+        "tags": [
+          "Suprimentos"
+        ],
+        "summary": "create logistics route",
+        "description": "Exclusivo para ADMIN. Cada direção possui uma rota que pode ser editada ou inativada.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LogisticsRoute"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "originId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,9}$"
+                  },
+                  "destinationId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,9}$"
+                  },
+                  "distancia_km": {
+                    "type": "string",
+                    "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,2})?$"
+                  },
+                  "tempo_estimado_min": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10080
+                  }
+                },
+                "required": [
+                  "originId",
+                  "destinationId",
+                  "distancia_km",
+                  "tempo_estimado_min"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/logistics/routes/{id}": {
+      "patch": {
+        "operationId": "update_logistics_route",
+        "tags": [
+          "Suprimentos"
+        ],
+        "summary": "update logistics route",
+        "description": "Exclusivo para ADMIN. Cada direção possui uma rota que pode ser editada ou inativada.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LogisticsRoute"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "distancia_km": {
+                    "type": "string",
+                    "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,2})?$"
+                  },
+                  "tempo_estimado_min": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10080
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ATIVO",
+                      "INATIVO"
+                    ]
+                  }
+                },
+                "minProperties": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/unit/stock/sources": {
+      "get": {
+        "operationId": "list_unit_stock_sources",
+        "tags": [
+          "Suprimentos"
+        ],
+        "summary": "list unit stock sources",
+        "description": "Origens disponíveis para reposição no cinema do supervisor ou da equipe do colaborador.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "localId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "input",
+                "equipment"
+              ],
+              "default": "input"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "id_insumo": {
+                                    "type": "string",
+                                    "pattern": "^[1-9][0-9]{0,9}$"
+                                  },
+                                  "nome": {
+                                    "type": "string"
+                                  },
+                                  "id_local_origem": {
+                                    "type": "string",
+                                    "pattern": "^[1-9][0-9]{0,9}$"
+                                  },
+                                  "nome_origem": {
+                                    "type": "string"
+                                  },
+                                  "disponivel": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                  }
+                                },
+                                "required": [
+                                  "id_insumo",
+                                  "nome",
+                                  "id_local_origem",
+                                  "nome_origem",
+                                  "disponivel"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "id_equipamento": {
+                                    "type": "string",
+                                    "pattern": "^[1-9][0-9]{0,9}$"
+                                  },
+                                  "nome": {
+                                    "type": "string"
+                                  },
+                                  "id_local_origem": {
+                                    "type": "string",
+                                    "pattern": "^[1-9][0-9]{0,9}$"
+                                  },
+                                  "nome_origem": {
+                                    "type": "string"
+                                  },
+                                  "disponivel": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                  }
+                                },
+                                "required": [
+                                  "id_equipamento",
+                                  "nome",
+                                  "id_local_origem",
+                                  "nome_origem",
+                                  "disponivel"
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/unit/stock/requests/{id}/alternatives": {
+      "get": {
+        "operationId": "list_unit_supply_alternatives",
+        "tags": [
+          "Suprimentos"
+        ],
+        "summary": "list unit supply alternatives",
+        "description": "Origens de outros fornecedores com item de mesmo nome e categoria. A consulta é restrita à equipe autorizada da solicitação.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "maxItems": 5,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "item_id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,9}$"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "id_local_origem": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,9}$"
+                              },
+                              "nome_origem": {
+                                "type": "string"
+                              },
+                              "fornecedor": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "item_id",
+                              "nome",
+                              "id_local_origem",
+                              "nome_origem",
+                              "fornecedor"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "items"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/inputs/categories": {
+      "get": {
+        "operationId": "list_inputs_categories",
+        "tags": [
+          "Insumos"
+        ],
+        "summary": "categories inputs",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/InputProduct"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
+      }
+    },
+    "/api/equipment/categories": {
+      "get": {
+        "operationId": "list_equipment_categories",
+        "tags": [
+          "Equipamentos"
+        ],
+        "summary": "categories equipment",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EquipmentProduct"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "description": "FORNECEDOR consulta os próprios locais autorizados."
+      }
+    },
+    "/api/admin/logistics/input-links": {
+      "get": {
+        "operationId": "list_replenishment_input_links",
+        "tags": [
+          "Suprimentos"
+        ],
+        "summary": "list replenishment input links",
+        "description": "Exclusivo para ADMIN. Um insumo de origem aponta para um insumo do mesmo fornecedor por unidade de destino. Salvar a mesma origem e unidade substitui o vínculo.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ReplenishmentInputLink"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "save_replenishment_input_link",
+        "tags": [
+          "Suprimentos"
+        ],
+        "summary": "save replenishment input link",
+        "description": "Exclusivo para ADMIN. Um insumo de origem aponta para um insumo do mesmo fornecedor por unidade de destino. Salvar a mesma origem e unidade substitui o vínculo.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReplenishmentInputLink"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "sourceId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,9}$"
+                  },
+                  "targetId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,9}$"
+                  }
+                },
+                "required": [
+                  "sourceId",
+                  "targetId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/logistics/input-links/{id}": {
+      "delete": {
+        "operationId": "remove_replenishment_input_link",
+        "tags": [
+          "Suprimentos"
+        ],
+        "summary": "remove replenishment input link",
+        "description": "Exclusivo para ADMIN. Um insumo de origem aponta para um insumo do mesmo fornecedor por unidade de destino. Salvar a mesma origem e unidade substitui o vínculo.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Vínculo removido."
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -43636,6 +44910,18 @@
           },
           "venda_avulsa": {
             "type": "boolean"
+          },
+          "custo_receita": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
+            "description": "Custo em decimal exato. Disponível apenas para ADMIN.",
+            "nullable": true
+          },
+          "custo_parceria": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
+            "description": "Custo em decimal exato. Disponível apenas para ADMIN.",
+            "nullable": true
           }
         },
         "required": [
@@ -44083,6 +45369,31 @@
           },
           "data_solicitacao": {
             "type": "string"
+          },
+          "nome_item": {
+            "type": "string",
+            "nullable": true
+          },
+          "distancia_km": {
+            "type": "string",
+            "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,2})?$",
+            "nullable": true
+          },
+          "tempo_estimado_min": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10080,
+            "nullable": true
+          },
+          "estoque_origem": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "DISPONIVEL",
+              "SALDO_INSUFICIENTE",
+              "INDISPONIVEL",
+              null
+            ]
           }
         },
         "required": [
@@ -44095,7 +45406,11 @@
           "quantidade",
           "status",
           "observacao",
-          "data_solicitacao"
+          "data_solicitacao",
+          "nome_item",
+          "distancia_km",
+          "tempo_estimado_min",
+          "estoque_origem"
         ]
       },
       "Logistics": {
@@ -44183,6 +45498,9 @@
           "observacao": {
             "type": "string",
             "nullable": true
+          },
+          "devolucao_disponivel": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -44202,7 +45520,8 @@
           "data_devolucao",
           "id_usuario_recebimento",
           "id_usuario_devolucao",
-          "observacao"
+          "observacao",
+          "devolucao_disponivel"
         ]
       },
       "LocalStock": {
@@ -48388,6 +49707,198 @@
           "items",
           "pagination"
         ]
+      },
+      "LogisticsRoute": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id_rota": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "id_local_origem": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "id_local_destino": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "nome_origem": {
+            "type": "string"
+          },
+          "nome_destino": {
+            "type": "string"
+          },
+          "distancia_km": {
+            "type": "string",
+            "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,2})?$"
+          },
+          "tempo_estimado_min": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10080
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ]
+          }
+        },
+        "required": [
+          "id_rota",
+          "id_local_origem",
+          "id_local_destino",
+          "nome_origem",
+          "nome_destino",
+          "distancia_km",
+          "tempo_estimado_min",
+          "status"
+        ]
+      },
+      "ManagedCombo": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id_combo": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "id_local": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$",
+            "nullable": true
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 10000,
+            "nullable": true
+          },
+          "preco": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$"
+          },
+          "ativo": {
+            "type": "boolean"
+          },
+          "data_cadastro": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id_insumo": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]{0,9}$"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "quantidade": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "id_insumo",
+                "nome",
+                "quantidade"
+              ]
+            }
+          },
+          "custo_operacional": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id_combo",
+          "id_local",
+          "nome",
+          "descricao",
+          "preco",
+          "ativo",
+          "data_cadastro",
+          "items",
+          "custo_operacional"
+        ]
+      },
+      "ReplenishmentInputLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id_vinculo": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "id_insumo_origem": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "id_insumo_destino": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "id_local_origem": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "id_local_destino": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
+          },
+          "nome_insumo_origem": {
+            "type": "string"
+          },
+          "nome_insumo_destino": {
+            "type": "string"
+          },
+          "nome_local_origem": {
+            "type": "string"
+          },
+          "nome_local_destino": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id_vinculo",
+          "id_insumo_origem",
+          "id_insumo_destino",
+          "id_local_origem",
+          "id_local_destino",
+          "nome_insumo_origem",
+          "nome_insumo_destino",
+          "nome_local_origem",
+          "nome_local_destino"
+        ]
+      },
+      "IdentityInput_adminProfile": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "phone": {
+            "nullable": true,
+            "type": "string",
+            "pattern": "^\\+?[\\d ()-]{8,20}$"
+          }
+        },
+        "additionalProperties": false,
+        "minProperties": 1
       }
     },
     "responses": {

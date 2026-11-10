@@ -2,6 +2,7 @@ import { idString } from '../utils/dto.js';
 
 const projection = 's.id_sessao,s.id_filme,s.id_sala,sa.id_local,f.titulo AS titulo_filme,sa.nome AS nome_sala,l.nome AS nome_local,s.data,s.horario_inicio,s.horario_fim,s.idioma,s.preco_inteira,s.status';
 const joins = ' FROM sessoes s JOIN salas sa ON sa.id_sala = s.id_sala JOIN locais l ON l.id_local = sa.id_local JOIN filmes f ON f.id_filme = s.id_filme';
+const publicConditions = "s.status IN ('AGENDADA','EM_CARTAZ') AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE";
 export function createSessionModel(database) {
     const rows = async (c, sql, args = []) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args = []) => (await rows(c, sql, args))[0] ?? null;
@@ -17,6 +18,14 @@ export function createSessionModel(database) {
             AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO'
             AND f.disponivel_cinema = TRUE AND TIMESTAMP(s.data,s.horario_inicio) > UTC_TIMESTAMP()
             ORDER BY s.data`, [filmId, localId]),
+        upcomingForFilm(filmId, { date, localId }) {
+            const filters = ['s.id_filme = ?', publicConditions, 'TIMESTAMP(s.data,s.horario_inicio) > UTC_TIMESTAMP()'];
+            const args = [filmId];
+            if (date) { filters.push('s.data = ?'); args.push(date); }
+            if (localId) { filters.push('sa.id_local = ?'); args.push(localId); }
+            return rows(database, `SELECT ${projection}${joins} WHERE ${filters.join(' AND ')}
+                ORDER BY s.data, s.horario_inicio, s.id_sessao LIMIT 7`, args);
+        },
         // One statement keeps session visibility, seat map and occupancy in the same read snapshot.
         seatAvailability: id => rows(database, `SELECT s.id_sessao,s.id_sala,sa.id_local,
             a.id_assento,a.fileira,a.numero,a.tipo,
@@ -50,7 +59,7 @@ export function createSessionModel(database) {
             if (q.startFrom) { where.push('s.horario_inicio >= ?'); args.push(q.startFrom); }
             if (q.startUntil) { where.push('s.horario_inicio <= ?'); args.push(q.startUntil); }
             if (admin) { if (q.status) { where.push('s.status = ?'); args.push(q.status); } }
-            else where.push("s.status IN ('AGENDADA','EM_CARTAZ')", "sa.status = 'ATIVA'", "l.status = 'ATIVO'", "f.status = 'ATIVO'", 'f.disponivel_cinema = TRUE');
+            else where.push(publicConditions);
             return rows(c, `SELECT ${projection}${joins} WHERE ${where.join(' AND ')} ORDER BY s.id_sessao LIMIT ${q.limit + 1}`, args);
         },
         publicSession: id => one(database, `SELECT ${projection}${joins} WHERE s.id_sessao = ? AND s.status IN ('AGENDADA','EM_CARTAZ') AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE`, [id]),

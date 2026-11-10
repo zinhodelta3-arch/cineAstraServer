@@ -1,13 +1,19 @@
 import { ApiError } from '../utils/ApiError.js';
 import { idString, moneyString } from '../utils/dto.js';
+import { validateRetailInput } from './retailInputPricing.js';
 
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'PRODUCT_CONFLICT');
 const key = type => type === 'inputs' ? 'id_insumo' : 'id_equipamento';
-const productDto = (type, row) => ({ [key(type)]: idString(row[key(type)]), id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, categoria: row.categoria ?? null, ...(type === 'inputs' ? { quantidade_minima: row.quantidade_minima, venda_avulsa: Boolean(row.venda_avulsa), preco: moneyString(row.preco) } : { numero_patrimonio: row.numero_patrimonio ?? null }), quantidade: row.quantidade, status: row.status, data_cadastro: row.data_cadastro });
+const productDto = (type, row, role) => ({ [key(type)]: idString(row[key(type)]), id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, categoria: row.categoria ?? null, ...(type === 'inputs' ? { quantidade_minima: row.quantidade_minima, venda_avulsa: Boolean(row.venda_avulsa), preco: moneyString(row.preco), ...(role === 'ADMIN' ? { custo_receita: row.custo_receita ?? null, custo_parceria: row.custo_parceria ?? null } : {}) } : { numero_patrimonio: row.numero_patrimonio ?? null }), quantidade: row.quantidade, status: row.status, data_cadastro: row.data_cadastro });
 const grantDto = row => ({ id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), status: row.status, criado_em: row.criado_em });
 const page = (rows, q, dto, id) => { const items = rows.slice(0, q.limit); return { items: items.map(dto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1)[id]) : null } }; };
 export function createProductService({ model, identity }) {
+    function checkCostsPermission(input, user) {
+        if (user.tipo !== 'ADMIN' && (Object.hasOwn(input, 'custo_receita') || Object.hasOwn(input, 'custo_parceria'))) {
+            throw ApiError.acessoNegado();
+        }
+    }
     function role(context) { if (!['ADMIN','FORNECEDOR'].includes(context.actor.tipo)) throw ApiError.acessoNegado(); return context.actor; }
     async function actor(c, context) { const row = await identity.activeActor(c, context); if (!['ADMIN','FORNECEDOR'].includes(row.tipo_usuario)) throw ApiError.acessoNegado(); return { id: idString(row.id_usuario), tipo: row.tipo_usuario }; }
     async function ownSupplier(c, userId) { const row = found(await model.supplierByUser(userId, c)); if (row.status !== 'ATIVO' || row.tipo_usuario !== 'FORNECEDOR' || row.usuario_status !== 'ATIVO') throw ApiError.acessoNegado(); return row; }
@@ -36,12 +42,12 @@ export function createProductService({ model, identity }) {
             const u = role(context);
             let supplierId = null;
             if (u.tipo === 'FORNECEDOR') { if (q.supplierId) throw ApiError.acessoNegado(); supplierId = idString((await ownSupplier(undefined, u.id)).id_fornecedor); }
-            return page(await model.list(type, q, supplierId), q, row => productDto(type, row), key(type));
+            return page(await model.list(type, q, supplierId), q, row => productDto(type, row, u.tipo), key(type));
         },
         async get(type, id, context) {
             const u = role(context), row = found(await model.product(type, id));
             if (u.tipo === 'FORNECEDOR' && idString((await ownSupplier(undefined, u.id)).id_fornecedor) !== idString(row.id_fornecedor)) throw ApiError.acessoNegado();
-            return productDto(type, row);
+            return productDto(type, row, u.tipo);
         },
         async create(type, input, context) {
             return transaction(context, async (c, u) => {
@@ -49,9 +55,13 @@ export function createProductService({ model, identity }) {
                 if (u.tipo === 'ADMIN') { if (!input.supplierId) throw ApiError.validacao('supplierId obrigatório para ADMIN'); supplierId = input.supplierId; }
                 else { if (input.supplierId) throw ApiError.acessoNegado(); supplierId = idString((await ownSupplier(c, u.id)).id_fornecedor); }
                 await allowedContext(c, supplierId, input.localId);
+                if (type === 'inputs') {
+                    checkCostsPermission(input, u);
+                    validateRetailInput({ ...input, status: 'DISPONIVEL' });
+                }
                 const id = await model.create(type, c, { ...input, supplierId });
                 await identity.audit(c, `PRODUCT.${type.toUpperCase()}.CREATED`, id, context);
-                return productDto(type, found(await model.product(type, id, c)));
+                return productDto(type, found(await model.product(type, id, c)), u.tipo);
             });
         },
         async patch(type, id, input, context) {
@@ -61,9 +71,13 @@ export function createProductService({ model, identity }) {
                 if (u.tipo === 'FORNECEDOR' || input.status === 'DISPONIVEL') await allowedContext(c, initial.id_fornecedor, initial.id_local);
                 const row = found(await model.product(type, id, c, true));
                 if (idString(row.id_fornecedor) !== idString(initial.id_fornecedor) || idString(row.id_local) !== idString(initial.id_local)) throw conflict('Vínculo do item alterado');
+                if (type === 'inputs') {
+                    checkCostsPermission(input, u);
+                    validateRetailInput({ ...row, ...input });
+                }
                 await model.update(type, c, id, input);
                 await identity.audit(c, `PRODUCT.${type.toUpperCase()}.CHANGED`, id, context);
-                return productDto(type, found(await model.product(type, id, c)));
+                return productDto(type, found(await model.product(type, id, c)), u.tipo);
             });
         },
         async archive(type, id, context) {

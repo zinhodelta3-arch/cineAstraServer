@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Armchair, Clapperboard, Film, LayoutDashboard, ListChecks, Menu, Popcorn, UsersRound, X } from 'lucide-react';
 import { AppSidebar } from '@/components/app-sidebar';
 import SessionControls from '@/components/auth/session-controls';
+import { NotificationButton } from '@/components/notifications/notification-button';
 import { useSession } from '@/hooks/auth/use-session';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import styles from '../admin/admin.module.css';
@@ -43,7 +44,10 @@ export default function UnitShell({ children, initialUser }) {
           </SheetContent>
         </Sheet>
       </div>
-      <div className="flex justify-end p-4"><SessionControls session={session} /></div>
+      <div className="flex items-center justify-end gap-2 p-4">
+        {session.user && <NotificationButton userId={session.user.id} />}
+        <SessionControls session={session} />
+      </div>
       {children}
     </div>
   </div>;

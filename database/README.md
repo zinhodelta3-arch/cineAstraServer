@@ -14,7 +14,7 @@ mysql --default-character-set=utf8mb4 -u root -p cineastra < /caminho/cineastra-
 
 A senha é solicitada no terminal. Não precisa importar tabela por tabela. Substitua o nome do banco e o caminho pelos reais. Selecionar o banco neste mesmo comando evita o problema de `USE` executado numa conexão anterior.
 
-Requer MySQL 8.0.16+ (CHECK constraints), permissões DDL, CREATE ROUTINE e EXECUTE. Validado nesta revisão em MySQL **8.0.46**. Não foi validado em MariaDB. O arquivo não cria banco/usuário, não remove tabelas e não inclui senhas ou dados de clientes.
+Requer MySQL 8.0.16+ (CHECK constraints), permissões DDL, CREATE ROUTINE e EXECUTE. Validado nesta revisão em MySQL **8.0.46**. Não foi validado em MariaDB. O arquivo não cria banco nem contas do servidor MySQL e não remove tabelas. Após instalar o schema, carrega o catálogo e os dados iniciais da aplicação.
 
 **Não importar o consolidado em banco já preenchido.** Ele recusa schemas com tabelas. Não usar `--force`, não apagar o ledger, não remover tabelas para contornar erro. Se uma importação falhar, DDL pode já ter sido persistido: inspecione `schema_migrations` e a procedure auxiliar antes de repetir.
 
@@ -51,7 +51,7 @@ node backend/scripts/generateInstallSql.js
 node --test backend/tests/migrationInstall.test.js
 ```
 
-O gerador usa o mesmo plano e os mesmos checksums do runner. O teste detecta arquivo consolidado desatualizado e SQL esquecido no plano. Nunca edite manualmente o consolidado como substituto de uma migration incremental.
+O gerador usa o mesmo plano e os mesmos checksums do runner. Os dados iniciais e o catálogo vêm de `examples/dados-iniciais.sql` e `examples/filmes-100.sql`, carregados após as migrations e fora do ledger. O teste confere o conteúdo gerado e detecta SQL esquecido no plano. Nunca edite manualmente o consolidado como substituto de uma migration incremental.
 
 ## Verificação realizada nesta revisão
 

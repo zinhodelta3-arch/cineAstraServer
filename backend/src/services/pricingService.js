@@ -1,6 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { idString } from '../utils/dto.js';
 import { cents,money,roundDiv,basePrice,ordinaryQuote,ticketQuote,addMoney } from './pricingMath.js';
+import { validateRetailInput } from './retailInputPricing.js';
 
 const found=row=>{if(!row)throw ApiError.naoEncontrado();return row;};
 const conflict=message=>new ApiError(message,409,null,'PRICING_CONFLICT');
@@ -121,7 +122,18 @@ export function createPricingService({model,identity,simulated=false}){
         async parameters(context){return tx(context,async c=>{await admin(c,context);return (await model.parameters(c)).map(paramDto);});},
         async setParameter(category,input,context){return tx(context,async c=>{await admin(c,context);found(await model.parameter(category,c,true));await model.updateParameter(c,category,input);await identity.audit(c,'PRICING.PARAMETERS_CHANGED',category,context);return paramDto(found(await model.parameter(category,c)));});},
         async costs(kind,id,context){return tx(context,async c=>{await admin(c,context);return found(await model.resource(kind,id,c));});},
-        async setCosts(kind,id,input,context){return tx(context,async c=>{await admin(c,context);found(await model.resource(kind,id,c,true));const data={};for(const key of fields[kind])if(Object.hasOwn(input,key))data[key]=input[key];await model.updateResource(c,kind,id,data);await identity.audit(c,'PRICING.COST_CHANGED',id,context);return found(await model.resource(kind,id,c));});},
+        async setCosts(kind,id,input,context){return tx(context,async c=>{
+            await admin(c,context);
+            const data={};
+            for(const key of fields[kind])if(Object.hasOwn(input,key))data[key]=input[key];
+            if(kind==='inputs'){
+                const row=found(await model.product('INPUT',id,c,true));
+                validateRetailInput({...row,...data,preco:row.published});
+            }else found(await model.resource(kind,id,c,true));
+            await model.updateResource(c,kind,id,data);
+            await identity.audit(c,'PRICING.COST_CHANGED',id,context);
+            return found(await model.resource(kind,id,c));
+        });},
         async publish(category,id,context){return tx(context,async c=>{
             await admin(c,context);
             const p=found(await model.parameter(category,c,true)),row=found(await model.product(category,id,c,true));

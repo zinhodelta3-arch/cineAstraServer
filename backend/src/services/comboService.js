@@ -4,6 +4,7 @@ import { idString, moneyString } from '../utils/dto.js';
 
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'COMBO_CONFLICT');
+const cost = row => row.custo_operacional == null ? null : moneyString(row.custo_operacional);
 const dto = (row, items) => ({ id_combo: idString(row.id_combo), id_local: row.id_local === null ? null : idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, preco: moneyString(row.preco), imagem: row.imagem ?? null, ativo: Boolean(row.ativo), data_cadastro: row.data_cadastro, items: items.map(i => ({ id_insumo: idString(i.id_insumo), nome: i.nome, quantidade: i.quantidade })) });
 export function createComboService({ model, identity }) {
     async function admin(c, context) { if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); }
@@ -25,7 +26,11 @@ export function createComboService({ model, identity }) {
         const rows = await model.inputs(ids, c, true);
         if (rows.length !== ids.length || rows.some(i => idString(i.id_local) !== idString(localId) || i.status !== 'DISPONIVEL' || i.fornecedor_status !== 'ATIVO' || i.usuario_status !== 'ATIVO' || i.tipo_usuario !== 'FORNECEDOR' || i.vinculo_status !== 'ATIVO')) throw conflict('Composição exige insumos disponíveis do mesmo local e fornecedor autorizado');
     }
-    async function detail(id, c) { const combo = found(await model.combo(id, c)); return dto(combo, await model.items(id, c)); }
+    async function detail(id, c, includeCost = false) {
+        const combo = found(await model.combo(id, c));
+        const result = dto(combo, await model.items(id, c));
+        return includeCost ? { ...result, custo_operacional: cost(combo) } : result;
+    }
     return {
         async list(q) {
             const rows = await model.list(q), items = rows.slice(0, q.limit);
@@ -40,20 +45,22 @@ export function createComboService({ model, identity }) {
         },
         async adminList(q,context) { return transact(context,async c=>{
             const rows=await model.adminList(c,q),page=rows.slice(0,q.limit);
-            return {items:page.map(row=>({id_combo:idString(row.id_combo),id_local:row.id_local==null?null:idString(row.id_local),nome:row.nome,descricao:row.descricao??null,preco:moneyString(row.preco),ativo:Boolean(row.ativo),data_cadastro:row.data_cadastro??null,itemCount:Number(row.item_count)})),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(page.at(-1).id_combo):null}};
+            return {items:page.map(row=>({id_combo:idString(row.id_combo),id_local:row.id_local==null?null:idString(row.id_local),nome:row.nome,descricao:row.descricao??null,preco:moneyString(row.preco),custo_operacional:cost(row),ativo:Boolean(row.ativo),data_cadastro:row.data_cadastro??null,itemCount:Number(row.item_count)})),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(page.at(-1).id_combo):null}};
         }); },
-        async adminGet(id, context) { return transact(context,c=>detail(id,c)); },
+        async adminGet(id, context) { return transact(context,c=>detail(id,c,true)); },
         async unitList(q, context) { return identity.transaction(async c => {
-            const localId = await unitReadLocation(c, await identity.activeActor(c, context), q.localId);
+            const actor = await identity.activeActor(c, context);
+            const localId = await unitReadLocation(c, actor, q.localId);
             if (q.localId && idString(q.localId) !== localId) throw ApiError.acessoNegado();
             const rows = await model.adminList(c, { ...q, localId }), page = rows.slice(0, q.limit);
-            return { items: page.map(row => ({ id_combo: idString(row.id_combo), id_local: idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, preco: moneyString(row.preco), ativo: Boolean(row.ativo), itemCount: Number(row.item_count) })), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(page.at(-1).id_combo) : null } };
+            return { items: page.map(row => ({ id_combo: idString(row.id_combo), id_local: idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, preco: moneyString(row.preco), ...(actor.tipo_usuario === 'SUPERVISOR' ? { custo_operacional: cost(row) } : {}), ativo: Boolean(row.ativo), itemCount: Number(row.item_count) })), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(page.at(-1).id_combo) : null } };
         }, context); },
         async unitGet(id, context) { return identity.transaction(async c => {
             const row = found(await model.combo(id, c));
             if(row.id_local==null)throw ApiError.acessoNegado();
-            await unitReadLocation(c, await identity.activeActor(c, context), row.id_local);
-            return detail(id, c);
+            const actor = await identity.activeActor(c, context);
+            await unitReadLocation(c, actor, row.id_local);
+            return detail(id, c, actor.tipo_usuario === 'SUPERVISOR');
         }, context); },
         async create(input, context, unitAccess = false) {
             return transact(context, async c => {
@@ -62,7 +69,7 @@ export function createComboService({ model, identity }) {
                 const id = await model.create(c, input);
                 await model.replaceItems(c, id, input.items);
                 await identity.audit(c, 'COMBO.CREATED', id, context);
-                return detail(id, c);
+                return detail(id, c, true);
             }, unitAccess);
         },
         async patch(id, input, context, unitAccess = false) {
@@ -73,10 +80,11 @@ export function createComboService({ model, identity }) {
                 await model.local(initial.id_local, c, true);
                 const row = found(await model.combo(id, c, true));
                 if (row.id_local !== initial.id_local) throw conflict('Local alterado');
-                if (!row.ativo || await model.referenced(id, c)) throw conflict('Combo arquivado ou referenciado não pode ser alterado');
+                const adminCostOnly = !unitAccess && Object.keys(input).length === 1 && input.custo_operacional !== undefined;
+                if (!row.ativo || (!adminCostOnly && await model.referenced(id, c))) throw conflict('Combo arquivado ou referenciado não pode ser alterado');
                 await model.update(c, id, input);
                 await identity.audit(c, 'COMBO.CHANGED', id, context);
-                return detail(id, c);
+                return detail(id, c, true);
             }, unitAccess);
         },
         async replace(id, input, context, unitAccess = false) {
@@ -90,7 +98,7 @@ export function createComboService({ model, identity }) {
                 if (!row.ativo || await model.referenced(id, c)) throw conflict('Combo arquivado ou referenciado não pode ter composição alterada');
                 await model.replaceItems(c, id, input.items);
                 await identity.audit(c, 'COMBO.COMPOSITION_CHANGED', id, context);
-                return detail(id, c);
+                return detail(id, c, true);
             }, unitAccess);
         },
         async archive(id, context, unitAccess = false) {

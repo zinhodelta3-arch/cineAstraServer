@@ -19,5 +19,10 @@ export async function POST(request){
    return {kind:line.category,id:line.id,unitPrice:line.unitPrice,originalPrice:line.base,discountSources:line.discountSources??[],total:line.subtotal,finalizable:quote.finalizable===true,catalogOutOfSync:line.catalogOutOfSync===true,quotedAt:quote.quotedAt};
   });
   return json(batch?{lines}:lines[0]);
- }catch(e){return json({message:e instanceof AuthError?e.message:'Não foi possível cotar o produto.'},e instanceof AuthError?e.status:503);}
+ }catch(e){
+  const message=e instanceof AuthError&&e.code==='PRICING_CONFLICT'
+   ? 'O cinema precisa revisar a configuração de preço deste produto antes da compra.'
+   : e instanceof AuthError?e.message:'Não foi possível cotar o produto.';
+  return json({message},e instanceof AuthError?e.status:503);
+ }
 }

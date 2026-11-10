@@ -5,7 +5,7 @@ import { supplySchemas } from '../src/validators/supplyValidators.js';
 
 function fixture(){
     let failReceipt=false;
-    let state={items:[{id_insumo:'10',id_fornecedor:'5',id_local:'1',nome:'Pipoca',descricao:null,categoria:'Alimento',quantidade:4,quantidade_reservada:0,quantidade_minima:1,preco:'1.00',status:'DISPONIVEL'}],equipment:[{id_equipamento:'20',id_fornecedor:'5',id_local:'1',quantidade:1,status:'DISPONIVEL'}],sessionStatus:'AGENDADA',requests:[],shipments:[],movements:[],audit:[]};
+    let state={items:[{id_insumo:'10',id_fornecedor:'5',id_local:'1',nome:'Pipoca',descricao:null,categoria:'Alimento',quantidade:4,quantidade_reservada:0,quantidade_minima:1,preco:'1.00',status:'DISPONIVEL'}],equipment:[{id_equipamento:'20',id_fornecedor:'5',id_local:'1',quantidade:1,status:'DISPONIVEL'}],sessionStatus:'AGENDADA',requests:[],shipments:[],movements:[],audit:[],links:[]};
     const model={
         async local(id){return {id_local:String(id),status:'ATIVO'};},
         async session(id){return {id_sessao:String(id),id_local:'2',status:state.sessionStatus,local_status:'ATIVO'};},
@@ -25,6 +25,12 @@ function fixture(){
         async createShipment(c,d){const id=String(state.shipments.length+1);state.shipments.push({id_logistica:id,id_fornecedor:d.supplierId,id_local_origem:d.originId,id_local_destino:d.destinationId,id_solicitacao:d.requestId,id_insumo_origem:d.inputId??null,id_equipamento_origem:d.equipmentId??null,id_insumo_destino:null,quantidade:d.quantity,id_usuario_recebimento:null,data_envio:null,data_prevista:null,data_recebimento:null,status:'PENDENTE',observacao:null});return id;},
         async setShipment(c,id,status,receiver){const s=state.shipments.find(x=>x.id_logistica===String(id));s.status=status;if(status==='RECEBIDO')s.id_usuario_recebimento=receiver;},
         async setDestinationItem(c,id,itemId){state.shipments.find(x=>x.id_logistica===String(id)).id_insumo_destino=itemId;},
+        async inputLink(c,sourceId,localId){return state.links.find(row=>row.id_insumo_origem===sourceId&&row.id_local_destino===localId)??null;},
+        async saveInputLink(c,sourceId,localId,targetId){
+            const row={id_vinculo:'1',id_insumo_origem:sourceId,id_insumo_destino:targetId,id_local_origem:'1',id_local_destino:localId};
+            state.links=[row];
+            return row;
+        },
         async setReturned(c,id,actorId){const s=state.shipments.find(x=>x.id_logistica===String(id));s.status='DEVOLVIDO';s.id_usuario_devolucao=actorId;},
         async cloneInput(c,source,destinationId){const id=String(state.items.length+10);state.items.push({...source,id_insumo:id,id_local:destinationId,quantidade:0,quantidade_reservada:0});return id;},
         async changeInput(c,id,delta){const item=state.items.find(x=>x.id_insumo===String(id));if(!item||item.quantidade+delta<item.quantidade_reservada)return [{affectedRows:0}];item.quantidade+=delta;return [{affectedRows:1}];},
@@ -32,7 +38,12 @@ function fixture(){
         async equipmentInTransit(id){return state.shipments.find(x=>x.id_equipamento_origem===String(id)&&['PENDENTE','ENVIADO','EM_TRANSITO'].includes(x.status))??null;},
         async movement(c,d){if(failReceipt&&d.type==='ENTRADA')throw new Error('history failed');state.movements.push(d);return String(state.movements.length);}
     };
-    const identity={async transaction(fn){const saved=structuredClone(state);try{return await fn({execute:async()=>[]});}catch(e){state=saved;throw e;}},async activeActor(c,ctx){return {id_usuario:ctx.actor.id,tipo_usuario:ctx.actor.tipo};},async audit(c,action,id){state.audit.push({action,id});}};
+    const identity={async transaction(fn){const saved=structuredClone(state);try{return await fn({
+        async execute(sql,[userId,localId]){
+            assert.match(sql,/equipe_membros/);
+            return [userId==='3'&&localId==='2'?[{id_local:'2'}]:[]];
+        }
+    });}catch(e){state=saved;throw e;}},async activeActor(c,ctx){return {id_usuario:ctx.actor.id,tipo_usuario:ctx.actor.tipo};},async audit(c,action,id){state.audit.push({action,id});}};
     const service=createSupplyService({model,identity});
     const ctx=(id,tipo)=>({actor:{id,tipo}});
     return {service,ctx,get state(){return state;},set failReceipt(value){failReceipt=value;}};
@@ -84,4 +95,39 @@ test('estoque mostra a chegar; equipamento só volta após sessão encerrada e u
     assert.equal(f.state.movements.length,3);
     await assert.rejects(f.service.returnEquipment('1',staff),{statusCode:409});
     assert.equal(f.state.movements.length,3);
+});
+
+test('recebimento com vínculo repõe somente o insumo existente do mesmo fornecedor',async()=>{
+    const f=fixture(),admin=f.ctx('1','ADMIN'),staff=f.ctx('3','COLABORADOR'),supplier=f.ctx('2','FORNECEDOR');
+    f.state.items.push({...f.state.items[0],id_insumo:'11',id_local:'2',quantidade:10,quantidade_reservada:3,preco:'8.00',venda_avulsa:true});
+    f.state.items.push({...f.state.items[1],id_insumo:'12',id_fornecedor:'6'});
+    await assert.rejects(f.service.saveInputLink({sourceId:'10',targetId:'11'},staff),{statusCode:403});
+    await assert.rejects(f.service.saveInputLink({sourceId:'10',targetId:'12'},admin),{statusCode:409});
+    await f.service.saveInputLink({sourceId:'10',targetId:'11'},admin);
+    await f.service.createRequest({localId:'2',sessionId:'7',inputId:'10',quantity:2},staff);
+    await f.service.decide('1','APROVADA',supplier);
+    await f.service.transitionShipment('1','send',supplier);
+
+    f.failReceipt=true;
+    await assert.rejects(f.service.transitionShipment('1','receive',staff),/history failed/);
+    assert.equal(f.state.items[1].quantidade,10);
+    assert.equal(f.state.shipments[0].id_insumo_destino,null);
+    assert.equal(f.state.shipments[0].status,'ENVIADO');
+    assert.equal(f.state.requests[0].status,'APROVADA');
+    assert.equal(f.state.movements.length,1);
+
+    f.failReceipt=false;
+    const receipt=await f.service.transitionShipment('1','receive',staff);
+    assert.equal(receipt.id_insumo_destino,'11');
+    assert.equal(f.state.items.length,3);
+    assert.equal(f.state.items[1].quantidade,12);
+    assert.equal(f.state.items[1].quantidade_reservada,3);
+    assert.equal(f.state.items[1].preco,'8.00');
+    assert.equal(f.state.items[1].venda_avulsa,true);
+    assert.equal(f.state.movements.at(-1).inputId,'11');
+    assert.equal(f.state.movements.at(-1).shipmentId,'1');
+    assert.equal(receipt.id_usuario_recebimento,'3');
+    await assert.rejects(f.service.transitionShipment('1','receive',staff),{statusCode:409});
+    assert.equal(f.state.items[1].quantidade,12);
+    assert.equal(f.state.movements.length,2);
 });

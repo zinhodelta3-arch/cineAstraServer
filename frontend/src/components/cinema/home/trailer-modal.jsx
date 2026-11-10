@@ -1,29 +1,30 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { X } from "lucide-react";
-import { useEscapeClose } from "@/hooks/cinema/home/use-escape-close";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { youtubeEmbed } from "@/lib/api/youtube-embed.mjs";
 
-export default function TrailerModal({ movie, onClose }) {
-  useEscapeClose(onClose);
+export default function TrailerButton({ url, title, className, onOpenChange }) {
+  const [open, setOpen] = useState(false);
+  const closeRef = useRef(null);
+  const embed = youtubeEmbed(url);
+  if (!embed) return null;
 
-  return (
-    <div role="dialog" aria-modal="true" aria-label={`Trailer de ${movie.title}`} className="fixed inset-0 z-50 bg-background/90 backdrop-blur-md flex flex-col items-center justify-center p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-5xl">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <span className="text-xs font-semibold text-primary block">Trailer oficial</span>
-            <h3 className="f-display text-3xl font-black text-foreground">{movie.title}</h3>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Fechar" className="p-2 text-muted-foreground hover:text-foreground rounded-full"><X className="w-6 h-6" /></button>
-        </div>
-        <div className="flex gap-2 bg-card p-3 rounded-md border border-border">
-          <div className="perf-v hidden sm:block rounded-sm" aria-hidden="true" />
-          <div className="aspect-video w-full bg-black">
-            <iframe src={`${movie.trailerUrl}?autoplay=1`} title={movie.title} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-          </div>
-          <div className="perf-v hidden sm:block rounded-sm" aria-hidden="true" />
-        </div>
+  return <Dialog open={open} onOpenChange={value => { setOpen(value); onOpenChange?.(value); }}>
+    <DialogTrigger type="button" className={className}>Assistir trailer</DialogTrigger>
+    <DialogContent initialFocus={closeRef} showCloseButton={false}
+      className="max-h-[calc(100dvh-2rem)] overflow-y-auto border border-border bg-card sm:max-w-4xl">
+      <DialogClose ref={closeRef} aria-label="Fechar trailer"
+        className="absolute right-4 top-4 grid size-10 place-items-center rounded-md text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary">
+        <X size={20} aria-hidden="true" />
+      </DialogClose>
+      <div className="pr-12">
+        <DialogTitle className="f-display text-2xl font-bold">{title}</DialogTitle>
+        <DialogDescription>Trailer oficial</DialogDescription>
       </div>
-    </div>
-  );
+      {open && <iframe src={`${embed}&autoplay=1`} title={`Trailer de ${title}`}
+        className="aspect-video w-full rounded-md bg-black" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen />}
+    </DialogContent>
+  </Dialog>;
 }

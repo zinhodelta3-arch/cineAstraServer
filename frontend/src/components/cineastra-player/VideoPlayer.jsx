@@ -28,7 +28,7 @@ function IconButton({ label, icon: Icon, active, seconds, text, emphasis, ...pro
 }
 
 export default function VideoPlayer(props) {
-  const { dialog,mode,full,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,gesture,progressPointer,duration,current,seek,setHoverTime,paused,ended } = useVideoPlayer(props);
+  const { dialog,mode,full,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,startProgressGesture,endProgressGesture,leaveProgress,progressPointer,duration,current,seek,paused,ended } = useVideoPlayer(props);
   const options = props.options ?? {};
   return <dialog ref={dialog} className={`cineastra-player ca-dialog ca-${mode} ${full || mode === "expanded" ? "ca-full" : ""}`} role={mode === "page" ? "region" : undefined} aria-label={`${options.isTrailer ? "Trailer" : "Player"}: ${media.title}`}
     onKeyDown={keyDown} onCancel={(e) => { e.preventDefault(); if (panel) setPanel(null); else close(); }}
@@ -48,7 +48,7 @@ export default function VideoPlayer(props) {
         <div className="ca-perf-v" aria-hidden="true" />
         <div className={`ca-screen ${visible ? "ca-controls-shown" : ""}`} ref={surface} tabIndex={0} aria-label={embed ? "Trailer oficial no YouTube" : "Área do vídeo. Espaço: pausar. Setas: avançar ou voltar 15 segundos."} onPointerMove={showControls}>
           {embed ? <YouTubeVideo key={embed} src={embed} title={media.title} options={options} /> : content.src ?
-            <video ref={video} key={`${episodeId ?? media.id}:${content.src}`} src={content.src} poster={content.poster} playsInline preload="metadata"
+            <video ref={video} key={`${episode?.id ?? media.id}:${content.src}`} poster={content.poster} playsInline preload="metadata"
               onLoadedMetadata={loaded} onTimeUpdate={updated} onPlay={() => { setPlaying(true); setStarted(true); setError(""); showControls(); }} onPause={paused}
               onWaiting={() => setWaiting(true)} onPlaying={() => setWaiting(false)} onCanPlay={() => setWaiting(false)} onEnded={ended}
               onError={() => { setWaiting(false); setError("Vídeo indisponível. Confira o endereço do arquivo e tente novamente."); }}
@@ -71,9 +71,8 @@ export default function VideoPlayer(props) {
               <div className="ca-story-head"><button type="button" onClick={() => setStoryboard(false)} aria-label="Fechar quadros"><X size={16} /></button></div>
               <div className="ca-frames">{frames.length ? frames.map((frame) => <button type="button" key={frame.time} onClick={() => { seek(frame.time); setStoryboard(false); }}><img src={frame.src} alt={`Cena em ${time(frame.time)}`} /><span>{time(frame.time)}</span></button>) : <p>Prévias de cenas não disponíveis para este vídeo.</p>}</div>
             </div>}
-            <div className="ca-timeline" onPointerMove={progressPointer} onPointerLeave={() => { if (!gesture.current) setHoverTime(null); }}
-              onPointerDown={(e) => { gesture.current = { y: e.clientY }; }}
-              onPointerUp={() => { gesture.current = null; }} onPointerCancel={() => { gesture.current = null; }}>
+            <div className="ca-timeline" onPointerMove={progressPointer} onPointerLeave={leaveProgress}
+              onPointerDown={startProgressGesture} onPointerUp={endProgressGesture} onPointerCancel={endProgressGesture}>
               {hoverTime !== null && !storyboard && <div className="ca-seek-preview" style={{ left: `${Math.min(88, Math.max(12, duration ? hoverTime / duration * 100 : 0))}%` }}>{thumbnail && <img src={thumbnail.src} alt="Prévia da cena" />}<span>{time(hoverTime)}</span></div>}
               <input type="range" min="0" max={duration || 1} step="0.1" value={current} disabled={!duration} aria-label="Posição do vídeo" aria-valuetext={`${time(current)} de ${time(duration)}`} style={{ "--progress": `${duration ? current / duration * 100 : 0}%` }} onChange={(e) => seek(Number(e.target.value))} />
             </div>

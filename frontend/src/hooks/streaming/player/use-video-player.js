@@ -1,20 +1,11 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-function youtubeEmbed(src) {
-  if (!src) return null;
-  try {
-    const u = new URL(src);
-    if (u.protocol !== "https:" || u.username || u.password) return null;
-    const host = u.hostname.replace(/^www\./, "");
-    let id;
-    if (host === "youtu.be") id = u.pathname.slice(1);
-    if (["youtube.com", "m.youtube.com", "youtube-nocookie.com"].includes(host)) id = u.searchParams.get("v") ?? u.pathname.match(/^\/(?:embed|shorts)\/([^/]+)/)?.[1];
-    return /^[\w-]{11}$/.test(id ?? "") ? `https://www.youtube-nocookie.com/embed/${id}?playsinline=1&rel=0` : null;
-  } catch { return null; }
-}
+import { useEffect, useRef, useState } from "react";
+import { youtubeEmbed } from "@/lib/api/youtube-embed.mjs";
 export default function useVideoPlayer({ media, options = {}, mode, onModeChange: setMode, onRestore, onEpisodeChange, onClose }) {
   const allEpisodes = (media.seasons ?? []).flatMap((s) => s.episodes.map((e) => ({ ...e, season: s.number })));
   const [episodeId, setEpisodeId] = useState(options.episodeId ?? allEpisodes[0]?.id);
+  const [selection, setSelection] = useState({ id: options.episodeId, token: options.selectionToken });
+  const [autoPlayEpisode, setAutoPlayEpisode] = useState(null);
   const episode = allEpisodes.find((e) => e.id === episodeId) ?? allEpisodes[0];
   const content = media.type === "series" ? { ...media, ...episode } : media;
   const [season, setSeason] = useState(episode?.season ?? media.seasons?.[0]?.number);
@@ -34,14 +25,34 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
   const [storyboard, setStoryboard] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const dialog = useRef(null), shell = useRef(null), video = useRef(null), surface = useRef(null), timer = useRef(null), gesture = useRef(null);
-  const autoPlayNext = useRef(false);
+  const mediaKey = JSON.stringify([episode?.id ?? media.id, content.src]);
+  const [previousMediaKey, setPreviousMediaKey] = useState(mediaKey);
   const fullscreenOrigin = useRef(mode);
   const focusReturn = useRef(null);
-  const currentRef = useRef(0);
   const embed = youtubeEmbed(content.src);
   const next = allEpisodes[allEpisodes.findIndex((e) => e.id === episode?.id) + 1];
   const frames = content.thumbnails ?? [];
   const thumbnail = frames.filter((f) => f.time <= (hoverTime ?? current)).at(-1) ?? frames[0];
+  if (selection.id !== options.episodeId || selection.token !== options.selectionToken) {
+    setSelection({ id: options.episodeId, token: options.selectionToken });
+    const selected = allEpisodes.find((item) => item.id === options.episodeId);
+    if (selected && selected.id !== episodeId) {
+      setAutoPlayEpisode(selected.id);
+      setEpisodeId(selected.id);
+      setSeason(selected.season);
+      setPanel(null);
+    }
+  }
+  if (previousMediaKey !== mediaKey) {
+    setPreviousMediaKey(mediaKey);
+    setCurrent(0);
+    setDuration(0);
+    setStarted(false);
+    setPlaying(false);
+    setError("");
+    setCaption(-1);
+    setWaiting(false);
+  }
 
   useEffect(() => {
     focusReturn.current = document.activeElement;
@@ -73,9 +84,11 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     return () => { window.removeEventListener("pointermove", drag); window.removeEventListener("pointerup", end); window.removeEventListener("pointercancel", end); };
   }, []);
   useEffect(() => {
-    setCurrent(0); currentRef.current = 0; setDuration(0); setStarted(false); setPlaying(false); setError(""); setCaption(-1); setWaiting(false);
-
-  }, [content.src, episodeId]);
+    const el = video.current;
+    if (!el) return;
+    // Start loading only after the video and its metadata handler are mounted.
+    el.src = content.src;
+  }, [content.src, mediaKey]);
   useEffect(() => {
     const el = video.current;
     if (!el) return;
@@ -86,35 +99,29 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     if (el) Array.from(el.textTracks).forEach((track, i) => { track.mode = i === caption ? "showing" : "disabled"; });
   }, [caption, episodeId]);
 
-  useEffect(() => {
-    if (options.episodeId && options.episodeId !== episodeId) {
-      const selected = allEpisodes.find((e) => e.id === options.episodeId);
-      if (selected) { autoPlayNext.current = true; setEpisodeId(selected.id); setSeason(selected.season); setPanel(null); }
-    }
-  }, [options.episodeId, options.selectionToken]);
   useEffect(() => { onEpisodeChange?.(episode?.id ?? null); }, [episode?.id, onEpisodeChange]);
 
-  const showControls = useCallback(() => {
+  const showControls = () => {
     setControlsVisible(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       if (!shell.current?.querySelector(".ca-icon:hover, .ca-icon:focus-visible, .ca-panel:hover")) setControlsVisible(false);
     }, 3500);
-  }, []);
-  const toggle = useCallback(async () => {
+  };
+  const toggle = async () => {
     const el = video.current;
     if (!el) return;
     if (el.paused) {
       try { await el.play(); } catch { setError("Não foi possível iniciar. Tente reproduzir novamente."); }
     } else el.pause();
     showControls();
-  }, [showControls]);
-  const seek = useCallback((value) => {
+  };
+  const seek = (value) => {
     const el = video.current;
     if (!el || !Number.isFinite(el.duration)) return;
     el.currentTime = Math.max(0, Math.min(value, el.duration));
-    currentRef.current = el.currentTime; setCurrent(el.currentTime);
-  }, []);
+    setCurrent(el.currentTime);
+  };
   const fullscreen = async () => {
     if (document.fullscreenElement) {
       await document.exitFullscreen().catch(() => {});
@@ -134,7 +141,7 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     setPanel(null); setMode(newMode); showControls();
   };
   const selectEpisode = (item) => {
-    autoPlayNext.current = true; setEpisodeId(item.id); setSeason(item.season); setPanel(null);
+    setAutoPlayEpisode(item.id); setEpisodeId(item.id); setSeason(item.season); setPanel(null);
   };
   const close = () => {
     if (video.current) options.onPause?.(video.current.currentTime);
@@ -144,7 +151,7 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
   };
   const updated = () => {
     const el = video.current;
-    currentRef.current = el.currentTime; setCurrent(el.currentTime);
+    setCurrent(el.currentTime);
     options.onTimeUpdate?.(el.currentTime);
   };
   const loaded = () => {
@@ -153,7 +160,10 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     const saved = Number(options.initialPosition || 0);
     if (saved > 0 && saved < el.duration - 3) el.currentTime = saved;
     Array.from(el.textTracks).forEach((t) => { t.mode = "disabled"; });
-    if (autoPlayNext.current || options.autoPlay) { autoPlayNext.current = false; el.play().catch(() => {}); }
+    if ((autoPlayEpisode !== null && autoPlayEpisode === episode?.id) || options.autoPlay) {
+      setAutoPlayEpisode(null);
+      el.play().catch(() => {});
+    }
   };
   const keyDown = (event) => {
     if (event.key === "Escape" && panel) { event.preventDefault(); event.stopPropagation(); setPanel(null); return; }
@@ -161,8 +171,8 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     if (event.target.closest("input, select, textarea, button") || embed) return;
     if ([" ", "k", "ArrowLeft", "ArrowRight", "m", "f"].includes(event.key)) event.preventDefault();
     if (event.key === " " || event.key === "k") toggle();
-    if (event.key === "ArrowLeft") seek(currentRef.current - 15);
-    if (event.key === "ArrowRight") seek(currentRef.current + 15);
+    if (event.key === "ArrowLeft") seek((video.current?.currentTime ?? current) - 15);
+    if (event.key === "ArrowRight") seek((video.current?.currentTime ?? current) + 15);
     if (event.key === "m") setMuted((v) => !v);
     if (event.key === "f") fullscreen();
     showControls();
@@ -173,9 +183,12 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     setHoverTime(position * duration);
     if (gesture.current && gesture.current.y - event.clientY > 25) setStoryboard(true);
   };
+  const startProgressGesture = (event) => { gesture.current = { y: event.clientY }; };
+  const endProgressGesture = () => { gesture.current = null; };
+  const leaveProgress = () => { if (!gesture.current) setHoverTime(null); };
   const visible = controlsVisible || !playing || Boolean(panel) || storyboard || mode === "mini";
 
   const paused = () => { setPlaying(false); if (video.current) options.onPause?.(video.current.currentTime); };
   const ended = () => { setPlaying(false); if (video.current) options.onPause?.(video.current.duration); };
-  return { dialog,mode,full,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,gesture,progressPointer,duration,current,seek,setHoverTime,paused,ended };
+  return { dialog,mode,full,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,startProgressGesture,endProgressGesture,leaveProgress,progressPointer,duration,current,seek,paused,ended };
 }

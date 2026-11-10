@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { operationKey } from "@/lib/api/operation-key.mjs";
 
 export default function useAddCard(onAdd) {
   const [open, setOpen] = useState(false);
@@ -14,7 +15,12 @@ export default function useAddCard(onAdd) {
     const now = new Date();
     if (!/^\d{4}$/.test(last4)) { setError("Informe exatamente os quatro últimos dígitos."); return; }
     if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry) || new Date(2000 + year, month, 1) <= now) { setError("Informe uma validade futura no formato MM/AA."); return; }
-    onAdd({ id: crypto.randomUUID(), brand: values.get("brand"), nickname: String(values.get("nickname")).trim() || "Meu cartão", last4, expiry }); setOpen(false);
+    try {
+      onAdd({ id: operationKey(), brand: values.get("brand"), nickname: String(values.get("nickname")).trim() || "Meu cartão", last4, expiry });
+      setOpen(false);
+    } catch (error) {
+      setError(error.message);
+    }
   }
   const changeOpen = (isOpen) => { setError(""); setOpen(isOpen); };
 

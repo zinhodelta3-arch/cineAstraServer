@@ -1,7 +1,7 @@
 import { idString } from '../utils/dto.js';
 
 const config = {
-    inputs: { table: 'insumos', id: 'id_insumo', fields: 'id_insumo,id_fornecedor,id_local,nome,descricao,categoria,quantidade,quantidade_minima,preco,venda_avulsa,status,data_cadastro', editable: ['nome','descricao','categoria','quantidade_minima','preco','venda_avulsa','status'] },
+    inputs: { table: 'insumos', id: 'id_insumo', fields: 'id_insumo,id_fornecedor,id_local,nome,descricao,categoria,quantidade,quantidade_minima,preco,custo_receita,custo_parceria,venda_avulsa,status,data_cadastro', editable: ['nome','descricao','categoria','quantidade_minima','preco','custo_receita','custo_parceria','venda_avulsa','status'] },
     equipment: { table: 'equipamentos', id: 'id_equipamento', fields: 'id_equipamento,id_fornecedor,id_local,nome,descricao,categoria,numero_patrimonio,quantidade,status,data_cadastro', editable: ['nome','descricao','categoria','numero_patrimonio','status'] }
 };
 const spec = type => { if (!config[type]) throw new TypeError('Produto inválido'); return config[type]; };
@@ -42,8 +42,9 @@ export function createProductModel(database) {
             const s = spec(type);
             let sql, args;
             if (type === 'inputs') {
-                sql = "INSERT INTO insumos (id_fornecedor,id_local,nome,descricao,categoria,quantidade,quantidade_minima,preco,venda_avulsa,status) VALUES (?,?,?,?,?,0,?,?,?,'DISPONIVEL')";
-                args = [input.supplierId,input.localId,input.nome,input.descricao ?? null,input.categoria ?? null,input.quantidade_minima ?? 0,input.preco,input.venda_avulsa ?? false];
+                sql = "INSERT INTO insumos (id_fornecedor,id_local,nome,descricao,categoria,quantidade,quantidade_minima,preco,custo_receita,custo_parceria,venda_avulsa,status) VALUES (?,?,?,?,?,0,?,?,?,?,?,'DISPONIVEL')";
+                args = [input.supplierId,input.localId,input.nome,input.descricao ?? null,input.categoria ?? null,
+                    input.quantidade_minima ?? 0,input.preco,input.custo_receita ?? null,input.custo_parceria ?? null,input.venda_avulsa ?? false];
             } else {
                 sql = "INSERT INTO equipamentos (id_fornecedor,id_local,nome,descricao,categoria,numero_patrimonio,quantidade,status) VALUES (?,?,?,?,?,?,0,'DISPONIVEL')";
                 args = [input.supplierId,input.localId,input.nome,input.descricao ?? null,input.categoria ?? null,input.numero_patrimonio ?? null];

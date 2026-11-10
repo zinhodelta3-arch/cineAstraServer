@@ -1,12 +1,15 @@
 "use client";
 
 import { Film, Ticket, Clock3, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { useState } from "react";
 import Image from "next/image";
 import { Badge, SmartImg, Button } from "./home-ui";
 import { useHomeHero } from "@/hooks/cinema/home/use-home-hero";
+import TrailerButton from "./trailer-modal";
 
 export default function HeroSection({ movies, onSelectMovie }) {
-  const { cur, setCur, movie } = useHomeHero(movies);
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const { cur, setCur, movie } = useHomeHero(movies, trailerOpen);
   if (!movie) return null;
 
   return (
@@ -54,7 +57,8 @@ export default function HeroSection({ movies, onSelectMovie }) {
             </div>
             <div className="flex items-center gap-4 flex-wrap">
               <Button size="lg" onClick={() => onSelectMovie(movie)}><Ticket className="w-5 h-5 mr-2" aria-hidden="true" /> Consultar sessões</Button>
-              {movie.trailerUrl && <a href={movie.trailerUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-border px-8 py-4 font-bold focus-visible:ring-2 focus-visible:ring-primary">Assistir trailer ↗</a>}
+              <TrailerButton key={movie.id} url={movie.trailerUrl} title={movie.title} onOpenChange={setTrailerOpen}
+                className="rounded-full border border-border px-8 py-4 font-bold focus-visible:ring-2 focus-visible:ring-primary" />
             </div>
           </div>
 

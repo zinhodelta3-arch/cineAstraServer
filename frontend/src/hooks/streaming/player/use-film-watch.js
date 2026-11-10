@@ -7,11 +7,10 @@ import { loadMyAccesses, loadStreamingFilms, streamingMovie, streamingRequest } 
 export default function useFilmWatch(filmId) {
   const router = useRouter();
   const [revision, setRevision] = useState(0);
-  const [state, setState] = useState({ loading: true });
+  const [state, setState] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    setState({ loading: true });
     async function load() {
       try {
         if (!/^[1-9]\d{0,19}$/.test(filmId)) throw new Error("Filme não encontrado.");
@@ -28,14 +27,15 @@ export default function useFilmWatch(filmId) {
         const profile = profiles.items?.find((item) => item.id === profiles.activeProfileId) || profiles.items?.[0];
         if (!profile) { router.replace("/streaming/perfis"); return; }
         const access = accesses.find((item) => String(item.filmId) === filmId && item.available);
-        setState({ loading: false, movie, profile, access });
+        setState({ filmId, revision, loading: false, movie, profile, access });
       } catch (cause) {
-        if (!controller.signal.aborted) setState({ loading: false, error: cause.message || "Não foi possível carregar o filme." });
+        if (!controller.signal.aborted) setState({ filmId, revision, loading: false, error: cause.message || "Não foi possível carregar o filme." });
       }
     }
     void load();
     return () => controller.abort();
   }, [filmId, revision, router]);
 
-  return { ...state, retry: () => setRevision((value) => value + 1), close: () => router.push("/streaming/home") };
+  const view = state?.filmId === filmId && state.revision === revision ? state : { loading: true };
+  return { ...view, retry: () => setRevision((value) => value + 1), close: () => router.push("/streaming/home") };
 }

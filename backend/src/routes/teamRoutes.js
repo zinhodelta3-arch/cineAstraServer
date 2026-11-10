@@ -3,6 +3,11 @@ import { allowRoles } from '../middlewares/authMiddleware.js';
 import { validateBody } from '../validators/identityValidators.js';
 import { teamSchemas, teamParams, teamQuery } from '../validators/teamValidators.js';
 
+export const teamLookupOperations = [
+    { method: 'get', path: '/api/teams/context', operationId: 'get_team_context' },
+    { method: 'get', path: '/api/teams/collaborator', operationId: 'find_team_collaborator' }
+];
+
 export const teamOperations = [
     ['get','/api/teams','list_teams','list'],
     ['get','/api/teams/{id}','get_team','get'],
@@ -20,8 +25,9 @@ export const teamOperations = [
 ].map(([method,path,operationId,action]) => ({ method,path,operationId,action }));
 export function teamRoutes(controller, { auth }) {
     const router = Router(), access = [auth, allowRoles('ADMIN','SUPERVISOR','COLABORADOR')];
-    router.get('/api/teams/context', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, allowRoles('SUPERVISOR','COLABORADOR'), controller.context);
-    router.get('/api/teams/collaborator', auth, allowRoles('SUPERVISOR'), (req, res, next) => {
+    const [context, collaborator] = teamLookupOperations;
+    router.get(context.path, (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, allowRoles('SUPERVISOR','COLABORADOR'), controller.context);
+    router.get(collaborator.path, auth, allowRoles('SUPERVISOR'), (req, res, next) => {
         if (Object.keys(req.query).length !== 1 || typeof req.query.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.query.email) || req.query.email.length > 150) return res.status(422).json({ message: 'Informe um e-mail válido.' });
         res.set('Cache-Control', 'no-store'); next();
     }, controller.collaborator);

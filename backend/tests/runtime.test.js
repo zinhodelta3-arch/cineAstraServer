@@ -9,6 +9,9 @@ import { runtimeConfig } from '../src/config/runtime.js';
 import { createJwt } from '../src/config/jwt.js';
 import { testEnvironment } from './helpers.js';
 
+const windows = process.platform === 'win32';
+const requiresPosixMode = { skip: windows && 'A chave em arquivo exige permissões POSIX verificáveis' };
+
 function setup(t) {
     const directory = mkdtempSync(join(tmpdir(), 'cineastra-runtime-'));
     t.after(() => rmSync(directory, { recursive: true, force: true }));
@@ -20,7 +23,7 @@ function setup(t) {
     };
 }
 
-test('runtime gera chave privada e reutiliza tokens após nova inicialização', t => {
+test('runtime gera chave privada e reutiliza tokens após nova inicialização', requiresPosixMode, t => {
     const { env } = setup(t);
     const first = runtimeConfig(env);
     const token = createJwt(first.jwt).signAccess({ userId: '1', sessionId: '2' });
@@ -39,7 +42,7 @@ test('chave explícita tem precedência e não cria arquivo', t => {
     assert.equal(existsSync(env.JWT_SECRET_FILE), false);
 });
 
-test('perder o arquivo gera outra chave e invalida tokens antigos', t => {
+test('perder o arquivo gera outra chave e invalida tokens antigos', requiresPosixMode, t => {
     const { env } = setup(t);
     const first = runtimeConfig(env);
     const token = createJwt(first.jwt).signAccess({ userId: '1', sessionId: '2' });
@@ -57,7 +60,13 @@ test('configuração inválida ou múltiplas instâncias não grava chave implí
     assert.throws(() => runtimeConfig({ ...env, JWT_SECRET_FILE: 'relative/secret' }), /JWT_SECRET_FILE/);
 });
 
-test('arquivo corrompido ou acessível por outros não é substituído silenciosamente', t => {
+test('Windows exige chave explícita e falha antes de criar o diretório da chave', { skip: !windows }, t => {
+    const { env } = setup(t);
+    assert.throws(() => runtimeConfig(env), { fields: ['JWT_SECRET'] });
+    assert.equal(existsSync(join(env.JWT_SECRET_FILE, '..')), false);
+});
+
+test('arquivo corrompido ou acessível por outros não é substituído silenciosamente', requiresPosixMode, t => {
     const { env } = setup(t);
     runtimeConfig(env);
     const before = readFileSync(env.JWT_SECRET_FILE);
@@ -70,7 +79,7 @@ test('arquivo corrompido ou acessível por outros não é substituído silencios
     assert.equal(readFileSync(env.JWT_SECRET_FILE, 'utf8'), 'invalid');
 });
 
-test('inicializações concorrentes publicam e reutilizam uma única chave completa', async t => {
+test('inicializações concorrentes publicam e reutilizam uma única chave completa', requiresPosixMode, async t => {
     const { env } = setup(t);
     const moduleUrl = new URL('../src/config/runtime.js', import.meta.url).href;
     const script = `import {runtimeConfig} from ${JSON.stringify(moduleUrl)};

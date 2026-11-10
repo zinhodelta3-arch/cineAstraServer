@@ -14,6 +14,7 @@ function fixture(role='ADMIN'){
  let calls=0;
  const total={session_count:'3',completed_sessions:'1',capacity:'200',occupied:'50'};
  const model={daily:async(c,filter,start,end)=>{calls++;assert.equal(start,'2026-10-01 00:00:00');assert.equal(end,'2026-10-04 00:00:00');return [{day:'2026-10-02',tickets:'3',revenue:'30.03'}];},types:async()=>[{type:'INTEIRA',tickets:'2'},{type:'MEIA',tickets:'1'}],movies:async()=>[{id:'4',title:'Filme',tickets:'3',revenue:'30.03'}],occupancy:async()=>total,rooms:async()=>[{id:'1',local_id:'2',name:'Sala',...total}]};
+ model.upcoming=async()=>[{id:'5',film_id:'4',film_title:'Filme',room_name:'Sala',location_name:'Cinema',date:'2026-10-04',start_time:'15:00:00',language:'DUBLADO'}];
  const identity={transaction:fn=>fn({}),activeActor:async()=>({tipo_usuario:role})};
  const service=createDashboardService({model,identity}),app=express();app.use((req,res,next)=>{res.locals.requestId='test';next();});app.use(dashboardRoutes(createDashboardController(service),{auth:(req,res,next)=>{if(!req.headers['x-role'])throw ApiError.naoAutorizado();req.usuario={tipo:req.headers['x-role']};next();}}));app.use(errorMiddleware);
  return {service,model,app,calls:()=>calls};
@@ -24,11 +25,13 @@ test('datas vazias são preenchidas; moeda exata, tipos reais e ocupação ponde
  assert.deepEqual(r.daily.map(x=>x.tickets),['0','3','0']);assert.equal(r.daily[0].ticketSalesValue,'0.00');
  assert.equal(r.occupancy.occupancyPercent,25);assert.equal(r.occupancy.completedSessions,'1');
  assert.equal(r.ticketTypes[0].sharePercent,66.67);assert.equal(r.ticketTypes[1].sharePercent,33.33);assert.equal(r.topMovies[0].ticketSalesValue,'30.03');
+ assert.deepEqual(r.upcomingSessions,[{id:'5',filmId:'4',filmTitle:'Filme',roomName:'Sala',locationName:'Cinema',date:'2026-10-04',startTime:'15:00:00',language:'DUBLADO'}]);
  assert.equal(JSON.stringify(r).includes('PROMOCIONAL'),false);
 });
 test('sem dados retorna zeros e percentuais nulos; limita salas sem perder total global',async()=>{
- const f=fixture();f.model.daily=async()=>[];f.model.types=async()=>[];f.model.movies=async()=>[];f.model.occupancy=async()=>({});f.model.rooms=async()=>[];
+ const f=fixture();f.model.daily=async()=>[];f.model.types=async()=>[];f.model.movies=async()=>[];f.model.occupancy=async()=>({});f.model.rooms=async()=>[];f.model.upcoming=async()=>[];
  const r=await f.service.get(q,{});assert.equal(r.sales.tickets,'0');assert.equal(r.occupancy.occupancyPercent,null);assert.equal(r.ticketTypes[0].sharePercent,null);assert.equal(r.topMovies.length,0);
+ assert.deepEqual(r.upcomingSessions,[]);
  f.model.rooms=async()=>Array.from({length:101},(_,i)=>({id:String(i+1),local_id:'2',name:'Sala'}));
  const limited=await f.service.get(q,{});assert.equal(limited.rooms.length,100);assert.equal(limited.roomsTruncated,true);
 });

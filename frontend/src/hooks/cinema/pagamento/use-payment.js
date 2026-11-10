@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { useSession } from "@/hooks/auth/use-session";
 import { cartOrder } from "@/lib/api/cart-order.mjs";
@@ -11,6 +11,12 @@ const EMPTY_DETAILS = { name: "", phone: "", email: "", street: "", number: "", 
 const EMPTY_CARD = { holder: "", number: "", expiry: "", cvv: "" };
 const couponKey = "cineastra:checkout:coupon";
 const acceptanceKey = "cineastra:checkout:accepted";
+const noSubscription = () => () => {};
+const emptyCoupon = () => "";
+function savedCoupon() {
+  try { return sessionStorage.getItem(couponKey) || ""; }
+  catch { return ""; }
+}
 const transientKeys = new Map();
 const digits = value => value.replace(/\D/g, "");
 const maskCep = value => { const d = digits(value).slice(0, 8); return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d; };
@@ -48,50 +54,68 @@ function validCard(card) {
 export default function usePayment(method = null) {
   const cart = useCart();
   const session = useSession();
+  const userId = session.user?.id;
+  const role = session.user?.role;
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [card, setCard] = useState(EMPTY_CARD);
-  const [cepStatus, setCepStatus] = useState({ loading: false, error: "" });
-  const [coupon, setCoupon] = useState("");
-  const [offerState, setOfferState] = useState({ key: null, loading: false, offer: null, error: "" });
+  const [cepResult, setCepResult] = useState(null);
+  const coupon = useSyncExternalStore(noSubscription, savedCoupon, emptyCoupon);
+  const [offerState, setOfferState] = useState(null);
+  const [previousCartKey, setPreviousCartKey] = useState(null);
   const [accepted, setAcceptedState] = useState(false);
   const [result, setResult] = useState(null);
-  const [remaining, setRemaining] = useState(15);
+  const [countdown, setCountdown] = useState(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const lock = useRef(false);
 
-  useEffect(() => { try { setCoupon(sessionStorage.getItem(couponKey) || ""); } catch { /* Cupom opcional. */ } }, []);
-
   let input = null, issue = "";
   try { input = cartOrder(cart.items, coupon); } catch (caught) { issue = caught.message; }
   if (!issue && input.lines.some(line => line.kind === "COMBO" && !line.sessionId)) issue = "Para finalizar um combo, adicione um ingresso de sessão do mesmo cinema ao carrinho.";
-  const cartKey = JSON.stringify([session.user?.id, input, cart.items.map(item => [item.id, item.details, item.quantity])]);
-  const offer = offerState.key === cartKey ? offerState.offer : null;
-  const offerLoading = offerState.key === cartKey ? offerState.loading : Boolean(input && !issue && session.user?.role === "CLIENTE");
-  const offerError = offerState.key === cartKey ? offerState.error : "";
+  const quoteInput = input && !issue && role === "CLIENTE" ? JSON.stringify(input) : null;
+  const cartKey = JSON.stringify([userId, role, quoteInput, cart.items.map(item => [item.id, item.details, item.quantity])]);
+  const paid = ["PAGO", "FINALIZADO"].includes(result?.orderStatus);
+  if (previousCartKey !== cartKey) {
+    setPreviousCartKey(cartKey);
+    setOfferState(null);
+    setAcceptedState(false);
+    if (!paid) setResult(null);
+    setError("");
+  }
+  const currentOffer = offerState?.key === cartKey ? offerState : null;
+  const offer = currentOffer?.offer ?? null;
+  const offerLoading = Boolean(quoteInput && !currentOffer);
+  const offerError = currentOffer?.error ?? "";
   const offerHash = offer?.contract?.offerHash;
-  const ready = Boolean(!issue && offer?.finalizable && accepted && session.user?.role === "CLIENTE");
+  const ready = Boolean(quoteInput && offer?.finalizable && accepted);
+  const pixKey = method === "pix" && ready && !result?.paymentId ? offerHash : null;
+  if (countdown && countdown.key !== pixKey && !result?.paymentId) setCountdown(null);
+  const remaining = countdown?.key === pixKey ? countdown.remaining : 15;
+  const postalCode = digits(details.postalCode);
+  const cep = details.country === "BR" && postalCode.length === 8 ? postalCode : null;
+  const cepStatus = { loading: Boolean(cep && cepResult?.key !== cep), error: cepResult?.key === cep ? cepResult.error : "" };
+  const items = cart.items.map(item => {
+    const index = input?.lines.findIndex(line => line.kind === item.purchaseKind && line.id === item.sourceId && (line.kind !== "SESSION" || line.seatId === item.seatId));
+    const line = index >= 0 ? offer?.lines?.[index] : null;
+    return { ...item, price: line ? Number(line.unitPrice) : item.price };
+  });
 
   useEffect(() => {
-    setAcceptedState(false);
-    setResult(current => ["PAGO", "FINALIZADO"].includes(current?.orderStatus) ? current : null);
-    setError("");
-    if (!input || issue || session.user?.role !== "CLIENTE") return;
+    if (!quoteInput) return;
     const abort = new AbortController();
-    setOfferState({ key: cartKey, loading: true, offer: null, error: "" });
-    request("quote", { body: input, signal: abort.signal })
+    request("quote", { body: JSON.parse(quoteInput), signal: abort.signal })
       .then(data => {
         if (abort.signal.aborted) return;
         if (!data.contract?.offerHash || !data.contract?.terms?.body?.text || !data.contract?.privacy?.body?.text) throw new Error("Oferta ou documentos contratuais indisponíveis.");
         try {
           const saved = JSON.parse(sessionStorage.getItem(acceptanceKey) || "null");
-          setAcceptedState(saved?.offerHash === data.contract.offerHash && saved?.userId === session.user.id);
+          setAcceptedState(saved?.offerHash === data.contract.offerHash && saved?.userId === userId);
         } catch { setAcceptedState(false); }
-        setOfferState({ key: cartKey, loading: false, offer: data, error: "" });
+        setOfferState({ key: cartKey, offer: data, error: "" });
       })
-      .catch(caught => { if (!abort.signal.aborted) setOfferState({ key: cartKey, loading: false, offer: null, error: caught.message }); });
+      .catch(caught => { if (!abort.signal.aborted) setOfferState({ key: cartKey, offer: null, error: caught.message }); });
     return () => abort.abort();
-  }, [cartKey, session.user?.role]);
+  }, [cartKey, quoteInput, userId]);
 
   function setAccepted(value) {
     setAcceptedState(value);
@@ -99,24 +123,31 @@ export default function usePayment(method = null) {
   }
 
   useEffect(() => {
-    const cep = digits(details.postalCode);
-    if (details.country !== "BR" || cep.length !== 8) { setCepStatus({ loading: false, error: "" }); return; }
+    if (!cep) return;
     const abort = new AbortController();
-    setCepStatus({ loading: true, error: "" });
     const timer = setTimeout(() => {
       fetch(`/api/cep/${cep}`, { signal: abort.signal })
         .then(readSessionResponse)
-        .then(data => { if (!abort.signal.aborted) { setDetails(current => digits(current.postalCode) === cep ? { ...current, street: data.street, district: data.district, city: data.city, state: data.state } : current); setCepStatus({ loading: false, error: "" }); } })
-        .catch(caught => { if (!abort.signal.aborted) setCepStatus({ loading: false, error: caught.message }); });
+        .then(data => {
+          if (abort.signal.aborted) return;
+          setDetails(current => current.country === "BR" && digits(current.postalCode) === cep ? { ...current, street: data.street, district: data.district, city: data.city, state: data.state } : current);
+          setCepResult({ key: cep, error: "" });
+        })
+        .catch(caught => { if (!abort.signal.aborted) setCepResult({ key: cep, error: caught.message }); });
     }, 300);
     return () => { clearTimeout(timer); abort.abort(); };
-  }, [details.postalCode, details.country]);
+  }, [cep]);
 
   function changeDetail(event) {
     const { name, value } = event.target;
     setError("");
+    if (name === "country" || (name === "postalCode" && digits(maskCep(value)) !== postalCode)) setCepResult(null);
     setDetails(current => {
-      if (name === "postalCode") return { ...current, postalCode: current.country === "BR" ? maskCep(value) : value, street: "", district: "", city: "", state: "" };
+      if (name === "postalCode") {
+        const next = current.country === "BR" ? maskCep(value) : value;
+        if (next === current.postalCode) return current;
+        return { ...current, postalCode: next, street: "", district: "", city: "", state: "" };
+      }
       if (name === "country") return { ...current, country: value, postalCode: "", street: "", district: "", city: "", state: "" };
       return { ...current, [name]: value };
     });
@@ -141,12 +172,16 @@ export default function usePayment(method = null) {
       }
     } catch (caught) { setError(caught.message); }
   }
+  const refreshPending = useEffectEvent(refreshPayment);
+  const paymentId = result?.paymentId;
+  const paymentStatus = result?.status;
+  const orderStatus = result?.orderStatus;
 
   useEffect(() => {
-    if (!result?.paymentId || ["PAGO", "FINALIZADO"].includes(result.orderStatus) || !["PENDENTE", "APROVADO"].includes(result.status)) return;
-    const timer = setInterval(() => refreshPayment(result.paymentId), 5000);
+    if (!paymentId || ["PAGO", "FINALIZADO"].includes(orderStatus) || !["PENDENTE", "APROVADO"].includes(paymentStatus)) return;
+    const timer = setInterval(() => refreshPending(paymentId), 5000);
     return () => clearInterval(timer);
-  }, [result?.paymentId, result?.status, result?.orderStatus]);
+  }, [paymentId, paymentStatus, orderStatus]);
 
   async function confirmPayment(type, last4) {
     if (lock.current || result?.paymentId) return;
@@ -173,31 +208,24 @@ export default function usePayment(method = null) {
   }
 
   function confirmCard(event) { event.preventDefault(); confirmPayment(method === "debito" ? "DEBITO" : "CREDITO", digits(card.number).slice(-4)); }
+  const confirmPix = useEffectEvent(() => confirmPayment("PIX"));
 
   useEffect(() => {
-    if (method !== "pix" || !ready || result?.paymentId) return;
+    if (!pixKey) return;
     let elapsed = 0;
     let lastTick = Date.now();
-    setRemaining(15);
     const timer = setInterval(() => {
       const now = Date.now();
       if (document.visibilityState === "visible") elapsed += now - lastTick;
       lastTick = now;
       const left = Math.max(0, Math.ceil((15000 - elapsed) / 1000));
-      setRemaining(left);
-      if (left === 0) { clearInterval(timer); confirmPayment("PIX"); }
+      setCountdown(current => current?.key === pixKey && current.remaining === left ? current : { key: pixKey, remaining: left });
+      if (left === 0) { clearInterval(timer); confirmPix(); }
     }, 250);
     const visibility = () => { lastTick = Date.now(); };
     document.addEventListener("visibilitychange", visibility);
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", visibility); };
-  }, [method, ready, offerHash, result?.paymentId]);
-
-  const items = cart.items.map(item => {
-    const index = input?.lines.findIndex(line => line.kind === item.purchaseKind && line.id === item.sourceId && (line.kind !== 'SESSION' || line.seatId === item.seatId));
-    const line = index >= 0 ? offer?.lines?.[index] : null;
-    return { ...item, price: line ? Number(line.unitPrice) : item.price };
-  });
-  const paid = ["PAGO", "FINALIZADO"].includes(result?.orderStatus);
+  }, [pixKey]);
   const displayItems = paid && result.items ? result.items : items;
   return { items: displayItems, itemCount: paid ? displayItems.reduce((count,item) => count + item.quantity, 0) : cart.itemCount, total: paid ? result.total : offer ? Number(offer.total) : cart.total, details, changeDetail, cepStatus,
     card, changeCard, session, issue, offer, offerLoading, offerError, accepted, setAccepted, ready,

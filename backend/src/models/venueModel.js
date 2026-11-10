@@ -23,6 +23,7 @@ export function createVenueModel(database) {
             const filters = [`${pk[kind]} > ?`], args = [q.cursor ?? '0'];
             if (parentId) { filters.push(`${parent[kind]} = ?`); args.push(parentId); }
             if (!admin || q.status) { filters.push('status = ?'); args.push(q.status ?? (kind === 'local' ? 'ATIVO' : 'ATIVA')); }
+            if (kind === 'local' && q.name) { filters.push("nome LIKE ? ESCAPE '!'"); args.push(`%${q.name.replace(/[!%_]/g, value => `!${value}`)}%`); }
             if (kind === 'seat' && q.accessible !== undefined) { filters.push(`tipo ${q.accessible ? 'IN' : 'NOT IN'} ('PCD','OBESO','IDOSO')`); }
             return rows(c, `SELECT ${columns[kind]} FROM ${table[kind]} WHERE ${filters.join(' AND ')} ORDER BY ${pk[kind]} LIMIT ${q.limit + 1}`, args);
         },

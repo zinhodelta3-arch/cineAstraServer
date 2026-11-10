@@ -17,7 +17,7 @@ function fixture(contracts){
         recordCancelKey:async(c,owner,id,key)=>state.cancelKeys.set(key,id),
         hasTicket:async()=>false,orderIntentions:async()=>[],cancelPreparedIntentions:async()=>{},
         cancelPending:async()=>{state.order.status='CANCELADO';return true;}};
-    const orders={quoteOnConnection:async()=>({total:'20.00',finalizable:true})};
+    const orders={quoteOnConnection:async(c,input)=>({lines:input.lines.map(()=>({catalogOutOfSync:false})),total:'20.00',finalizable:true})};
     const pricing={commit:async(c,{input})=>({total:'20.00',couponId:'5',lines:input.lines.map(()=>({unitPrice:'20.00',subtotal:'20.00'}))}),settleCoupon:async(c,input)=>state.coupons.push(input.action)};
     const inventory={reserve:async()=>state.inventory.push('reserved'),transition:async(c,{action})=>state.inventory.push(action)};
     const seats={reserve:async()=>state.seats.push('reserved'),confirm:async()=>state.seats.push('confirmed'),releaseCancelled:async()=>state.seats.push('released')};

@@ -5,8 +5,8 @@ import {createHash} from 'node:crypto';
 import {generateInstallSql} from '../scripts/generateInstallSql.js';
 import {migrationPlan} from '../scripts/migrationPlan.js';
 
-test('consolidado reproduz exatamente o plano com ledger, ordem e checksums',async()=>{
- const plan=await migrationPlan(),sql=await readFile(new URL('../../database/cineastra-install.sql',import.meta.url),'utf8');
+test('consolidado reproduz o plano com ledger, ordem, checksums e dados iniciais',async()=>{
+ const plan=await migrationPlan(),sql=(await readFile(new URL('../../database/cineastra-install.sql',import.meta.url),'utf8')).replaceAll('\r\n','\n');
  assert.equal(sql,await generateInstallSql());
  const records=[...sql.matchAll(/INSERT INTO schema_migrations \(name, checksum, status\) VALUES \('([^']+)', '([^']+)', 'RUNNING'\);\n([\s\S]*?);\n    UPDATE schema_migrations SET status = 'APPLIED', applied_at = UTC_TIMESTAMP\(3\) WHERE name = '([^']+)';/g)];
  assert.equal(records.length,plan.length);

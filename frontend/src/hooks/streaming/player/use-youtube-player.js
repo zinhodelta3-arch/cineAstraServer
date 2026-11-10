@@ -30,7 +30,7 @@ function loadYouTubeApi() {
 export default function useYouTubePlayer({ src, options }) {
   const host = useRef(null);
   const callbacks = useRef(options);
-  const [error, setError] = useState("");
+  const [failure, setFailure] = useState(null);
   useEffect(() => { callbacks.current = options; }, [options]);
 
   useEffect(() => {
@@ -38,6 +38,7 @@ export default function useYouTubePlayer({ src, options }) {
     let player;
     let played = false;
     let timer;
+    const reportError = message => { if (!disposed) setFailure({ src, message }); };
     const flush = (force = false, ended = false) => {
       if (!played || !player?.getDuration) return;
       try {
@@ -50,17 +51,17 @@ export default function useYouTubePlayer({ src, options }) {
     };
     const hidden = () => { if (document.visibilityState === "hidden") flush(true); };
     const leaving = () => flush(true);
-    setError("");
     loadYouTubeApi().then((YT) => {
       if (disposed || !host.current) return;
       const videoId = new URL(src).pathname.split("/").at(-1);
       if (!/^[\w-]{11}$/.test(videoId)) throw new Error("Trailer indisponível.");
       const mount = document.createElement("div");
       host.current.replaceChildren(mount);
+      const { autoPlay, initialPosition } = callbacks.current;
       player = new YT.Player(mount, {
         host: "https://www.youtube-nocookie.com", width: "100%", height: "100%", videoId,
-        playerVars: { origin: window.location.origin, playsinline: 1, rel: 0, autoplay: options.autoPlay ? 1 : 0,
-          start: Math.max(0, Math.floor(options.initialPosition || 0)) },
+        playerVars: { origin: window.location.origin, playsinline: 1, rel: 0, autoplay: autoPlay ? 1 : 0,
+          start: Math.max(0, Math.floor(initialPosition || 0)) },
         events: {
           onReady: () => {
             if (disposed) return;
@@ -71,10 +72,10 @@ export default function useYouTubePlayer({ src, options }) {
             if (data === 1) played = true;
             if (data === 2 || data === 0) flush(true, data === 0);
           },
-          onError: () => { if (!disposed) setError("Este trailer está indisponível no YouTube."); },
+          onError: () => reportError("Este trailer está indisponível no YouTube."),
         },
       });
-    }).catch((cause) => { if (!disposed) setError(cause.message || "Não foi possível carregar o trailer."); });
+    }).catch((cause) => reportError(cause.message || "Não foi possível carregar o trailer."));
     document.addEventListener("visibilitychange", hidden);
     window.addEventListener("pagehide", leaving);
     return () => {
@@ -87,5 +88,5 @@ export default function useYouTubePlayer({ src, options }) {
     };
   }, [src]);
 
-  return { host, error };
+  return { host, error: failure?.src === src ? failure.message : "" };
 }

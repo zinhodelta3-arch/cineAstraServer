@@ -7,7 +7,7 @@ function fixture(maxMembers=3){
   const state={user:'7',subscription:{id_assinatura:'4',id_usuario:'7',status:'ATIVA',periodicidade:'MENSAL',tipo_divisao:'TITULAR_PAGA',tipo_divisao_proximo:null,tipo_divisao_efetiva_em:null,preco_contratado:'10.00',limite_membros_contratado:maxMembers,inicio:'2026-10-10'},invitations:[],members:[],events:[],proposal:null,votes:[],notices:[],charges:[{id_cobranca:'9007199254740993',id_usuario:'7',valor_devido:'10.00',status:'PAGO'}]};
   let serial=Promise.resolve();
   const identity={transaction:async fn=>{let release;const next=new Promise(resolve=>{release=resolve;});const previous=serial;serial=next;await previous;try{return await fn({});}finally{release();}},activeActor:async()=>({id_usuario:state.user,tipo_usuario:'CLIENTE'}),audit:async()=>{}};
-  const model={subscription:async()=>state.subscription,user:async(c,id)=>({id_usuario:id,status:'ATIVO',tipo_usuario:'CLIENTE',faixa_etaria:'MAIOR_16'}),participants:async()=>state.members,participant:async(c,id,user)=>state.members.find(x=>x.id_usuario===user)??null,
+  const model={subscription:async()=>state.subscription,user:async(c,id)=>({id_usuario:id,status:'ATIVO',tipo_usuario:'CLIENTE',data_nascimento:'1990-01-01',faixa_etaria:'MAIOR_16'}),participants:async()=>state.members,participant:async(c,id,user)=>state.members.find(x=>x.id_usuario===user)??null,
     activeCount:async()=>({total:state.members.filter(x=>x.status!=='SAIU').length}),pendingCount:async()=>({total:state.invitations.filter(x=>x.status==='PENDENTE').length}),
     invitation:async(c,id)=>state.invitations.find(x=>x.id_convite===id)??null,invitationForUser:async(c,id,user)=>state.invitations.find(x=>x.id_usuario_convidado===user)??null,
     invite:async(c,id,user)=>{const i={id_convite:String(state.invitations.length+1),id_assinatura:id,id_usuario_convidado:user,status:'PENDENTE',data_convite:'2026-10-10 12:00:00.000',data_resposta:null};state.invitations.push(i);return i.id_convite;},
@@ -33,14 +33,16 @@ test('centavos são distribuídos deterministicamente e somam o preço exato',()
 test('convites concorrentes reservam limite incluindo titular; saída preserva fatura passada',async()=>{
   const f=fixture(2);
   const results=await Promise.allSettled([f.service.invite('4','9',{}),f.service.invite('4','10',{})]);
-  assert.equal(results.filter(x=>x.status==='fulfilled').length,1);
-  assert.equal(results.filter(x=>x.status==='rejected')[0].reason.statusCode,409);
-  f.state.user='9';
-  await f.service.decide('1',true,{});
+  assert.deepEqual(results.map(x=>x.status).sort(),['fulfilled','rejected']);
+  assert.equal(results.find(x=>x.status==='rejected').reason.statusCode,409);
+  assert.equal(f.state.invitations.length,1);
+  const [invitation]=f.state.invitations;
+  f.state.user=invitation.id_usuario_convidado;
+  await f.service.decide(invitation.id_convite,true,{});
   assert.equal(f.state.members[0].status,'ATIVO');
   assert.equal((await f.service.members('4',{})).participants[0].joinedAt,'2026-10-10T12:00:00.000Z');
   const old=structuredClone(f.state.charges);
-  await f.service.changeMember('4','9','SAIU',{});
+  await f.service.changeMember('4',f.state.user,'SAIU',{});
   assert.equal(f.state.members[0].status,'SAIU');
   assert.deepEqual(f.state.charges,old);
   assert.equal(f.state.events.at(-1).evento,'SAIU');

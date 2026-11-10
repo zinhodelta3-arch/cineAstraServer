@@ -8,10 +8,12 @@ export function createAssistantService({identity,support,provider=unavailableAss
             await client(context);
             const handoffPath='/api/assistant/handoff';
             if(provider.available!==true)return {identity:'IA',available:false,message:'Assistente indisponível. Encaminhe sua dúvida ao suporte humano.',handoffPath};
-            // Somente texto da dúvida: sem identidade, histórico, SQL, ferramentas ou operações financeiras.
+            // O provedor recebe a dúvida, sem acesso à identidade ou à sessão do cliente.
             try{const answer=await provider.answer({message:input.message});
-                if(typeof answer!=='string'||!answer.trim()||answer.length>4000)throw new Error('Resposta inválida');
-                return {identity:'IA',available:true,message:answer,handoffPath};
+                const message=typeof answer==='string'?answer:answer?.message;
+                if(typeof message!=='string'||!message.trim()||message.length>4000)throw new Error('Resposta inválida');
+                const sessions=Array.isArray(answer?.sessions)?answer.sessions.filter(item=>typeof item?.id==='string'&&/^[1-9]\d{0,19}$/.test(item.id)&&typeof item.label==='string').slice(0,6):[];
+                return {identity:'IA',available:true,message,handoffPath,...(sessions.length?{sessions}:{})};
             }catch{return {identity:'IA',available:false,message:'Assistente indisponível. Encaminhe sua dúvida ao suporte humano.',handoffPath};}
         },
         handoff:(input,context)=>support.create({subject:'Encaminhamento da IA',message:input.message},context)

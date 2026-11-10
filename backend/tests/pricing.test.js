@@ -28,9 +28,9 @@ test('C100: markup 60%, descontos 25%, alerta sobre custo e meia legal',()=>{
     assert.equal(pricingSchemas.quote.safeParse({lines:[{category:'INPUT',id:'1',quantity:1,halfPreview:true}]}).success,false);
 });
 
-function fixture(published = true){
+function fixture(published = true, markupBps = 6000){
     let state={usage:[],snapshots:[],published:[],audit:[],orderStatus:'EM_ANDAMENTO'},chain=Promise.resolve();
-    const params={categoria:'INPUT',markup_bps:6000,margem_alerta_bps:2000,teto_desconto_bps:2500,ocupacao_referencia:20,meia_projecao_bps:5000,combo_passo_bps:500,atualizado_em:'2026-10-09'};
+    const params={categoria:'INPUT',markup_bps:markupBps,margem_alerta_bps:2000,teto_desconto_bps:2500,ocupacao_referencia:20,meia_projecao_bps:5000,combo_passo_bps:500,atualizado_em:'2026-10-09'};
     const model={
         async activePlan(){return null;},async parameter(category){return {...params,categoria:category};},
         async product(category){return category==='SESSION'?{id:'11',custo_local_dia:'0.00',custo_exibicao:'2000.00',horario_inicio:'10:00:00',horario_fim:'12:00:00',status:'AGENDADA',capacidade:20,published:'160.00'}:category==='COMBO'?{id:'30',custo_operacional:'10.00',published:'336.00',ativo:1}:{id:'10',custo_receita:'80.00',custo_parceria:'20.00',published:'160.00',status:'DISPONIVEL',venda_avulsa:published};},
@@ -111,9 +111,14 @@ test('HTTP exige autenticação, separa ADMIN e valida corpo da cotação',async
     assert.equal(result.body.data.total,'160.00');
 });
 
-test('ADMIN publica preço derivado do custo, sem usar float',async()=>{
-    const f=fixture(),result=await f.service.publish('INPUT','10',{actor:{id:'1',tipo:'ADMIN'}});
-    assert.equal(result.price,'160.00');assert.equal(f.state.published[0].price,'160.00');
+test('ADMIN confirma preço do catálogo e recebe sugestão calculada pelo custo',async()=>{
+    const f=fixture(true,7000);
+    const context={actor:{id:'1',tipo:'ADMIN'}};
+    const result=await f.service.publish('INPUT','10',context);
+    assert.equal(result.price,'160.00');
+    assert.equal(result.suggestedPrice,'170.00');
+    assert.equal(result.priceSource,'CATALOG');
+    assert.equal(f.state.published.length,0);
 });
 
 test('reserva de cupom só confirma com pedido pago e pode ser liberada',async()=>{

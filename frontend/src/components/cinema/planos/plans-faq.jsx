@@ -1,7 +1,12 @@
+"use client"
+
+import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { FAQS } from "./data"
 
-export default function PlansFaq({ faqOpen, toggleFaq }) {
+export default function PlansFaq() {
+  const [faqOpen, setFaqOpen] = useState(null)
+  const toggleFaq = index => setFaqOpen(current => current === index ? null : index)
   return (
       <section className="border-y border-border/70 bg-card/30">
         <div className="mx-auto max-w-4xl px-5 py-14 md:px-10 md:py-20">

@@ -56,7 +56,8 @@ async function handle(request, { params }) {
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 503;
     const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "Sua conta não pode administrar o AstraSnack.", 404: "Registro não encontrado.", 409: "A operação conflita com o estado atual do item, o estoque ou um vínculo existente.", 422: "Confira os dados informados e tente novamente." };
-    return json({ message: messages[status] ?? "Não foi possível acessar o AstraSnack." }, status);
+    const message = error instanceof AuthError && error.code === "PRODUCT_RETAIL_CONFLICT" ? error.message : messages[status];
+    return json({ message: message ?? "Não foi possível acessar o AstraSnack." }, status);
   }
 }
 

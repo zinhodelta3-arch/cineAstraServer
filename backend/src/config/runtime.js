@@ -42,6 +42,8 @@ export function runtimeConfig(env = process.env) {
     if (config.instances > 1) throw new EnvironmentValidationError(['JWT_SECRET']);
     const file = env.JWT_SECRET_FILE || defaultSecretFile;
     if (!isAbsolute(file)) throw new EnvironmentValidationError(['JWT_SECRET_FILE']);
+    // On Windows, stat.mode cannot establish that the file's ACL is private.
+    if (process.platform === 'win32') throw new EnvironmentValidationError(['JWT_SECRET']);
     let secret;
     try {
         secret = persistedSecret(file, candidate);

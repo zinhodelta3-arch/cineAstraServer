@@ -5,14 +5,21 @@ import {createPlanModel} from '../src/models/planModel.js';
 import {planCreate,planPatch,subscriptionCreate} from '../src/validators/planValidators.js';
 
 function fixture(contracts){
+  const today=new Date().toISOString().slice(0,10);
   const state={actor:'CLIENTE',plan:{id_plano:'2',nome:'Cine Médio',descricao:'Oferta',valor_mensal:'30.00',valor_anual:'300.00',limite_membros:2,ativo:1,acesso_catalogo:1,id_combo_medio:'5',combo_gratis_mes:1,custo_beneficios_mensal:'20.00',custo_beneficios_anual:'200.00'},benefits:[{categoria:'SESSION',desconto_bps:1000}],subscription:null,charge:null,redemptions:[],audit:[]};
   const model={lockUser:async()=>({}),byKey:async()=>null,age:async()=>({faixa_etaria:'MAIOR_16'}),activeForUser:async()=>state.subscription&&['PENDENTE','ATIVA'].includes(state.subscription.status)?state.subscription:null,plan:async()=>state.plan,benefits:async()=>state.benefits,combo:async()=>({ativo:1}),
-    subscribe:async(c,data)=>{state.subscription={id_assinatura:'9',id_usuario:'7',id_plano:data.planId,periodicidade:data.period,status:'PENDENTE',renovacao_automatica:data.autoRenew,inicio:'2026-10-10',fim:null,preco_contratado:data.price,contrato_snapshot:JSON.stringify(data.snapshot)};return '9';},
+    subscribe:async(c,data)=>{state.subscription={id_assinatura:'9',id_usuario:'7',id_plano:data.planId,periodicidade:data.period,status:'PENDENTE',renovacao_automatica:data.autoRenew,inicio:today,fim:null,preco_contratado:data.price,contrato_snapshot:JSON.stringify(data.snapshot)};return '9';},
     initialCharge:async()=>{state.charge={id_cobranca:'9007199254740993',status:'PENDENTE'};return state.charge.id_cobranca;},subscription:async()=>state.subscription,firstCharge:async()=>state.charge,
     paidCurrent:async()=>state.charge?.status==='PAGO'?state.charge:null,existingRedemption:async()=>state.redemptions[0]??null,redeem:async(c,id,user,combo,competence)=>{state.redemptions.push({id_assinatura:id,competencia:competence});return '9007199254740994';},
-    settlement:async()=>({cobranca_status:state.charge?.status,assinatura_status:state.subscription?.status,id_assinatura:'9',periodicidade:'MENSAL'}),activate:async()=>{state.subscription.status='ATIVA';state.subscription.inicio='2026-10-10';state.subscription.fim='2026-11-09';}};
-  const identity={transaction:async fn=>fn({}),activeActor:async()=>({id_usuario:'7',tipo_usuario:state.actor}),audit:async(c,event)=>state.audit.push(event)};
-  return {state,model,service:createPlanService({model,identity,contracts})};
+    settlement:async()=>({cobranca_status:state.charge?.status,assinatura_status:state.subscription?.status,id_assinatura:'9',periodicidade:'MENSAL'}),
+    activate:async(c,id,confirmedAt)=>{
+      const start=confirmedAt.slice(0,10);
+      const end=new Date(`${start}T00:00:00Z`);
+      end.setUTCDate(end.getUTCDate()+30);
+      Object.assign(state.subscription,{status:'ATIVA',inicio:start,fim:end.toISOString().slice(0,10)});
+    }};
+  const identity={transaction:async fn=>fn({}),activeActor:async()=>({id_usuario:'7',tipo_usuario:state.actor,data_nascimento:'1990-01-01'}),audit:async(c,event)=>state.audit.push(event)};
+  return {state,model,today,service:createPlanService({model,identity,contracts})};
 }
 
 test('assinatura exige aceite da versão vigente e preserva contrato legal',async()=>{
@@ -44,7 +51,7 @@ test('pagamento confirmado ativa contrato; resgate único mensal permanece solic
   const f=fixture();
   await f.service.subscribe({planId:'2',period:'MENSAL',autoRenew:true},'unique-key-124',{});
   f.state.charge.status='PAGO';
-  await f.service.activate({},f.state.charge.id_cobranca,'2026-10-10 12:00:00');
+  await f.service.activate({},f.state.charge.id_cobranca,`${f.today} 12:00:00`);
   const claim=await f.service.redeem('9',{});
   assert.equal(claim.status,'SOLICITADO');
   assert.equal(claim.id,'9007199254740994');
@@ -58,7 +65,7 @@ test('assinatura cancelada e pagamento ausente impedem ativação e benefício',
   f.state.subscription.status='CANCELADA';
   assert.equal(await f.service.canSettle({},f.state.charge.id_cobranca),false);
   f.state.charge.status='PAGO';
-  await assert.rejects(f.service.activate({},f.state.charge.id_cobranca,'2026-10-10 12:00:00'),{statusCode:409});
+  await assert.rejects(f.service.activate({},f.state.charge.id_cobranca,`${f.today} 12:00:00`),{statusCode:409});
   await assert.rejects(f.service.redeem('9',{}),{statusCode:409});
 });
 

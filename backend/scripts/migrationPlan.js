@@ -33,7 +33,8 @@ export async function migrationPlan() {
         '20261025_32_streaming_favorites.sql',
         '20261025_33_streaming_progress.sql',
         '20261026_35_promotional_content.sql',
-        '20261026_36_streaming_profile_photos.sql'
+        '20261026_36_streaming_profile_photos.sql',
+        '20261108_40_stock_replenishment_links.sql'
     ]);
     const sources = [
         ['20261001_02_create_tables.sql', sql => /^(CREATE TABLE|CREATE INDEX)\b/i.test(sql)],
@@ -78,7 +79,9 @@ export async function migrationPlan() {
         ['20261026_35_promotional_content.sql', () => true],
         ['20261026_36_streaming_profile_photos.sql', () => true],
         ['20261031_37_supervisor_locations.sql', () => true],
-        ['20261105_38_supplier_transports.sql', () => true]
+        ['20261105_38_supplier_transports.sql', () => true],
+        ['20261108_39_logistics_routes.sql', () => true],
+        ['20261108_40_stock_replenishment_links.sql', () => true]
     ];
     const plan = [];
     for (const [file, filter] of sources) {

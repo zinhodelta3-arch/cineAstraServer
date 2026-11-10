@@ -14,12 +14,14 @@ test('carrinho aceita apenas tipo unico e IDs; preço, dono e status do cliente 
     assert.equal(orderBody.safeParse({lines:[{kind:'STREAMING',id:'2',mode:'COMPRA',quantity:1}]}).success,true);
 });
 
-test('compra definitiva de streaming usa custo e preço próprios no motor 28',async()=>{
+test('aluguel de streaming usa custo e prazo próprios; novas compras são bloqueadas',async()=>{
     const model={activePlan:async()=>null,parameter:async()=>({markup_bps:6000,margem_alerta_bps:2000,teto_desconto_bps:2500,ocupacao_referencia:20,meia_projecao_bps:5000,combo_passo_bps:500,atualizado_em:'2026-10-10'}),
-        product:async()=>({status:'ATIVO',disponivel_streaming:1,custo_streaming_compra:'10.00',published:'16.00'}),activePromotions:async()=>[]};
+        product:async()=>({status:'ATIVO',disponivel_streaming:1,custo_streaming_dia:'5.00',dias_acesso_aluguel:2,published:'16.00'}),activePromotions:async()=>[]};
     const identity={transaction:async fn=>fn({execute:async()=>[]}),activeActor:async()=>({id_usuario:'1',tipo_usuario:'CLIENTE'})};
     const pricing=createPricingService({model,identity});
-    const quote=await pricing.quote({lines:[{category:'PURCHASE',id:'2',quantity:1}]},{actor:{id:'1'}});
+    const context={actor:{id:'1'}};
+    await assert.rejects(pricing.quote({lines:[{category:'PURCHASE',id:'2',quantity:1}]},context),{code:'STREAMING_PURCHASE_DISABLED'});
+    const quote=await pricing.quote({lines:[{category:'RENTAL',id:'2',quantity:1}]},context);
     assert.equal(quote.total,'16.00');assert.equal(quote.lines[0].unitPrice,'16.00');assert.equal(quote.finalizable,true);
 });
 
@@ -48,7 +50,7 @@ test('insumo e combo somam demanda do mesmo estoque; menor não recebe cotação
     const pricing={quoteOnConnection:async()=>({lines:[],total:'1.00',finalizable:true})};
     const service=createOrderService({model,identity,pricing});
     const lines=[{kind:'INPUT',id:'2',quantity:2},{kind:'COMBO',id:'3',quantity:1}];
-    await assert.rejects(service.quote({localId:'7',lines},{actor:{id:'1'}}),{code:'ORDER_CONFLICT'});
+    await assert.rejects(service.quote({localId:'7',lines},{actor:{id:'1'}}),{code:'INSUFFICIENT_STOCK'});
     const quote=await service.quote({localId:'7',lines:[{kind:'INPUT',id:'2',quantity:1}]},{actor:{id:'1'}});
     assert.equal(quote.finalizable,false);assert.equal(quote.guardianAuthorizationRequired,true);assert.equal(quote.fees,'0.00');
 });
@@ -56,7 +58,7 @@ test('insumo e combo somam demanda do mesmo estoque; menor não recebe cotação
 
 test('insumo interno não pode ser comprado avulso mas continua compondo combo', async () => {
     const row={venda_avulsa:0,id_local:'7',status:'DISPONIVEL',local_status:'ATIVO',fornecedor_status:'ATIVO',usuario_status:'ATIVO',vinculo_status:'ATIVO'};
-    const model={age:async()=>({faixa_etaria:'ADULTO'}),input:async()=>row,combo:async()=>({id_local:'7',ativo:1,local_status:'ATIVO'}),comboParts:async()=>[{id_insumo:'2',quantidade:2}],stock:async()=>({...row,quantidade:10,quantidade_reservada:0})};
+    const model={age:async()=>({faixa_etaria:'MAIOR_16'}),input:async()=>row,combo:async()=>({id_local:'7',ativo:1,local_status:'ATIVO'}),comboParts:async()=>[{id_insumo:'2',quantidade:2}],stock:async()=>({...row,quantidade:10,quantidade_reservada:0})};
     const identity={transaction:async fn=>fn({}),activeActor:async()=>({id_usuario:'1',tipo_usuario:'CLIENTE',data_nascimento:'1990-01-01'})};
     const service=createOrderService({model,identity,pricing:{quoteOnConnection:async()=>({lines:[],total:'1.00',finalizable:true})}});
     const quote=kind=>service.quote({localId:'7',lines:[{kind,id:'2',quantity:1}]},{actor:{id:'1'}});

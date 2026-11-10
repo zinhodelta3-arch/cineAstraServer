@@ -182,7 +182,8 @@ import {createAssistantService} from './services/assistantService.js';
 import {createAgePolicy} from './services/agePolicyService.js';
 import {createContentController} from './controllers/contentController.js';
 import {contentRoutes} from './routes/contentRoutes.js';
-import {unavailableAssistantProvider} from './providers/assistantProvider.js';
+import {createOpenAiAssistantProvider} from './providers/assistantProvider.js';
+import {createAssistantShowtimes} from './services/assistantShowtimes.js';
 import {createReportModel} from './models/reportModel.js';
 import {createReportService} from './services/reportService.js';
 import {createReportController} from './controllers/reportController.js';
@@ -198,7 +199,7 @@ import {adminStreamingRoutes} from './routes/adminStreamingRoutes.js';
 
 const specification = JSON.parse(readFileSync(new URL('./docs/openapi.json', import.meta.url), 'utf8'));
 
-export function createApp({ config, database, logQueue, retention, sessionProvider, storeFactory, identityModel, identityProviders = unavailableIdentityProviders(), captchaProvider = unavailableCaptchaProvider(), paymentProvider = unavailablePaymentProvider(), streamingProvider = unavailableStreamingProvider(), newsletterEmailProvider = unavailableNewsletterEmailProvider(), assistantProvider = unavailableAssistantProvider, ipcaProvider = createIbgeIpcaProvider(), lifecycle = { stopping: false }, registerRoutes }) {
+export function createApp({ config, database, logQueue, retention, sessionProvider, storeFactory, identityModel, identityProviders = unavailableIdentityProviders(), captchaProvider = unavailableCaptchaProvider(), paymentProvider = unavailablePaymentProvider(), streamingProvider = unavailableStreamingProvider(), newsletterEmailProvider = unavailableNewsletterEmailProvider(), assistantProvider, ipcaProvider = createIbgeIpcaProvider(), lifecycle = { stopping: false }, registerRoutes }) {
     const app = express();
     app.disable('x-powered-by');
     app.set('trust proxy', config.trustProxy.length ? config.trustProxy : false);
@@ -268,11 +269,21 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     const support=createSupportService({model:createSupportModel(),identity,notifications});
     app.locals.support=support;
     app.use(supportRoutes(createSupportController(support),dependencies));
-    app.use(contentRoutes(createContentController(content,createAssistantService({identity,support,provider:assistantProvider})),dependencies));
+    const catalog = createCatalogService({ model: createCatalogModel(database), identity, mediaHosts: config.catalog?.mediaHosts ?? [] });
+    const venues = createVenueService({ model: createVenueModel(database), identity });
+    const sessions = createSessionService({ model: createSessionModel(database), identity });
+    const assistant = assistantProvider ?? createOpenAiAssistantProvider({
+        ...config.assistant,
+        timeoutMs: Math.max(1, Math.min(6500, Math.floor(config.httpTimeout * 0.65))),
+        loadFaq: async () => (await content.get('faq')).body.items,
+        loadNowPlaying: titulo => catalog.listFilms({ cinema: true, upcoming: false, limit: 8, titulo }, false),
+        answerShowtimes: createAssistantShowtimes({ catalog, venues, sessions })
+    });
+    app.use(contentRoutes(createContentController(content,createAssistantService({identity,support,provider:assistant})),dependencies));
     app.use(reportRoutes(createReportController(createReportService({model:createReportModel(),identity,allowedRoutes:Object.keys(specification.paths).map(path=>path.replace(/\{(\w+)\}/g,':$1'))})),dependencies));
     app.use(salesRoutes(createSalesController(createSalesService({model:createSalesModel(),identity})),dependencies));
     app.use(adminStreamingRoutes(createAdminStreamingController(createAdminStreamingService({model:createAdminStreamingModel(),identity})),dependencies));
-    app.use(catalogRoutes(createCatalogController(createCatalogService({ model: createCatalogModel(database), identity, mediaHosts: config.catalog?.mediaHosts ?? [] })), dependencies));
+    app.use(catalogRoutes(createCatalogController(catalog), dependencies));
     const staging = createImageStorage({ ...config.imageUpload, enforceOwner: true });
     app.use(imageUploadRoutes(createImageUploadController(createImageUploadService({
         storage: staging,
@@ -284,8 +295,8 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
         model: createFilmGalleryModel(database), identity,
         storage: createGalleryStorage({ directory: config.gallery?.directory, staging })
     })), dependencies));
-    app.use(venueRoutes(createVenueController(createVenueService({ model: createVenueModel(database), identity })), dependencies));
-    app.use(sessionRoutes(createSessionController(createSessionService({ model: createSessionModel(database), identity })), dependencies));
+    app.use(venueRoutes(createVenueController(venues), dependencies));
+    app.use(sessionRoutes(createSessionController(sessions), dependencies));
     app.use(teamRoutes(createTeamController(createTeamService({ model: createTeamModel(database), identity, notifications })), dependencies));
     app.use(taskRoutes(createTaskController(createTaskService({ model: createTaskModel(database), identity })), dependencies));
     app.use(notificationRoutes(createNotificationController(notifications), dependencies));
@@ -301,7 +312,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(comboRoutes(createComboController(createComboService({ model: createComboModel(database), identity })), dependencies));
     app.use(supplierTransportRoutes(createSupplierTransportController(createSupplierTransportService({ model: createSupplierTransportModel(), identity })), dependencies));
     app.use(inventoryRoutes(createInventoryController(inventory), dependencies));
-    app.use(supplyRoutes(createSupplyController(createSupplyService({ model: createSupplyModel(database), identity })), dependencies));
+    app.use(supplyRoutes(createSupplyController(createSupplyService({ model: createSupplyModel(database), identity, notifications })), dependencies));
     app.use(pricingRoutes(createPricingController(pricing), dependencies));
     app.use(orderRoutes(createOrderController(orders,checkout,content),dependencies));
     app.use(ticketRoutes(createTicketController(tickets),dependencies));

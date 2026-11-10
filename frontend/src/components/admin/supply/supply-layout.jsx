@@ -9,7 +9,8 @@ const sections = [
   { href: '/admin/suprimentos', label: 'Fornecedores' },
   { href: '/admin/suprimentos/equipamentos', label: 'Equipamentos' },
   { href: '/admin/suprimentos/solicitacoes', label: 'Solicitações' },
-  { href: '/admin/suprimentos/logistica', label: 'Logística' }
+  { href: '/admin/suprimentos/logistica', label: 'Logística' },
+  { href: '/admin/suprimentos/rotas', label: 'Rotas de entrega' }
 ];
 
 export default function SupplyLayout({ title, description, action, children }) {

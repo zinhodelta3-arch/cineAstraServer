@@ -81,6 +81,7 @@ export function validateEnv(env = process.env) {
         identity: { allowLocalRegistrationDocuments: boolean('ALLOW_LOCAL_REGISTRATION_DOCUMENTS', true), allowSelfDeclaredAge: boolean('ALLOW_SELF_DECLARED_AGE', true), encryptionKey, bcryptCost: integer('BCRYPT_COST', 12, 10, 14), termsVersion: env.TERMS_VERSION || null, privacyVersion: env.PRIVACY_VERSION || null, legalBasis: env.IDENTITY_LEGAL_BASIS || null },
         // O CineAstra usa pagamento simulado por padrão, inclusive no ambiente publicado.
         paymentMode: env.PAYMENT_MODE || 'SIMULATED',
+        assistant: { apiKey: env.OPENAI_API_KEY?.trim(), model: env.ASSISTANT_OPENAI_MODEL?.trim() },
         db: { host: required('DB_HOST'), port: integer('DB_PORT', 3306, 1, 65535), user: required('DB_USER'), password: required('DB_PASSWORD'), database: required('DB_NAME'),
             connectionLimit: integer('DB_CONNECTION_LIMIT', 10, 1, 100), queueLimit: integer('DB_QUEUE_LIMIT', 100, 1, 1000), timeout: integer('DB_TIMEOUT_MS', 3000, 100, 5000) },
         rate: { max: integer('RATE_LIMIT_MAX', 120, 1, 10000), windowMs: integer('RATE_LIMIT_WINDOW_MS', 60000, 100, 3600000) },

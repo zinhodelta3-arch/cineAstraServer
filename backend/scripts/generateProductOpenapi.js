@@ -3,7 +3,6 @@ import { productOperations } from '../src/routes/productRoutes.js';
 
 const file = new URL('../src/docs/openapi.json', import.meta.url);
 const spec = JSON.parse(await readFile(file, 'utf8'));
-spec.info.version = '1.11.0';
 spec.tags = [...spec.tags.filter(t => !['Insumos','Equipamentos','Fornecedor locais'].includes(t.name)),
     { name: 'Insumos', description: 'Catálogo de insumos por fornecedor e local autorizado.' },
     { name: 'Equipamentos', description: 'Catálogo de equipamentos e patrimônio.' },
@@ -19,16 +18,19 @@ const inputStatus = status(['DISPONIVEL','INDISPONIVEL']);
 const equipmentStatus = status(['DISPONIVEL','MANUTENCAO','INDISPONIVEL']);
 const grantStatus = status(['ATIVO','INATIVO']);
 const money = { type: 'string', pattern: '^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$', description: 'Preço de catálogo em decimal exato; não é custo.' };
+const cost = { ...money, description: 'Custo em decimal exato. Disponível apenas para ADMIN.' };
+const costs = { custo_receita: cost, custo_parceria: cost };
 const count = { type: 'integer', minimum: 0, maximum: 2147483647 };
 const patrimony = nullable({ type: 'string', minLength: 1, maxLength: 100, description: 'Único após trim/uppercase; null é permitido.' });
 const common = { nome: name, descricao: nullable({ type: 'string', maxLength: 10000 }), categoria: nullable({ type: 'string', minLength: 1, maxLength: 100 }) };
 const base = { id_fornecedor: id, id_local: id, ...common, quantidade: count, status: inputStatus, data_cadastro: { type: 'string' } };
-spec.components.schemas.InputProduct = obj({ id_insumo: id, ...base, quantidade_minima: count, preco: money, venda_avulsa: {type:'boolean'} });
+const inputProduct = { id_insumo: id, ...base, quantidade_minima: count, preco: money, venda_avulsa: {type:'boolean'} };
+spec.components.schemas.InputProduct = obj({ ...inputProduct, custo_receita: nullable(cost), custo_parceria: nullable(cost) }, Object.keys(inputProduct));
 spec.components.schemas.EquipmentProduct = obj({ id_equipamento: id, ...base, numero_patrimonio: patrimony, status: equipmentStatus });
 spec.components.schemas.SupplierLocationGrant = obj({ id_fornecedor: id, id_local: id, status: grantStatus, criado_em: { type: 'string' } });
-const inputCreate = obj({ ...common, supplierId: id, localId: id, quantidade_minima: count, preco: money, venda_avulsa: {type:'boolean',default:false} }, ['nome','localId','preco']);
+const inputCreate = obj({ ...common, supplierId: id, localId: id, quantidade_minima: count, preco: money, ...costs, venda_avulsa: {type:'boolean',default:false} }, ['nome','localId','preco']);
 const equipmentCreate = obj({ ...common, supplierId: id, localId: id, numero_patrimonio: patrimony }, ['nome','localId']);
-const inputPatch = { ...obj({ ...common, quantidade_minima: count, preco: money, venda_avulsa: {type:'boolean'}, status: inputStatus }, []), minProperties: 1 };
+const inputPatch = { ...obj({ ...common, quantidade_minima: count, preco: money, ...costs, venda_avulsa: {type:'boolean'}, status: inputStatus }, []), minProperties: 1 };
 const equipmentPatch = { ...obj({ ...common, numero_patrimonio: patrimony, status: equipmentStatus }, []), minProperties: 1 };
 const bodies = { inputs: { create: inputCreate, patch: inputPatch }, equipment: { create: equipmentCreate, patch: equipmentPatch } };
 const paging = schema => obj({ items: { type: 'array', items: schema }, pagination: ref('Pagination') });
@@ -38,6 +40,7 @@ for (const r of productOperations) {
     const productSchema = r.type === 'inputs' ? ref('InputProduct') : ref('EquipmentProduct');
     const op = { operationId: r.operationId, tags: [tag], summary: `${r.action} ${r.type ?? 'fornecedor-local'}`, security: [{ bearerAuth: [] }], parameters: [], responses: {} };
     if (r.type) op.description = 'ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências.';
+    if (r.type === 'inputs') op.description += ' A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos.';
     else op.description = r.admin ? 'Somente ADMIN gerencia o vínculo operacional fornecedor-local.' : 'FORNECEDOR consulta os próprios locais autorizados.';
     for (const param of ['id','supplierId','localId']) if (r.path.includes(`{${param}}`)) op.parameters.push({ name: param, in: 'path', required: true, schema: id });
     if (['list','grants','myGrants'].includes(r.action)) {

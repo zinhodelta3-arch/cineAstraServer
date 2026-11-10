@@ -34,7 +34,7 @@ test('JWT ausente/formato inválido/expirado/issuer-audience/algoritmo/tampering
     await request(f.app).get('/__test/private').expect(401);
     const base = { sid: '1', jti: 'test-jti', purpose: 'access' };
     const make = opts => jwt.sign(base, f.config.jwt.secret, { subject: '1', issuer: f.config.jwt.issuer, audience: f.config.jwt.audience, expiresIn: 60, ...opts });
-    for (const header of ['Basic abc', `Bearer ${token(f)}x`, `Bearer ${make({ expiresIn: -1 })}`, `Bearer ${make({ issuer: 'evil' })}`, `Bearer ${make({ audience: 'evil' })}`, `Bearer ${make({ algorithm: 'HS384' })}`, `Bearer ${make({ expiresIn: 3600 })}`]) {
+    for (const header of ['Basic abc', `Bearer ${token(f)}x`, `Bearer ${make({ expiresIn: -1 })}`, `Bearer ${make({ issuer: 'evil' })}`, `Bearer ${make({ audience: 'evil' })}`, `Bearer ${make({ algorithm: 'HS384' })}`, `Bearer ${make({ expiresIn: f.config.jwt.ttl + 1 })}`]) {
         const res = await request(f.app).get('/__test/private').set('Authorization', header).expect(401);
         assert.equal(res.headers['www-authenticate'], 'Bearer');
         assert.ok(!res.text.includes(header));

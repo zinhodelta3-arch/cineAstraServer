@@ -11,11 +11,12 @@ import { ApiError } from '../src/utils/ApiError.js';
 
 function fixture() {
     let state = {
-        sessions: [{ id_sessao: '1', status: 'AGENDADA' }, { id_sessao: '2', status: 'CANCELADA' }],
+        sessions: [{ id_sessao: '1', id_local: '10', status: 'AGENDADA' }, { id_sessao: '2', id_local: '10', status: 'CANCELADA' }],
         users: [{ id_usuario: '1', tipo_usuario: 'SUPERVISOR', status: 'ATIVO' }, { id_usuario: '2', tipo_usuario: 'SUPERVISOR', status: 'ATIVO' }, { id_usuario: '3', tipo_usuario: 'COLABORADOR', status: 'ATIVO' }, { id_usuario: '4', tipo_usuario: 'COLABORADOR', status: 'ATIVO' }, { id_usuario: '5', tipo_usuario: 'CLIENTE', status: 'ATIVO' }, { id_usuario: '6', tipo_usuario: 'ADMIN', status: 'ATIVO' }],
         teams: [], members: [], entries: [], events: [], notifications: []
     };
     let serial = Promise.resolve(), next = { team: 1, member: 1, entry: 1 }, notificationFailure = false;
+    const supervisorLocations = new Map([['1', '10'], ['2', '20']]);
     const team = id => state.teams.find(t => t.id_equipe === String(id));
     const member = (teamId, userId) => state.members.find(m => m.id_equipe === String(teamId) && m.id_usuario === String(userId));
     const entry = (teamId, entryId) => state.entries.find(e => e.id_equipe === String(teamId) && e.id_entrada === String(entryId));
@@ -23,13 +24,23 @@ function fixture() {
         async team(id) { const t = team(id); return t && { ...t, sessao_status: state.sessions.find(s => s.id_sessao === t.id_sessao).status }; },
         async lockTeam(id) { return team(id) ?? null; },
         async session(id) { return state.sessions.find(s => s.id_sessao === String(id)) ?? null; },
+        async supervisorLocation(id) {
+            const id_local = supervisorLocations.get(String(id));
+            return id_local ? { id_local } : null;
+        },
         async activeTeamForSession(id) { return state.teams.find(t => t.id_sessao === String(id) && t.status === 'ATIVA') ?? null; },
         async user(id) { return state.users.find(u => u.id_usuario === String(id)) ?? null; },
         async listTeams(actor, q) { return state.teams.filter(t => BigInt(t.id_equipe) > BigInt(q.cursor ?? '0') && (actor.tipo === 'ADMIN' || actor.tipo === 'SUPERVISOR' && actor.id === t.id_supervisor || actor.tipo === 'COLABORADOR' && t.status === 'ATIVA' && ['AGENDADA','EM_CARTAZ'].includes(state.sessions.find(s => s.id_sessao === t.id_sessao).status))); },
-        async create(c, data) { const id = String(next.team++); state.teams.push({ id_equipe: id, id_supervisor: String(data.supervisorId), id_sessao: String(data.sessionId), nome: data.nome, status: 'ATIVA' }); return id; },
+        async create(c, data) { const id = String(next.team++); const session = await model.session(data.sessionId); state.teams.push({ id_equipe: id, id_supervisor: String(data.supervisorId), id_sessao: String(data.sessionId), id_local: session.id_local, nome: data.nome, status: 'ATIVA' }); return id; },
         async update(c, id, data) { Object.assign(team(id), data); },
         async member(id, memberId) { return state.members.find(m => m.id_equipe === String(id) && m.id_equipe_membro === String(memberId)) ?? null; },
         async memberByUser(id, userId) { return member(id, userId) ?? null; },
+        async activeMemberInLocal(userId, localId) {
+            return state.members.find(m => {
+                const membershipTeam = team(m.id_equipe);
+                return m.id_usuario === userId && m.status === 'ATIVO' && membershipTeam?.status === 'ATIVA' && membershipTeam.id_local === localId;
+            }) ?? null;
+        },
         async listMembers(id, q) { return state.members.filter(m => m.id_equipe === String(id) && BigInt(m.id_equipe_membro) > BigInt(q.cursor ?? '0')); },
         async activateMember(c, teamId, userId, funcao, previous) { if (previous) Object.assign(previous, { status: 'ATIVO', funcao }); else state.members.push({ id_equipe_membro: String(next.member++), id_equipe: String(teamId), id_usuario: String(userId), funcao, data_entrada: '2026-10-08', status: 'ATIVO' }); },
         async updateMember(c, id, memberId, data) { Object.assign(state.members.find(m => m.id_equipe === String(id) && m.id_equipe_membro === String(memberId)), data); },
@@ -61,6 +72,7 @@ test('equipe exige sessão ativa e supervisor autorizado; outro supervisor não 
     await f.api('post', '/api/teams', '5').send({ sessionId: '1', nome: 'A' }).expect(403);
     await f.api('post', '/api/teams').send({ sessionId: '2', nome: 'A' }).expect(409);
     await f.api('post', '/api/teams').send({ sessionId: '1', nome: 'A', supervisorId: '2' }).expect(403);
+    await f.api('post', '/api/teams', '2').send({ sessionId: '1', nome: 'A' }).expect(409);
     const created = await f.api('post', '/api/teams').send({ sessionId: '1', nome: 'A' }).expect(201);
     assert.equal(created.body.data.id_supervisor, '1');
     await f.api('post', '/api/teams').send({ sessionId: '1', nome: 'B' }).expect(409);
@@ -72,18 +84,23 @@ test('equipe exige sessão ativa e supervisor autorizado; outro supervisor não 
 
 test('solicitação não cria membro; apenas gestor próprio aceita e define função', async () => {
     const f = fixture(); await f.api('post', '/api/teams').send({ sessionId: '1', nome: 'A' }).expect(201);
+    await f.api('post', '/api/teams/1/entries/requests', '3').send({}).expect(403);
+    f.state.sessions.push({ id_sessao: '3', id_local: '10', status: 'AGENDADA' });
+    f.state.teams.push({ id_equipe: '99', id_sessao: '3', id_local: '10', status: 'ATIVA' });
+    f.state.members.push({ id_equipe_membro: '99', id_equipe: '99', id_usuario: '3', status: 'ATIVO' });
     const proposal = await f.api('post', '/api/teams/1/entries/requests', '3').send({}).expect(201);
-    assert.equal(f.state.members.length, 0);
+    assert.ok(!f.state.members.some(m => m.id_equipe === '1'));
     await f.api('post', '/api/teams/1/entries/requests', '3').send({}).expect(409);
     await f.api('post', '/api/teams/1/entries/1/decision', '3').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(403);
     await f.api('post', '/api/teams/1/entries/1/decision', '2').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(403);
     await f.api('post', '/api/teams/1/entries/1/decision').send({ decision: 'ACEITAR' }).expect(422);
     await f.api('post', '/api/teams/1/entries/1/decision').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(200);
     assert.equal(proposal.body.data.status, 'PENDENTE');
-    assert.equal(f.state.members[0].funcao, 'Projeção');
+    const newMember = () => f.state.members.find(m => m.id_equipe === '1');
+    assert.equal(newMember().funcao, 'Projeção');
     await f.api('patch', '/api/teams/1/members/1', '3').send({ funcao: 'Chefe' }).expect(403);
     await f.api('patch', '/api/teams/1/members/1').send({ funcao: 'Portaria' }).expect(200);
-    assert.equal(f.state.members[0].funcao, 'Portaria');
+    assert.equal(newMember().funcao, 'Portaria');
 });
 
 test('convite só incorpora após aceite do destinatário e rejeita perfil indevido', async () => {
