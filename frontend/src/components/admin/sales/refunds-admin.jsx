@@ -1,5 +1,6 @@
 'use client';
 
+import TablePagination from '@/components/ui/table-pagination';
 import { useEffect, useRef, useState } from 'react';
 import { Eye, Scale } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -61,7 +62,7 @@ export default function RefundsAdmin() {
       <div className={styles.toolbar}><label className={styles.filter}>Status<select value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos</option>{statuses.map(value => <option key={value} value={value}>{statusName(value)}</option>)}</select></label><label className={styles.filter}>Motivo<select value={reason} onChange={event => setReason(event.target.value)}><option value="">Todos</option>{reasons.map(value => <option key={value} value={value}>{statusName(value)}</option>)}</select></label></div>
       <SalesState list={list} empty="Nenhuma solicitação encontrada." noun="reembolsos" />
       {list.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de reembolsos; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Solicitações de reembolso</caption><thead><tr><th scope="col">Solicitação</th><th scope="col">Cliente</th><th scope="col">Pagamento</th><th scope="col">Motivo</th><th scope="col">Status</th><th scope="col">Valor</th><th scope="col">Recebida</th><th scope="col">Ações</th></tr></thead><tbody>{list.items.map(row => <tr key={row.id}><th scope="row">#{row.id}</th><td>#{row.userId}</td><td>#{row.paymentId}</td><td>{statusName(row.reason)}</td><td><span className={`${styles.badge} ${['NEGADA', 'FALHOU'].includes(row.status) ? styles.inactive : ''}`}>{statusName(row.status)}</span></td><td>{money(row.requestedAmount)}</td><td>{dateTime(row.receivedAt)}</td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title={row.status === 'EM_ANALISE' ? 'Analisar reembolso' : 'Ver detalhes'} aria-label={`${row.status === 'EM_ANALISE' ? 'Analisar' : 'Ver'} reembolso ${row.id}`} onClick={() => open(row)}>{row.status === 'EM_ANALISE' ? <Scale size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button></div></td></tr>)}</tbody></table></div>}
-      <footer className={styles.footer}><span>Exibindo {list.items.length} solicitações{list.nextCursor ? ' · há mais' : ''}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? 'Carregando…' : 'Carregar mais'}</button></footer>
+      <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>Reembolso #{selected?.id}</DialogTitle><DialogDescription className={styles.dialogDescription}>Confira a solicitação e o estado antes de registrar uma decisão.</DialogDescription>
       {detailLoading && <p role="status">Carregando solicitação…</p>}

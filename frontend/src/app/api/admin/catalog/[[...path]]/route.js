@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
 import { resolveApiBase } from "@/lib/api/api-base.mjs";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
 
@@ -36,7 +36,9 @@ function targetFor(method, parts, search) {
 async function uploadImage(request, token) {
   const size = Number(request.headers.get("content-length"));
   if (size > 6_000_000) return json({ message: "A imagem deve ter até 5 MB." }, 413);
-  const form = await request.formData();
+  let form;
+  try { form = await request.formData(); }
+  catch { throw new AuthError(400, 'Não foi possível ler a imagem enviada. Selecione o arquivo novamente.', 'INVALID_UPLOAD'); }
   const file = form.get("image");
   if ([...form.keys()].some((key) => key !== "image") || form.getAll("image").length !== 1 || !file || typeof file.arrayBuffer !== "function" || file.size > 5_242_880 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
     return json({ message: "Selecione uma imagem JPG, PNG ou WebP de até 5 MB." }, 422);
@@ -47,10 +49,11 @@ async function uploadImage(request, token) {
   let response;
   try {
     response = await fetch(`${base}/admin/uploads/images`, { method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30000), headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body });
-  } catch { return json({ message: "Não foi possível enviar a imagem." }, 503); }
+  } catch (error) { return json(authErrorPayload(new AuthError(503, 'Não foi possível enviar a imagem.', error?.name === 'TimeoutError' ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR')), 503); }
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.success !== true || !imageKey(payload.data?.key)) {
-    return json({ message: response.status === 413 ? "A imagem deve ter até 5 MB." : response.status === 415 || response.status === 422 ? "Formato de imagem inválido." : "Não foi possível enviar a imagem." }, response.ok ? 503 : response.status >= 500 ? 503 : response.status);
+    const status = response.ok ? 503 : response.status;
+    return json(authErrorPayload(new AuthError(status, 'Não foi possível enviar a imagem.', response.ok ? 'INVALID_RESPONSE' : payload?.code, { ...payload, requestId: payload?.requestId ?? response.headers.get('X-Request-Id'), retryAfter: response.headers.get('Retry-After') })), status);
   }
   return json(payload.data, 201);
 }
@@ -64,7 +67,7 @@ async function handle(request, { params }) {
     const user = await currentUser();
     if (user?.role !== "ADMIN") return json({ message: "Acesso restrito à administração." }, 403);
     const parts = (await params).path ?? [];
-    if (parts[0] === "uploads" && parts.length === 1 && method === "POST") return uploadImage(request, token);
+    if (parts[0] === "uploads" && parts.length === 1 && method === "POST") return await uploadImage(request, token);
     if (parts[0] === "uploads" && parts.length === 2 && imageKey(parts[1]) && method === "DELETE") {
       await backendAuth(`/admin/uploads/images/${parts[1]}`, { token, method });
       return new NextResponse(null, { status: 204 });
@@ -81,9 +84,9 @@ async function handle(request, { params }) {
     const data = await backendAuth(target, { token, method, body });
     return method === "DELETE" ? new NextResponse(null, { status: 204 }) : json(data);
   } catch (error) {
-    const status = error instanceof AuthError ? error.status : 503;
+    const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "Sua conta não pode alterar o catálogo.", 404: "Registro não encontrado.", 409: "Há um conflito com os dados ou o estado atual do registro. Atualize a lista e confira as informações.", 422: "Confira os dados informados e tente novamente." };
-    return json({ message: messages[status] ?? "Não foi possível acessar o catálogo." }, status);
+    return json(authErrorPayload(error, { message: messages[status] ?? "Não foi possível acessar o catálogo." }), status);
   }
 }
 

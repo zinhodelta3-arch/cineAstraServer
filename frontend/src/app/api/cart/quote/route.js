@@ -1,6 +1,6 @@
 import {NextResponse} from 'next/server';
 import {cookies} from 'next/headers';
-import {backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
+import { authErrorPayload,backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
 import {isAllowedAuthOrigin} from '@/lib/auth/request-origin.mjs';
 import {validCartOrder} from '@/lib/api/cart-order.mjs';
 import {commerceErrors} from '@/lib/api/commerce-errors.mjs';
@@ -22,6 +22,6 @@ export async function POST(request){
    lines:quote.lines.map(line=>({category:line.category,id:line.id,quantity:line.quantity,unitPrice:line.unitPrice,originalPrice:line.base,discountSources:line.discountSources??[],subtotal:line.subtotal,catalogOutOfSync:line.catalogOutOfSync===true}))});
  }catch(e){
   const messages={AGE_VERIFICATION_REQUIRED:'Sua conta ainda não possui verificação de idade vigente. A idade informada no cadastro é autodeclarada e não habilita a cotação. Este ambiente precisa de um provedor de verificação de idade para liberar essa etapa.',AGE_RESTRICTION:'A classificação etária de um filme no carrinho não permite esta compra para a data de nascimento da conta.',403:'Sua conta não está habilitada para esta compra. Confira o perfil e a autenticação.',409:'Preço, estoque ou disponibilidade mudou. Revise os itens e consulte novamente.',404:'Um produto não está mais disponível.',422:'Confira os itens e a validade do cupom.'};
-  return json({code:e.code??null,message:commerceErrors[e.code]||messages[e.code]||messages[e.status]||(e instanceof AuthError?e.message:'Não foi possível cotar o pedido.')},e instanceof AuthError?e.status:503);
+  return json(authErrorPayload(e, {code:e.code??null,message:commerceErrors[e.code]||messages[e.code]||messages[e.status]||(e instanceof AuthError?e.message:'Não foi possível cotar o pedido.')}),e instanceof AuthError?e.status:500);
  }
 }

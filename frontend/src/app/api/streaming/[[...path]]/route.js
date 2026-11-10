@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
 
 const json = (body, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
@@ -25,10 +25,10 @@ async function handle(request, { params }) {
     const data = await backendAuth(target, { token, method });
     return json(data);
   } catch (error) {
-    const status = error instanceof AuthError ? error.status : 503;
+    const status = error instanceof AuthError ? error.status : 500;
     const reasons = { STREAMING_ACCESS_REQUIRED: "Você ainda não tem acesso a este filme.", AGE_VERIFICATION_REQUIRED: "Confira a verificação de idade da sua conta.", AGE_RESTRICTION: "Sua conta não atende à classificação etária deste filme." };
     const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "A reprodução não está permitida para esta conta.", 404: "Filme ou acesso não encontrado.", 503: "Este vídeo está indisponível no momento." };
-    return json({ message: reasons[error.code] || messages[status] || "Não foi possível iniciar a reprodução.", ...(reasons[error.code] ? { code: error.code } : {}) }, status);
+    return json(authErrorPayload(error, { message: reasons[error.code] || messages[status] || "Não foi possível iniciar a reprodução.", ...(reasons[error.code] ? { code: error.code } : {}) }), status);
   }
 }
 

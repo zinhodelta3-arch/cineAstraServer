@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
 
 const json = (body, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -18,6 +18,9 @@ async function handle(request, { params }) {
     const parts = (await params).path ?? [];
     const cursor = new URL(request.url).searchParams.get("cursor") ?? "0";
     const statusFilter = new URL(request.url).searchParams.get('status');
+    const limit = new URL(request.url).searchParams.get('limit') ?? '50';
+    const q = new URL(request.url).searchParams.get('q')?.trim();
+    if (!/^\d{1,3}$/.test(limit) || Number(limit) < 1 || Number(limit) > 100 || (q?.length ?? 0) > 150) return json({ message: 'Paginação ou busca inválida.' }, 422);
     if (statusFilter && !['ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO','ALL'].includes(statusFilter)) return json({ message: 'Status inválido.' }, 422);
     if (!validCursor(cursor) || (parts.length && !validId(parts[0]))) return json({ message: "Chamado ou página inválida." }, 422);
 
@@ -31,7 +34,7 @@ async function handle(request, { params }) {
 
     let target;
     if (request.method === "GET") {
-      if (!parts.length) target = `/admin/support?limit=50&cursor=${cursor}${statusFilter ? `&status=${statusFilter}` : ''}`;
+      if (!parts.length) target = `/admin/support?limit=${limit}&cursor=${cursor}${statusFilter ? `&status=${statusFilter}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`;
       else if (parts.length === 1) target = `/support/${parts[0]}`;
       else if (parts.length === 2 && parts[1] === "messages") target = `/support/${parts[0]}/messages?limit=100&cursor=${cursor}`;
     } else if (parts.length === 2) {
@@ -46,9 +49,9 @@ async function handle(request, { params }) {
       : undefined;
     return json(await backendAuth(target, { token, method: request.method, body: payload }));
   } catch (error) {
-    const status = error instanceof AuthError ? error.status : 503;
+    const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "Você não tem acesso a este chamado.", 404: "Chamado não encontrado.", 409: "O chamado mudou de estado. Atualize a fila e tente novamente.", 422: "Confira a mensagem e tente novamente." };
-    return json({ message: messages[status] ?? "Não foi possível acessar o suporte." }, status);
+    return json(authErrorPayload(error, { message: messages[status] ?? "Não foi possível acessar o suporte." }), status);
   }
 }
 

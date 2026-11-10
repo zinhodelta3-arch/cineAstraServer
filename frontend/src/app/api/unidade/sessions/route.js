@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from '@/lib/auth/server';
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from '@/lib/auth/server';
 
 const json = (data, status = 200) => NextResponse.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 export async function GET(request) {
@@ -10,12 +10,13 @@ export async function GET(request) {
     if (!['SUPERVISOR','COLABORADOR'].includes((await currentUser())?.role)) return json({ message: 'Acesso restrito ao supervisor.' }, 403);
     const params = new URL(request.url).searchParams;
     const cursor = params.get('cursor');
-    if ([...params.keys()].some(key => key !== 'cursor') || cursor && !/^[1-9]\d{0,9}$/.test(cursor)) return json({ message: 'Filtro inválido.' }, 422);
+    const limit = params.get('limit') ?? '100';
+    if ([...params.keys()].some(key => !['cursor', 'limit'].includes(key)) || cursor && !/^[1-9]\d{0,9}$/.test(cursor) || !/^\d{1,3}$/.test(limit) || Number(limit) < 1 || Number(limit) > 100) return json({ message: 'Filtro inválido.' }, 422);
     const context = await backendAuth('/teams/context', { token });
     const localId = context.locations?.[0]?.id_local;
     if (!localId) return json({ items: [], pagination: { nextCursor: null } });
-    return json(await backendAuth(`/unit/sessions?localId=${encodeURIComponent(localId)}&limit=100${cursor ? `&cursor=${cursor}` : ''}`, { token }));
+    return json(await backendAuth(`/unit/sessions?localId=${encodeURIComponent(localId)}&limit=${limit}${cursor ? `&cursor=${cursor}` : ''}`, { token }));
   } catch (error) {
-    return json({ message: error instanceof AuthError ? error.message : 'Não foi possível consultar as sessões.' }, error instanceof AuthError ? error.status : 503);
+    return json(authErrorPayload(error, { message: error instanceof AuthError ? error.message : 'Não foi possível consultar as sessões.' }), error instanceof AuthError ? error.status : 500);
   }
 }

@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
-import { readSessionResponse } from '@/lib/auth/session-response.mjs';
+import { sessionFetch, readSessionResponse } from '@/lib/auth/session-response.mjs';
 import { loginDestination, passwordValid } from '@/lib/auth/destination.mjs';
 export async function sessionRequest(action,body,signal) {
- const response=await fetch(`/api/session/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body),signal});
+ const response=await sessionFetch(`/api/session/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body),signal});
  return readSessionResponse(response);
 }
 export function useAuthForm({resetToken}={}) {
@@ -22,10 +22,10 @@ export function useAuthForm({resetToken}={}) {
    const body=action==='reset'?{token:resetToken,password:form.password,passwordConfirmation:form.confirmation}:action==='forgot'?{email:form.login.trim()}:{email:form.login.trim(),password:form.password};
    const result=await sessionRequest(action,body,abort.signal);setForm(f=>({...f,password:'',confirmation:''}));
    if(action==='login'){
-    setUser(result.user);window.dispatchEvent(new Event('cineastra-session'));
+    setUser(result.user);
     const destination = loginDestination(result.user?.role) ?? result.destination;
     if(destination){window.location.replace(destination);}
-    else setMessage('Login realizado.');
+    else {window.dispatchEvent(new Event('cineastra-session'));setMessage('Login realizado.');}
    }else{setMessage(result.message);setSuccess(true);}
   }catch(e){if(!abort.signal.aborted)setMessage(e.message||'Falha de conexão. Tente novamente.');}
   finally{busy.current=false;if(!abort.signal.aborted)setPending(false);}

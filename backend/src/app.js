@@ -199,18 +199,18 @@ import {adminStreamingRoutes} from './routes/adminStreamingRoutes.js';
 
 const specification = JSON.parse(readFileSync(new URL('./docs/openapi.json', import.meta.url), 'utf8'));
 
-export function createApp({ config, database, logQueue, retention, sessionProvider, storeFactory, identityModel, identityProviders = unavailableIdentityProviders(), captchaProvider = unavailableCaptchaProvider(), paymentProvider = unavailablePaymentProvider(), streamingProvider = unavailableStreamingProvider(), newsletterEmailProvider = unavailableNewsletterEmailProvider(), assistantProvider, ipcaProvider = createIbgeIpcaProvider(), lifecycle = { stopping: false }, registerRoutes }) {
+export function createApp({ config, database, logQueue, retention, sessionProvider, storeFactory, identityModel, identityProviders = unavailableIdentityProviders(), captchaProvider = unavailableCaptchaProvider(), paymentProvider = unavailablePaymentProvider(), streamingProvider = unavailableStreamingProvider(), newsletterEmailProvider = unavailableNewsletterEmailProvider(), assistantProvider, ipcaProvider = createIbgeIpcaProvider(), lifecycle = { stopping: false }, registerRoutes, registerCleanup }) {
     const app = express();
     app.disable('x-powered-by');
     app.set('trust proxy', config.trustProxy.length ? config.trustProxy : false);
     app.set('json replacer', (key, value) => typeof value === 'bigint' ? value.toString() : value);
-    const limits = createLimits(config, storeFactory);
+    const limits = createLimits(config, storeFactory, registerCleanup);
+    app.locals.close = () => limits.close();
     const tokens = createJwt(config.jwt);
     const identity = createIdentityService({ database, model: identityModel ?? createIdentityModel(database), config, tokens, providers: identityProviders });
     const profile = createProfileService({ identity, config, providers: identityProviders });
     const auth = createAuthMiddleware(tokens, createAccessService(createUserAccessModel(database), sessionProvider ?? identity.sessionProvider, config.security));
     const dependencies = { auth, limits: limits.flows, captcha: captchaProvider, security: config.security };
-    app.locals.close = () => limits.close();
     app.use(requestId);
     app.use(logMiddleware(logQueue, { sampleRate: config.logging.sampleRate }));
     app.use(helmet());

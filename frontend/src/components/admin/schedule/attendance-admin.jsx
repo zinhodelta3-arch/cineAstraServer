@@ -1,5 +1,6 @@
 "use client";
 
+import TablePagination from '@/components/ui/table-pagination';
 import { useAdminSchedule } from "@/hooks/admin/use-admin-schedule";
 import ScheduleLayout, { ScheduleState } from "./schedule-layout";
 import SessionPicker, { useSessionSelection } from "./session-picker";
@@ -25,7 +26,7 @@ export default function AttendanceAdmin() {
       {!session && <p className={styles.state}>Selecione uma sessão acima para começar.</p>}
       {session && <><ScheduleState list={attendance} empty="Ainda não há entradas ou saídas registradas para esta sessão." noun="movimentações" />
         {attendance.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de presença; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Registros de presença da sessão {session.id_sessao}</caption><thead><tr><th scope="col">Registro</th><th scope="col">Ingresso</th><th scope="col">Movimentação</th><th scope="col">Horário</th><th scope="col">Responsável</th></tr></thead><tbody>{attendance.items.map((entry) => <tr key={entry.id}><th scope="row">#{entry.id}</th><td>#{entry.ticketId}</td><td><span className={`${styles.badge} ${entry.type === "SAIDA" ? styles.inactive : ""}`}>{entry.type === "ENTRADA" ? "Entrada" : entry.type === "SAIDA" ? "Saída" : entry.type}</span></td><td>{dateTime(entry.at)}</td><td className={styles.muted}>{entry.staffId ? `Equipe #${entry.staffId}` : "—"}</td></tr>)}</tbody></table></div>}
-        <footer className={styles.footer}><span>Exibindo {attendance.items.length} movimentações{attendance.nextCursor ? " · há mais registros" : ""}</span><button type="button" onClick={attendance.loadMore} disabled={!attendance.nextCursor || attendance.loadingMore}>{attendance.loadingMore ? "Carregando…" : "Carregar mais"}</button></footer></>}
+        <TablePagination list={attendance} /></>}
     </section>
   </ScheduleLayout>;
 }

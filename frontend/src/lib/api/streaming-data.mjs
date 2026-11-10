@@ -1,16 +1,10 @@
 import { publicAsset, publicGet, safeLink } from "./public-api.mjs";
+import { sessionFetch, readSessionResponse } from '../auth/session-response.mjs';
 
 export async function streamingRequest(path, { method = "GET", body, signal, keepalive = false } = {}) {
-  const response = await fetch(`/api/streaming${path}`, { method, credentials: "same-origin", cache: "no-store", signal, keepalive, headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+  const response = await sessionFetch(`/api/streaming${path}`, { method, credentials: "same-origin", cache: "no-store", signal, keepalive, headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
   if (response.status === 204) return null;
-  const data = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = new Error(data?.message || "Não foi possível acessar o streaming.");
-    error.status = response.status;
-    error.code = data?.code;
-    throw error;
-  }
-  return data;
+  return readSessionResponse(response);
 }
 
 async function allPages(path, { privateRoute = false, signal } = {}) {

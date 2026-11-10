@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from '@/lib/auth/server';
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from '@/lib/auth/server';
 import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 
 const json = (data, status = 200) => NextResponse.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -14,7 +14,7 @@ function target(method, parts, search) {
     if (parts.length === 2 && id(second) && ['GET', 'PATCH'].includes(method)) return `/admin/${group}/${second}`;
   }
   if (group === 'categories') {
-    if (parts.length === 1 && ['GET', 'POST'].includes(method)) return '/admin/newsletter/categories';
+    if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/admin/newsletter/categories${method === 'GET' ? search : ''}`;
     if (parts.length === 2 && id(second) && ['PATCH', 'DELETE'].includes(method)) return `/admin/newsletter/categories/${second}`;
   }
   if (group === 'campaigns') {
@@ -49,10 +49,10 @@ async function handle(request, { params }) {
     const data = await backendAuth(path, { token, method, body });
     return json(data, method === 'POST' && !/\/(?:schedule|cancel)$/.test(path) ? 201 : 200);
   } catch (error) {
-    const status = error instanceof AuthError ? error.status : 503;
+    const status = error instanceof AuthError ? error.status : 500;
     if (method === 'GET' && path?.startsWith('/content/') && status === 404) return json({ published: false });
     const messages = { 401: 'Sua sessão expirou. Entre novamente.', 403: 'Acesso negado.', 404: 'Registro não encontrado.', 409: error.message, 422: 'Confira os dados informados.' };
-    return json({ message: messages[status] ?? 'Não foi possível acessar Marketing.' }, status);
+    return json(authErrorPayload(error, { message: messages[status] ?? 'Não foi possível acessar Marketing.' }), status);
   }
 }
 

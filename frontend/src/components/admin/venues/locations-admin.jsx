@@ -1,5 +1,6 @@
 "use client";
 
+import TablePagination from '@/components/ui/table-pagination';
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 import { Archive, DoorOpen, Pencil, Plus, RotateCcw, Search } from "lucide-react";
@@ -24,9 +25,9 @@ export default function LocationsAdmin() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("Todos");
   const search = useDeferredValue(query.trim().toLocaleLowerCase("pt-BR"));
-  const list = useAdminVenues(`locations?limit=20${status === "Todos" ? "" : `&status=${status}`}`);
+  const list = useAdminVenues(`locations?limit=20${status === "Todos" ? "" : `&status=${status}`}${search ? `&q=${encodeURIComponent(search)}` : ''}`);
   const actions = useVenueActions(list);
-  const visible = list.items.filter((item) => `${item.nome} ${item.cidade} ${item.estado}`.toLocaleLowerCase("pt-BR").includes(search));
+  const visible = list.items;
   const item = actions.dialog?.item;
 
   function save(event) {
@@ -48,7 +49,7 @@ export default function LocationsAdmin() {
       {visible.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de cinemas; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Cinemas cadastrados</caption><thead><tr><th scope="col">Cinema</th><th scope="col">Cidade</th><th scope="col">CEP</th><th scope="col">Status</th><th scope="col" aria-label="Ações" /></tr></thead><tbody>{visible.map((row) => <tr key={row.id_local}><th scope="row">{row.nome}</th><td>{row.cidade}, {row.estado}</td><td className={styles.muted}>{row.cep || "—"}</td><td><span className={`${styles.badge} ${row.status !== "ATIVO" ? styles.inactive : ""}`}>{statusName[row.status] ?? row.status}</span></td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar cinema" aria-label={`Editar ${row.nome}`} onClick={() => actions.open("form", row)}><Pencil size={16} aria-hidden="true" /></button><Link href={`/admin/locais/salas?local=${row.id_local}`} className={styles.iconButton} title="Ver salas" aria-label={`Salas de ${row.nome}`}><DoorOpen size={16} aria-hidden="true" /></Link><button type="button" className={`${styles.iconButton} ${row.status !== "INATIVO" ? styles.destructive : ""}`} title={row.status === "INATIVO" ? "Reativar cinema" : "Arquivar cinema"} aria-label={`${row.status === "INATIVO" ? "Reativar" : "Arquivar"} ${row.nome}`} onClick={() => actions.open("status", row)}>{row.status === "INATIVO" ? <RotateCcw size={16} aria-hidden="true" /> : <Archive size={16} aria-hidden="true" />}</button></div></td></tr>)}</tbody></table></div>}
       <VenueState list={list} empty="Nenhum cinema encontrado para este status." noun="cinemas" />
       {!list.loading && !list.error && list.items.length > 0 && !visible.length && <p className={styles.state}>Nenhum cinema carregado corresponde à busca.{list.nextCursor ? " Carregue mais registros para ampliar a busca." : ""}</p>}
-      <footer className={styles.footer}><span>Exibindo {visible.length} de {list.items.length} cinemas carregados{list.nextCursor ? " · há mais registros" : ""}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? "Carregando…" : "Carregar mais"}</button></footer>
+      <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(actions.dialog)} onOpenChange={(value) => { if (!value) actions.close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{actions.dialog?.type === "status" ? `${item?.status === "INATIVO" ? "Reativar" : "Arquivar"} cinema` : item ? "Editar cinema" : "Novo cinema"}</DialogTitle>
       {actions.dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>Cadastre os dados do cinema. Salas e assentos são administrados nas próximas abas.</DialogDescription><form key={item?.id_local ?? "new"} className={styles.form} onSubmit={save}>

@@ -4,11 +4,11 @@ import {useEffect,useRef,useState} from 'react';
 import {Ticket} from 'lucide-react';
 import {usePublicList} from '@/hooks/cinema/home/use-public-list';
 import {useSession} from '@/hooks/auth/use-session';
-import {readSessionResponse} from '@/lib/auth/session-response.mjs';
+import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
 import {planBenefits,planMoney} from '@/lib/api/plan-subscription.mjs';
 
 async function request(action,body,signal,key){
- return readSessionResponse(await fetch('/api/plans/'+action,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal,headers:body?{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
+ return readSessionResponse(await sessionFetch('/api/plans/'+action,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal,headers:body?{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
 }
 export default function useCinemaPlans(){
  const list=usePublicList('/plans?limit=12'),session=useSession(),userId=session.user?.id;

@@ -28,7 +28,7 @@ export const catalogSchemas = {
     genre: z.object({ nome: z.string().trim().min(1).max(100), status: z.enum(['ATIVO', 'INATIVO']).default('ATIVO') }).strict(),
     genrePatch: z.object({ nome: z.string().trim().min(1).max(100).optional(), status: z.enum(['ATIVO', 'INATIVO']).optional() }).strict().refine(v => Object.keys(v).length > 0),
     link: z.object({ genreId: catalogId }).strict(), query, adminQuery: query.extend({ status: z.enum(['ATIVO', 'INATIVO']).optional() }),
-    genreQuery: z.object(paging).strict(), adminGenreQuery: z.object({ ...paging, status: z.enum(['ATIVO', 'INATIVO']).optional() }).strict()
+    genreQuery: z.object(paging).strict(), adminGenreQuery: z.object({ ...paging, q: z.string().trim().min(1).max(100).optional(), status: z.enum(['ATIVO', 'INATIVO']).optional() }).strict()
 };
 export function catalogQuery(schema) {
     return (req, res, next) => { const parsed = schema.safeParse(req.query); if (!parsed.success) throw ApiError.validacao('Filtros ou paginação inválidos'); req.catalogQuery = parsed.data; next(); };

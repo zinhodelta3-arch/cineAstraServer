@@ -1,8 +1,8 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
-import {readSessionResponse} from '@/lib/auth/session-response.mjs';
+import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
 export async function supportRequest(path='',body,signal){
- return readSessionResponse(await fetch('/api/support'+(path?'/'+path:''),{method:body?'POST':'GET',cache:'no-store',credentials:'same-origin',signal,headers:body?{'Content-Type':'application/json'}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
+ return readSessionResponse(await sessionFetch('/api/support'+(path?'/'+path:''),{method:body?'POST':'GET',cache:'no-store',credentials:'same-origin',signal,headers:body?{'Content-Type':'application/json'}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
 }
 export function useSupportResource(path,paginated=true){
  const [revision,setRevision]=useState(0),[state,setState]=useState({key:null,items:[],data:null,cursor:null,loading:false,error:null});

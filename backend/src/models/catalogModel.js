@@ -34,6 +34,7 @@ export function createCatalogModel(database) {
         },
         listGenres(q, admin = false, filmId = null, c = database) {
             const where = ['g.id_genero > ?'], args = [q.cursor ?? '0'];
+            if (q.q) { where.push("g.nome LIKE ? ESCAPE '!'"); args.push(`%${q.q.replace(/[!%_]/g, value => `!${value}`)}%`); }
             if (!admin || q.status) { where.push('g.status = ?'); args.push(admin ? q.status : 'ATIVO'); }
             if (filmId) { where.push('EXISTS (SELECT 1 FROM filme_generos fg WHERE fg.id_genero = g.id_genero AND fg.id_filme = ?)'); args.push(filmId); }
             return rows(c, `SELECT g.id_genero,g.nome,g.status FROM generos g WHERE ${where.join(' AND ')} ORDER BY g.id_genero LIMIT ${pageLimit(q.limit)}`, args);

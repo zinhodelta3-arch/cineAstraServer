@@ -1,5 +1,6 @@
 'use client';
 
+import TablePagination from '@/components/ui/table-pagination';
 import { Pencil, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useAdminVenues } from '@/hooks/admin/use-admin-venues';
@@ -70,10 +71,7 @@ export default function LogisticsRoutesAdmin() {
           </tr>)}</tbody>
         </table>
       </div>}
-      {list.nextCursor && <footer className={styles.footer}>
-        <span>{list.items.length} rotas carregadas</span>
-        <button type="button" onClick={list.loadMore} disabled={list.loadingMore}>{list.loadingMore ? 'Carregando…' : 'Carregar mais'}</button>
-      </footer>}
+      {list.nextCursor && <TablePagination list={list} />}
     </section>
 
     <Dialog open={Boolean(actions.dialog)} onOpenChange={open => { if (!open) actions.close(); }}>

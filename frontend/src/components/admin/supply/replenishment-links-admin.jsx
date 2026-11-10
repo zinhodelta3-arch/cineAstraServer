@@ -1,5 +1,6 @@
 'use client';
 
+import TablePagination from '@/components/ui/table-pagination';
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -52,7 +53,7 @@ export default function ReplenishmentLinksAdmin({ locals }) {
         </tr>)}</tbody>
       </table>
     </div>}
-    {list.nextCursor && <footer className={styles.footer}><button type="button" onClick={list.loadMore} disabled={list.loadingMore}>Carregar mais vínculos</button></footer>}
+    {list.nextCursor && <TablePagination list={list} />}
     <Dialog open={Boolean(actions.dialog)} onOpenChange={value => { if (!value) actions.close(); }}>
       <DialogContent className={styles.dialog}>
         <DialogTitle>{editing ? 'Vincular insumos' : 'Remover vínculo'}</DialogTitle>

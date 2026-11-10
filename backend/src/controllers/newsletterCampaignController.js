@@ -1,7 +1,7 @@
 import {success} from '../utils/dto.js';
 const context=req=>({actor:req.usuario,signal:req.signal,requestId:req.res.locals.requestId});
 export function createNewsletterCampaignController(service){return {
-    categories:async(req,res)=>success(res,await service.listCategories(context(req))),
+    categories:async(req,res)=>success(res,await service.listCategories(context(req),req.campaignPage)),
     createCategory:async(req,res)=>success(res,await service.createCategory(req.campaignInput,context(req)),201),
     patchCategory:async(req,res)=>success(res,await service.patchCategory(req.params.categoryId,req.campaignInput,context(req))),
     archiveCategory:async(req,res)=>success(res,await service.archiveCategory(req.params.categoryId,context(req))),

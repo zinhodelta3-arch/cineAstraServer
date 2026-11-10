@@ -2,7 +2,7 @@ import {idString} from '../utils/dto.js';
 const rows=async(c,sql,args=[])=> (await c.execute(sql,args))[0];
 const one=async(c,sql,args=[])=> (await rows(c,sql,args))[0]??null;
 export function createNewsletterCampaignModel(){return {
-    categories:c=>rows(c,'SELECT id_categoria,codigo,nome,descricao,ativo FROM newsletter_categorias ORDER BY id_categoria'),
+    categories:(c,{limit=50,cursor='0'}={})=>rows(c,'SELECT id_categoria,codigo,nome,descricao,ativo FROM newsletter_categorias WHERE id_categoria>? ORDER BY id_categoria LIMIT ?',[cursor,limit+1]),
     category:(c,id,lock=false)=>one(c,`SELECT id_categoria,codigo,nome,descricao,ativo FROM newsletter_categorias WHERE id_categoria=?${lock?' FOR UPDATE':''}`,[id]),
     async createCategory(c,input){const [r]=await c.execute('INSERT INTO newsletter_categorias(codigo,nome,descricao,ativo) VALUES(?,?,?,TRUE)',[input.code,input.name,input.description??null]);return idString(r.insertId);},
     patchCategory:(c,id,input)=>c.execute('UPDATE newsletter_categorias SET nome=?,descricao=? WHERE id_categoria=?',[input.name,input.description??null,id]),

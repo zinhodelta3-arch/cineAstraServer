@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AuthError, backendAuth, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, SESSION_COOKIE } from "@/lib/auth/server";
 
 const json = (body, status = 200) => NextResponse.json(body, {
   status,
@@ -30,7 +30,7 @@ export async function GET(request) {
     }
     return json(report);
   } catch (error) {
-    return json({ message: error instanceof AuthError ? error.message : "Não foi possível consultar o relatório." },
-      error instanceof AuthError ? error.status : 503);
+    return json(authErrorPayload(error, { message: error instanceof AuthError ? error.message : "Não foi possível consultar o relatório." }),
+      error instanceof AuthError ? error.status : 500);
   }
 }

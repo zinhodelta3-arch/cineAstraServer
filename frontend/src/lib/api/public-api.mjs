@@ -1,4 +1,5 @@
 import { resolveApiBase } from './api-base.mjs';
+import { responseError, networkError } from './api-errors.mjs';
 const configured = resolveApiBase(process.env.NEXT_PUBLIC_API_URL);
 export function apiUrl(path) { return `${configured}${path}`; }
 export function publicAsset(value) {
@@ -20,13 +21,14 @@ export async function publicGet(path, { signal } = {}) {
   const timer = setTimeout(() => timeout.abort(), 15000);
   try {
     const response = await fetch(apiUrl(path), { signal: signal ? AbortSignal.any([signal, timeout.signal]) : timeout.signal, cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } });
-    if (!response.ok) throw new Error('Não foi possível carregar os dados. Tente novamente.');
-    const body = await response.json();
-    if (body.success !== true || body.data == null) throw new Error('Resposta inválida do servidor.');
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw responseError(response, body);
+    if (body?.success !== true || body.data == null) throw responseError(response, { code: 'INVALID_RESPONSE' });
     return body.data;
   } catch (error) {
     if (signal?.aborted) throw error;
-    throw new Error('Não foi possível carregar os dados. Verifique sua conexão e tente novamente.');
+    if (error.name === 'ApiResponseError') throw error;
+    throw networkError(error);
   } finally { clearTimeout(timer); }
 }
 export function filmCard(film) {

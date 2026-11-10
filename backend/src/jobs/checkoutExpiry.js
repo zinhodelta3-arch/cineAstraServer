@@ -5,7 +5,7 @@ export function createCheckoutExpiry(checkout,{intervalMs=30000}={}){
     const run=()=>{
         running=(async()=>{
             try{await checkout.expireBatch(25);}
-            catch{report('checkout_expiry_failed');}
+            catch(error){report('checkout_expiry_failed',{error});}
             finally{if(!stopped){timer=setTimeout(run,intervalMs);timer.unref();}}
         })();
     };

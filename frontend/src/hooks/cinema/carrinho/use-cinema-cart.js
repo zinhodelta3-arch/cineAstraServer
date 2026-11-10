@@ -4,7 +4,7 @@ import {useRouter} from 'next/navigation';
 import {useCart} from '@/components/cart/cart-provider';
 import {useSession} from '@/hooks/auth/use-session';
 import {cartOrder} from '@/lib/api/cart-order.mjs';
-import {readSessionResponse} from '@/lib/auth/session-response.mjs';
+import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
 export default function useCinemaCart(){
  const router=useRouter(),cart=useCart(),session=useSession();
  const [coupon,setCoupon]=useState(''),[state,setState]=useState({key:null,quote:null,pending:false,error:null});
@@ -18,7 +18,7 @@ export default function useCinemaCart(){
   controller.current?.abort();const abort=new AbortController();controller.current=abort;
   setState({key,quote:null,pending:true,error:null});
   try{
-   const response=await fetch('/api/cart/quote',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(input),signal:abort.signal});
+   const response=await sessionFetch('/api/cart/quote',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(input),signal:abort.signal});
    const quote=await readSessionResponse(response);
    if(!abort.signal.aborted){
     cart.updatePrices(cart.items,cart.items.map(item=>{

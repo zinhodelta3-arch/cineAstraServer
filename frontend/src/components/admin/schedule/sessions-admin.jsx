@@ -1,5 +1,6 @@
 "use client";
 
+import TablePagination from '@/components/ui/table-pagination';
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Check, ClipboardList, Pencil, Play, Plus, Ticket, XCircle } from "lucide-react";
@@ -77,7 +78,7 @@ export default function SessionsAdmin() {
         {row.status === "EM_CARTAZ" && <button type="button" className={styles.iconButton} title="Encerrar sessão" aria-label={`Encerrar sessão ${row.id_sessao}`} onClick={() => open("transition", row, "ENCERRADA")}><Check size={16} aria-hidden="true" /></button>}
         {["AGENDADA", "EM_CARTAZ"].includes(row.status) && <button type="button" className={`${styles.iconButton} ${styles.destructive}`} title="Cancelar sessão" aria-label={`Cancelar sessão ${row.id_sessao}`} onClick={() => open("transition", row, "CANCELADA")}><XCircle size={16} aria-hidden="true" /></button>}
       </div></td></tr>)}</tbody></table></div>}
-      <footer className={styles.footer}><span>Exibindo {list.items.length} sessões{list.nextCursor ? " · há mais registros" : ""}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? "Carregando…" : "Carregar mais"}</button></footer>
+      <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(dialog)} onOpenChange={(value) => { if (!value) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{dialog?.type === "transition" ? `${states[dialog.nextStatus]} · sessão #${item?.id_sessao}` : item ? "Editar sessão" : "Nova sessão"}</DialogTitle>
       {dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>A sala precisa estar ativa e com assentos cadastrados. Deixe ao menos uma hora entre sessões do mesmo cinema.</DialogDescription><form key={item?.id_sessao ?? "new"} className={styles.form} onSubmit={save}>

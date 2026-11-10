@@ -1,5 +1,6 @@
 "use client";
 
+import TablePagination from '@/components/ui/table-pagination';
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 import { Archive, Boxes, Images, Pencil, Plus, RotateCcw, Search } from "lucide-react";
@@ -43,6 +44,7 @@ export default function InputsAdmin() {
   const [grantError, setGrantError] = useState("");
   const search = useDeferredValue(query.trim().toLocaleLowerCase("pt-BR"));
   const params = new URLSearchParams({ limit: "20" });
+  if (search) params.set('q', search);
   if (localId) params.set("localId", localId);
   if (status !== "Todos") params.set("status", status);
   const list = useAdminSnacks(`inputs?${params}`);
@@ -52,7 +54,7 @@ export default function InputsAdmin() {
   const grants = useAdminSnacks(formSupplierId && formLocalId ? `suppliers/${formSupplierId}/locations?limit=100` : null);
   const actions = useSnackActions(list);
   const item = actions.dialog?.item;
-  const visible = list.items.filter((row) => `${row.nome} ${row.categoria ?? ""}`.toLocaleLowerCase("pt-BR").includes(search));
+  const visible = list.items;
   const grant = grants.items.find((row) => row.id_local === formLocalId && row.status === "ATIVO");
 
   function open(type, row = null) { setGrantError(""); setFormSupplierId(row?.id_fornecedor ?? ""); setFormLocalId(row?.id_local ?? ""); actions.open(type, row); }
@@ -83,7 +85,7 @@ export default function InputsAdmin() {
       {visible.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de insumos; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Insumos do AstraSnack</caption><thead><tr><th scope="col">Insumo</th><th scope="col">Cinema</th><th scope="col">Fornecedor</th><th scope="col">Estoque</th><th scope="col">Preço</th><th scope="col">Venda avulsa</th><th scope="col">Status</th><th scope="col" aria-label="Ações" /></tr></thead><tbody>{visible.map((row) => <tr key={row.id_insumo}><th scope="row">{row.nome}<small className={styles.muted}> · #{row.id_insumo}</small></th><td>{localName(row.id_local)}</td><td>{supplierName(row.id_fornecedor)}</td><td>{row.quantidade}</td><td>R$ {Number(row.preco).toFixed(2).replace(".", ",")}</td><td>{row.venda_avulsa ? "Sim" : "Não"}</td><td><span className={`${styles.badge} ${row.status !== "DISPONIVEL" ? styles.inactive : ""}`}>{row.status === "DISPONIVEL" ? "Disponível" : "Indisponível"}</span></td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar insumo" aria-label={`Editar ${row.nome}`} onClick={() => open("form", row)}><Pencil size={16} aria-hidden="true" /></button><Link className={styles.iconButton} href={`/admin/astrasnack/imagens?insumo=${row.id_insumo}`} title="Ver imagens" aria-label={`Imagens de ${row.nome}`}><Images size={16} aria-hidden="true" /></Link><Link className={styles.iconButton} href={`/admin/astrasnack/estoque?insumo=${row.id_insumo}`} title="Ver estoque" aria-label={`Estoque de ${row.nome}`}><Boxes size={16} aria-hidden="true" /></Link><button type="button" className={`${styles.iconButton} ${row.status === "DISPONIVEL" ? styles.destructive : ""}`} title={row.status === "DISPONIVEL" ? "Arquivar insumo" : "Reativar insumo"} aria-label={`${row.status === "DISPONIVEL" ? "Arquivar" : "Reativar"} ${row.nome}`} onClick={() => open("status", row)}>{row.status === "DISPONIVEL" ? <Archive size={16} aria-hidden="true" /> : <RotateCcw size={16} aria-hidden="true" />}</button></div></td></tr>)}</tbody></table></div>}
       <SnackState list={list} empty="Nenhum insumo encontrado para estes filtros." noun="insumos" />
       {!list.loading && !list.error && list.items.length > 0 && !visible.length && <p className={styles.state}>Nenhum insumo carregado corresponde à busca.{list.nextCursor ? " Carregue mais registros para ampliar a busca." : ""}</p>}
-      <footer className={styles.footer}><span>Exibindo {visible.length} de {list.items.length} insumos carregados{list.nextCursor ? " · há mais registros" : ""}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? "Carregando…" : "Carregar mais"}</button></footer>
+      <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(actions.dialog)} onOpenChange={(value) => { if (!value) actions.close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{actions.dialog?.type === "status" ? `${item?.status === "DISPONIVEL" ? "Arquivar" : "Reativar"} insumo` : item ? "Editar insumo" : "Novo insumo"}</DialogTitle>
       {actions.dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>Cadastre o item para um fornecedor autorizado neste cinema. A quantidade é controlada pelo estoque.</DialogDescription><form key={item?.id_insumo ?? "new"} className={styles.form} onSubmit={save}>

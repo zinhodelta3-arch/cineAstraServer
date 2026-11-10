@@ -16,7 +16,7 @@ export function createNewsletterCampaignService({model,identity}){
     const content=input=>({...input,html:cleanHtml(input.html),text:input.text.trim()});
     async function activeCategory(c,id){const row=await model.category(c,id,true);if(!row||!row.ativo)throw conflict('Categoria indisponível');return row;}
     return {
-        listCategories:context=>tx(context,async c=>{await admin(c,context);return {items:(await model.categories(c)).map(categoryDto)};}),
+        listCategories:(context,{limit=50,cursor='0'}={})=>tx(context,async c=>{await admin(c,context);const rows=await model.categories(c,{limit,cursor}),items=rows.slice(0,limit);return {items:items.map(categoryDto),pagination:{limit,nextCursor:rows.length>limit?idString(items.at(-1).id_categoria):null}};}),
         async createCategory(input,context){try{return await tx(context,async c=>{await admin(c,context);const id=await model.createCategory(c,input);await identity.audit(c,'NEWSLETTER.CATEGORY_CREATED',id,context);return categoryDto(await model.category(c,id));});}catch(error){if(error.code==='ER_DUP_ENTRY')throw conflict('Código de categoria já existe');throw error;}},
         patchCategory:(id,input,context)=>tx(context,async c=>{await admin(c,context);await activeCategory(c,id);await model.patchCategory(c,id,input);await identity.audit(c,'NEWSLETTER.CATEGORY_UPDATED',id,context);return categoryDto(await model.category(c,id));}),
         archiveCategory:(id,context)=>tx(context,async c=>{await admin(c,context);await activeCategory(c,id);await model.archiveCategory(c,id);await model.cancelCategoryCampaigns(c,id);await model.cancelCategoryQueue(c,id);await identity.audit(c,'NEWSLETTER.CATEGORY_ARCHIVED',id,context);return {archived:true};}),

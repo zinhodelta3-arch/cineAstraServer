@@ -1,8 +1,8 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
-import {readSessionResponse} from '@/lib/auth/session-response.mjs';
+import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
 export async function profileRequest(path='',method='GET',body,signal){
- return readSessionResponse(await fetch('/api/profile'+(path?'/'+path:''),{method,cache:'no-store',credentials:'same-origin',signal,headers:body?{'Content-Type':'application/json'}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
+ return readSessionResponse(await sessionFetch('/api/profile'+(path?'/'+path:''),{method,cache:'no-store',credentials:'same-origin',signal,headers:body?{'Content-Type':'application/json'}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
 }
 export default function useProfileResource(path){
  const [revision,setRevision]=useState(0),[state,setState]=useState({key:null,data:null,items:[],cursor:null,loading:false,error:null});

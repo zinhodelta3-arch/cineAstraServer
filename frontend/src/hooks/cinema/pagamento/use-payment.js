@@ -5,7 +5,7 @@ import { useCart } from "@/components/cart/cart-provider";
 import { useSession } from "@/hooks/auth/use-session";
 import { cartOrder } from "@/lib/api/cart-order.mjs";
 import { operationKey } from "@/lib/api/operation-key.mjs";
-import { readSessionResponse } from "@/lib/auth/session-response.mjs";
+import { sessionFetch, readSessionResponse } from "@/lib/auth/session-response.mjs";
 
 const EMPTY_DETAILS = { name: "", phone: "", email: "", street: "", number: "", complement: "", district: "", city: "", state: "", country: "BR", postalCode: "" };
 const EMPTY_CARD = { holder: "", number: "", expiry: "", cvv: "" };
@@ -24,7 +24,7 @@ const maskCard = value => digits(value).slice(0, 16).replace(/(.{4})/g, "$1 ").t
 const maskExpiry = value => { const d = digits(value).slice(0, 4); return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
 
 async function request(action, { body, key, signal, query } = {}) {
-  const response = await fetch(`/api/checkout/${action}${query ? `?${query}` : ""}`, {
+  const response = await sessionFetch(`/api/checkout/${action}${query ? `?${query}` : ""}`, {
     method: body ? "POST" : "GET", credentials: "same-origin", cache: "no-store", signal,
     headers: body ? { "Content-Type": "application/json", ...(key ? { "Idempotency-Key": key } : {}) } : undefined,
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -126,7 +126,7 @@ export default function usePayment(method = null) {
     if (!cep) return;
     const abort = new AbortController();
     const timer = setTimeout(() => {
-      fetch(`/api/cep/${cep}`, { signal: abort.signal })
+      sessionFetch(`/api/cep/${cep}`, { signal: abort.signal })
         .then(readSessionResponse)
         .then(data => {
           if (abort.signal.aborted) return;

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from '@/lib/auth/server';
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from '@/lib/auth/server';
 import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 
 const json = (data, status = 200) => NextResponse.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -72,7 +72,7 @@ async function handle(request, { params }) {
     if (method === 'DELETE') return new NextResponse(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
     return json(data, method === 'POST' && ['/unit/sessions', '/unit/combos', '/stock/requests', '/inventory/movements'].includes(path) || method === 'POST' && /\/rooms(?:\/\d+\/seats)?$/.test(path) ? 201 : 200);
   } catch (error) {
-    return json({ message: error instanceof AuthError ? error.message : 'Não foi possível acessar a operação.' }, error instanceof AuthError ? error.status : 503);
+    return json(authErrorPayload(error, { message: error instanceof AuthError ? error.message : 'Não foi possível acessar a operação.' }), error instanceof AuthError ? error.status : 500);
   }
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import TablePagination from '@/components/ui/table-pagination';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import page from '../tabelaexemplo/example-table.module.css';
@@ -38,4 +39,4 @@ export function TeamState({ list, empty, noun }) {
   return null;
 }
 
-export function TeamFooter({ list, noun }) { return <footer className={styles.footer}><span>Exibindo {list.items.length} {noun}{list.nextCursor ? ' · há mais' : ''}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? 'Carregando…' : 'Carregar mais'}</button></footer>; }
+export function TeamFooter({ list, noun }) { return <TablePagination list={list} noun={noun} />; }

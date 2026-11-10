@@ -1,5 +1,6 @@
 'use client';
 
+import TablePagination from '@/components/ui/table-pagination';
 import { useEffect, useState } from 'react';
 import { Eye, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -34,7 +35,7 @@ export default function PrivacyAdmin() {
       <PeopleState list={list} empty="Nenhuma solicitação encontrada." noun="solicitações" />
       {list.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de solicitações; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Solicitações de privacidade</caption><thead><tr><th scope="col">Solicitação</th><th scope="col">Conta</th><th scope="col">Status</th><th scope="col">Recebida em</th><th scope="col">Encerrada em</th><th scope="col">Ações</th></tr></thead><tbody>{list.items.map(row => <tr key={row.id}><th scope="row">#{row.id}<div className={styles.muted}>{statusName(row.type)}</div></th><td>{row.user?.name ?? `Conta #${row.user?.id ?? '—'}`}<div className={styles.muted}>{row.user?.email ?? '—'}</div></td><td><span className={`${styles.badge} ${row.status === 'CONCLUIDA' ? '' : styles.inactive}`}>{statusName(row.status)}</span></td><td>{dateTime(row.createdAt)}</td><td>{dateTime(row.closedAt)}</td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Ver solicitação" aria-label={`Ver solicitação ${row.id}`} onClick={() => setSelected(row)}><Eye size={16} aria-hidden="true" /></button></div></td></tr>)}</tbody></table></div>}
       {list.error && list.items.length > 0 && <p className={styles.error} role="alert">{list.error}</p>}
-      <footer className={styles.footer}><span>Exibindo {list.items.length} solicitações{list.nextCursor ? ' · há mais' : ''}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? 'Carregando…' : 'Carregar mais'}</button></footer>
+      <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(selected)} onOpenChange={value => { if (!value) setSelected(null); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>Solicitação #{selected?.id}</DialogTitle><DialogDescription className={styles.dialogDescription}>{selected?.user?.name ?? 'Conta'} · {selected?.user?.email ?? ''}</DialogDescription>
       {loadingDetail && <p role="status">Carregando solicitação…</p>}{detailError && <p className={styles.error} role="alert">{detailError}</p>}

@@ -1,5 +1,6 @@
 "use client";
 
+import TablePagination from '@/components/ui/table-pagination';
 import { useDeferredValue, useRef, useState } from "react";
 import { Archive, Pencil, Plus, RotateCcw, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -16,8 +17,8 @@ export default function GenresAdmin() {
   const [pending, setPending] = useState(false);
   const lock = useRef(false);
   const search = useDeferredValue(query.trim().toLocaleLowerCase("pt-BR"));
-  const list = useAdminCatalogList(`genres?limit=20${status === "Todos" ? "" : `&status=${status}`}`);
-  const visible = list.items.filter((genre) => genre.nome.toLocaleLowerCase("pt-BR").includes(search));
+  const list = useAdminCatalogList(`genres?limit=20${status === "Todos" ? "" : `&status=${status}`}${search ? `&q=${encodeURIComponent(search)}` : ''}`);
+  const visible = list.items;
 
   function open(type, genre = null) { setError(""); setNotice(""); setDialog({ type, genre }); }
   function close() { if (!pending) setDialog(null); }
@@ -45,7 +46,7 @@ export default function GenresAdmin() {
       {visible.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de gêneros" tabIndex={0}><table className={styles.table}><caption className="sr-only">Gêneros cadastrados no catálogo administrativo</caption><thead><tr><th scope="col">Gênero</th><th scope="col">Identificador</th><th scope="col">Status</th><th scope="col" aria-label="Ações" /></tr></thead><tbody>{visible.map((item) => <tr key={item.id_genero}><th scope="row">{item.nome}</th><td className={styles.muted}>#{item.id_genero}</td><td><span className={`${styles.badge} ${item.status === "INATIVO" ? styles.inactive : ""}`}>{item.status === "ATIVO" ? "Ativo" : "Inativo"}</span></td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar gênero" aria-label={`Editar ${item.nome}`} onClick={() => open("form", item)}><Pencil size={16} aria-hidden="true" /></button><button type="button" className={`${styles.iconButton} ${item.status === "ATIVO" ? styles.destructive : ""}`} title={item.status === "ATIVO" ? "Arquivar gênero" : "Reativar gênero"} aria-label={`${item.status === "ATIVO" ? "Arquivar" : "Reativar"} ${item.nome}`} onClick={() => open("status", item)}>{item.status === "ATIVO" ? <Archive size={16} aria-hidden="true" /> : <RotateCcw size={16} aria-hidden="true" />}</button></div></td></tr>)}</tbody></table></div>}
       <CatalogState list={list} empty="Nenhum gênero encontrado para este status." noun="gêneros" />
       {!list.loading && !list.error && list.items.length > 0 && visible.length === 0 && <p className={styles.state}>Nenhum gênero carregado corresponde à busca.{list.nextCursor ? " Carregue mais registros para ampliar a busca." : ""}</p>}
-      <footer className={styles.footer}><span>Exibindo {visible.length} de {list.items.length} gêneros carregados{list.nextCursor ? " · há mais registros" : ""}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? "Carregando…" : "Carregar mais"}</button></footer>
+      <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(dialog)} onOpenChange={(value) => { if (!value) close(); }}><DialogContent className={styles.dialog}>
       <DialogTitle className={styles.dialogTitle}>{dialog?.type === "status" ? `${genre?.status === "ATIVO" ? "Arquivar" : "Reativar"} gênero` : genre ? "Editar gênero" : "Novo gênero"}</DialogTitle>

@@ -1,5 +1,6 @@
 "use client";
 
+import TablePagination from '@/components/ui/table-pagination';
 import { useAdminSchedule } from "@/hooks/admin/use-admin-schedule";
 import ScheduleLayout, { ScheduleState } from "./schedule-layout";
 import SessionPicker, { useSessionSelection } from "./session-picker";
@@ -20,7 +21,7 @@ export default function TicketsAdmin() {
       {!session && <p className={styles.state}>Selecione uma sessão acima para começar.</p>}
       {session && <><ScheduleState list={tickets} empty="Esta sessão ainda não tem ingressos emitidos." noun="ingressos" />
         {tickets.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de ingressos; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Ingressos da sessão {session.id_sessao}</caption><thead><tr><th scope="col">Ticket</th><th scope="col">Tipo</th><th scope="col">Item do pedido</th><th scope="col">Unidade</th><th scope="col">Status</th><th scope="col">Presença</th><th scope="col">Utilizado em</th><th scope="col">Válido até</th></tr></thead><tbody>{tickets.items.map((ticket) => <tr key={ticket.id}><th scope="row">#{ticket.id}</th><td>{typeName[ticket.type] ?? ticket.type}</td><td>#{ticket.itemId}</td><td>{ticket.unit}</td><td><span className={`${styles.badge} ${ticket.status !== "GERADO" ? styles.inactive : ""}`}>{statusName[ticket.status] ?? ticket.status}</span></td><td>{presenceName[ticket.presence] ?? "—"}</td><td className={styles.muted}>{dateTime(ticket.usedAt)}</td><td className={styles.muted}>{dateTime(ticket.expiresAt)}</td></tr>)}</tbody></table></div>}
-        <footer className={styles.footer}><span>Exibindo {tickets.items.length} ingressos{tickets.nextCursor ? " · há mais registros" : ""}</span><button type="button" onClick={tickets.loadMore} disabled={!tickets.nextCursor || tickets.loadingMore}>{tickets.loadingMore ? "Carregando…" : "Carregar mais"}</button></footer></>}
+        <TablePagination list={tickets} /></>}
     </section>
   </ScheduleLayout>;
 }

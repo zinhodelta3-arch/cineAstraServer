@@ -1,5 +1,6 @@
 "use client";
 
+import TablePagination from '@/components/ui/table-pagination';
 import Link from "next/link";
 import { useDeferredValue, useRef, useState } from "react";
 import { Archive, Film, Images, Pencil, Plus, RotateCcw, Search, Tags } from "lucide-react";
@@ -109,7 +110,7 @@ export default function FilmsAdmin() {
         </div></td></tr>)}</tbody>
       </table></div>}
       <CatalogState list={list} empty="Nenhum filme encontrado para este filtro." noun="filmes" />
-      <footer className={styles.footer}><span>Exibindo {list.items.length} filmes{list.nextCursor ? " · há mais registros" : ""}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? "Carregando…" : "Carregar mais"}</button></footer>
+      <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(dialog)} onOpenChange={(value) => { if (!value) close(); }}><DialogContent className={styles.dialog}>
       <DialogTitle className={styles.dialogTitle}>{dialog?.type === "genres" ? `Gêneros de ${film?.titulo}` : dialog?.type === "status" ? `${film?.status === "ATIVO" ? "Arquivar" : "Reativar"} filme` : film ? "Editar filme" : "Novo filme"}</DialogTitle>

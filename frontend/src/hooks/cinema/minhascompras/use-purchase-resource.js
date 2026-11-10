@@ -1,8 +1,8 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
-import {readSessionResponse} from '@/lib/auth/session-response.mjs';
+import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
 export async function purchaseRequest(path='',options={}){
- return readSessionResponse(await fetch('/api/purchases'+(path?'/'+path:''),{cache:'no-store',credentials:'same-origin',...options}));
+ return readSessionResponse(await sessionFetch('/api/purchases'+(path?'/'+path:''),{cache:'no-store',credentials:'same-origin',...options}));
 }
 export default function usePurchaseResource(path,paginated=true){
  const [revision,setRevision]=useState(0),[state,setState]=useState({key:null,data:null,items:[],cursor:null,loading:false,error:null});

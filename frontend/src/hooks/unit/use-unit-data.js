@@ -1,84 +1,52 @@
 'use client';
 
+import { usePaginatedList } from '@/hooks/use-paginated-list';
 import { useEffect, useRef, useState } from 'react';
-import { readSessionResponse } from '@/lib/auth/session-response.mjs';
+import { sessionFetch, readSessionResponse } from '@/lib/auth/session-response.mjs';
 
 export async function unitRequest(path, { method = 'GET', body, signal } = {}) {
-  const response = await fetch(`/api/unidade/teams${path}`, {
+  const response = await sessionFetch(`/api/unidade/teams${path}`, {
     method, cache: 'no-store', credentials: 'same-origin', signal,
     headers: body == null ? undefined : { 'Content-Type': 'application/json' },
-    body: body == null ? undefined : JSON.stringify(body),
-  });
+    body: body == null ? undefined : JSON.stringify(body) });
   return readSessionResponse(response);
 }
 
 export async function unitSessions(path, { signal } = {}) {
-  const response = await fetch(`/api/unidade/sessions${path}`, { cache: 'no-store', credentials: 'same-origin', signal });
+  const response = await sessionFetch(`/api/unidade/sessions${path}`, { cache: 'no-store', credentials: 'same-origin', signal });
   return readSessionResponse(response);
 }
 
 export async function unitOperation(path, { method = 'GET', body, signal } = {}) {
-  const response = await fetch(`/api/unidade/operacoes${path}`, {
+  const response = await sessionFetch(`/api/unidade/operacoes${path}`, {
     method, cache: 'no-store', credentials: 'same-origin', signal,
     headers: body == null ? undefined : { 'Content-Type': 'application/json' },
-    body: body == null ? undefined : JSON.stringify(body),
-  });
+    body: body == null ? undefined : JSON.stringify(body) });
   if (response.status === 204) return null;
   return readSessionResponse(response);
 }
 
 export function useUnitList(path, request = unitRequest) {
-  const [revision, setRevision] = useState(0);
-  const [state, setState] = useState({ key: null, items: [], nextCursor: null, loading: false, loadingMore: false, error: '' });
-  const generation = useRef(0);
-  const key = `${path ?? ''}:${revision}`;
-
-  useEffect(() => {
-    if (!path) return;
-    const abort = new AbortController();
-    const current = ++generation.current;
-    setState({ key, items: [], nextCursor: null, loading: true, loadingMore: false, error: '' });
-    request(path, { signal: abort.signal }).then(data => {
-      if (!Array.isArray(data?.items)) throw new Error('A lista retornou dados inválidos.');
-      if (!abort.signal.aborted && current === generation.current) setState({ key, items: data.items, nextCursor: data.pagination?.nextCursor ?? null, loading: false, loadingMore: false, error: '' });
-    }).catch(error => {
-      if (!abort.signal.aborted && current === generation.current) setState({ key, items: [], nextCursor: null, loading: false, loadingMore: false, error: error.message });
-    });
-    return () => abort.abort();
-  }, [key, path, request]);
-
-  const visible = state.key === key ? state : { key, items: [], nextCursor: null, loading: Boolean(path), loadingMore: false, error: '' };
-  async function loadMore() {
-    if (!path || !visible.nextCursor || visible.loading || visible.loadingMore) return;
-    const cursor = visible.nextCursor;
-    const current = generation.current;
-    setState(value => ({ ...value, loadingMore: true, error: '' }));
-    try {
-      const data = await request(`${path}${path.includes('?') ? '&' : '?'}cursor=${encodeURIComponent(cursor)}`);
-      if (!Array.isArray(data?.items) || data.pagination?.nextCursor === cursor) throw new Error('Não foi possível carregar mais registros.');
-      if (current === generation.current) setState(value => ({ ...value, items: [...value.items, ...data.items], nextCursor: data.pagination?.nextCursor ?? null, loadingMore: false }));
-    } catch (error) {
-      if (current === generation.current) setState(value => ({ ...value, loadingMore: false, error: error.message }));
-    }
-  }
-  return { ...visible, reload: () => setRevision(value => value + 1), loadMore };
+  return usePaginatedList(path, request);
 }
 
 export function useUnitTeam() {
   const teams = useUnitList('?limit=100');
   const [selected, setSelected] = useState('');
   const [remoteTeam, setRemoteTeam] = useState(null);
+  const firstTeamId = teams.items[0]?.id_equipe;
+  useEffect(() => { if (!selected && firstTeamId) setSelected(firstTeamId); }, [selected, firstTeamId]);
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get('teamId');
     if (fromUrl && /^[1-9]\d{0,9}$/.test(fromUrl)) setSelected(fromUrl);
   }, []);
   const listedTeam = teams.items.find(team => team.id_equipe === selected);
   useEffect(() => {
-    if (!selected || listedTeam) return;
+    if (!selected || listedTeam || teams.loading) return;
     const abort = new AbortController();
     unitRequest(`/${selected}`, { signal: abort.signal }).then(data => { if (!abort.signal.aborted) setRemoteTeam(data); }).catch(() => { if (!abort.signal.aborted) setRemoteTeam(null); });
     return () => abort.abort();
-  }, [selected, listedTeam]);
+  }, [selected, listedTeam, teams.loading]);
   const teamId = selected || teams.items[0]?.id_equipe || '';
   function setTeamId(id) {
     setSelected(id);

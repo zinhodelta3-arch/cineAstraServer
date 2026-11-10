@@ -33,6 +33,7 @@ export function createProductModel(database) {
             const s = spec(type);
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
             const where = [`${s.id} > ?`], args = [q.cursor ?? '0'];
+            if (q.q) { where.push("CONCAT_WS(' ', nome, categoria) LIKE ? ESCAPE '!'"); args.push(`%${q.q.replace(/[!%_]/g, value => `!${value}`)}%`); }
             if (supplierId || q.supplierId) { where.push('id_fornecedor = ?'); args.push(supplierId ?? q.supplierId); }
             if (q.localId) { where.push('id_local = ?'); args.push(q.localId); }
             if (q.status) { where.push('status = ?'); args.push(q.status); }

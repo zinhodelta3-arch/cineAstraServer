@@ -29,6 +29,21 @@ export function createLogQueue(write, { limit = 200, reportFailure = report } = 
         },
         stats() { return { ...metrics, pending: queue.length + Number(active) }; },
         async drain() { await task; },
-        async close() { accepting = false; await task; }
+        async close({ timeoutMs } = {}) {
+            accepting = false;
+            let timer;
+            const discard = () => {
+                const count = queue.length;
+                queue.length = 0;
+                metrics.dropped += count;
+                if (count) reportFailure('http_log_shutdown_dropped', { count });
+            };
+            if (Number.isFinite(timeoutMs)) {
+                if (timeoutMs <= 0) discard();
+                else timer = setTimeout(discard, timeoutMs);
+            }
+            // A gravação em andamento continua protegida pelo timeout do banco.
+            try { await task; } finally { clearTimeout(timer); }
+        }
     };
 }

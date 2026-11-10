@@ -1,5 +1,6 @@
 'use client';
 
+import TablePagination from '@/components/ui/table-pagination';
 import { useState } from 'react';
 import { Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -48,7 +49,7 @@ export default function SalesList({ kind }) {
           {list.items.map(row => <tr key={row.id}><th scope="row">#{row.id}</th><td>{row.customer}<small className={styles.muted}> · #{row.userId}</small></td>{kind === 'payments' && <td>{statusName(row.method)}</td>}<td><span className={`${styles.badge} ${['CANCELADO', 'RECUSADO', 'ESTORNADO'].includes(row.status) ? styles.inactive : ''}`}>{statusName(row.status)}</span></td><td>{money(kind === 'orders' ? row.total : row.amount)}</td><td>{dateTime(row.createdAt)}</td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Ver detalhes" aria-label={`Ver ${kind === 'orders' ? 'pedido' : 'pagamento'} ${row.id}`} onClick={() => setSelected(row)}><Eye size={16} aria-hidden="true" /></button></div></td></tr>)}
         </tbody></table>
       </div>}
-      <footer className={styles.footer}><span>Exibindo {list.items.length} registros{list.nextCursor ? ' · há mais' : ''}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? 'Carregando…' : 'Carregar mais'}</button></footer>
+      <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{kind === 'orders' ? 'Pedido' : 'Pagamento'} #{selected?.id}</DialogTitle><DialogDescription className={styles.dialogDescription}>Registro administrativo de Vendas.</DialogDescription>
       {selected && <dl className={styles.detailGrid}><div><dt>Cliente</dt><dd>{selected.customer} · #{selected.userId}</dd></div><div><dt>Status</dt><dd>{statusName(selected.status)}</dd></div><div><dt>{kind === 'orders' ? 'Total' : 'Valor'}</dt><dd>{money(kind === 'orders' ? selected.total : selected.amount)}</dd></div><div><dt>Registrado em</dt><dd>{dateTime(selected.createdAt)}</dd></div>{kind === 'payments' && <><div><dt>Método</dt><dd>{statusName(selected.method)}</dd></div><div><dt>Pedido</dt><dd>{selected.orderId ? `#${selected.orderId}` : '—'}</dd></div><div><dt>Cobrança</dt><dd>{selected.chargeId ? `#${selected.chargeId}` : '—'}</dd></div><div><dt>Pago em</dt><dd>{dateTime(selected.paidAt)}</dd></div></>}</dl>}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
 
 const json = (body, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -41,9 +41,9 @@ async function handle(request, { params }) {
     const data = await backendAuth(target, { token, method, body });
     return method === "DELETE" ? new NextResponse(null, { status: 204 }) : json(data);
   } catch (error) {
-    const status = error instanceof AuthError ? error.status : 503;
+    const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "Sua conta não pode alterar os locais.", 404: "Registro não encontrado.", 409: "A alteração conflita com a capacidade, os vínculos ou o estado do local. Confira salas, assentos e sessões.", 422: "Confira os dados informados e tente novamente." };
-    return json({ message: messages[status] ?? "Não foi possível acessar os locais." }, status);
+    return json(authErrorPayload(error, { message: messages[status] ?? "Não foi possível acessar os locais." }), status);
   }
 }
 

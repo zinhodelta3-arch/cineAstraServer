@@ -1,12 +1,12 @@
 
 import {NextResponse} from 'next/server';
 import {cookies} from 'next/headers';
-import {backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
+import { authErrorPayload,backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
 import {isAllowedAuthOrigin} from '@/lib/auth/request-origin.mjs';
 import {subscriptionInput} from '@/lib/api/plan-subscription.mjs';
 import {commerceErrors} from '@/lib/api/commerce-errors.mjs';
 const json=(body,status=200)=>NextResponse.json(body,{status,headers:{'Cache-Control':'no-store'}});
-const failure=e=>json({code:e instanceof AuthError?e.code:null,message:(e instanceof AuthError&&Object.hasOwn(commerceErrors,e.code)?commerceErrors[e.code]:null)??(e.status===409?'A oferta mudou ou você já possui uma assinatura ativa ou pendente. Consulte suas assinaturas e revise a oferta.':e.status===403?'Sua conta não está habilitada para esta contratação. Confira seu perfil e a verificação de idade.':e.status===404?'Plano ou recurso indisponível. Atualize a página.':e instanceof AuthError?e.message:'Não foi possível acessar os planos.')},e instanceof AuthError?e.status:503);
+const failure=e=>json(authErrorPayload(e, {code:e instanceof AuthError?e.code:null,message:(e instanceof AuthError&&Object.hasOwn(commerceErrors,e.code)?commerceErrors[e.code]:null)??(e.status===409?'A oferta mudou ou você já possui uma assinatura ativa ou pendente. Consulte suas assinaturas e revise a oferta.':e.status===403?'Sua conta não está habilitada para esta contratação. Confira seu perfil e a verificação de idade.':e.status===404?'Plano ou recurso indisponível. Atualize a página.':e instanceof AuthError?e.message:'Não foi possível acessar os planos.')}),e instanceof AuthError?e.status:500);
 export async function GET(request,{params}){
  if((await params).action!=='mine')return json({message:'Recurso não encontrado.'},404);
  const token=(await cookies()).get(SESSION_COOKIE)?.value;

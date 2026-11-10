@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { pricingRequest, usePricingList } from '@/hooks/admin/use-admin-pricing';
 import PricingLayout, { PricingState, categories, percent, toBps } from './pricing-layout';
 import styles from '../catalog/catalog.module.css';
+import TablePagination from '@/components/ui/table-pagination';
 
 const fields = [
   { name: 'markupBps', key: 'markup_bps', label: 'Markup', max: 30000 },
@@ -48,6 +49,7 @@ export default function ParametersAdmin() {
     <section className={styles.panel} aria-labelledby="parameters-title"><header className={styles.panelHeader}><div><h2 id="parameters-title">Parâmetros por categoria</h2><p>Valores percentuais são exibidos em %.</p></div><span className={styles.count}>{list.items.length} categorias</span></header>
       <PricingState list={list} empty="Nenhum parâmetro cadastrado." noun="parâmetros" />
       {list.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de parâmetros; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Parâmetros de precificação</caption><thead><tr><th scope="col">Categoria</th><th scope="col">Markup</th><th scope="col">Margem alerta</th><th scope="col">Teto desconto</th><th scope="col">Ocupação</th><th scope="col">Ações</th></tr></thead><tbody>{list.items.map(row => <tr key={row.category}><th scope="row">{categories[row.category] ?? row.category}</th><td>{percent(row.markupBps)}</td><td>{percent(row.minMarginBps)}</td><td>{percent(row.discountCapBps)}</td><td>{row.referenceOccupancy}</td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar parâmetros" aria-label={`Editar parâmetros de ${categories[row.category] ?? row.category}`} onClick={() => open(row)}><Pencil size={16} aria-hidden="true" /></button></div></td></tr>)}</tbody></table></div>}
+      <TablePagination list={list} noun="categorias" />
     </section>
     <Dialog open={Boolean(item)} onOpenChange={value => { if (!value) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>Parâmetros · {categories[item?.category] ?? item?.category}</DialogTitle><DialogDescription className={styles.dialogDescription}>Informe percentuais com até duas casas decimais.</DialogDescription>
       {item && <form key={item.category} className={styles.form} onSubmit={save}>{fields.map(field => <label key={field.key}>{field.label} (%)<input name={field.key} type="number" min="0" max={(field.max ?? 10000) / 100} step="0.01" defaultValue={item[field.name] / 100} required /></label>)}<label>Ocupação de referência<input name="ocupacao_referencia" type="number" min="1" max="65535" defaultValue={item.referenceOccupancy} required /></label><div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Salvando…' : 'Salvar parâmetros'}</button></div></form>}

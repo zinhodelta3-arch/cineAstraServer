@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { backendAuth, AuthError, SESSION_COOKIE } from '@/lib/auth/server';
+import { authErrorPayload, backendAuth, AuthError, SESSION_COOKIE } from '@/lib/auth/server';
 import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 import { validCartOrder } from '@/lib/api/cart-order.mjs';
 import { commerceErrors } from '@/lib/api/commerce-errors.mjs';
@@ -10,7 +10,7 @@ const json = (body, status = 200) => NextResponse.json(body, { status, headers: 
 const id = value => typeof value === 'string' && /^[1-9]\d{0,19}$/.test(value) && BigInt(value) <= 18446744073709551615n;
 const smallId = value => typeof value === 'string' && /^[1-9]\d{0,9}$/.test(value) && BigInt(value) <= 4294967295n;
 const key = value => typeof value === 'string' && /^[A-Za-z0-9._:-]{8,120}$/.test(value);
-const failure = error => json({ code: error.code ?? null, message: commerceErrors[error.code] ?? (error.code === 'AGE_VERIFICATION_REQUIRED' ? 'Sua conta precisa de uma verificação de idade vigente para finalizar a compra.' : error.code === 'AGE_RESTRICTION' ? 'A classificação etária de um filme não permite esta compra.' : error instanceof AuthError ? error.message : 'Não foi possível processar a compra.') }, error instanceof AuthError ? error.status : 503);
+const failure = error => json(authErrorPayload(error, { code: error.code ?? null, message: commerceErrors[error.code] ?? (error.code === 'AGE_VERIFICATION_REQUIRED' ? 'Sua conta precisa de uma verificação de idade vigente para finalizar a compra.' : error.code === 'AGE_RESTRICTION' ? 'A classificação etária de um filme não permite esta compra.' : error instanceof AuthError ? error.message : 'Não foi possível processar a compra.') }), error instanceof AuthError ? error.status : 500);
 
 export async function GET(request, { params }) {
   const action = (await params).action;

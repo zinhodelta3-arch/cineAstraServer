@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { usePaginatedList } from '@/hooks/use-paginated-list';
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { useSession } from "@/hooks/auth/use-session";
-import { readSessionResponse } from "@/lib/auth/session-response.mjs";
+import { sessionFetch, readSessionResponse } from "@/lib/auth/session-response.mjs";
 
-const emptyQueue = { items: [], nextCursor: null, loading: true, loadingMore: false, error: null };
 const emptyThread = { id: null, ticket: null, messages: [], nextCursor: null, loading: false, loadingMore: false, error: null };
-const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
 
 async function request(path = "", body, signal) {
-  const response = await fetch(`/api/admin/support${path.startsWith("?") ? path : path ? `/${path}` : ""}`, {
+  const response = await sessionFetch(`/api/admin/support${path.startsWith("?") ? path : path ? `/${path}` : ""}`, {
     method: body === undefined ? "GET" : "POST",
     cache: "no-store",
     credentials: "same-origin",
@@ -20,9 +19,11 @@ async function request(path = "", body, signal) {
   return readSessionResponse(response);
 }
 
+const queueRequest = (path, { signal } = {}) => request(path, undefined, signal);
+
 export function useAdminSupport() {
   const session = useSession();
-  const [queue, setQueue] = useState(emptyQueue);
+
   const [thread, setThread] = useState(emptyThread);
   const [selectedId, setSelectedId] = useState(null);
   const [query, setQuery] = useState("");
@@ -33,22 +34,12 @@ export function useAdminSupport() {
   const [error, setError] = useState("");
   const [queueRevision, setQueueRevision] = useState(0);
   const [threadRevision, setThreadRevision] = useState(0);
-  const queueGeneration = useRef(0);
+
+  const search = useDeferredValue(query.trim());
+  const queue = usePaginatedList('?' + new URLSearchParams({ status: status === 'Todos' ? 'ALL' : status, limit: '50', ...(search ? { q: search } : {}) }), queueRequest, { refreshKey: queueRevision });
   const threadGeneration = useRef(0);
   const actionLock = useRef(false);
 
-  useEffect(() => {
-    const abort = new AbortController();
-    const generation = ++queueGeneration.current;
-    setQueue({ ...emptyQueue, loading: true });
-    request(`?status=${status === 'Todos' ? 'ALL' : status}`, undefined, abort.signal).then((data) => {
-      if (!Array.isArray(data.items)) throw new Error("A fila retornou dados inválidos.");
-      if (!abort.signal.aborted && generation === queueGeneration.current) setQueue({ items: data.items, nextCursor: data.pagination?.nextCursor ?? null, loading: false, loadingMore: false, error: null });
-    }).catch((cause) => {
-      if (!abort.signal.aborted && generation === queueGeneration.current) setQueue((current) => ({ ...current, loading: false, loadingMore: false, error: cause.message }));
-    });
-    return () => abort.abort();
-  }, [queueRevision, status]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -64,11 +55,7 @@ export function useAdminSupport() {
     return () => abort.abort();
   }, [selectedId, threadRevision]);
 
-  const search = normalize(query.trim());
-  const visibleTickets = queue.items.filter((ticket) =>
-    (status === "Todos" || ticket.status === status) &&
-    (!search || normalize(`${ticket.id} ${ticket.clientId} ${ticket.subject}`).includes(search))
-  );
+  const visibleTickets = queue.items;
 
   function select(id) {
     if (actionLock.current) return;
@@ -78,19 +65,6 @@ export function useAdminSupport() {
     setNotice("");
   }
 
-  async function loadMoreQueue() {
-    const cursor = queue.nextCursor;
-    if (!cursor || queue.loading || queue.loadingMore) return;
-    const generation = queueGeneration.current;
-    setQueue((current) => ({ ...current, loadingMore: true, error: null }));
-    try {
-      const data = await request(`?cursor=${encodeURIComponent(cursor)}&status=${status === 'Todos' ? 'ALL' : status}`);
-      if (!Array.isArray(data.items) || data.pagination?.nextCursor === cursor) throw new Error("Não foi possível carregar mais chamados.");
-      if (generation === queueGeneration.current) setQueue((current) => ({ ...current, items: [...current.items, ...data.items], nextCursor: data.pagination?.nextCursor ?? null, loadingMore: false }));
-    } catch (cause) {
-      if (generation === queueGeneration.current) setQueue((current) => ({ ...current, loadingMore: false, error: cause.message }));
-    }
-  }
 
   async function loadMoreMessages() {
     const cursor = thread.nextCursor;
@@ -139,7 +113,7 @@ export function useAdminSupport() {
 
   return {
     session, queue, thread, selectedId, select, query, setQuery, status, setStatus, visibleTickets,
-    draft, setDraft, pending, notice, error, send, loadMoreQueue, loadMoreMessages,
+    draft, setDraft, pending, notice, error, send, loadMoreMessages,
     refresh() { setQueueRevision((value) => value + 1); if (selectedId) setThreadRevision((value) => value + 1); },
     assign() { if (session.user?.id) run("assign", {}, "Chamado atribuído a você."); },
     resolve() { run("resolve", {}, "Chamado resolvido."); },

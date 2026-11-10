@@ -1,10 +1,10 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
-import {readSessionResponse} from '@/lib/auth/session-response.mjs';
+import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
 import {notificationItem} from '@/lib/api/notifications.mjs';
 const eventName='cineastra-notification-read';
 async function request(path='',options={}){
- return readSessionResponse(await fetch('/api/notifications'+path,{cache:'no-store',credentials:'same-origin',...options}));
+ return readSessionResponse(await sessionFetch('/api/notifications'+path,{cache:'no-store',credentials:'same-origin',...options}));
 }
 export function useNotifications(userId){
  const [revision,setRevision]=useState(0),[state,setState]=useState({key:null,items:[],cursor:null,loading:false,error:null});

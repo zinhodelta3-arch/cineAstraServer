@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from '@/lib/auth/server';
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from '@/lib/auth/server';
 import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 
 const json = (data, status = 200) => NextResponse.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -58,8 +58,8 @@ async function handle(request, { params }) {
     const data = await backendAuth(path, { token, method, body });
     return json(data, method === 'POST' && (path === '/teams' || path.endsWith('/invitations') || path.endsWith('/chamados')) ? 201 : 200);
   } catch (error) {
-    const status = error instanceof AuthError ? error.status : 503;
-    return json({ message: error instanceof AuthError ? error.message : 'Não foi possível acessar sua unidade.' }, status);
+    const status = error instanceof AuthError ? error.status : 500;
+    return json(authErrorPayload(error, { message: error instanceof AuthError ? error.message : 'Não foi possível acessar sua unidade.' }), status);
   }
 }
 

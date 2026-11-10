@@ -15,7 +15,7 @@ export const newsletterCampaignOperations=[
 ];
 export function newsletterCampaignRoutes(controller,{auth,limits}){const router=Router(),admin=[auth,allowRoles('ADMIN')],write=[...admin,...limits.newsletter];
     router.use((req,res,next)=>{res.set('Cache-Control','no-store');next();});
-    router.get('/api/admin/newsletter/categories',...admin,controller.categories);
+    router.get('/api/admin/newsletter/categories',...admin,newsletterCampaignPage,controller.categories);
     router.post('/api/admin/newsletter/categories',...write,categoryCreate,controller.createCategory);
     router.patch('/api/admin/newsletter/categories/:categoryId',...write,newsletterCampaignId,categoryUpdate,controller.patchCategory);
     router.delete('/api/admin/newsletter/categories/:categoryId',...write,newsletterCampaignId,controller.archiveCategory);

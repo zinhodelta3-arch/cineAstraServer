@@ -1,6 +1,6 @@
 import {NextResponse} from 'next/server';
 import {cookies} from 'next/headers';
-import {backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
+import { authErrorPayload,backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
 import {isAllowedAuthOrigin} from '@/lib/auth/request-origin.mjs';
 const json=(body,status=200)=>NextResponse.json(body,{status,headers:{'Cache-Control':'no-store'}});
 export async function POST(request){
@@ -23,6 +23,6 @@ export async function POST(request){
   const message=e instanceof AuthError&&e.code==='PRICING_CONFLICT'
    ? 'O cinema precisa revisar a configuração de preço deste produto antes da compra.'
    : e instanceof AuthError?e.message:'Não foi possível cotar o produto.';
-  return json({message},e instanceof AuthError?e.status:503);
+  return json(authErrorPayload(e, {message}),e instanceof AuthError?e.status:500);
  }
 }

@@ -24,7 +24,7 @@ const paging = { limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.n
 export const venueSchemas = {
     local, localPatch: patch({ ...localFields, status: localStatus }), room, roomPatch: patch({ ...roomFields, tipo: roomType, status: roomStatus }), seat, seatPatch: patch({ ...seatFields, tipo: seatType, status: seatStatus }),
     list: z.object(paging).strict(),
-    adminLocals: z.object({ ...paging, status: z.enum(['ATIVO', 'INATIVO', 'MANUTENCAO']).optional() }).strict(),
+    adminLocals: z.object({ ...paging, q: limited(150).optional(), status: z.enum(['ATIVO', 'INATIVO', 'MANUTENCAO']).optional() }).strict(),
     adminRooms: z.object({ ...paging, status: z.enum(['ATIVA', 'INATIVA', 'MANUTENCAO']).optional() }).strict(),
     seats: z.object({ ...paging, accessible: z.enum(['true', 'false']).transform(v => v === 'true').optional() }).strict(),
     adminSeats: z.object({ ...paging, accessible: z.enum(['true', 'false']).transform(v => v === 'true').optional(), status: z.enum(['ATIVA', 'INATIVA']).optional() }).strict()

@@ -2,6 +2,7 @@
 
 import { Ticket } from 'lucide-react';
 import styles from './unit.module.css';
+import TablePagination from '@/components/ui/table-pagination';
 
 export const label = value => String(value ?? '—').replaceAll('_', ' ').toLocaleLowerCase('pt-BR').replace(/^./, letter => letter.toLocaleUpperCase('pt-BR'));
 export const dateTime = value => {
@@ -29,6 +30,6 @@ export function UnitListState({ list, empty }) {
   return null;
 }
 
-export function UnitMore({ list, caption = 'Carregar mais' }) {
-  return list.nextCursor && <div className={styles.footer}><button type="button" className={styles.secondary} onClick={list.loadMore} disabled={list.loadingMore}>{list.loadingMore ? 'Carregando…' : caption}</button></div>;
+export function UnitMore({ list }) {
+  return <TablePagination list={list} />;
 }

@@ -1,6 +1,6 @@
 import {NextResponse} from 'next/server';
 import {cookies} from 'next/headers';
-import {backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
+import { authErrorPayload,backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
 import {isAllowedAuthOrigin} from '@/lib/auth/request-origin.mjs';
 import {sessionCookieOptions} from '@/lib/auth/session-cookie.mjs';
 import {profileTarget} from '@/lib/api/profile-request.mjs';
@@ -27,7 +27,7 @@ async function handle(request,{params}){
   return json(target.list?{items:data}:data??{success:true});
  }catch(e){
   const messages={401:'Sessão expirada ou senha atual/código de autenticação inválido.',404:'Registro não encontrado ou indisponível para sua conta.',409:'Não foi possível alterar este registro no estado atual. Atualize os dados.',422:'Confira os campos e, na troca de senha, a confirmação e os requisitos informados.'};
-  return json({message:messages[e.status]||(e instanceof AuthError?e.message:'Não foi possível acessar seu perfil.')},e instanceof AuthError?e.status:503);
+  return json(authErrorPayload(e, {message:messages[e.status]||(e instanceof AuthError?e.message:'Não foi possível acessar seu perfil.')}),e instanceof AuthError?e.status:500);
  }
 }
 export const GET=handle;

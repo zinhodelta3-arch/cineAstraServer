@@ -12,7 +12,7 @@ const heritage = z.string().trim().min(1).max(100).transform(v => v.toUpperCase(
 const supplyStatus = z.enum(['DISPONIVEL','INDISPONIVEL']);
 const equipmentStatus = z.enum(['DISPONIVEL','MANUTENCAO','INDISPONIVEL']);
 const common = { nome: name, descricao: description.optional(), categoria: category.optional() };
-const page = status => z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: catalogId.optional(), supplierId: catalogId.optional(), localId: catalogId.optional(), status: status.optional() }).strict();
+const page = status => z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: catalogId.optional(), q: z.string().trim().min(1).max(150).optional(), supplierId: catalogId.optional(), localId: catalogId.optional(), status: status.optional() }).strict();
 export const productSchemas = {
     categoriesQuery: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: z.string().min(1).max(100).optional() }).strict(),
     inputs: {

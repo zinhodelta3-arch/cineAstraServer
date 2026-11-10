@@ -1,5 +1,6 @@
 'use client';
 
+import TablePagination from '@/components/ui/table-pagination';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import page from '@/components/admin/tabelaexemplo/example-table.module.css';
@@ -33,7 +34,7 @@ export function SupplierState({ list, noun, empty }) {
 }
 
 export function More({ list, noun }) {
-  return <footer className={styles.footer}><span>{list.items.length} {noun} carregados{list.nextCursor ? ' · há mais registros' : ''}</span><button type="button" onClick={list.loadMore} disabled={!list.nextCursor || list.loadingMore}>{list.loadingMore ? 'Carregando…' : 'Carregar mais'}</button></footer>;
+  return <TablePagination list={list} noun={noun} />;
 }
 
 export const statusName = value => String(value ?? '—').replaceAll('_', ' ').toLocaleLowerCase('pt-BR').replace(/^./, letter => letter.toLocaleUpperCase('pt-BR'));

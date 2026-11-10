@@ -1,10 +1,10 @@
 import {NextResponse} from 'next/server';
 import {cookies} from 'next/headers';
-import {backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
+import { authErrorPayload,backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
 import {isAllowedAuthOrigin} from '@/lib/auth/request-origin.mjs';
 import {notificationId} from '@/lib/api/notifications.mjs';
 const json=(body,status=200)=>NextResponse.json(body,{status,headers:{'Cache-Control':'no-store'}});
-const failure=e=>json({message:e.status===404?'Notificação não encontrada para esta conta.':e instanceof AuthError?e.message:'Não foi possível acessar suas notificações.'},e instanceof AuthError?e.status:503);
+const failure=e=>json(authErrorPayload(e, {message:e.status===404?'Notificação não encontrada para esta conta.':e instanceof AuthError?e.message:'Não foi possível acessar suas notificações.'}),e instanceof AuthError?e.status:500);
 export async function GET(request,{params}){
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({message:'Entre para consultar notificações.'},401);

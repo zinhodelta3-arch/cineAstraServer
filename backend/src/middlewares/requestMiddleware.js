@@ -15,7 +15,7 @@ export function deadline(timeout) {
         Object.defineProperty(req, 'signal', { value: controller.signal, configurable: true });
         const timer = setTimeout(() => {
             controller.abort();
-            if (!res.headersSent) next(new ApiError('Tempo de execução excedido', 503, null, 'DEPENDENCY_UNAVAILABLE'));
+            if (!res.headersSent) next(new ApiError('Tempo de execução excedido', 503, null, 'REQUEST_TIMEOUT'));
             else res.destroy();
         }, timeout);
         timer.unref();

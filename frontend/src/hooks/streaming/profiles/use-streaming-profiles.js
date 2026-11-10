@@ -3,17 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MAX_PROFILES, STREAMING_PATH } from "@/components/streaming/profiles/profile-data";
+import { sessionFetch, readSessionResponse } from '@/lib/auth/session-response.mjs';
 
 const endpoint = "/api/streaming/profiles";
 const photoEndpoint = (id) => `${endpoint}/${id}/photo`;
 const displayProfile = (item) => ({ ...item, photo: item.photoUrl ? `${endpoint}/${item.id}/photo` : "" });
 
 async function profileRequest(path, { method = "GET", body, signal } = {}) {
-  const response = await fetch(path, { method, credentials: "same-origin", cache: "no-store", signal, headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+  const response = await sessionFetch(path, { method, credentials: "same-origin", cache: "no-store", signal, headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
   if (response.status === 204) return null;
-  const data = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.message || "Não foi possível atualizar os perfis.");
-  return data;
+  return readSessionResponse(response);
 }
 
 async function updatePhoto(id, photo, hadPhoto) {
@@ -21,11 +20,8 @@ async function updatePhoto(id, photo, hadPhoto) {
     const blob = await (await fetch(photo)).blob();
     const form = new FormData();
     form.set("image", blob, "perfil.jpg");
-    const response = await fetch(photoEndpoint(id), { method: "PUT", credentials: "same-origin", body: form });
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      throw new Error(data?.message || "Não foi possível salvar a foto.");
-    }
+    const response = await sessionFetch(photoEndpoint(id), { method: "PUT", credentials: "same-origin", body: form });
+    await readSessionResponse(response);
   } else if (!photo && hadPhoto) {
     await profileRequest(photoEndpoint(id), { method: "DELETE" });
   }

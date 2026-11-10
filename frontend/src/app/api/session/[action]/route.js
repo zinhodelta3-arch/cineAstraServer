@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { AuthError, backendAuth, SESSION_COOKIE } from '@/lib/auth/server';
+import { authErrorPayload, AuthError, backendAuth, SESSION_COOKIE } from '@/lib/auth/server';
 import { sessionCookieOptions } from '@/lib/auth/session-cookie.mjs';
 import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 import { loginDestination } from '@/lib/auth/destination.mjs';
@@ -12,7 +12,7 @@ export async function GET(request,{params}) {
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({user:null});
  try {return json({user:userDto(await backendAuth('/users/me',{token}))});}
- catch(error){const res=json({user:null,message:error.message},error.status||503);if([401,403].includes(error.status))res.cookies.set(SESSION_COOKIE,'',{...sessionCookieOptions(request),maxAge:0});return res;}
+ catch(error){const res=json({user:null,...authErrorPayload(error)},error instanceof AuthError?error.status:500);if(error instanceof AuthError&&[401,403].includes(error.status))res.cookies.set(SESSION_COOKIE,'',{...sessionCookieOptions(request),maxAge:0});return res;}
 }
 export async function POST(request,{params}) {
  const {action}=await params;
@@ -37,5 +37,5 @@ export async function POST(request,{params}) {
   if(!Number.isInteger(data.expiresIn)||data.expiresIn<1||data.expiresIn>86400)throw new AuthError(503,'Sessão inválida.');
   const res=json({user:userDto(verified),destination:loginDestination(verified.role)});
   res.cookies.set(SESSION_COOKIE,data.accessToken,{...sessionCookieOptions(request),maxAge:data.expiresIn});return res;
- }catch(error){return json({message:error instanceof AuthError?error.message:'Não foi possível concluir a operação.'},error.status||503);}
+ }catch(error){return json(authErrorPayload(error),error instanceof AuthError?error.status:500);}
 }

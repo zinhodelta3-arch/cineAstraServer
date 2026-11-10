@@ -1,0 +1,16 @@
+.pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; color: var(--foreground); font-size: 12px; }
+.summary { color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.size, .buttons { display: flex; align-items: center; gap: 6px; }
+.size { gap: 8px; margin-left: auto; }
+.pagination button, .pagination select { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 40px; min-width: 40px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--foreground); font: inherit; cursor: pointer; }
+.pagination button:hover:enabled { background: var(--muted); }
+.pagination button[aria-current="page"] { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); opacity: 1; }
+.pagination :is(button, select):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.pagination :is(button, select):disabled { cursor: default; opacity: .55; }
+.pagination button[aria-current="page"]:disabled { opacity: 1; }
+@media (max-width: 600px) {
+  .pagination { padding: 14px 16px; gap: 12px 8px; }
+  .summary { flex-basis: 100%; }
+  .size { margin-left: 0; }
+  .buttons { flex-wrap: wrap; margin-left: auto; }
+}

@@ -3,6 +3,7 @@
 import { ArrowLeft, Check, Clock3, Inbox, RefreshCw, Search, Send, Ticket } from "lucide-react";
 import { useAdminSupport } from "@/hooks/admin/use-admin-support";
 import styles from "./admin-support.module.css";
+import TablePagination from '@/components/ui/table-pagination';
 
 const statusLabels = { ABERTO: "Aberto", EM_ATENDIMENTO: "Em atendimento", RESOLVIDO: "Resolvido", FECHADO: "Fechado" };
 
@@ -34,7 +35,7 @@ function TicketList({ support }) {
           <span className={styles.ticketBottom}><span>Cliente #{ticket.clientId}</span><span className={`${styles.status} ${ticket.status === "EM_ATENDIMENTO" ? styles.inProgress : ""}`}>{statusLabels[ticket.status] ?? ticket.status}</span></span>
         </button>
       </li>)}</ul>
-      {support.queue.nextCursor && <button type="button" className={styles.more} onClick={support.loadMoreQueue} disabled={support.queue.loadingMore}>{support.queue.loadingMore ? "Carregando…" : "Carregar mais chamados"}</button>}
+      <TablePagination list={support.queue} noun="chamados" />
     </div>
   </section>;
 }

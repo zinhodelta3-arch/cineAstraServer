@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
 import { resolveApiBase } from "@/lib/api/api-base.mjs";
 
@@ -24,7 +24,9 @@ async function photoRequest(request, target, token) {
   let body;
   if (request.method === "PUT") {
     if (Number(request.headers.get("content-length")) > 6_000_000) return json({ message: "A foto deve ter até 5 MB." }, 413);
-    const form = await request.formData();
+    let form;
+    try { form = await request.formData(); }
+    catch { throw new AuthError(400, 'Não foi possível ler a foto enviada. Selecione o arquivo novamente.', 'INVALID_UPLOAD'); }
     const file = form.get("image");
     if (form.getAll("image").length !== 1 || [...form.keys()].some((key) => key !== "image") || !file || typeof file.arrayBuffer !== "function" || file.size > 5_242_880 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) return json({ message: "Selecione uma foto JPG, PNG ou WebP de até 5 MB." }, 422);
     body = new FormData();
@@ -33,12 +35,15 @@ async function photoRequest(request, target, token) {
   let response;
   try {
     response = await fetch(`${base}${target}`, { method: request.method, body, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30000), headers: { Authorization: `Bearer ${token}`, Accept: request.method === "GET" ? "image/webp" : "application/json" } });
-  } catch { return json({ message: "Não foi possível acessar a foto do perfil." }, 503); }
+  } catch (error) { return json(authErrorPayload(new AuthError(503, 'Não foi possível acessar a foto do perfil.', error?.name === 'TimeoutError' ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR')), 503); }
   if (response.status === 204) return new NextResponse(null, { status: 204 });
-  if (!response.ok) return json({ message: response.status === 404 ? "Foto não encontrada." : response.status === 413 ? "A foto deve ter até 5 MB." : response.status === 415 || response.status === 422 ? "Formato de foto inválido." : "Não foi possível acessar a foto do perfil." }, response.status >= 500 ? 503 : response.status);
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    return json(authErrorPayload(new AuthError(response.status, response.status === 404 ? 'Foto não encontrada.' : 'Não foi possível acessar a foto do perfil.', payload?.code, { ...payload, requestId: payload?.requestId ?? response.headers.get('X-Request-Id'), retryAfter: response.headers.get('Retry-After') })), response.status);
+  }
   if (request.method === "GET") return new NextResponse(response.body, { status: 200, headers: { "Content-Type": "image/webp", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
   const payload = await response.json().catch(() => null);
-  return payload?.success === true && payload.data ? json(payload.data) : json({ message: "Resposta inválida ao salvar a foto." }, 503);
+  return payload?.success === true && payload.data ? json(payload.data) : json(authErrorPayload(new AuthError(503, 'Resposta inválida ao salvar a foto.', 'INVALID_RESPONSE', { requestId: response.headers.get('X-Request-Id') })), 503);
 }
 
 async function handle(request, { params }) {
@@ -52,7 +57,7 @@ async function handle(request, { params }) {
   try {
     const user = await currentUser();
     if (user?.role !== "CLIENTE") return json({ message: "Acesso restrito a clientes." }, 403);
-    if (parts[1] === "photo") return photoRequest(request, target, token);
+    if (parts[1] === "photo") return await photoRequest(request, target, token);
     let body;
     if (method === "POST" || method === "PATCH" || method === "PUT" || (method === "DELETE" && parts[1] === "progress")) {
       const raw = await request.text();
@@ -63,9 +68,9 @@ async function handle(request, { params }) {
     const data = await backendAuth(target, { token, method, body });
     return method === "DELETE" || (method === "PUT" && parts[1] === "favorites") ? new NextResponse(null, { status: 204 }) : json(data, method === "POST" && parts.length === 0 ? 201 : 200);
   } catch (error) {
-    const status = error instanceof AuthError ? error.status : 503;
+    const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "Acesso restrito a clientes.", 404: "Perfil não encontrado.", 409: "Os perfis foram alterados. Atualize a página e tente novamente.", 422: "Confira os dados do perfil." };
-    return json({ message: messages[status] || "Não foi possível acessar os perfis." }, status);
+    return json(authErrorPayload(error, { message: messages[status] || "Não foi possível acessar os perfis." }), status);
   }
 }
 

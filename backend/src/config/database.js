@@ -13,24 +13,30 @@ export function poolOptions(config) {
 export function createDatabase(config, suppliedPool) {
     const pool = suppliedPool ?? mysql.createPool(poolOptions(config));
     let closed = false;
-    async function acquire() {
-        if (closed) throw ApiError.indisponivel();
+    let closing;
+    async function acquire(signal) {
+        if (closed || signal?.aborted) throw ApiError.indisponivel();
         let expired = false;
         let timer;
-        const pending = pool.getConnection().then(connection => {
-            if (expired) { connection.release(); throw ApiError.indisponivel(); }
-            return connection;
-        });
+        let abort;
         try {
+            const pending = pool.getConnection().then(connection => {
+                if (expired || closed || signal?.aborted) { connection.release(); throw ApiError.indisponivel(); }
+                return connection;
+            });
             return await Promise.race([pending, new Promise((_, reject) => {
-                timer = setTimeout(() => { expired = true; reject(ApiError.indisponivel()); }, config.timeout);
+                abort = () => { expired = true; reject(ApiError.indisponivel()); };
+                timer = setTimeout(abort, config.timeout);
+                signal?.addEventListener('abort', abort, { once: true });
+                if (signal?.aborted) abort();
             })]);
         } catch (error) { report('database_acquire_failed', { error }); throw ApiError.indisponivel(); }
-        finally { clearTimeout(timer); }
+        finally { clearTimeout(timer); if (abort) signal?.removeEventListener('abort', abort); }
     }
     async function withConnection(operation, { signal } = {}) {
         if (signal?.aborted) throw ApiError.indisponivel();
-        const raw = await acquire();
+        const raw = await acquire(signal);
+        if (closed || signal?.aborted) { raw.release(); throw ApiError.indisponivel(); }
         let destroyed = false;
         const destroy = () => { if (!destroyed) { destroyed = true; raw.destroy(); } };
         let rejectDeadline;
@@ -81,6 +87,6 @@ export function createDatabase(config, suppliedPool) {
     return {
         execute, transaction, withConnection,
         async ping(options) { await execute('SELECT 1 AS ok', [], options); },
-        async close() { if (!closed) { closed = true; await pool.end(); } }
+        close() { closed = true; return closing ??= Promise.resolve().then(() => pool.end()); }
     };
 }
