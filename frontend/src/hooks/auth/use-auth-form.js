@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { sessionFetch, readSessionResponse } from '@/lib/auth/session-response.mjs';
 import { loginDestination, passwordValid } from '@/lib/auth/destination.mjs';
+import { notifySessionChange } from '@/lib/auth/session-events.mjs';
 export async function sessionRequest(action,body,signal) {
  const response=await sessionFetch(`/api/session/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body),signal});
  return readSessionResponse(response);
@@ -24,8 +25,9 @@ export function useAuthForm({resetToken}={}) {
    if(action==='login'){
     setUser(result.user);
     const destination = loginDestination(result.user?.role) ?? result.destination;
+    notifySessionChange({local:!destination});
     if(destination){window.location.replace(destination);}
-    else {window.dispatchEvent(new Event('cineastra-session'));setMessage('Login realizado.');}
+    else {setMessage('Login realizado.');}
    }else{setMessage(result.message);setSuccess(true);}
   }catch(e){if(!abort.signal.aborted)setMessage(e.message||'Falha de conexão. Tente novamente.');}
   finally{busy.current=false;if(!abort.signal.aborted)setPending(false);}

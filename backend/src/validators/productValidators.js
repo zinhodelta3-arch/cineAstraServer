@@ -16,7 +16,8 @@ const page = status => z.object({ limit: z.string().regex(/^\d{1,3}$/).transform
 export const productSchemas = {
     categoriesQuery: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: z.string().min(1).max(100).optional() }).strict(),
     inputs: {
-        create: z.object({ ...common, supplierId: catalogId.optional(), localId: catalogId, quantidade_minima: count.optional(), preco: price, ...costs, venda_avulsa: z.boolean().default(false) }).strict(),
+        create: z.object({ ...common, supplierId: catalogId.optional(), localId: catalogId, quantidade_minima: count.optional(), preco: price.optional(), priceMode: z.literal('RULE').optional(), ...costs, venda_avulsa: z.boolean().default(false) }).strict()
+            .refine(input => input.priceMode === 'RULE' ? input.preco === undefined && input.venda_avulsa && input.custo_receita !== undefined && input.custo_parceria !== undefined : input.preco !== undefined, { path: ['preco'] }),
         patch: z.object({ nome: name.optional(), descricao: description.optional(), categoria: category.optional(), quantidade_minima: count.optional(), preco: price.optional(), ...costs, venda_avulsa: z.boolean().optional(), status: supplyStatus.optional() }).strict().refine(v => Object.keys(v).length > 0),
         query: page(supplyStatus)
     },

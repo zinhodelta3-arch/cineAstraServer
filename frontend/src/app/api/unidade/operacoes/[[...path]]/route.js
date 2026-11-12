@@ -12,10 +12,9 @@ function target(parts, method, search) {
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/unit/sessions${method === 'GET' ? search : ''}`;
     if (parts.length === 2 && id(first) && ['GET', 'PATCH', 'DELETE'].includes(method)) return `/unit/sessions/${first}`;
   }
-  if (section === 'combos') {
-    if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/unit/combos${method === 'GET' ? search : ''}`;
-    if (id(first) && parts.length === 2 && ['GET', 'PATCH', 'DELETE'].includes(method)) return `/unit/combos/${first}`;
-    if (id(first) && parts.length === 3 && second === 'items' && method === 'PUT') return `/unit/combos/${first}/items`;
+  if (section === 'combos' && method === 'GET') {
+    if (parts.length === 1) return `/unit/combos${search}`;
+    if (id(first) && parts.length === 2) return `/unit/combos/${first}`;
   }
   if (section === 'locations' && id(first) && second === 'rooms') {
     const base = `/unit/locations/${first}/rooms`;
@@ -33,9 +32,13 @@ function target(parts, method, search) {
     if (parts.length === 3 && id(first) && second === 'alternatives' && method === 'GET') {
       return `/unit/stock/requests/${first}/alternatives`;
     }
+    if (parts.length === 3 && id(first) && second === 'review' && method === 'POST') {
+      return `/unit/stock/requests/${first}/review`;
+    }
   }
   if (section === 'logistics') {
     if (parts.length === 1 && method === 'GET') return `/logistics${search}`;
+    if (parts.length === 3 && id(first) && second === 'history' && method === 'GET') return `/logistics/${first}/history${search}`;
     if (parts.length === 3 && id(first) && ['receive','return'].includes(second) && method === 'POST') return `/logistics/${first}/${second}`;
   }
   if (section === 'inventory') {
@@ -60,7 +63,7 @@ async function handle(request, { params }) {
     if (!['SUPERVISOR','COLABORADOR'].includes(role)) return json({ message: 'Acesso restrito à equipe da unidade.' }, 403);
     const path = target((await params).path ?? [], method, new URL(request.url).search);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
-    if(role==='COLABORADOR'&&method!=='GET'&&!(method==='POST'&&(path==='/stock/requests'||/^\/logistics\/\d+\/(receive|return)$/.test(path))))return json({message:'Este cadastro está disponível apenas para consulta.'},403);
+    if(role==='COLABORADOR'&&method!=='GET'&&!(method==='POST'&&(['/stock/requests','/inventory/movements'].includes(path)||/^\/logistics\/\d+\/(receive|return)$/.test(path))))return json({message:'Este cadastro está disponível apenas para consulta.'},403);
     let body;
     if (['POST', 'PATCH', 'PUT'].includes(method) && !/^\/logistics\/\d+\/(receive|return)$/.test(path)) {
       const raw = await request.text();
@@ -70,7 +73,7 @@ async function handle(request, { params }) {
     }
     const data = await backendAuth(path, { token, method, body });
     if (method === 'DELETE') return new NextResponse(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
-    return json(data, method === 'POST' && ['/unit/sessions', '/unit/combos', '/stock/requests', '/inventory/movements'].includes(path) || method === 'POST' && /\/rooms(?:\/\d+\/seats)?$/.test(path) ? 201 : 200);
+    return json(data, method === 'POST' && ['/unit/sessions', '/stock/requests', '/inventory/movements'].includes(path) || method === 'POST' && /\/rooms(?:\/\d+\/seats)?$/.test(path) ? 201 : 200);
   } catch (error) {
     return json(authErrorPayload(error, { message: error instanceof AuthError ? error.message : 'Não foi possível acessar a operação.' }), error instanceof AuthError ? error.status : 500);
   }

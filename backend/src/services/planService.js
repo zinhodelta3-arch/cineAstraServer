@@ -8,8 +8,9 @@ import {cycleEnd} from './subscriptionBillingMath.js';
 const conflict=message=>new ApiError(message,409,null,'PLAN_CONFLICT');
 const found=row=>{if(!row)throw ApiError.naoEncontrado();return row;};
 const snapshot=value=>typeof value==='string'?JSON.parse(value):value;
+const isDraft=row=>row?.status==='PENDENTE'&&snapshot(row.contrato_snapshot)?.administrativeDraft===true;
 const planDto=(row,benefits,admin=false)=>({id:idString(row.id_plano),name:row.nome,description:row.descricao??null,monthlyPrice:row.valor_mensal??null,annualPrice:row.valor_anual??null,maxMembers:row.limite_membros,catalogAccess:Boolean(row.acesso_catalogo),freeComboId:row.id_combo_medio?idString(row.id_combo_medio):null,freeCombosPerMonth:row.combo_gratis_mes,discounts:Object.fromEntries(benefits.map(x=>[x.categoria,x.desconto_bps])),active:Boolean(row.ativo),...(admin?{monthlyBenefitCost:row.custo_beneficios_mensal,annualBenefitCost:row.custo_beneficios_anual}:{})});
-const subscriptionDto=(row,charge=null)=>({id:idString(row.id_assinatura),planId:idString(row.id_plano),period:row.periodicidade,divisionMode:row.tipo_divisao??'TITULAR_PAGA',status:row.status,autoRenew:Boolean(row.renovacao_automatica),startsOn:row.inicio,endsOn:row.fim,contractPrice:row.preco_contratado,contract:snapshot(row.contrato_snapshot),...(charge?{chargeId:idString(charge.id_cobranca),chargeStatus:charge.status,paymentPath:'/api/payments'}:{})});
+const subscriptionDto=(row,charge=null)=>({id:idString(row.id_assinatura),planId:idString(row.id_plano),period:row.periodicidade,divisionMode:row.tipo_divisao??'TITULAR_PAGA',status:row.status,autoRenew:Boolean(row.renovacao_automatica),startsOn:isDraft(row)?null:row.inicio,endsOn:row.fim,contractPrice:row.preco_contratado,contract:isDraft(row)?null:snapshot(row.contrato_snapshot),...(isDraft(row)?{administrativeDraft:true}:{}),...(charge?{chargeId:idString(charge.id_cobranca),chargeStatus:charge.status,paymentPath:'/api/payments'}:{})});
 const page=(rows,limit,key,map)=>({items:rows.slice(0,limit).map(map),pagination:{limit,nextCursor:rows.length>limit?idString(rows[limit-1][key]):null}});
 const positivePrice=(price,cost)=>price!=null&&cost!=null&&cents(price)>0n&&cents(price)*8000n>=cents(cost)*10000n;
 export function createPlanService({model,identity,billing,contracts,agePolicy=createAgePolicy()}){
@@ -22,6 +23,41 @@ export function createPlanService({model,identity,billing,contracts,agePolicy=cr
         if(row.combo_gratis_mes>1||Boolean(row.combo_gratis_mes)!==Boolean(row.id_combo_medio))throw conflict('Configure um combo mensal elegível');
         if(row.id_combo_medio&&!((await model.combo(c,row.id_combo_medio))?.ativo))throw conflict('Combo do plano indisponível');
     }
+    async function availablePlan(c,id){
+        const plan=found(await model.plan(c,id,true));
+        if(!plan.ativo)throw conflict('Plano indisponível');
+        await validatePlan(c,plan);
+        return plan;
+    }
+    async function adminCreateSubscription(input,context){return identity.transaction(async c=>{
+        await admin(c,context);
+        const user=found(await model.lockUser(c,input.userId));
+        if(user.tipo_usuario!=='CLIENTE'||user.status!=='ATIVO')throw conflict('Selecione um cliente ativo.');
+        if(await model.activeForUser(c,input.userId))throw conflict('Cliente já possui assinatura ativa ou pendente.');
+        await availablePlan(c,input.planId);
+        const id=await model.createDraft(c,input);
+        await identity.audit(c,'SUBSCRIPTION.ADMIN_DRAFT_CREATED',id,context);
+        return subscriptionDto(found(await model.subscription(c,id)));
+    },context);}
+    async function adminEditSubscription(id,input,context){return identity.transaction(async c=>{
+        await admin(c,context);
+        const initial=found(await model.subscription(c,id));
+        await model.lockUser(c,initial.id_usuario);
+        const row=found(await model.subscription(c,id,true));
+        if(input.action==='updateDraft'){
+            if(!isDraft(row))throw conflict('A proposta já foi aceita ou deixou de estar pendente.');
+            await availablePlan(c,input.planId);
+            await model.patchDraft(c,id,input.planId,input.period);
+            await identity.audit(c,'SUBSCRIPTION.ADMIN_DRAFT_UPDATED',id,context);
+        }else{
+            if(!['PENDENTE','ATIVA'].includes(row.status)||isDraft(row))throw conflict('A assinatura não admite alteração da renovação.');
+            if(row.renovacao_automatica){
+                await model.stopRenewal(c,id);
+                await identity.audit(c,'SUBSCRIPTION.ADMIN_RENEWAL_DISABLED',id,context);
+            }
+        }
+        return subscriptionDto(found(await model.subscription(c,id,true)));
+    },context);}
     async function plans({limit=50,cursor='0'},context,isAdmin=false){return identity.transaction(async c=>{
         if(isAdmin)await admin(c,context);
         const rows=await model.plans(c,isAdmin,limit,cursor);
@@ -68,7 +104,8 @@ export function createPlanService({model,identity,billing,contracts,agePolicy=cr
         const prior=await model.byKey(c,user.id_usuario,key);
         if(prior){if(prior.contratacao_hash!==hash)throw conflict('Chave de contratação reutilizada');const row=found(await model.subscription(c,prior.id_assinatura));return subscriptionDto(row,await model.firstCharge(c,row.id_assinatura));}
         agePolicy.requireIndependent(user,await model.age(c,user.id_usuario));
-        if(await model.activeForUser(c,user.id_usuario))throw conflict('Titular já possui assinatura ativa ou pendente');
+        const existing=await model.activeForUser(c,user.id_usuario);
+        if(existing&&!isDraft(existing))throw conflict('Titular já possui assinatura ativa ou pendente');
         const plan=found(await model.plan(c,input.planId,true));
         if(!plan.ativo)throw conflict('Plano indisponível');
         await validatePlan(c,plan);
@@ -76,7 +113,9 @@ export function createPlanService({model,identity,billing,contracts,agePolicy=cr
         const price=input.period==='ANUAL'?plan.valor_anual:plan.valor_mensal;
         const legal=contracts?await contracts.planContract(c,input,contract,price):null;
         if(contracts&&(!input.acceptance?.accepted||input.acceptance.offerHash!==legal.offerHash))throw conflict('Aceite da oferta atual necessário');
-        const id=await model.subscribe(c,{userId:user.id_usuario,planId:input.planId,period:input.period,divisionMode:input.divisionMode??'TITULAR_PAGA',autoRenew:input.autoRenew,key,hash,snapshot:legal?{...contract,legal}:contract,price,maxMembers:plan.limite_membros});
+        const subscription={userId:user.id_usuario,planId:input.planId,period:input.period,divisionMode:input.divisionMode??'TITULAR_PAGA',autoRenew:input.autoRenew,key,hash,snapshot:legal?{...contract,legal}:contract,price,maxMembers:plan.limite_membros};
+        const id=existing?idString(existing.id_assinatura):await model.subscribe(c,subscription);
+        if(existing)await model.acceptDraft(c,id,subscription);
         await model.initialCharge(c,id,user.id_usuario,price);
         await identity.audit(c,'SUBSCRIPTION.CONTRACTED',id,context);
         return subscriptionDto(found(await model.subscription(c,id)),await model.firstCharge(c,id));
@@ -109,5 +148,5 @@ export function createPlanService({model,identity,billing,contracts,agePolicy=cr
         await identity.audit(c,'SUBSCRIPTION.COMBO_REQUESTED',redemptionId,context);
         return {id:redemptionId,subscriptionId:idString(id),comboId:contract.freeComboId,competence,status:'SOLICITADO'};
     },context);}
-    return {plans,get,create,patch,archive,summary,subscribe,mySubscriptions,ownSubscription,canSettle,activate,redeem};
+    return {plans,get,create,patch,archive,adminCreateSubscription,adminEditSubscription,summary,subscribe,mySubscriptions,ownSubscription,canSettle,activate,redeem};
 }

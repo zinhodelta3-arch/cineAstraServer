@@ -38,12 +38,19 @@ export async function backendAuth(path, { token, body, idempotencyKey, method = 
   if (response.status === 409 && ['/orders/quote', '/orders/checkout'].includes(path) && ['ORDER_CONFLICT', 'PRICING_CONFLICT', 'CHECKOUT_CONFLICT'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && /^\/admin\/users(?:\/\d+\/(?:access|location))?$/.test(path) && ['IDENTITY_CONFLICT', 'LAST_ADMIN', 'REACTIVATION_REQUIRES_REVIEW'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && /^\/teams(?:\/\d+(?:\/.*)?)?$/.test(path) && ['TEAM_CONFLICT', 'TASK_CONFLICT'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
+  if (response.status === 409 && /^\/admin\/streaming\/subscriptions(?:\/\d+)?$/.test(path) && payload?.code === 'PLAN_CONFLICT' && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
+  if (response.status === 409 && path.startsWith('/admin/sales/') && payload?.code === 'ADMIN_SALES_CONFLICT' && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && /^\/unit\/(?:sessions|locations|combos)(?:\/.*)?$/.test(path) && ['SESSION_CONFLICT', 'VENUE_CONFLICT', 'COMBO_CONFLICT'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && /^\/(?:stock|logistics|inventory)(?:\/.*)?$/.test(path) && ['SUPPLY_CONFLICT', 'INVENTORY_CONFLICT'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
+  if (response.status === 409 && /^\/unit\/stock\/requests\/\d+\/review$/.test(path) && payload?.code === 'SUPPLY_CONFLICT' && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && (/^\/admin\/(?:banners|experiences|partners|newsletter\/(?:categories|campaigns)|content)(?:\/.*)?$/.test(path)) && ['PROMOTIONAL_CONFLICT', 'NEWSLETTER_CONFLICT', 'CONTENT_VERSION_EXISTS'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && /^\/suppliers\/me\/transports(?:\/\d+)?$/.test(path) && payload?.code === 'SUPPLIER_TRANSPORT_CONFLICT') throw failure(409,'Já existe um transporte com essa identificação neste fornecedor.',payload.code);
   if (response.status === 409 && path === '/pricing/quote' && payload?.code === 'PRICING_CONFLICT') {
    throw failure(409, 'O preço não pôde ser cotado.', payload.code);
+  }
+  if (response.status === 409 && method === 'POST' && ['/inputs','/admin/combos'].includes(path)
+      && payload?.code === 'PRICING_CONFLICT' && typeof payload.message === 'string' && payload.message.length <= 180) {
+   throw failure(409, payload.message, payload.code);
   }
   if (response.status === 409 && /^\/(?:inputs(?:\/\d+)?|admin\/pricing\/costs\/inputs\/\d+)$/.test(path)
       && payload?.code === 'PRODUCT_RETAIL_CONFLICT' && typeof payload.message === 'string' && payload.message.length <= 180) {
@@ -54,6 +61,12 @@ export async function backendAuth(path, { token, body, idempotencyKey, method = 
  }
  if (response.status !== 204 && (payload?.success !== true || payload.data == null)) throw new AuthError(503,'Resposta inválida do servidor.', 'INVALID_RESPONSE', { requestId: response.headers.get('X-Request-Id') });
  return payload?.data;
+}
+export const sessionUserDto = user => user == null ? user : ({ id:user.id,name:user.name,role:user.role,ageVerified:user.ageVerified===true });
+export async function publicSessionSnapshot(user) {
+ // A rota de sessão pode limpar um cookie rejeitado. O layout só pode lê-lo.
+ if (user === null && (await cookies()).get(SESSION_COOKIE)?.value) return undefined;
+ return sessionUserDto(user);
 }
 // Cache limitado à renderização do servidor; não compartilha sessões entre requisições.
 export const currentUser = cache(async function currentUser() {

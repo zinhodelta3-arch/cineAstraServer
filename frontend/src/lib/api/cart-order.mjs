@@ -2,7 +2,8 @@ const id=v=>typeof v==='string'&&/^[1-9]\d{0,19}$/.test(v)&&BigInt(v)<=184467440
 export function cartOrder(items,coupon=''){
  if(!Array.isArray(items)||!items.length)throw new Error('Adicione produtos ao carrinho.');
  const lines=new Map();let localId;
- const sessionId=items.find(item=>item.purchaseKind==='SESSION'&&id(item.sourceId))?.sourceId;
+ const sessions=new Set(items.filter(item=>item.purchaseKind==='SESSION'&&id(item.sourceId)).map(item=>item.sourceId));
+ const sessionId=sessions.values().next().value;
  for(const item of items){
   if(!id(item.localId)||!id(item.sourceId)||!['INPUT','COMBO','SESSION'].includes(item.purchaseKind)||item.purchaseKind==='SESSION'&&!id(item.seatId))throw new Error('Há itens antigos ou inválidos no carrinho. Remova-os e escolha novamente.');
   if(localId&&localId!==item.localId)throw new Error('Escolha produtos de um único cinema para este pedido.');
@@ -11,7 +12,9 @@ export function cartOrder(items,coupon=''){
   const key=item.purchaseKind+':'+item.sourceId+(item.seatId?':'+item.seatId:''),quantity=(lines.get(key)?.quantity||0)+item.quantity;
   if(item.purchaseKind==='SESSION'&&quantity!==1)throw new Error('Cada assento admite um ingresso. Escolha outro assento para adicionar ingressos.');
   if(quantity>100)throw new Error('O limite por produto é de 100 unidades.');
-  lines.set(key,{kind:item.purchaseKind,id:item.sourceId,quantity,...(item.purchaseKind==='SESSION'?{seatId:item.seatId}:item.purchaseKind==='COMBO'&&sessionId?{sessionId}:{})});
+  if(item.purchaseKind==='COMBO'&&item.eventSessionId&&!sessions.has(item.eventSessionId))throw new Error('Inclua um ingresso da sessão vinculada para comprar o combo temático.');
+  const pickupSession=item.eventSessionId||sessionId;
+  lines.set(key,{kind:item.purchaseKind,id:item.sourceId,quantity,...(item.purchaseKind==='SESSION'?{seatId:item.seatId}:item.purchaseKind==='COMBO'&&pickupSession?{sessionId:pickupSession}:{})});
  }
  const couponCode=coupon.trim().toUpperCase();
  if(couponCode&&!/^[A-Z0-9_-]{1,50}$/.test(couponCode))throw new Error('Cupom inválido. Use até 50 letras, números, hífen ou sublinhado.');

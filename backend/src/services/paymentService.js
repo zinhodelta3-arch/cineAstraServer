@@ -35,7 +35,7 @@ export function createPaymentService({model,methods,identity,provider,checkout,s
             if(!inserted.created)return {duplicate:true};
             const last=row.ultimo_evento_em?Date.parse(`${String(row.ultimo_evento_em).replace(' ','T')}Z`):0;
             const at=Date.parse(`${e.occurredSql.replace(' ','T')}Z`);
-            if(at<last||row.pagamento_status==='APROVADO'&&e.status!=='APROVADO')return {duplicate:false,ignored:true};
+            if(at<last||['ESTORNADO','PARCIALMENTE_ESTORNADO'].includes(row.pagamento_status)||row.pagamento_status==='APROVADO'&&e.status!=='APROVADO')return {duplicate:false,ignored:true};
             if(e.status==='PENDENTE'){await model.markObserved(c,row.id_intencao,e.occurredSql);return {duplicate:false,pending:true};}
             if(row.pagamento_status===e.status){await model.markObserved(c,row.id_intencao,e.occurredSql);return {duplicate:false,ignored:true};}
             let fulfill=false,checkoutOrder=false;
@@ -87,13 +87,22 @@ export function createPaymentService({model,methods,identity,provider,checkout,s
         }
         return ownPayment(dispatch.id,context);
     }
-    async function reconcile(id,context){
+    async function reconcile(id,context,administrative=false){
         ready();
-        const row=await tx(context,async c=>{const a=await contextActor(identity,c,context);const r=await model.byPayment(id,c);if(!r||idString(r.id_usuario)!==idString(a.id_usuario))throw ApiError.naoEncontrado();return r;});
-        if(row.pagamento_status==='APROVADO')return statusDto(row);
+        const read=async c=>{
+            const actor=await identity.activeActor(c,context);
+            if(actor.tipo_usuario!==(administrative?'ADMIN':'CLIENTE'))throw ApiError.acessoNegado();
+            const payment=await model.byPayment(id,c);
+            if(!payment||(!administrative&&idString(payment.id_usuario)!==idString(actor.id_usuario)))throw ApiError.naoEncontrado();
+            return payment;
+        };
+        const row=await tx(context,read);
+        if(['APROVADO','ESTORNADO','PARCIALMENTE_ESTORNADO'].includes(row.pagamento_status))return statusDto(row);
+        if(row.provider!==provider.name)throw conflict();
+        if(administrative)await tx(context,c=>identity.audit(c,'PAYMENT.ADMIN_RECONCILIATION_REQUESTED',id,context));
         const result=await provider.consult({idempotencyKey:row.chave_idempotencia,intentionId:idString(row.id_intencao),transactionId:row.provider_ref,amount:String(row.valor),currency:row.moeda,signal:context.signal});
         if(result)await applyEvent(result,'CONSULTA',context);
-        return ownPayment(id,context);
+        return statusDto(await tx(context,read));
     }
     async function webhook(name,body,headers,context){
         ready();
@@ -105,5 +114,5 @@ export function createPaymentService({model,methods,identity,provider,checkout,s
         if(!verified)throw ApiError.naoAutorizado();
         return applyEvent(verified,'WEBHOOK',context);
     }
-    return {create,get:ownPayment,reconcile,webhook};
+    return {create,get:ownPayment,reconcile,webhook,reconcileByAdmin:(id,context)=>reconcile(id,context,true)};
 }

@@ -1,14 +1,14 @@
 import { idString } from '../utils/dto.js';
 
 const columns = {
-    local: 'id_local,nome,cep,logradouro,numero,complemento,bairro,cidade,estado,telefone,status',
+    local: 'id_local,nome,cep,logradouro,numero,complemento,bairro,cidade,estado,telefone,status,tipo_local,lotacao_eventos,acesso_eventos',
     room: 'id_sala,id_local,nome,capacidade,tipo,status',
     seat: 'id_assento,id_sala,fileira,numero,tipo,status'
 };
 const table = { local: 'locais', room: 'salas', seat: 'assentos' };
 const pk = { local: 'id_local', room: 'id_sala', seat: 'id_assento' };
 const parent = { room: 'id_local', seat: 'id_sala' };
-const writable = { local: ['nome', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'telefone', 'status'],
+const writable = { local: ['nome', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'telefone', 'status','tipo_local','lotacao_eventos','acesso_eventos'],
     room: ['nome', 'capacidade', 'tipo', 'status'], seat: ['fileira', 'numero', 'tipo', 'status'] };
 export function createVenueModel(database) {
     const rows = async (c, sql, params = []) => (await c.execute(sql, params))[0];

@@ -9,7 +9,7 @@ const status=z.enum(['ATIVO','INATIVO']);
 export const supplierTransportSchemas={
     create:z.object({nome:text(120),tipo:text(60),identificacao:identification.optional(),observacao:note.optional()}).strict(),
     patch:z.object({nome:text(120).optional(),tipo:text(60).optional(),identificacao:identification.optional(),observacao:note.optional(),status:status.optional()}).strict().refine(value=>Object.keys(value).length>0),
-    query:z.object({limit:z.string().regex(/^[1-9]\d{0,2}$/).transform(Number).pipe(z.number().max(100)).default(20),cursor:catalogId.optional(),status:status.optional(),q:text(120).optional()}).strict()
+    query:z.object({limit:z.string().regex(/^[1-9]\d{0,2}$/).transform(Number).pipe(z.number().max(100)).default(20),cursor:catalogId.optional(),status:status.optional(),q:text(120).optional(),available:z.literal('true').optional()}).strict()
 };
 export function supplierTransportQuery(req,res,next) {
     const parsed=supplierTransportSchemas.query.safeParse(req.query);

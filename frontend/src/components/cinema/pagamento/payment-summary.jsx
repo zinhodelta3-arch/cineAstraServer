@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import ResumoCompra from "@/components/cinema/card/resumocompra";
 import styles from "./payment.module.css";
 
-export default function PaymentSummary({ payment, method }) {
-  const { items, itemCount, total, issue, offer, offerLoading, offerError, accepted, setAccepted, pending, error, result, refreshPayment, session } = payment;
+export default function PaymentSummary({ payment, method, draftId }) {
+  const { items, itemCount, total, issue, offer, offerLoading, offerError, accepted, setAccepted, pending, error, result, refreshPayment, session, checkingPayment, pollingPaused } = payment;
   const isCard = method === "credito" || method === "debito";
   const canPay = Boolean(isCard && payment.ready && !pending && !result?.paymentId);
   return <ResumoCompra
@@ -15,9 +15,9 @@ export default function PaymentSummary({ payment, method }) {
     totalLabel={offer ? "TOTAL DA OFERTA" : "TOTAL ESTIMADO"}
     totalNote={offer?.contract?.offer?.conditions}
     action={isCard && !["PAGO", "FINALIZADO"].includes(result?.orderStatus) && <Button type="submit" form="payment-card-form" size="lg" disabled={!canPay}>{pending ? "Processando…" : "Confirmar pagamento"}<ArrowRight size={17} /></Button>}
-    footerContent={<Link href="/cinema/carrinho" className="mt-5 block text-center text-xs text-secondary-foreground underline underline-offset-4">Editar meu carrinho</Link>}
+    footerContent={<Link href={draftId ? "/cinema/minhascompras" : "/cinema/carrinho"} className="mt-5 block text-center text-xs text-secondary-foreground underline underline-offset-4">{draftId ? "Voltar às minhas compras" : "Editar meu carrinho"}</Link>}
   >
-    {!items.length && !result && <Link href="/cinema/carrinho" className={styles.inlineLink}>Voltar ao carrinho <ArrowRight size={15} /></Link>}
+    {!draftId && !items.length && !result && <Link href="/cinema/carrinho" className={styles.inlineLink}>Voltar ao carrinho <ArrowRight size={15} /></Link>}
     {issue && !["PAGO", "FINALIZADO"].includes(result?.orderStatus) && <p role="alert" className={styles.error}>{issue}</p>}
     {offerLoading && <p role="status" className={styles.summaryHint}>Consultando preço e disponibilidade…</p>}
     {offerError && <p role="alert" className={styles.error}>{offerError}</p>}
@@ -28,8 +28,8 @@ export default function PaymentSummary({ payment, method }) {
       {[offer.contract.business, offer.contract.terms, offer.contract.privacy].map(document => <details key={document.slug} className={styles.document}><summary>{document.title}</summary><p>{document.body.text}</p></details>)}
       <label className={styles.acceptance}><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} />Li e aceito a oferta, os termos e a política de privacidade.</label>
     </div>}
-    {method && !accepted && offer && <p className={styles.error}>Aceite a oferta na <Link href="/cinema/pagamento" className={styles.inlineLink}>seleção de pagamento</Link> para continuar.</p>}
+    {method && !accepted && offer && <p className={styles.error}>Aceite a oferta na <Link href={draftId ? `/cinema/pagamento?draft=${draftId}` : "/cinema/pagamento"} className={styles.inlineLink}>seleção de pagamento</Link> para continuar.</p>}
     {isCard && error && <p role="alert" className={styles.error}>{error}</p>}
-    {isCard && result && <div role="status" className={styles.paymentResult}><strong>Pedido #{result.orderId}</strong><span>Pagamento: {result.status}</span><span>Pedido: {result.orderStatus}</span>{["PAGO", "FINALIZADO"].includes(result.orderStatus) ? <Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link> : result.paymentId && <Button type="button" variant="outline" onClick={() => refreshPayment(result.paymentId)}>Atualizar status</Button>}</div>}
+    {isCard && result && <div role="status" className={styles.paymentResult}><strong>Pedido #{result.orderId}</strong><span>Pagamento: {result.status}</span><span>Pedido: {result.orderStatus}</span>{["PAGO", "FINALIZADO"].includes(result.orderStatus) ? <Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link> : result.paymentId && <Button type="button" variant="outline" disabled={pending || checkingPayment} onClick={() => refreshPayment(result.paymentId)}>Atualizar status</Button>}{pollingPaused && <p>As consultas automáticas foram pausadas. Use Atualizar status para consultar o pedido.</p>}</div>}
   </ResumoCompra>;
 }

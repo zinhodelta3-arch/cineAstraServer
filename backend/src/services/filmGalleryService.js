@@ -4,7 +4,12 @@ import { galleryKey, galleryUrl } from '../models/galleryStorage.js';
 import { report } from '../utils/telemetry.js';
 
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
-export const galleryDto = row => ({ id_imagem: idString(row.id_imagem), id_filme: idString(row.id_filme), tipo: row.tipo, url: row.url, texto_alternativo: row.texto_alternativo, ordem: row.ordem, principal: Boolean(row.principal) });
+export const galleryDto = row => ({ id_imagem: idString(row.id_imagem), id_filme: idString(row.id_filme), tipo: row.tipo, url: row.url, texto_alternativo: row.texto_alternativo, ordem: row.ordem, principal: Boolean(row.principal),
+    contexto_banner:row.contexto_banner??'GERAL',dispositivo_banner:row.dispositivo_banner??'PADRAO' });
+function validateBanner({tipo,principal,contexto_banner='GERAL',dispositivo_banner='PADRAO'}){
+    if(contexto_banner==='GERAL'&&dispositivo_banner==='PADRAO')return;
+    if(tipo!=='BANNER'||contexto_banner==='GERAL'||dispositivo_banner==='PADRAO'||principal)throw ApiError.validacao('Um banner responsivo exige uma área e um dispositivo. Use o banner padrão para definir a imagem principal.');
+}
 export function createFilmGalleryService({ model, identity, storage }) {
     async function lock(c, id, context) {
         if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
@@ -18,12 +23,24 @@ export function createFilmGalleryService({ model, identity, storage }) {
         } catch { report('gallery_storage_reconciliation_pending'); return false; }
     }
     return {
+        async banners(id,context) {
+            found(await model.film(id,false));
+            const rows=await model.banners(id,context);
+            const result={defaultBanner:null,cover:null,variants:{}};
+            for(const row of rows){
+                if(row.tipo==='CAPA')result.cover=row.url;
+                else if(row.dispositivo_banner==='PADRAO')result.defaultBanner=row.url;
+                else result.variants[row.dispositivo_banner]=row.url;
+            }
+            return result;
+        },
         async list(id, query, admin = false) {
             found(await model.film(id, admin));
             const rows = await model.list(id, query, admin), items = rows.slice(0, query.limit);
             return { items: items.map(galleryDto), pagination: { limit: query.limit, nextCursor: rows.length > query.limit ? `${items.at(-1).ordem}:${idString(items.at(-1).id_imagem)}` : null } };
         },
         async create(id, input, context) {
+            validateBanner(input);
             await identity.transaction(c => lock(c, id, context), context);
             const saved = await storage.promote(input.stagingKey, id, context.signal, context.actor.id);
             try {
@@ -40,6 +57,7 @@ export function createFilmGalleryService({ model, identity, storage }) {
             return identity.transaction(async c => {
                 await lock(c, id, context);
                 const previous = found(await model.image(c, id, imageId)), next = { ...previous, ...input };
+                validateBanner(next);
                 if (next.principal) {
                     await model.clearPrincipal(c, id, next.tipo);
                     // clearPrincipal pode ter desmarcado o próprio alvo.

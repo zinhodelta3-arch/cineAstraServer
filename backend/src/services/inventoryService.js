@@ -7,12 +7,15 @@ const conflict = message => new ApiError(message, 409, null, 'INVENTORY_CONFLICT
 const sortIds = (a,b) => BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0;
 const kindOf = input => input.inputId ? 'inputs' : 'equipment';
 const itemId = input => input.inputId ?? input.equipmentId;
-const balanceDto = (kind, row) => ({ [kind === 'inputs' ? 'id_insumo' : 'id_equipamento']: idString(row[kind === 'inputs' ? 'id_insumo' : 'id_equipamento']), nome: row.nome ?? null, id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), quantidade: row.quantidade, quantidade_reservada: kind === 'inputs' ? row.quantidade_reservada : 0, disponivel: row.quantidade - (kind === 'inputs' ? row.quantidade_reservada : 0), ...(kind === 'inputs' ? { quantidade_minima: row.quantidade_minima, alerta_reposicao: row.quantidade - row.quantidade_reservada <= row.quantidade_minima } : {}), status: row.status });
-const movementDto = row => ({ id_movimentacao: idString(row.id_movimentacao), id_insumo: row.id_insumo === null ? null : idString(row.id_insumo), id_equipamento: row.id_equipamento === null ? null : idString(row.id_equipamento), nome_item: row.nome_insumo ?? row.nome_equipamento ?? null, id_reserva: row.id_reserva === null ? null : idString(row.id_reserva), id_usuario: idString(row.id_usuario), tipo: row.tipo, quantidade: row.quantidade, motivo: row.motivo ?? null, data_movimentacao: row.data_movimentacao });
+const balanceDto = (kind, row, committed = false) => {
+    const reserved = kind === 'inputs' ? row.quantidade_reservada : committed ? row.quantidade : 0;
+    const available = row.quantidade - reserved;
+    return { [kind === 'inputs' ? 'id_insumo' : 'id_equipamento']: idString(row[kind === 'inputs' ? 'id_insumo' : 'id_equipamento']), nome: row.nome ?? null, id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), quantidade: row.quantidade, quantidade_reservada: reserved, disponivel: available, ...(kind === 'inputs' ? { quantidade_minima: row.quantidade_minima, alerta_reposicao: available <= row.quantidade_minima } : {}), status: row.status };
+};
+const movementDto = row => ({ id_movimentacao: idString(row.id_movimentacao), id_insumo: row.id_insumo === null ? null : idString(row.id_insumo), id_equipamento: row.id_equipamento === null ? null : idString(row.id_equipamento), nome_item: row.nome_insumo ?? row.nome_equipamento ?? null, id_reserva: row.id_reserva === null ? null : idString(row.id_reserva), id_logistica: row.id_logistica == null ? null : idString(row.id_logistica), id_solicitacao: row.id_solicitacao == null ? null : idString(row.id_solicitacao), id_usuario: idString(row.id_usuario), tipo: row.tipo, quantidade: row.quantidade, motivo: row.motivo ?? null, data_movimentacao: row.data_movimentacao });
 const positive = value => Number.isInteger(value) && value > 0 && value <= 2147483647;
 export function createInventoryService({ model, identity }) {
     const collaboratorLocation=(context,localId)=>identity.transaction(async c=>unitReadLocation(c,await identity.activeActor(c,context),localId),context);
-    async function active(c, context) { const row = await identity.activeActor(c, context); if (!['ADMIN','FORNECEDOR','SUPERVISOR'].includes(row.tipo_usuario)) throw ApiError.acessoNegado(); return { id: idString(row.id_usuario), role: row.tipo_usuario }; }
     async function ownSupplier(c, actor) { const row = found(await model.supplierByUser(actor.id, c)); if (row.status !== 'ATIVO') throw ApiError.acessoNegado(); return idString(row.id_fornecedor); }
     async function ownLocation(c, actor) { const row = await model.supervisorLocation(actor.id, c); if (!row) throw ApiError.acessoNegado(); return idString(row.id_local); }
     async function scope(c, row, actor) {
@@ -64,7 +67,7 @@ export function createInventoryService({ model, identity }) {
             if (!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(actor.role)) throw ApiError.acessoNegado();
             const row = found(await model.item(kind,id));
             if(actor.role==='COLABORADOR')await collaboratorLocation(context,row.id_local);else await scope(undefined,row,actor);
-            return balanceDto(kind,row);
+            return balanceDto(kind,row,kind === 'equipment' && Boolean(await model.equipmentCommitment(id)));
         },
         async listMovements(q, context) {
             const actor = { id: idString(context.actor.id), role: context.actor.tipo };
@@ -92,11 +95,18 @@ export function createInventoryService({ model, identity }) {
             if (Boolean(input.inputId) === Boolean(input.equipmentId)) throw ApiError.validacao('Exatamente um item é obrigatório');
             const kind = kindOf(input), id = idString(itemId(input));
             return identity.transaction(async c => {
-                const actor = await active(c,context), row = found(await model.item(kind,id,c,true));
-                await scope(c,row,actor);
+                const user = await identity.activeActor(c,context);
+                const actor = { id: idString(user.id_usuario), role: user.tipo_usuario };
+                if (!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(actor.role)) throw ApiError.acessoNegado();
                 const qty = input.quantidade;
-                if (actor.role === 'SUPERVISOR' && (kind !== 'inputs' || !['SAIDA','PERDA'].includes(input.tipo) || qty >= 0)) throw ApiError.acessoNegado();
+                const unitStaff = ['SUPERVISOR','COLABORADOR'].includes(actor.role);
+                if (unitStaff && (kind !== 'inputs' || !['SAIDA','PERDA'].includes(input.tipo) || qty >= 0)) throw ApiError.acessoNegado();
+                if (actor.role === 'COLABORADOR' && !input.motivo?.trim()) throw ApiError.validacao('Informe a justificativa da movimentação.');
                 if ((['ENTRADA','DEVOLUCAO'].includes(input.tipo) && qty <= 0) || (['SAIDA','PERDA'].includes(input.tipo) && qty >= 0) || !Number.isInteger(qty) || qty === 0 || Math.abs(qty) > 2147483647) throw ApiError.validacao('Sinal da quantidade incompatível com o tipo');
+                const row = found(await model.item(kind,id,c,true));
+                if (actor.role === 'COLABORADOR') await unitReadLocation(c,user,row.id_local,{ activeTeam: true });
+                else await scope(c,row,actor);
+                if (kind === 'equipment' && await model.equipmentCommitment(id,c,true)) throw conflict('Equipamento comprometido com uma transferência. Conclua a operação logística antes de alterar a quantidade.');
                 if (kind === 'inputs' && qty < 0 && row.quantidade - row.quantidade_reservada < -qty) throw conflict('Saldo disponível insuficiente');
                 if (row.status === 'INDISPONIVEL' && actor.role !== 'ADMIN') throw conflict('Item indisponível');
                 await change(c,kind,id,qty);

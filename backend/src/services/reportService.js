@@ -9,8 +9,35 @@ const instant=value=>new Date(`${String(value).replace(' ','T')}Z`).toISOString(
 const paged=(rows,q,map)=>{const items=rows.slice(0,q.limit);return {items:items.map(map),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(items.at(-1).id):null}};};
 export function createReportService({model,identity,allowedRoutes=[]}){
     const routes=new Set(allowedRoutes);
-    const tx=(context,fn)=>identity.transaction(async c=>{const actor=await identity.activeActor(c,context);if(actor.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();return fn(c);},context);
+    const tx=(context,fn)=>identity.transaction(async c=>{const actor=await identity.activeActor(c,context);if(actor.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();return fn(c,actor);},context);
+    async function saveDestination(id,input,context){
+        return tx(context,async(c,actor)=>{
+            const {revision:expected,...details}=input;
+            let revision=1;
+            if(id){
+                const current=await model.destination(c,id,true);
+                if(!current)throw ApiError.naoEncontrado();
+                if(Number(current.revisao)!==expected)throw new ApiError('Esta destinação foi alterada. Reabra o cadastro para editar a versão atual.',409,null,'SOCIAL_DESTINATION_CONFLICT');
+                revision=expected+1;
+                await model.updateDestination(c,id,details);
+            }
+            const destinationId=id??await model.createDestination(c,details);
+            await model.recordDestination(c,destinationId,revision,actor.id_usuario,details);
+            await identity.audit(c,id?'SOCIAL_DESTINATION.UPDATED':'SOCIAL_DESTINATION.CREATED',destinationId,context);
+            return {id:destinationId,revision,...details};
+        });
+    }
     return {
+        destinations:(q,context)=>tx(context,async c=>paged(await model.destinations(c,q),q,row=>({...row,id:idString(row.id)}))),
+        createDestination:(input,context)=>saveDestination(null,input,context),
+        updateDestination:saveDestination,
+        destinationHistory:(id,q,context)=>tx(context,async c=>{
+            if(!await model.destination(c,id))throw ApiError.naoEncontrado();
+            return paged(await model.destinationHistory(c,id,q),q,row=>({
+                revision:row.id,actorId:idString(row.actorId),recordedAt:instant(row.registrado_em),
+                details:typeof row.dados==='string'?JSON.parse(row.dados):row.dados
+            }));
+        }),
         finance:(q,context)=>tx(context,async c=>{const [start,end]=window(q);const paid=await model.payments(c,q,start,end),refunded=await model.refunds(c,q,start,end),cost=q.scope==='SUBSCRIPTIONS'?null:await model.costs(c,start,end);
             const gross=units(paid.gross),refunds=units(refunded.refunded),captures=count(paid.captures),orders=count(paid.orders),charges=count(paid.charges),snapshotOrders=count(cost?.snapshot_orders);
             return {period:{from:q.from,to:q.to,timeZone:'UTC'},scope:q.scope,grossCaptured:amount(gross),confirmedRefunds:amount(refunds),netCashMovement:amount(gross-refunds),captureCount:String(captures),refundCount:String(count(refunded.refunds)),duplicateCaptureCandidates:String(captures-orders-charges),orderCount:String(orders),subscriptionChargeCount:String(charges),knownOrderCost:cost?amount(units(cost.known_cost)):null,orderSnapshotCount:String(snapshotOrders),missingOrderSnapshots:String(orders-snapshotOrders),missingCostLines:String(count(cost?.missing_cost_lines)),marginAlertLines:String(count(cost?.margin_alert_lines)),projectedMarginAlertLines:String(count(cost?.projected_margin_alert_lines)),netProfitAvailable:false,notes:['Capturas e estornos são contabilizados na data de cada evento; estorno de período anterior pode tornar o movimento líquido negativo.','Custo conhecido cobre apenas snapshots de pedidos, uma vez por pedido. Não inclui custos de assinatura, despesas operacionais, tributos ou folha.']};

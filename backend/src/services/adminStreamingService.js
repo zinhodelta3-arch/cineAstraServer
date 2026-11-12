@@ -12,9 +12,10 @@ export function createAdminStreamingService({ model, identity }) {
       const rows = await model[kind](c, q), page = rows.slice(0, q.limit);
       const items = page.map(row => kind === 'subscriptions' ? {
         id: idString(row.id_assinatura), userId: idString(row.id_usuario), customer: row.cliente,
-        planId: idString(row.id_plano), plan: row.plano, startsOn: day(row.inicio), endsOn: day(row.fim),
+        planId: idString(row.id_plano), plan: row.plano, startsOn: row.proposta_admin ? null : day(row.inicio), endsOn: day(row.fim),
         period: row.periodicidade, divisionMode: row.tipo_divisao, status: row.status,
-        autoRenew: Boolean(row.renovacao_automatica), contractPrice: row.preco_contratado == null ? null : String(row.preco_contratado)
+        autoRenew: Boolean(row.renovacao_automatica), contractPrice: row.preco_contratado == null ? null : String(row.preco_contratado),
+        administrativeDraft: Boolean(row.proposta_admin)
       } : {
         id: idString(row.id_acesso), userId: idString(row.id_usuario), customer: row.cliente,
         filmId: idString(row.id_filme), film: row.filme, itemId: idString(row.id_item),

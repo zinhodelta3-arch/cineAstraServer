@@ -117,7 +117,7 @@ export function createProfileService({ identity, config, providers }) {
                 await model.adminGuard(c);
                 if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
                 const id = await model.createUser(c, { ...input, hash, status: 'ATIVO' });
-                await audit(c, 'IDENTITY.STAFF_CREATED', id, context);
+                await audit(c, input.role === 'CLIENTE' ? 'IDENTITY.CLIENT_CREATED_BY_ADMIN' : 'IDENTITY.STAFF_CREATED', id, context);
                 return userDto(await model.user(id, c));
             }, context);
         },

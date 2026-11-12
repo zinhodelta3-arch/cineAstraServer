@@ -2,7 +2,20 @@ const rows=async(c,sql,args)=>(await c.execute(sql,args))[0];
 const one=async(c,sql,args)=>(await rows(c,sql,args))[0]??null;
 const scope={ALL:'',ORDERS:' AND p.id_pedido IS NOT NULL',SUBSCRIPTIONS:' AND p.id_cobranca IS NOT NULL'};
 const where=(scopeName)=>{if(!Object.hasOwn(scope,scopeName))throw new TypeError('Escopo inválido');return scope[scopeName];};
+const fields='instituicao AS institution,categoria AS category,descricao AS description,finalidade AS purpose,recurso AS resource,CAST(valor AS CHAR) AS amount,referencia_contabil AS accountingReference,revisao AS revision';
+const values=input=>[input.institution,input.category,input.description,input.purpose,input.resource,input.amount,input.accountingReference];
 export function createReportModel(){return {
+    destinations:(c,q)=>rows(c,`SELECT id_destinacao AS id,${fields} FROM destinacoes_sociais
+        ${q.cursor?'WHERE id_destinacao<?':''} ORDER BY id_destinacao DESC LIMIT ?`,[...(q.cursor?[q.cursor]:[]),q.limit+1]),
+    destination:(c,id,lock=false)=>one(c,`SELECT revisao FROM destinacoes_sociais WHERE id_destinacao=?${lock?' FOR UPDATE':''}`,[id]),
+    async createDestination(c,input){
+        const [result]=await c.execute('INSERT INTO destinacoes_sociais(instituicao,categoria,descricao,finalidade,recurso,valor,referencia_contabil) VALUES (?,?,?,?,?,?,?)',values(input));
+        return String(result.insertId);
+    },
+    updateDestination:(c,id,input)=>c.execute('UPDATE destinacoes_sociais SET instituicao=?,categoria=?,descricao=?,finalidade=?,recurso=?,valor=?,referencia_contabil=?,revisao=revisao+1 WHERE id_destinacao=?',[...values(input),id]),
+    recordDestination:(c,id,revision,adminId,input)=>c.execute('INSERT INTO destinacoes_sociais_historico(id_destinacao,revisao,id_admin,dados) VALUES (?,?,?,?)',[id,revision,adminId,JSON.stringify(input)]),
+    destinationHistory:(c,id,q)=>rows(c,`SELECT revisao AS id,id_admin AS actorId,dados,registrado_em
+        FROM destinacoes_sociais_historico WHERE id_destinacao=?${q.cursor?' AND revisao<?':''} ORDER BY revisao DESC LIMIT ?`,[id,...(q.cursor?[q.cursor]:[]),q.limit+1]),
     payments:(c,q,start,end)=>one(c,`SELECT COUNT(*) AS captures,COUNT(DISTINCT p.id_pedido) AS orders,COUNT(DISTINCT p.id_cobranca) AS charges,COALESCE(SUM(p.valor),0) AS gross FROM pagamentos p WHERE p.data_pagamento>=? AND p.data_pagamento<? AND p.status IN ('APROVADO','PARCIALMENTE_ESTORNADO','ESTORNADO')${where(q.scope)}`,[start,end]),
     refunds:(c,q,start,end)=>one(c,`SELECT COUNT(*) AS refunds,COALESCE(SUM(r.valor_confirmado),0) AS refunded FROM reembolso_solicitacoes r JOIN pagamentos p ON p.id_pagamento=r.id_pagamento WHERE r.respondido_em>=? AND r.respondido_em<? AND r.status='CONFIRMADA' AND r.valor_confirmado IS NOT NULL${where(q.scope)}`,[start,end]),
     costs:(c,start,end)=>one(c,`SELECT COUNT(DISTINCT pp.id_pedido) AS snapshot_orders,

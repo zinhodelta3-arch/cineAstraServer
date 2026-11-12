@@ -9,7 +9,9 @@ const itemKind = r => r.id_insumo ? 'input' : 'equipment';
 const itemId = r => r.id_insumo ?? r.id_equipamento;
 const requestDto = r => ({id_solicitacao:idString(r.id_solicitacao),id_usuario:idString(r.id_usuario),id_local:idString(r.id_local),id_sessao:r.id_sessao===null?null:idString(r.id_sessao),id_insumo:r.id_insumo===null?null:idString(r.id_insumo),id_equipamento:r.id_equipamento===null?null:idString(r.id_equipamento),quantidade:r.quantidade,status:r.status,observacao:r.observacao??null,data_solicitacao:r.data_solicitacao,
     nome_item:r.nome_item??null,distancia_km:r.distancia_km??null,tempo_estimado_min:r.tempo_estimado_min??null,
-    estoque_origem:r.estoque_origem??null});
+    estoque_origem:r.estoque_origem??null,status_supervisao:r.status_supervisao??null,
+    id_supervisor_decisao:r.id_supervisor_decisao==null?null:idString(r.id_supervisor_decisao),data_decisao_supervisao:r.data_decisao_supervisao??null});
+const forwarded = request => request.status_supervisao == null || request.status_supervisao === 'APROVADA';
 const logisticsRouteDto = row => ({
     id_rota:idString(row.id_rota),
     id_local_origem:idString(row.id_local_origem),
@@ -21,6 +23,7 @@ const logisticsRouteDto = row => ({
     status:row.status
 });
 const shipmentDto = r => ({id_logistica:idString(r.id_logistica),id_fornecedor:idString(r.id_fornecedor),id_local_origem:r.id_local_origem==null?null:idString(r.id_local_origem),id_local_destino:idString(r.id_local_destino),id_solicitacao:r.id_solicitacao==null?null:idString(r.id_solicitacao),id_insumo_origem:r.id_insumo_origem==null?null:idString(r.id_insumo_origem),id_equipamento_origem:r.id_equipamento_origem==null?null:idString(r.id_equipamento_origem),id_insumo_destino:r.id_insumo_destino==null?null:idString(r.id_insumo_destino),quantidade:r.quantidade,status:r.status,data_envio:r.data_envio??null,data_prevista:r.data_prevista??null,data_recebimento:r.data_recebimento??null,data_devolucao:r.data_devolucao??null,id_usuario_recebimento:r.id_usuario_recebimento==null?null:idString(r.id_usuario_recebimento),id_usuario_devolucao:r.id_usuario_devolucao==null?null:idString(r.id_usuario_devolucao),observacao:r.observacao??null,
+    id_transporte:r.id_transporte==null?null:idString(r.id_transporte),nome_transporte:r.nome_transporte??null,
     devolucao_disponivel:Number(r.devolucao_disponivel)===1});
 const page = (rows,q,dto,key) => { const items=rows.slice(0,q.limit);return {items:items.map(dto),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(items.at(-1)[key]):null}}; };
 const inputLinkDto = row => ({
@@ -64,7 +67,10 @@ export function createSupplyService({model,identity,notifications}) {
     }
     async function visibleRequest(c,a,r) {
         if(a.role==='ADMIN')return;
-        if(a.role==='FORNECEDOR') { const item=found(await model.item(itemKind(r),itemId(r),c));await supplier(c,a,item.id_fornecedor);return; }
+        if(a.role==='FORNECEDOR') {
+            if(!forwarded(r))throw ApiError.naoEncontrado();
+            const item=found(await model.item(itemKind(r),itemId(r),c));await supplier(c,a,item.id_fornecedor);return;
+        }
         await staff(c,a,r.id_sessao,r.id_local,true);
     }
     const tx=(context,work)=>identity.transaction(async c=>work(c,await actor(c,context)),context);
@@ -155,53 +161,96 @@ export function createSupplyService({model,identity,notifications}) {
                 throw conflict('Equipamento exige transferência integral e livre');
             }
             await grant(c,item.id_fornecedor,item.id_local);await grant(c,item.id_fornecedor,input.localId);
-            const id=await model.createRequest(c,{...input,actorId:a.id});await identity.audit(c,'SUPPLY.REQUESTED',id,context);return requestDto(found(await model.request(id,c)));
+            const id=await model.createRequest(c,{...input,actorId:a.id,statusSupervisao:a.role==='COLABORADOR'?'PENDENTE':null});
+            await identity.audit(c,'SUPPLY.REQUESTED',id,context);return requestDto(found(await model.request(id,c)));
+        }); },
+        async review(id,status,context) { return tx(context,async(c,a)=>{
+            if(a.role!=='SUPERVISOR')throw ApiError.acessoNegado();
+            const request=found(await model.request(id,c,true));
+            await staff(c,a,request.id_sessao,request.id_local,true);
+            if(request.status_supervisao!=='PENDENTE'||request.status!=='PENDENTE')throw conflict('Solicitação já decidida ou fora da fila de supervisão');
+            if(!['APROVADA','RECUSADA'].includes(status))throw ApiError.validacao('Decisão inválida');
+            await model.setSupervisorReview(c,id,status,a.id);
+            await notifications?.emit(c,{
+                recipientId:idString(request.id_usuario),title:'Decisão sobre reposição',
+                message:status==='APROVADA'?`A solicitação #${id} foi aprovada e encaminhada ao fornecedor.`:`A solicitação #${id} foi rejeitada pela supervisão.`,
+                type:'SUPPLY_SUPERVISOR_REVIEW',dedupeKey:`supply-supervisor-review:${id}`
+            });
+            await identity.audit(c,`SUPPLY.SUPERVISION_${status}`,id,context);
+            return requestDto(found(await model.request(id,c)));
         }); },
         async decide(id,status,context) { return tx(context,async(c,a)=>{
             if(!['ADMIN','FORNECEDOR'].includes(a.role))throw ApiError.acessoNegado();
-            const r=found(await model.request(id,c,true)),item=found(await model.item(itemKind(r),itemId(r),c,true));await supplier(c,a,item.id_fornecedor);
+            const r=found(await model.request(id,c,true));
+            if(!forwarded(r))throw ApiError.naoEncontrado();
+            const item=found(await model.item(itemKind(r),itemId(r),c,true));await supplier(c,a,item.id_fornecedor);
             if(r.status!== 'PENDENTE')throw conflict('Solicitação já decidida');
             await grant(c,item.id_fornecedor,item.id_local);await grant(c,item.id_fornecedor,r.id_local);
             if(status==='APROVADA'){
                 if(item.status!=='DISPONIVEL'||item.quantidade-(item.quantidade_reservada??0)<r.quantidade)throw conflict('Saldo insuficiente');
                 if(itemKind(r)==='equipment'&&(item.quantidade!==r.quantidade||await model.equipmentInTransit(itemId(r),c)))throw conflict('Equipamento exige transferência integral e livre');
                 if(await model.shipmentByRequest(id,c))throw conflict('Envio já vinculado');
-                await model.createShipment(c,{supplierId:item.id_fornecedor,originId:item.id_local,destinationId:r.id_local,requestId:id,inputId:r.id_insumo,equipmentId:r.id_equipamento,quantity:r.quantidade});
+                const shipmentId=await model.createShipment(c,{supplierId:item.id_fornecedor,originId:item.id_local,destinationId:r.id_local,requestId:id,inputId:r.id_insumo,equipmentId:r.id_equipamento,quantity:r.quantidade});
+                await model.shipmentEvent(c,shipmentId,a.id,'STATUS','PENDENTE');
             }
             await model.setRequest(c,id,status);await identity.audit(c,`SUPPLY.${status}`,id,context);return requestDto(found(await model.request(id,c)));
         }); },
         async shipments(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(a.role==='SUPERVISOR'){const location=await model.supervisorLocation(a.id,c);if(!location||q.localId&&!same(q.localId,location.id_local))throw ApiError.acessoNegado();q.localId=idString(location.id_local);if(q.sessionId)await staff(c,a,q.sessionId,q.localId,true);}if(a.role==='COLABORADOR'){if(!q.localId||!q.sessionId)throw ApiError.validacao('localId e sessionId obrigatórios');await staff(c,a,q.sessionId,q.localId,true);}return page(await model.listShipments(q,c),q,shipmentDto,'id_logistica');}); },
         async shipment(id,context) { return tx(context,async(c,a)=>{const r=found(await model.shipment(id,c));await supplierOrStaff(c,a,r);return shipmentDto(r);}); },
+        async history(id,q,context) { return tx(context,async(c,a)=>{
+            const shipment=found(await model.shipment(id,c));
+            await supplierOrStaff(c,a,shipment);
+            return page(await model.shipmentEvents(c,id,q),q,event=>({
+                ...event,id_evento:idString(event.id_evento),id_usuario:idString(event.id_usuario)
+            }),'id_evento');
+        }); },
+        async reportIncident(id,input,context) { return tx(context,async(c,a)=>{
+            const shipment=found(await model.shipment(id,c,true));
+            await supplier(c,a,shipment.id_fornecedor);
+            if(!['ENVIADO','EM_TRANSITO'].includes(shipment.status))throw conflict('Registre ocorrências em entregas enviadas ou em trânsito.');
+            await model.shipmentEvent(c,id,a.id,input.type,shipment.status,input.description);
+            await identity.audit(c,'LOGISTICS.INCIDENT_RECORDED',id,context);
+            return shipmentDto(found(await model.shipment(id,c)));
+        }); },
         async returnEquipment(id,context) { return tx(context,async(c,a)=>{
             const initial=found(await model.shipment(id,c));
             if(a.role==='FORNECEDOR')await supplier(c,a,initial.id_fornecedor);
             const request=found(await model.request(initial.id_solicitacao,c,true));
+            if(!initial.id_equipamento_origem)throw conflict('Devolução exige equipamento recebido');
+            const equipment=found(await model.item('equipment',initial.id_equipamento_origem,c,true));
             const r=found(await model.shipment(id,c,true));
             if(!r.id_equipamento_origem||r.status!=='RECEBIDO'||request.status!=='FINALIZADA')throw conflict('Devolução exige equipamento recebido');
             const session=found(await model.session(request.id_sessao,c));
             if(session.status!=='ENCERRADA')throw conflict('Sessão ainda não encerrada');
             if(a.role!=='ADMIN'&&a.role!=='FORNECEDOR')await staff(c,a,request.id_sessao,request.id_local,true);
-            const equipment=found(await model.item('equipment',r.id_equipamento_origem,c,true));
             if(!same(equipment.id_fornecedor,r.id_fornecedor)||!same(equipment.id_local,r.id_local_destino)||equipment.quantidade!==r.quantidade)throw conflict('Equipamento ou local divergente');
             await grant(c,r.id_fornecedor,r.id_local_origem);await grant(c,r.id_fornecedor,r.id_local_destino);
             await model.changeEquipment(c,r.id_equipamento_origem,r.id_local_origem);
             await model.movement(c,{equipmentId:r.id_equipamento_origem,shipmentId:id,actorId:a.id,type:'DEVOLUCAO',quantity:r.quantidade,reason:`DEVOLUCAO:${r.id_local_destino}->${r.id_local_origem}`});
-            await model.setReturned(c,id,a.id);await identity.audit(c,'LOGISTICS.RETURNED',id,context);
+            await model.setReturned(c,id,a.id);
+            await model.shipmentEvent(c,id,a.id,'STATUS','DEVOLVIDO');
+            await identity.audit(c,'LOGISTICS.RETURNED',id,context);
             return shipmentDto(found(await model.shipment(id,c)));
         }); },
-        async transitionShipment(id,action,context) { return tx(context,async(c,a)=>{
-            const initial=found(await model.shipment(id,c));const request=found(await model.request(initial.id_solicitacao,c,true));const r=found(await model.shipment(id,c,true));
-            if(request.status!=='APROVADA'||!same(r.id_solicitacao,request.id_solicitacao))throw conflict('Solicitação incompatível');
+        async transitionShipment(id,action,context,input) { return tx(context,async(c,a)=>{
+            const initial=found(await model.shipment(id,c));
+            const request=found(await model.request(initial.id_solicitacao,c,true));
             const kind=itemKind(request),source=found(await model.item(kind,itemId(request),c,true));
+            const r=found(await model.shipment(id,c,true));
+            if(request.status!=='APROVADA'||!same(r.id_solicitacao,request.id_solicitacao))throw conflict('Solicitação incompatível');
             if(!same(source.id_fornecedor,r.id_fornecedor)||!same(source.id_local,r.id_local_origem)||!same(r.id_local_destino,request.id_local)||r.quantidade!==request.quantidade)throw conflict('Origem, destino ou item divergente');
             await grant(c,r.id_fornecedor,r.id_local_origem);await grant(c,r.id_fornecedor,r.id_local_destino);
             if(action==='send'){
                 await supplier(c,a,r.id_fornecedor);if(r.status!=='PENDENTE')throw conflict('Envio já iniciado');
+                if(!input?.transportId)throw ApiError.validacao('Selecione um transporte cadastrado.');
+                const transport=await model.transport(c,input.transportId,r.id_fornecedor);
+                if(transport?.status!=='ATIVO')throw conflict('Selecione um transporte ativo do fornecedor.');
+                if(await model.transportInUse(c,input.transportId))throw conflict('Transporte ocupado por outra entrega.');
                 if(source.status!=='DISPONIVEL'||source.quantidade-(source.quantidade_reservada??0)<r.quantidade)throw conflict('Saldo insuficiente');
                 if(kind==='equipment'&&source.quantidade!==r.quantidade)throw conflict('Transferência parcial de equipamento indisponível');
                 if(kind==='input'){const changed=await model.changeInput(c,itemId(request),-r.quantidade);if(changed[0].affectedRows!==1)throw conflict('Saldo insuficiente');}
                 await model.movement(c,{inputId:r.id_insumo_origem,equipmentId:r.id_equipamento_origem,shipmentId:id,actorId:a.id,type:'SAIDA',quantity:-r.quantidade,reason:`ENVIO:${id}`});
-                await model.setShipment(c,id,'ENVIADO');
+                await model.setShipment(c,id,'ENVIADO',null,input.transportId);
                 await notifications?.emit(c,{
                     recipientId:idString(request.id_usuario),
                     title:'Material enviado',
@@ -237,7 +286,9 @@ export function createSupplyService({model,identity,notifications}) {
                 await supplier(c,a,r.id_fornecedor);if(r.status!=='PENDENTE')throw conflict('Somente envio pendente pode ser cancelado');
                 await model.setShipment(c,id,'CANCELADO');await model.setRequest(c,request.id_solicitacao,'RECUSADA');
             }
-            await identity.audit(c,`LOGISTICS.${action.toUpperCase()}`,id,context);return shipmentDto(found(await model.shipment(id,c)));
+            const shipment=found(await model.shipment(id,c));
+            await model.shipmentEvent(c,id,a.id,'STATUS',shipment.status);
+            await identity.audit(c,`LOGISTICS.${action.toUpperCase()}`,id,context);return shipmentDto(shipment);
         }); }
     };
     async function supplierOrStaff(c,a,r){if(a.role==='ADMIN')return;if(a.role==='FORNECEDOR')return supplier(c,a,r.id_fornecedor);const req=found(await model.request(r.id_solicitacao,c));return staff(c,a,req.id_sessao,req.id_local,true);}

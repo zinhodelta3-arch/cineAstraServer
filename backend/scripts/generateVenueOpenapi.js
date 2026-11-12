@@ -19,6 +19,12 @@ const examples = {
     room: { id_sala: '2', id_local: '1', nome: 'Sala 1', capacidade: 2, tipo: '2D', status: 'INATIVA' },
     seat: { id_assento: '3', id_sala: '2', fileira: 'A', numero: 1, tipo: 'PCD', status: 'ATIVA', acessivel: true }
 };
+Object.assign(properties.local, {
+    tipo_local: { type:'string', enum:['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO'], default:'CINEMA' },
+    lotacao_eventos: { type:'integer', minimum:1, maximum:100000, nullable:true },
+    acesso_eventos: { type:'string', enum:['NUMERADO','LIVRE',null], nullable:true }
+});
+Object.assign(examples.local, { tipo_local:'CINEMA', lotacao_eventos:null, acesso_eventos:null });
 const object = (props, required = Object.keys(props)) => ({ type: 'object', additionalProperties: false, properties: props, required });
 for (const kind of ['local', 'room', 'seat']) {
     const title = kind[0].toUpperCase() + kind.slice(1);

@@ -1,5 +1,6 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {orderOperations} from '../src/routes/orderRoutes.js';
+import {documentAdminSales} from './adminSalesOpenapi.js';
 const file=new URL('../src/docs/openapi.json',import.meta.url),spec=JSON.parse(await readFile(file,'utf8'));
 spec.info.version='1.21.0';
 spec.info.description=spec.info.description.replace('Tarefa32: ocupação de assentos é serviço interno transacional; ainda não há rota pública de reserva ou disponibilidade.','Tarefa34: checkout transacional com TTL de 15 minutos, pagamento separado e aprovação autenticada; tickets seguem na tarefa35.');
@@ -25,6 +26,7 @@ spec.components.schemas.CheckoutOrder=obj({orderId:id,status:{type:'string',enum
 const checkoutResponse={description:'Pedido reservado por 15 minutos; pague usando POST /api/payments',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data:ref('CheckoutOrder'),requestId:{type:'string',format:'uuid'}}),example:{success:true,data:{orderId:'123',status:'AGUARDANDO_PAGAMENTO',total:'25.00',currency:'BRL',expiresAt:'2026-10-10T15:15:00.000Z',paymentPath:'/api/payments'},requestId:'00000000-0000-4000-8000-000000000001'}}}};
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for(const r of orderOperations){
+    if(r.action==='draft')continue;
     if(r.action==='list'){
         const summary=obj({orderId:id,financialStatus:{type:'string',enum:['EM_ANDAMENTO','AGUARDANDO_PAGAMENTO','PAGO','CANCELADO','FINALIZADO']},total:money,currency:kind('BRL'),createdAt:{type:'string',format:'date-time',nullable:true}});
         const page=obj({items:{type:'array',items:summary},pagination:obj({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...id,nullable:true}})});
@@ -60,5 +62,6 @@ for(const r of orderOperations){
 }
 for(const path of ['/api/orders/{id}'])delete spec.paths[path];
 for(const name of ['Order','OrderItem'])delete spec.components.schemas[name];
+documentAdminSales(spec);
 await writeFile(file,`${JSON.stringify(spec,null,2)}\n`);
 console.info(`Carrinho: ${orderOperations.length} operação documentada.`);

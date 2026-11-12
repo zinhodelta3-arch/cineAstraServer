@@ -8,7 +8,10 @@ const roomStatus = z.enum(['ATIVA', 'MANUTENCAO', 'INATIVA']);
 const seatStatus = z.enum(['ATIVA', 'INATIVA']);
 const roomType = z.enum(['2D', '3D', '4DX', 'VIP', 'IMAX']);
 const seatType = z.enum(['COMUM', 'PCD', 'OBESO', 'IDOSO', 'CASAL']);
+const venueType = z.enum(['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO']);
 const localFields = {
+    tipo_local: venueType.optional(), lotacao_eventos: z.number().int().min(1).max(100000).nullable().optional(),
+    acesso_eventos: z.enum(['NUMERADO','LIVRE']).nullable().optional(),
     nome: limited(150), cidade: limited(100), estado: z.string().regex(/^[A-Z]{2}$/),
     cep: z.string().trim().max(10).nullable().optional(), logradouro: limited(150).nullable().optional(),
     numero: limited(20).nullable().optional(), complemento: limited(100).nullable().optional(),

@@ -3,7 +3,7 @@ import { unitReadLocation } from './unitReadScope.js';
 import { idString } from '../utils/dto.js';
 
 const fields = {
-    local: ['nome', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'telefone', 'status'],
+    local: ['nome', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'telefone', 'status','tipo_local','lotacao_eventos','acesso_eventos'],
     room: ['id_local', 'nome', 'capacidade', 'tipo', 'status'],
     seat: ['id_sala', 'fileira', 'numero', 'tipo', 'status']
 };
@@ -79,7 +79,7 @@ export function createVenueService({ model, identity }) {
                 const previous = kind === 'local' ? place : kind === 'room' ? hall : chair;
                 const id = kind === 'local' ? ids.localId : kind === 'room' ? ids.roomId : ids.seatId;
                 if (kind === 'local') {
-                    if (id && await model.localSessions(c, id) && Object.keys(input).some(k => k !== 'telefone')) throw conflict('Local com sessões vinculadas não admite alteração estrutural');
+                    if (id && Object.keys(input).some(k => !['telefone','tipo_local','lotacao_eventos','acesso_eventos'].includes(k)) && await model.localSessions(c, id)) throw conflict('Local com sessões vinculadas não admite alteração estrutural');
                     if (id && input.status && input.status !== 'ATIVO' && total(await model.activeRooms(c, id)) > 0) throw conflict('Desative as salas antes do local');
                 } else if (kind === 'room') {
                     if (id) await requireMutableRoom(c, id);
@@ -87,13 +87,17 @@ export function createVenueService({ model, identity }) {
                     if (next.status === 'ATIVA') {
                         if (place.status !== 'ATIVO') throw conflict('Local inativo ou em manutenção');
                         if (!id) throw conflict('Cadastre os assentos antes de ativar a sala');
-                        if (total(await model.activeSeats(c, id)) !== next.capacidade) throw conflict('Capacidade deve corresponder aos assentos ativos');
+                        if (total(await model.activeSeats(c, id)) !== next.capacidade) {
+                            throw new ApiError('A capacidade deve corresponder à quantidade de assentos ativos.', 409, null, 'ROOM_CAPACITY_MISMATCH');
+                        }
                     }
                 } else {
                     await requireMutableRoom(c, ids.roomId);
                     const nextStatus = input.status ?? previous?.status ?? 'ATIVA';
                     if (hall.status === 'ATIVA' && id && nextStatus !== previous.status) throw conflict('Desative a sala antes de alterar assentos ativos');
-                    if (nextStatus === 'ATIVA' && (!id || previous.status !== 'ATIVA') && total(await model.activeSeats(c, ids.roomId)) >= hall.capacidade) throw conflict('Capacidade da sala excedida');
+                    if (nextStatus === 'ATIVA' && (!id || previous.status !== 'ATIVA') && total(await model.activeSeats(c, ids.roomId)) >= hall.capacidade) {
+                        throw new ApiError('A sala atingiu o limite de assentos ativos.', 409, null, 'ROOM_CAPACITY_REACHED');
+                    }
                 }
                 const parentId = kind === 'room' ? ids.localId : kind === 'seat' ? ids.roomId : null;
                 const key = id ? (await model.update(kind, c, id, input), id) : await model.insert(kind, c, parentId, input);

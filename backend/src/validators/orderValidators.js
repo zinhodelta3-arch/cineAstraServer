@@ -8,6 +8,7 @@ const combo=z.object({kind:z.literal('COMBO'),id,quantity,sessionId:id.optional(
 const streaming=z.object({kind:z.literal('STREAMING'),id,mode:z.enum(['ALUGUEL','COMPRA']),quantity:z.literal(1)}).strict();
 export const orderBody=z.object({localId:id.optional(),lines:z.array(z.discriminatedUnion('kind',[seat,input,combo,streaming])).min(1).max(50),couponCode:z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{1,50}$/).optional(),acceptance:z.object({offerHash:z.string().regex(/^[a-f0-9]{64}$/),accepted:z.literal(true)}).strict().optional()}).strict();
 export const orderCancelBody=z.object({}).strict().default({});
+export const checkoutBody=orderBody.extend({draftOrderId:id.optional()}).strict();
 
 const orderListQuery=z.object({limit:z.string().regex(/^[1-9]\d{0,2}$/).transform(Number).pipe(z.number().max(100)).default(20),cursor:id.optional()}).strict();
 export function orderPage(req,res,next){

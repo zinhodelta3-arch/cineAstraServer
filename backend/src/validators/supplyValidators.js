@@ -10,7 +10,12 @@ const routeFields = {
 };
 export const supplySchemas={
     request:z.object({localId:catalogId,sessionId:catalogId.optional(),inputId:catalogId.optional(),equipmentId:catalogId.optional(),quantity:z.number().int().min(1).max(2147483647),note}).strict().refine(v=>Boolean(v.inputId)!==Boolean(v.equipmentId)).refine(v=>!v.equipmentId||Boolean(v.sessionId)),
-    requestsQuery:z.object({...paging,sessionId:catalogId.optional()}).strict(),shipmentsQuery:z.object({...paging,sessionId:catalogId.optional()}).strict(),stockQuery:z.object({localId:catalogId,sessionId:catalogId.optional()}).strict(),
+    requestsQuery:z.object({...paging,sessionId:catalogId.optional(),status:z.enum(['PENDENTE','APROVADA','RECUSADA','FINALIZADA']).optional()}).strict(),
+    supervisorReview:z.object({decision:z.enum(['APROVADA','RECUSADA'])}).strict(),
+    dispatch:z.object({transportId:catalogId}).strict(),
+    incident:z.object({type:z.enum(['ACIDENTE','EXTRAVIO','PERDA']),description:z.string().trim().min(1).max(2000)}).strict(),
+    shipmentHistory:z.object({limit:paging.limit,cursor:z.string().regex(/^[1-9]\d{0,19}$/).refine(v=>BigInt(v)<=18446744073709551615n).optional()}).strict(),
+    shipmentsQuery:z.object({...paging,sessionId:catalogId.optional()}).strict(),stockQuery:z.object({localId:catalogId,sessionId:catalogId.optional()}).strict(),
     sourcesQuery:z.object({...paging,kind:z.enum(['input','equipment']).default('input')}).strict(),
     logisticsRoutesQuery:z.object({limit:paging.limit,cursor:paging.cursor}).strict(),
     inputLink:z.object({sourceId:catalogId,targetId:catalogId}).strict().refine(value => value.sourceId !== value.targetId),

@@ -2,6 +2,7 @@ import { success } from '../utils/dto.js';
 const context = req => ({ actor: req.usuario, signal: req.signal, requestId: req.res.locals.requestId });
 export function createFilmGalleryController(service) {
     return {
+        banners:async(req,res)=>success(res,await service.banners(req.params.id,req.bannerContext)),
         list: admin => async (req, res) => success(res, await service.list(req.params.id, req.galleryQuery, admin)),
         async create(req, res) {
             const image = await service.create(req.params.id, req.input, context(req));

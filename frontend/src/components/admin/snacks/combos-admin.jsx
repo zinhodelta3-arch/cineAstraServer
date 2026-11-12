@@ -14,14 +14,27 @@ function details(form) {
   const name = String(form.get("nome") ?? "").trim();
   const description = String(form.get("descricao") ?? "").trim();
   const price = Number(form.get("preco"));
+  const useRule = form.has("usePricingRule");
   const cost = String(form.get("custo_operacional") ?? "").trim();
-  if (!name || name.length > 150 || !Number.isFinite(price) || price < 0 || price > 99999999.99) throw new Error("Confira o nome e o preço do combo.");
+  const eventId = String(form.get("eventId") ?? "").trim();
+  const sessionId = String(form.get("eventSessionId") ?? "").trim();
+  const totalLimit = Number(form.get("eventTotalLimit"));
+  const customerLimit = Number(form.get("eventCustomerLimit"));
+  const hasEvent = Boolean(eventId || sessionId || totalLimit || customerLimit);
+  if (hasEvent && (!/^[1-9]\d{0,9}$/.test(eventId) || !/^[1-9]\d{0,9}$/.test(sessionId) ||
+    !Number.isInteger(totalLimit) || totalLimit < 1 || totalLimit > 100000 ||
+    !Number.isInteger(customerLimit) || customerLimit < 1 || customerLimit > 100 || customerLimit > totalLimit)) {
+    throw new Error("Confira os IDs e os limites da oferta temática.");
+  }
+  if (!name || name.length > 150 || (!useRule && (!Number.isFinite(price) || price < 0 || price > 99999999.99))) throw new Error("Confira o nome e o preço do combo.");
   if (!cost || !Number.isFinite(Number(cost)) || Number(cost) < 0 || Number(cost) > 99999999.99) throw new Error("Informe o custo operacional. Use R$ 0,00 quando não houver custo adicional.");
-  return { nome: name, descricao: description || null, preco: price.toFixed(2), custo_operacional: Number(cost).toFixed(2) };
+  return { nome: name, descricao: description || null, ...(useRule ? { priceMode: "RULE" } : { preco: price.toFixed(2) }), custo_operacional: Number(cost).toFixed(2),
+    event: hasEvent ? { eventId, sessionId, totalLimit, customerLimit } : null };
 }
 
 export default function CombosAdmin() {
   const [query, setQuery] = useState("");
+  const [usePricingRule, setUsePricingRule] = useState(false);
   const [localId, setLocalId] = useState("");
   const [active, setActive] = useState("Todos");
   const [formLocalId, setFormLocalId] = useState("");
@@ -52,7 +65,7 @@ export default function CombosAdmin() {
     return () => { active = false; };
   }, [actions.dialog?.type, item?.id_combo, retry]);
 
-  function open(type, row = null) { setComposition([]); setCompositionError(""); setInputChoice(""); setQuantity("1"); setFormLocalId(row?.id_local ?? ""); actions.open(type, row); }
+  function open(type, row = null) { setUsePricingRule(false); setComposition([]); setCompositionError(""); setInputChoice(""); setQuantity("1"); setFormLocalId(row?.id_local ?? ""); actions.open(type, row); }
   function addPart() {
     const count = Number(quantity);
     const input = inputs.items.find((row) => row.id_insumo === inputChoice);
@@ -72,7 +85,8 @@ export default function CombosAdmin() {
     try { body = details(new FormData(event.currentTarget)); if (!item) { if (!formLocalId) throw new Error("Selecione um cinema."); body = { ...body, localId: formLocalId, items: validateParts() }; } }
     catch (cause) { actions.setError(cause.message); return; }
     if (item) {
-      body = Object.fromEntries(Object.entries(body).filter(([key, value]) => value !== item[key]));
+      body = Object.fromEntries(Object.entries(body).filter(([key, value]) => key === "event"
+        ? JSON.stringify(value) !== JSON.stringify(item.event ?? null) : value !== item[key]));
       if (!Object.keys(body).length) { actions.setError("Nenhuma alteração para salvar."); return; }
     }
     actions.run(() => snackRequest(item ? `combos/${item.id_combo}` : "combos", { method: item ? "PATCH" : "POST", body }), item ? "Combo atualizado." : "Combo cadastrado.");
@@ -106,7 +120,17 @@ export default function CombosAdmin() {
       {actions.dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>Use insumos disponíveis do mesmo cinema. Depois do cadastro, a composição pode ser editada separadamente.</DialogDescription><form key={item?.id_combo ?? "new"} className={styles.form} onSubmit={save}>
         {!item && <label className={styles.wide}>Cinema<select value={formLocalId} onChange={(event) => { setFormLocalId(event.target.value); setComposition([]); setInputChoice(""); }} required><option value="">Selecione</option>{locals.items.filter((local) => local.status === "ATIVO").map((local) => <option key={local.id_local} value={local.id_local}>{local.nome}</option>)}</select></label>}
         {item && <p className={`${styles.hint} ${styles.wide}`}>{localName(item.id_local)}. O cinema do combo não pode ser alterado.</p>}
-        <label className={styles.wide}>Nome<input name="nome" required maxLength={150} defaultValue={item?.nome ?? ""} /></label><label>Preço (R$)<input name="preco" type="number" min="0" max="99999999.99" step="0.01" required defaultValue={item?.preco ?? ""} /></label><label className={styles.wide}>Descrição<textarea name="descricao" maxLength={10000} defaultValue={item?.descricao ?? ""} /></label>
+        <fieldset className={`${styles.form} ${styles.wide}`}>
+          <legend className="font-semibold">Oferta temática</legend>
+          <label>ID da experiência<input name="eventId" inputMode="numeric" maxLength={10} defaultValue={item?.event?.eventId ?? ""} /></label>
+          <label>ID da sessão<input name="eventSessionId" inputMode="numeric" maxLength={10} defaultValue={item?.event?.sessionId ?? ""} /></label>
+          <label>Unidades no lote<input name="eventTotalLimit" type="number" min="1" max="100000" step="1" defaultValue={item?.event?.totalLimit ?? ""} /></label>
+          <label>Limite por cliente<input name="eventCustomerLimit" type="number" min="1" max="100" step="1" defaultValue={item?.event?.customerLimit ?? ""} /></label>
+          <p className={`${styles.hint} ${styles.wide}`}>Use uma experiência e uma sessão do mesmo local. Deixe os quatro campos vazios para um combo do catálogo geral.</p>
+        </fieldset>
+        <label className={styles.wide}>Nome<input name="nome" required maxLength={150} defaultValue={item?.nome ?? ""} /></label>{!item && <div className={`${styles.checkboxList} ${styles.wide}`}><label><input type="checkbox" name="usePricingRule" checked={usePricingRule} onChange={event => setUsePricingRule(event.target.checked)} /> Calcular preço pela regra cadastrada</label></div>}
+        {!usePricingRule && <label>Preço (R$)<input name="preco" type="number" min="0" max="99999999.99" step="0.01" required defaultValue={item?.preco ?? ""} /></label>}
+        {usePricingRule && <p className={`${styles.hint} ${styles.wide}`}>O preço será calculado com os custos informados e o markup da categoria, no momento de salvar.</p>}<label className={styles.wide}>Descrição<textarea name="descricao" maxLength={10000} defaultValue={item?.descricao ?? ""} /></label>
         <label>Custo operacional (R$)<input name="custo_operacional" type="number" min="0" max="99999999.99" step="0.01" required defaultValue={item?.custo_operacional ?? ""} /></label>
         <p className={`${styles.hint} ${styles.wide}`}>Informe 0,00 quando o combo não tiver custo adicional além dos insumos.</p>
         {!item && compositionEditor()}{actions.error && <p className={`${styles.error} ${styles.wide}`} role="alert">{actions.error}</p>}

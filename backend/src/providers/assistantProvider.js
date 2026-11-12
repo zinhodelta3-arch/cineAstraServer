@@ -1,3 +1,5 @@
+import {normalizeQuestion as normalizeForMatch} from '../services/assistantKnowledge.js';
+
 export const unavailableAssistantProvider={available:false,async answer(){throw new Error('ASSISTANT_PROVIDER_UNAVAILABLE');}};
 
 const noAnswer = 'Posso ajudar com dúvidas sobre o CineAstra. Se a informação que você procura não estiver nas perguntas frequentes, entre em contato com o suporte.';
@@ -21,6 +23,18 @@ const navigationFaq = [
     {
         question: 'Quais formas de pagamento são aceitas?',
         answer: 'Na etapa de pagamento, você pode escolher Pix, cartão de débito ou cartão de crédito.'
+    },
+    {
+        question: 'Quais planos incluem streaming?',
+        answer: 'Abra Planos e procure “Acesso ao catálogo de streaming” nos benefícios publicados. A assinatura precisa estar ativa para liberar o catálogo.'
+    },
+    {
+        question: 'Onde acompanho minhas compras?',
+        answer: 'Entre com sua conta de cliente e abra Minhas compras para acompanhar o pedido. Os ingressos ficam disponíveis após a confirmação do pagamento.'
+    },
+    {
+        question: 'Como falar com o suporte?',
+        answer: 'Abra a página Suporte. Entre na sua conta de cliente para abrir um chamado e acompanhar as respostas.'
     }
 ];
 const instructions = [
@@ -62,7 +76,7 @@ function normalizeQuestion(question) {
 }
 
 export function createOpenAiAssistantProvider({ apiKey, model, loadFaq, loadNowPlaying, answerShowtimes, timeoutMs }) {
-    if (!apiKey || !model) return unavailableAssistantProvider;
+    const hasClassifier = Boolean(apiKey && model);
 
     async function answerFrom(item) {
         if (item?.question !== nowPlayingQuestion) return item?.answer.trim() || noAnswer;
@@ -82,7 +96,7 @@ export function createOpenAiAssistantProvider({ apiKey, model, loadFaq, loadNowP
 
     return {
         available: true,
-        async answer({ message }) {
+        async answer({ message, signal }) {
             const question = normalizeQuestion(message);
             if (internalRequest.test(question)) {
                 return 'Informações internas do sistema são restritas. Posso ajudar com filmes, sessões, ingressos e pagamentos.';
@@ -92,30 +106,42 @@ export function createOpenAiAssistantProvider({ apiKey, model, loadFaq, loadNowP
             }
             const showtimes = await answerShowtimes?.(question);
             if (showtimes) return showtimes;
-            const faq = faqExcerpt([...navigationFaq, ...(await loadFaq() ?? [])]);
-            const known = faq.find(item => normalizeQuestion(item.question) === question);
+            let published=[];
+            try { published=(await loadFaq?.())??[]; } catch { /* As orientações de navegação permanecem disponíveis. */ }
+            const faq = faqExcerpt([...navigationFaq, ...(Array.isArray(published)?published:[])]);
+            const normalized=normalizeForMatch(question);
+            const known = faq.find(item => normalizeForMatch(item.question) === normalized);
             if (known?.answer.trim()) return answerFrom(known);
+            if (/^(?:o que (?:esta|tem) em cartaz|filmes em cartaz|quais filmes estao em cartaz)$/.test(normalized)) {
+                return answerFrom(navigationFaq[0]);
+            }
             const title = question.match(titleRequest)?.[1];
             if (title && !/\b(?:filmes?|sessões?|ingressos?|pagamentos?|streaming)\b/.test(title)) return findTitle(title);
 
-            const response = await fetch('https://api.openai.com/v1/responses', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                redirect: 'error',
-                signal: AbortSignal.timeout(timeoutMs),
-                body: JSON.stringify({
-                    model, instructions, input: JSON.stringify({ faq, question: message }),
-                    store: false, max_output_tokens: 100, text: { format }
-                })
-            });
-            if (!response.ok) throw new Error('ASSISTANT_PROVIDER_UNAVAILABLE');
-            const result = await response.json();
-            if (result.status !== 'completed') throw new Error('ASSISTANT_INCOMPLETE_RESPONSE');
-            const messageOutput = result.output?.find(item => item.type === 'message');
-            const output = messageOutput?.content?.find(item => item.type === 'output_text');
-            if (!output) return noAnswer;
-            const index = JSON.parse(output.text)?.faqIndex;
-            return Number.isInteger(index) ? answerFrom(faq[index]) : noAnswer;
+            if(!hasClassifier)return {message:noAnswer,available:false};
+            try {
+                const timeout=AbortSignal.timeout(timeoutMs);
+                const response = await fetch('https://api.openai.com/v1/responses', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                    redirect: 'error',
+                    signal: signal ? AbortSignal.any([signal,timeout]) : timeout,
+                    body: JSON.stringify({
+                        model, instructions, input: JSON.stringify({ faq:faq.map(item=>item.question), question }),
+                        store: false, max_output_tokens: 100, text: { format }
+                    })
+                });
+                if (!response.ok) throw new Error('ASSISTANT_PROVIDER_UNAVAILABLE');
+                const result = await response.json();
+                if (result.status !== 'completed') throw new Error('ASSISTANT_INCOMPLETE_RESPONSE');
+                const messageOutput = result.output?.find(item => item.type === 'message');
+                const output = messageOutput?.content?.find(item => item.type === 'output_text');
+                if (!output) return noAnswer;
+                const index = JSON.parse(output.text)?.faqIndex;
+                return Number.isInteger(index) ? answerFrom(faq[index]) : noAnswer;
+            } catch {
+                return {message:noAnswer,available:false};
+            }
         }
     };
 }

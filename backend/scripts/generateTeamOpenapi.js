@@ -12,7 +12,7 @@ const obj = (properties, required = Object.keys(properties)) => ({ type: 'object
 const nullable = schema => ({ ...schema, nullable: true });
 const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const response = data => ({ description: 'Sucesso', content: { 'application/json': { schema: obj({ success: { type: 'boolean', enum: [true] }, data, requestId: { type: 'string', format: 'uuid' } }) } } });
-const [context, collaborator] = teamLookupOperations;
+const [context, collaborator, available, ownRequests] = teamLookupOperations;
 spec.paths[context.path] = { get: {
     operationId: context.operationId, tags: ['Equipes'], summary: 'Consultar cinemas da unidade',
     description: 'SUPERVISOR vê o cinema atribuído; COLABORADOR vê cinemas das equipes em que possui vínculo ativo.',
@@ -34,6 +34,29 @@ spec.paths[collaborator.path] = { get: {
 spec.components.schemas.Team = obj({ id_equipe: id, id_supervisor: id, id_sessao: id, nome: str, status: { type: 'string', enum: ['ATIVA','FINALIZADA','CANCELADA'] } });
 spec.components.schemas.TeamMember = obj({ id_equipe_membro: id, id_equipe: id, id_usuario: id, funcao: nullable(str), data_entrada: { type: 'string', format: 'date' }, status: { type: 'string', enum: ['ATIVO','INATIVO'] } });
 spec.components.schemas.TeamEntry = obj({ id_entrada: entryId, id_equipe: id, id_usuario: id, id_emissor: id, tipo: { type: 'string', enum: ['SOLICITACAO','CONVITE'] }, funcao_proposta: nullable(str), status: { type: 'string', enum: ['PENDENTE','ACEITA','RECUSADA','CANCELADA'] }, criado_em: { type: 'string' }, decidido_em: nullable({ type: 'string' }) });
+const joinLists = [
+    [available, 'Listar equipes para o primeiro ingresso', id, obj({
+        hasTeam: { type: 'boolean' },
+        items: { type: 'array', items: obj({ id_equipe: id, nome: str, cinema: str, data: { type: 'string', format: 'date' }, horario_inicio: { type: 'string' } }) },
+        pagination: ref('Pagination')
+    })],
+    [ownRequests, 'Acompanhar minhas solicitações de ingresso', entryId, obj({
+        items: { type: 'array', items: obj({ id_entrada: entryId, id_equipe: id, nome: str, status: spec.components.schemas.TeamEntry.properties.status, criado_em: { type: 'string' }, decidido_em: nullable({ type: 'string' }) }) },
+        pagination: ref('Pagination')
+    })]
+];
+for (const [operation, summary, cursor, data] of joinLists) {
+    spec.paths[operation.path] = { get: {
+        operationId: operation.operationId, tags: ['Equipes'], summary, description: 'Exclusivo para COLABORADOR autenticado.',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+            { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
+            { name: 'cursor', in: 'query', schema: cursor }
+        ],
+        responses: { 200: response(data), 401: { $ref: '#/components/responses/Unauthorized' },
+            403: { $ref: '#/components/responses/Forbidden' }, 422: { $ref: '#/components/responses/ValidationError' } }
+    } };
+}
 const bodies = {
     create: obj({ sessionId: id, nome: str, supervisorId: id }, ['sessionId','nome']),
     patch: { ...obj({ nome: str, status: { type: 'string', enum: ['FINALIZADA','CANCELADA'] }, supervisorId: id }, []), minProperties: 1 },
@@ -55,7 +78,7 @@ const descriptions = {
     changeMember: 'Somente ADMIN ou supervisor vinculado ao cinema define função de membro ativo.',
     removeMember: 'ADMIN ou supervisor vinculado ao cinema desativa o vínculo; nova entrada exige solicitação ou convite.',
     entries: 'ADMIN e supervisor vinculado ao cinema veem todas as entradas; COLABORADOR vê somente as próprias quando membro ativo ou convidado.',
-    request: 'COLABORADOR membro ativo de outra equipe do mesmo cinema pode solicitar entrada para si; não ingressa automaticamente.',
+    request: 'COLABORADOR sem equipe ativa pode solicitar seu primeiro ingresso. Com equipe ativa, a solicitação fica restrita ao cinema em que atua. O supervisor recebe a solicitação e avalia o ingresso.',
     invitation: 'ADMIN ou supervisor vinculado ao cinema convida COLABORADOR ativo e define função. Membro só entra após aceitar.',
     decision: 'Solicitação: ADMIN ou supervisor vinculado ao cinema aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.',
     cancelEntry: 'ADMIN, supervisor próprio ou emissor cancela entrada pendente.'

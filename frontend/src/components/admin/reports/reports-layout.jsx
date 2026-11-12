@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import page from '../tabelaexemplo/example-table.module.css';
 import styles from '../catalog/catalog.module.css';
+import reports from './reports.module.css';
 
 const sections = [
   { href: '/admin/relatorios', label: 'Financeiro' },
@@ -17,12 +18,12 @@ export default function ReportsLayout({ title, description, children }) {
   return <main id="admin-content" tabIndex={-1} className={page.page}>
     <header className={page.heading}><div><h1>{title}</h1><p>{description}</p></div></header>
     <nav className={styles.tabs} aria-label="Seções de Relatórios e auditoria">{sections.map(section => <Link key={section.href} href={section.href} aria-current={pathname === section.href ? 'page' : undefined}>{section.label}</Link>)}</nav>
-    {children}
+    <div className={reports.stack}>{children}</div>
   </main>;
 }
 
 export function ReportFilters({ range, onSubmit, children }) {
-  return <form className={styles.toolbar} onSubmit={event => { event.preventDefault(); onSubmit(); }}>
+  return <form className={`${styles.toolbar} ${reports.filters}`} onSubmit={event => { event.preventDefault(); onSubmit(); }}>
     <label className={styles.filter}>De<input type="date" value={range.from} onChange={event => range.setFrom(event.target.value)} min="1000-01-01" max="9999-12-30" required /></label>
     <label className={styles.filter}>Até<input type="date" value={range.to} onChange={event => range.setTo(event.target.value)} min="1000-01-01" max="9999-12-30" required /></label>
     {children}<button type="submit" className={styles.primary}>Aplicar filtros</button>
@@ -32,9 +33,23 @@ export function ReportFilters({ range, onSubmit, children }) {
 
 export function ReportState({ report, empty = 'Nenhum registro encontrado.' }) {
   if (report.loading) return <p className={styles.state} role="status">Carregando dados…</p>;
-  if (report.error && !report.data) return <div className={styles.state} role="alert"><p>{report.error}</p><button type="button" onClick={report.reload}>Tentar novamente</button></div>;
+  if (report.error && !report.data) return <div className={styles.state}><p className={styles.error} role="alert">{report.error}</p><button type="button" className={styles.secondary} onClick={report.reload}>Tentar novamente</button></div>;
   if (!report.data) return <p className={styles.state}>{empty}</p>;
   return null;
+}
+
+export function ReportSection({ id, title, description, children }) {
+  return <section className={styles.panel} aria-labelledby={id}>
+    <header className={styles.panelHeader}><div><h2 id={id}>{title}</h2><p>{description}</p></div></header>
+    {children}
+  </section>;
+}
+
+export function ReportDetails({ title, rows }) {
+  return <div className={reports.group}>
+    <h3>{title}</h3>
+    <dl className={styles.detailGrid}>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+  </div>;
 }
 
 export const money = value => {

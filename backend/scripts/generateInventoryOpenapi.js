@@ -13,11 +13,15 @@ const ref = name => ({ $ref:`#/components/schemas/${name}` });
 const response = data => ({ description:'Sucesso',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data,requestId:{type:'string',format:'uuid'}})}} });
 spec.components.schemas.InventoryBalance = obj({ id_insumo:{...intId,nullable:true},id_equipamento:{...intId,nullable:true},id_fornecedor:intId,id_local:intId,quantidade:count,quantidade_reservada:count,disponivel:count,quantidade_minima:count,alerta_reposicao:{type:'boolean'},status:{type:'string'} },['id_fornecedor','id_local','quantidade','quantidade_reservada','disponivel','status']);
 spec.components.schemas.InventoryMovement = obj({ id_movimentacao:id,id_insumo:{...intId,nullable:true},id_equipamento:{...intId,nullable:true},id_reserva:{...id,nullable:true},id_usuario:intId,tipo:{type:'string',enum:['ENTRADA','SAIDA','AJUSTE','PERDA','DEVOLUCAO']},quantidade:{type:'integer',minimum:-2147483647,maximum:2147483647},motivo:{type:'string',nullable:true},data_movimentacao:{type:'string'} });
+const movementSchema = spec.components.schemas.InventoryMovement;
+Object.assign(movementSchema.properties, { id_logistica: { ...intId, nullable:true }, id_solicitacao: { ...intId, nullable:true } });
+movementSchema.required.push('id_logistica','id_solicitacao');
 const list = schema => obj({ items:{type:'array',items:schema},pagination:ref('Pagination') });
 const errors = {400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for (const r of inventoryOperations) {
     const op = {operationId:r.operationId,tags:['Estoque'],summary:r.operationId.replaceAll('_',' '),description:'ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
-    if(r.method==='get')op.description+=' Supervisor consulta a própria unidade; colaborador consulta somente unidades vinculadas à sua equipe, sem permissão para movimentos manuais.';
+    if(r.method==='get')op.description+=' Supervisor consulta a própria unidade; colaborador consulta somente unidades vinculadas à sua equipe.';
+    if(r.action==='move')op.description+=' Supervisor registra saída ou perda de insumos da própria unidade. Colaborador pode registrar saída ou perda com justificativa na unidade em que possui equipe ativa.';
     if (r.path.includes('{id}')) op.parameters.push({name:'id',in:'path',required:true,schema:intId});
     if (r.action === 'list' || r.action === 'alerts') {
         if (r.action === 'alerts') op.parameters.push({name:'localId',in:'query',required:true,schema:intId});

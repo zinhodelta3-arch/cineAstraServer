@@ -7,7 +7,7 @@ export function createCatalogModel(database) {
     const rows = async (c, sql, args) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args) => (await rows(c, sql, args))[0] ?? null;
     const selection = admin => `${[...publicFields, ...(admin ? ['url_reproducao'] : [])].map(k => `f.${k}`).join(',')},
-        (SELECT fi.url FROM filmes_imagens fi WHERE fi.id_filme = f.id_filme AND fi.tipo = 'BANNER' ORDER BY fi.principal DESC, fi.ordem, fi.id_imagem LIMIT 1) AS banner,
+        (SELECT fi.url FROM filmes_imagens fi WHERE fi.id_filme = f.id_filme AND fi.tipo = 'BANNER' AND fi.contexto_banner='GERAL' ORDER BY fi.principal DESC, fi.ordem, fi.id_imagem LIMIT 1) AS banner,
         (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT('id', g.id_genero, 'nome', g.nome)), JSON_ARRAY())
          FROM filme_generos fg JOIN generos g ON g.id_genero = fg.id_genero
          WHERE fg.id_filme = f.id_filme AND g.status = 'ATIVO') AS generos`;

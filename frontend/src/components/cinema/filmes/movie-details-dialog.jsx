@@ -5,7 +5,7 @@ import {Button} from '@/components/ui/button';
 import {useMovieDetails} from '@/hooks/cinema/filmes/use-movie-details';
 import {publicAsset} from '@/lib/api/public-api.mjs';
 import ListStatus from '@/components/cinema/home/list-status';
-import PosterImage from './poster-image';
+import FilmDetailBanner from './film-detail-banner';
 import {AgeRating} from './movie-ui';
 import {durationLabel} from './movie-utils';
 import styles from './filmes.module.css';
@@ -13,9 +13,10 @@ function Details({id,onSessions}){
  const {movie,loading,error,retry,genres,gallery}=useMovieDetails(id);
  if(loading||error)return <><DialogHeader><DialogTitle>Detalhes do filme</DialogTitle><DialogDescription>{loading?'Carregando informações…':'Não foi possível carregar este filme.'}</DialogDescription></DialogHeader>{error&&<div role="alert"><p>{error}</p><Button onClick={retry}>Tentar novamente</Button></div>}</>;
  return <>
-  <div className="grid gap-6 sm:grid-cols-[170px_1fr]">
-   <div className="mx-auto aspect-[2/3] w-36 overflow-hidden rounded-sm sm:w-full"><PosterImage movie={movie} className="h-full w-full object-cover" eager /></div>
-   <div><DialogHeader className="text-left"><DialogTitle className={`${styles.display} pr-4 text-4xl font-bold`}>{movie.title}</DialogTitle><DialogDescription>{movie.synopsis}</DialogDescription></DialogHeader>
+  <div className="grid min-w-0 gap-4">
+   <DialogHeader className="min-w-0 text-left"><DialogTitle className={`${styles.display} break-words pr-8 text-3xl font-bold sm:text-4xl`}>{movie.title}</DialogTitle><DialogDescription>{movie.synopsis}</DialogDescription></DialogHeader>
+   <FilmDetailBanner movie={movie}/>
+   <div className="min-w-0">
     <div className="my-5 flex flex-wrap items-center gap-3 text-xs"><AgeRating age={movie.age}/><span>{durationLabel(movie.duration)}</span>{movie.director&&<span>Direção: {movie.director}</span>}</div>
     <p className="text-sm text-primary">{genres.items.map(g=>g.nome).join(' · ')}</p><ListStatus list={genres} empty="" more="Mais gêneros"/>
     {movie.trailer&&<a href={movie.trailer} target="_blank" rel="noopener noreferrer" className="mb-4 block text-sm text-primary underline">Assistir ao trailer</a>}

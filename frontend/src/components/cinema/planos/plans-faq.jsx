@@ -2,7 +2,12 @@
 
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
-import { FAQS } from "./data"
+const FAQS = [
+  ["Quais planos incluem streaming?", "Confira a indicação de acesso ao catálogo na lista de benefícios de cada plano."],
+  ["Posso pagar mensal ou anualmente?", "Consulte o preço publicado em cada período. O valor e as condições da assinatura aparecem antes do aceite."],
+  ["Quem paga pela assinatura contratada aqui?", "O titular assume o pagamento da assinatura. O limite de membros depende do plano."],
+  ["Quando os benefícios ficam disponíveis?", "O pagamento precisa ser confirmado para que a assinatura seja ativada. Consulte a situação em Suas assinaturas."]
+]
 
 export default function PlansFaq() {
   const [faqOpen, setFaqOpen] = useState(null)

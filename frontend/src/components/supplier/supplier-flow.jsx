@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Eye, RotateCcw, Send, Truck, X, XCircle } from 'lucide-react';
+import { Check, Eye, RotateCcw, Send, TriangleAlert, Truck, X, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { useSupplierAction, useSupplierList, useSupplierLocations } from '@/hooks/supplier/use-supplier-data';
+import { supplierRequest, useSupplierAction, useSupplierList, useSupplierLocations } from '@/hooks/supplier/use-supplier-data';
+import ShipmentHistory from '@/components/logistics/shipment-history';
 import SupplierLayout, { dateTime, More, SupplierState, statusName } from './supplier-layout';
 import styles from '@/components/admin/catalog/catalog.module.css';
 
-const labels = { approve: 'Aprovar', refuse: 'Recusar', send: 'Enviar', transit: 'Marcar em trânsito', return: 'Confirmar devolução', cancel: 'Cancelar envio' };
-const icons = { approve: Check, refuse: X, send: Send, transit: Truck, return: RotateCcw, cancel: XCircle };
+const labels = { approve: 'Aprovar', refuse: 'Recusar', send: 'Enviar', transit: 'Marcar em trânsito', incidents: 'Registrar ocorrência', return: 'Confirmar devolução', cancel: 'Cancelar envio' };
+const icons = { approve: Check, refuse: X, send: Send, transit: Truck, incidents: TriangleAlert, return: RotateCcw, cancel: XCircle };
 const kilometers = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 const stockLabels = { SALDO_INSUFICIENTE: 'Saldo insuficiente', INDISPONIVEL: 'Item indisponível' };
 
@@ -16,8 +17,10 @@ export default function SupplierFlow({ kind }) {
   const requests = kind === 'requests';
   const [localId, setLocalId] = useState('');
   const [dialog, setDialog] = useState(null);
+  const [transport, setTransport] = useState(null);
   const list = useSupplierList(`${kind}?limit=20${localId ? `&localId=${localId}` : ''}`);
   const locations = useSupplierLocations();
+  const transports = useSupplierList(dialog?.type === 'send' ? 'transports?available=true&limit=10' : null);
   const action = useSupplierAction(list.reload);
   const item = dialog?.item;
   const idKey = requests ? 'id_solicitacao' : 'id_logistica';
@@ -30,14 +33,23 @@ export default function SupplierFlow({ kind }) {
       return stockLabels[row.estoque_origem] ? ['refuse'] : ['approve', 'refuse'];
     }
     if (row.status === 'PENDENTE') return ['send', 'cancel'];
-    if (row.status === 'ENVIADO') return ['transit'];
+    if (row.status === 'ENVIADO') return ['transit', 'incidents'];
+    if (row.status === 'EM_TRANSITO') return ['incidents'];
     if (row.status === 'RECEBIDO' && row.id_equipamento_origem && row.id_solicitacao) return ['return'];
     return [];
   }
-  function open(type, row) { action.setError(''); setDialog({ type, item: row }); }
-  async function confirm() {
-    const notice = dialog.type === 'return' ? 'Devolução confirmada.' : `${labels[dialog.type]} registrado.`;
-    if (await action.run(`${kind}/${item[idKey]}/${dialog.type}`, { method: 'POST' }, notice)) setDialog(null);
+  function open(type, row) { action.setError(''); setTransport(null); setDialog({ type, item: row }); }
+  async function confirm(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    let body;
+    if (dialog.type === 'send') {
+      if (!transport) return action.setError('Selecione um transporte disponível.');
+      body = { transportId: transport.id_transporte };
+    }
+    if (dialog.type === 'incidents') body = { type: form.get('type'), description: String(form.get('description') ?? '').trim() };
+    const notices = { return: 'Devolução confirmada.', send: 'Envio confirmado e estoque atualizado.', transit: 'Entrega marcada em trânsito.', incidents: 'Ocorrência registrada.', cancel: 'Envio cancelado.', approve: 'Solicitação aprovada.', refuse: 'Solicitação recusada.' };
+    if (await action.run(`${kind}/${item[idKey]}/${dialog.type}`, { method: 'POST', body }, notices[dialog.type])) setDialog(null);
   }
   return <SupplierLayout title={requests ? 'Solicitações' : 'Entregas'} description={requests ? 'Analise os pedidos de reposição dos cinemas.' : 'Acompanhe e atualize os envios aprovados.'}>
     {action.notice && <p className={styles.notice} role="status">{action.notice}</p>}
@@ -69,14 +81,37 @@ export default function SupplierFlow({ kind }) {
         <div><dt>{requests ? 'Solicitado em' : 'Enviado em'}</dt><dd>{dateTime(requests ? item.data_solicitacao : item.data_envio)}</dd></div>
         {!requests && <>
           <div><dt>Solicitação</dt><dd>{item.id_solicitacao ? `#${item.id_solicitacao}` : '—'}</dd></div>
-          <div><dt>Previsão de entrega</dt><dd>{item.data_prevista ? dateTime(item.data_prevista) : 'Sem previsão'}</dd></div>
+        <div><dt>Transporte</dt><dd>{item.nome_transporte ?? 'Sem transporte vinculado'}</dd></div>
+        <div><dt>Chegada estimada pela rota</dt><dd>{item.data_prevista ? dateTime(item.data_prevista) : 'Sem estimativa'}</dd></div>
           <div><dt>Recebido em</dt><dd>{dateTime(item.data_recebimento)}</dd></div>
           {item.data_devolucao && <div><dt>Devolvido em</dt><dd>{dateTime(item.data_devolucao)}</dd></div>}
         </>}
         {item.observacao && <div><dt>Observação</dt><dd>{item.observacao}</dd></div>}
       </dl>}
+      {!requests && dialog?.type === 'view' && <ShipmentHistory path={`logistics/${item[idKey]}/history?limit=10`} request={supplierRequest} />}
       {action.error && <p className={styles.error} role="alert">{action.error}</p>}
-      <div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={() => setDialog(null)}>{dialog?.type === 'view' ? 'Fechar' : 'Voltar'}</button>{dialog?.type !== 'view' && <button type="button" className={['refuse', 'cancel'].includes(dialog?.type) ? styles.danger : styles.primary} disabled={action.pending} onClick={confirm}>{action.pending ? 'Aguarde…' : 'Confirmar'}</button>}</div>
+      {dialog?.type === 'view' ? <div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={() => setDialog(null)}>Fechar</button></div> :
+        <form className={styles.form} onSubmit={confirm}>
+          {dialog?.type === 'send' && <>
+            <label className={styles.wide}>Transporte<select required value={transport?.id_transporte ?? ''} onChange={event => setTransport(transports.items.find(row => row.id_transporte === event.target.value) ?? null)} disabled={transports.loading || action.pending}>
+              <option value="">Selecione um transporte</option>
+              {transport && !transports.items.some(row => row.id_transporte === transport.id_transporte) && <option value={transport.id_transporte}>{transport.nome}</option>}
+              {transports.items.map(row => <option key={row.id_transporte} value={row.id_transporte}>{row.nome}{row.identificacao ? ` · ${row.identificacao}` : ''}</option>)}
+            </select></label>
+            <div className={styles.wide}>
+              <SupplierState list={transports} noun="transportes" empty="Nenhum transporte ativo e livre. Consulte o cadastro de transportes." />
+              <More list={transports} noun="transportes" />
+            </div>
+          </>}
+          {dialog?.type === 'incidents' && <>
+            <label className={styles.wide}>Tipo<select name="type" required defaultValue=""><option value="">Selecione</option><option value="ACIDENTE">Acidente</option><option value="EXTRAVIO">Extravio</option><option value="PERDA">Perda de mercadoria</option></select></label>
+            <label className={styles.wide}>Descrição<textarea name="description" maxLength={2000} required /></label>
+          </>}
+          <div className={`${styles.dialogActions} ${styles.wide}`}>
+            <button type="button" className={styles.secondary} disabled={action.pending} onClick={() => setDialog(null)}>Voltar</button>
+            <button type="submit" className={['refuse', 'cancel'].includes(dialog?.type) ? styles.danger : styles.primary} disabled={action.pending || (dialog?.type === 'send' && !transport)}>{action.pending ? 'Aguarde…' : 'Confirmar'}</button>
+          </div>
+        </form>}
     </DialogContent></Dialog>
   </SupplierLayout>;
 }

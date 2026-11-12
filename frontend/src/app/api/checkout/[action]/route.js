@@ -51,8 +51,8 @@ export async function POST(request, { params }) {
       if (!key(idempotencyKey)) return json({ message: 'Identificador do pagamento inválido.' }, 422);
       return json(await backendAuth('/payments', { token, method: 'POST', body, idempotencyKey }), 202);
     }
-    const { acceptance, ...order } = body || {};
-    if (!validCartOrder(order)) return json({ message: 'Confira os itens do carrinho.' }, 422);
+    const { acceptance, draftOrderId, ...order } = body || {};
+    if (draftOrderId !== undefined ? !id(draftOrderId) : !validCartOrder(order)) return json({ message: 'Confira os itens do pedido.' }, 422);
     if (action === 'quote') {
       if (acceptance !== undefined) return json({ message: 'Cotação inválida.' }, 422);
       const quote = await backendAuth('/orders/quote', { token, method: 'POST', body: order });
@@ -62,6 +62,6 @@ export async function POST(request, { params }) {
     if (!acceptance || acceptance.accepted !== true || typeof acceptance.offerHash !== 'string' || !/^[a-f0-9]{64}$/.test(acceptance.offerHash)) return json({ message: 'Aceite da oferta obrigatório.' }, 422);
     const idempotencyKey = request.headers.get('Idempotency-Key');
     if (!key(idempotencyKey)) return json({ message: 'Identificador do pedido inválido.' }, 422);
-    return json(await backendAuth('/orders/checkout', { token, method: 'POST', body: { ...order, acceptance }, idempotencyKey }), 201);
+    return json(await backendAuth('/orders/checkout', { token, method: 'POST', body: { ...order, acceptance, ...(draftOrderId !== undefined ? { draftOrderId } : {}) }, idempotencyKey }), 201);
   } catch (error) { return failure(error); }
 }

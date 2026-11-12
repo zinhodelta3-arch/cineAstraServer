@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { filmGalleryOperations } from '../src/routes/filmGalleryRoutes.js';
+import { bannerContext } from '../src/validators/filmGalleryValidators.js';
 const file = new URL('../src/docs/openapi.json', import.meta.url);
 const spec = JSON.parse(await readFile(file, 'utf8'));
 spec.info.version = '1.4.0';
@@ -10,7 +11,11 @@ const id = { type: 'string', pattern: '^[1-9][0-9]{0,19}$' };
 const key = { type: 'string', pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.webp$' };
 const image = { type: 'object', required: ['id_imagem', 'id_filme', 'tipo', 'url', 'texto_alternativo', 'ordem', 'principal'], properties: { id_imagem: id, id_filme: ref('Id'), tipo: { type: 'string', enum: ['CAPA', 'BANNER', 'ALTERNATIVA'] }, url: { type: 'string', description: 'URL relativa pública somente para filme ativo; nunca uma URL privada de staging/reprodução.' }, texto_alternativo: { type: 'string', nullable: true, maxLength: 255 }, ordem: { type: 'integer', minimum: 0, maximum: 4294967295 }, principal: { type: 'boolean' } } };
 spec.components.schemas.FilmImage = image;
-const fields = { tipo: image.properties.tipo, texto_alternativo: image.properties.texto_alternativo, ordem: image.properties.ordem, principal: image.properties.principal };
+const scope = { type:'string', enum:bannerContext.options };
+const bannerFields = { contexto_banner:{type:'string',enum:['GERAL',...scope.enum]},dispositivo_banner:{type:'string',enum:['PADRAO','DESKTOP','TABLET','MOBILE']} };
+Object.assign(image.properties,bannerFields);
+image.required.push(...Object.keys(bannerFields));
+const fields = { tipo: image.properties.tipo, texto_alternativo: image.properties.texto_alternativo, ordem: image.properties.ordem, principal: image.properties.principal,...bannerFields };
 spec.components.schemas.FilmImageCreate = { type: 'object', additionalProperties: false, required: ['stagingKey'], properties: { stagingKey: key, ...fields }, example: { stagingKey: '00000000-0000-4000-8000-000000000001.webp', tipo: 'CAPA', texto_alternativo: 'Cartaz do filme', ordem: 0, principal: true } };
 spec.components.schemas.FilmImagePatch = { type: 'object', additionalProperties: false, minProperties: 1, properties: fields, example: { ordem: 1, principal: true } };
 const list = { type: 'object', required: ['items', 'pagination'], properties: { items: { type: 'array', items: ref('FilmImage') }, pagination: { type: 'object', required: ['limit', 'nextCursor'], properties: { limit: { type: 'integer' }, nextCursor: { type: 'string', nullable: true, description: 'ordem:id_imagem' } } } } };
@@ -18,7 +23,15 @@ for (const r of filmGalleryOperations) {
     const admin = r.path.startsWith('/api/admin/');
     const params = [...r.path.matchAll(/\{(\w+)\}/g)].map(m => ({ name: m[1], in: 'path', required: true, schema: m[1] === 'key' ? key : id }));
     const op = { operationId: r.operationId, tags: ['Galeria de filmes'], summary: r.operationId.replaceAll('_', ' '), security: admin ? [{ bearerAuth: [] }] : [], parameters: params, description: admin ? 'ADMIN com sessão ativa e 2FA. Escritas bloqueiam o filme; promoção de staging para storage durável é compensada fora da transação SQL. Cache-Control: no-store.' : 'Público somente para filme ATIVO; staging e URL de reprodução não são expostos. Cache-Control: no-store.', responses: {} };
-    if (r.operationId.includes('list_')) {
+    if (r.operationId==='get_responsive_film_banners') {
+        op.parameters.push({name:'context',in:'query',required:true,schema:scope});
+        op.description='Retorna a melhor imagem de cada dispositivo na área solicitada, além do banner padrão e da capa. A ordenação considera principal, ordem e ID. O cliente seleciona a mídia e aplica o fallback.';
+        const url={type:'string'};
+        op.responses['200']=response({type:'object',required:['defaultBanner','cover','variants'],properties:{
+            defaultBanner:{...url,nullable:true},cover:{...url,nullable:true},
+            variants:{type:'object',additionalProperties:false,properties:{DESKTOP:url,TABLET:url,MOBILE:url}}
+        }});
+    } else if (r.operationId.includes('list_')) {
         op.parameters.push({ name: 'tipo', in: 'query', schema: image.properties.tipo }, { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: { type: 'string', pattern: '^(0|[0-9]{1,10}:[1-9][0-9]{0,19})$' } });
         op.responses['200'] = response(list);
     } else if (r.method === 'post' && r.operationId !== 'reconcile_film_images') {
@@ -34,4 +47,4 @@ for (const r of filmGalleryOperations) {
     (spec.paths[r.path] ??= {})[r.method] = op;
 }
 await writeFile(file, `${JSON.stringify(spec, null, 2)}\n`);
-console.info('Galeria: 7 operações documentadas.');
+console.info(`Galeria: ${filmGalleryOperations.length} operações documentadas.`);

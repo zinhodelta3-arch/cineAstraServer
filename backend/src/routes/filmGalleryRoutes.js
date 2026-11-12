@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { allowRoles } from '../middlewares/authMiddleware.js';
 import { validateBody } from '../validators/identityValidators.js';
-import { gallerySchemas, galleryParams } from '../validators/filmGalleryValidators.js';
+import { bannerContext, gallerySchemas, galleryParams } from '../validators/filmGalleryValidators.js';
 import { IMAGE_KEY } from '../models/imageStorage.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const filmGalleryOperations = [
+    { method: 'get', path: '/api/films/{id}/banners', operationId: 'get_responsive_film_banners' },
     { method: 'get', path: '/api/films/{id}/images', operationId: 'list_film_images' },
     { method: 'get', path: '/api/admin/films/{id}/images', operationId: 'admin_list_film_images' },
     { method: 'post', path: '/api/admin/films/{id}/images', operationId: 'create_film_image' },
@@ -24,6 +25,12 @@ export function filmGalleryRoutes(controller, { auth, limits }) {
         req.galleryQuery = parsed.data; next();
     };
     router.get('/api/films/:id/images', noStore, galleryParams, query, controller.list(false));
+    router.get('/api/films/:id/banners', noStore, galleryParams, (req,res,next)=>{
+        const parsed=bannerContext.safeParse(req.query.context);
+        if(!parsed.success||Object.keys(req.query).length!==1)throw ApiError.validacao('Área de banner inválida');
+        req.bannerContext=parsed.data;
+        next();
+    },controller.banners);
     router.get('/api/admin/films/:id/images', noStore, ...admin, galleryParams, query, controller.list(true));
     router.post('/api/admin/films/:id/images', noStore, ...admin, ...limits.upload, galleryParams, validateBody(gallerySchemas.create), controller.create);
     router.patch('/api/admin/films/:id/images/:imageId', noStore, ...admin, galleryParams, validateBody(gallerySchemas.patch), controller.patch);

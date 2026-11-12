@@ -1,0 +1,28 @@
+.topbar {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+.areaName { font-size: .875rem; font-weight: 600; }
+.controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.mobileNav { display: none; }
+.page { min-width: 0; }
+.page > header { margin-bottom: 20px; }
+.overview { display: grid; gap: 20px; }
+.overview > section { margin-top: 0; }
+
+@media (max-width: 1050px) {
+  .mobileNav { display: block; }
+}
+
+@media (max-width: 480px) {
+  .topbar { padding-inline: 12px; }
+  .controls { gap: 4px; }
+  .overview { gap: 14px; }
+}

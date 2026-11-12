@@ -3,16 +3,28 @@ import { idString } from '../utils/dto.js';
 const projection = 's.id_sessao,s.id_filme,s.id_sala,sa.id_local,f.titulo AS titulo_filme,sa.nome AS nome_sala,l.nome AS nome_local,s.data,s.horario_inicio,s.horario_fim,s.idioma,s.preco_inteira,s.status';
 const joins = ' FROM sessoes s JOIN salas sa ON sa.id_sala = s.id_sala JOIN locais l ON l.id_local = sa.id_local JOIN filmes f ON f.id_filme = s.id_filme';
 const publicConditions = "s.status IN ('AGENDADA','EM_CARTAZ') AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE";
+const future = 'TIMESTAMP(s.data,s.horario_inicio) > UTC_TIMESTAMP(3)';
+const activeSeat = "a.id_sala=s.id_sala AND a.status='ATIVA'";
+const liveOccupancy = "(o.estado='CONFIRMADA' OR (o.estado='RESERVADA' AND o.expira_em>UTC_TIMESTAMP(3)))";
+const seats = `(SELECT COUNT(*) FROM assentos a WHERE ${activeSeat})`;
+const occupied = `(SELECT COUNT(*) FROM assento_ocupacoes o JOIN assentos a ON a.id_assento=o.id_assento
+    WHERE o.id_sessao=s.id_sessao AND ${activeSeat} AND ${liveOccupancy})`;
+const availability = `${seats} AS assentos_ativos,${seats}-${occupied} AS assentos_disponiveis`;
 export function createSessionModel(database) {
     const rows = async (c, sql, args = []) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args = []) => (await rows(c, sql, args))[0] ?? null;
     return {
         supervisorLocation: (id, c = database) => one(c, 'SELECT id_local FROM supervisor_locais WHERE id_supervisor = ?', [id]),
-        filmAvailability: filmId => rows(database, `SELECT sa.id_local, COUNT(*) AS session_count, GROUP_CONCAT(DISTINCT sa.tipo ORDER BY sa.tipo SEPARATOR ' · ') AS formats${joins}
-            WHERE s.id_filme = ? AND s.status IN ('AGENDADA','EM_CARTAZ') AND sa.status = 'ATIVA'
-            AND l.status = 'ATIVO' AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE
-            AND TIMESTAMP(s.data,s.horario_inicio) > UTC_TIMESTAMP()
-            GROUP BY sa.id_local ORDER BY sa.id_local`, [filmId]),
+        filmAvailability: filmId => rows(database, `WITH upcoming AS (
+            SELECT sa.id_local,l.nome,sa.tipo,s.data,s.horario_inicio,${availability},
+                (SELECT COUNT(*) FROM assento_ocupacoes o WHERE o.id_sessao=s.id_sessao AND o.estado='CONFIRMADA') AS sold
+            ${joins} WHERE s.id_filme=? AND ${publicConditions} AND ${future}
+        )
+        SELECT id_local,nome,COUNT(*) AS session_count,
+            SUM(assentos_disponiveis>0) AS open_sessions,SUM(sold) AS sold,
+            MIN(CASE WHEN assentos_disponiveis>0 THEN CONCAT(data,'T',horario_inicio) END) AS next_open,
+            GROUP_CONCAT(DISTINCT tipo ORDER BY tipo SEPARATOR ' · ') AS formats
+        FROM upcoming GROUP BY id_local,nome ORDER BY sold DESC,id_local`, [filmId]),
         availableDays: (filmId, localId) => rows(database, `SELECT DISTINCT s.data AS date${joins}
             WHERE s.id_filme = ? AND sa.id_local = ? AND s.status IN ('AGENDADA','EM_CARTAZ')
             AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO'
@@ -55,12 +67,14 @@ export function createSessionModel(database) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
             const where = ['s.id_sessao > ?'], args = [q.cursor ?? '0'];
             if (q.localId) { where.push('sa.id_local = ?'); args.push(q.localId); }
+            if (!admin && q.filmId) { where.push('s.id_filme = ?',future); args.push(q.filmId); }
             if (q.date) { where.push('s.data = ?'); args.push(q.date); }
             if (q.startFrom) { where.push('s.horario_inicio >= ?'); args.push(q.startFrom); }
             if (q.startUntil) { where.push('s.horario_inicio <= ?'); args.push(q.startUntil); }
             if (admin) { if (q.status) { where.push('s.status = ?'); args.push(q.status); } }
             else where.push(publicConditions);
-            return rows(c, `SELECT ${projection}${joins} WHERE ${where.join(' AND ')} ORDER BY s.id_sessao LIMIT ${q.limit + 1}`, args);
+            const extra = !admin && q.filmId ? `,${availability}` : '';
+            return rows(c, `SELECT ${projection}${extra}${joins} WHERE ${where.join(' AND ')} ORDER BY s.id_sessao LIMIT ${q.limit + 1}`, args);
         },
         publicSession: id => one(database, `SELECT ${projection}${joins} WHERE s.id_sessao = ? AND s.status IN ('AGENDADA','EM_CARTAZ') AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE`, [id]),
         async insert(c, data) {

@@ -12,6 +12,20 @@ const category=line=>line.kind==='STREAMING'?(line.mode==='COMPRA'?'PURCHASE':'R
 export const pricingInput=input=>({couponCode:input.couponCode,lines:input.lines.map(line=>({category:category(line),id:line.id,quantity:line.quantity,...(line.halfPreview?{halfPreview:true}:{})}))});
 
 export function createOrderService({model,identity,pricing,selfDeclaredAge=false,agePolicy=createAgePolicy({allowSelfDeclaredAge:selfDeclaredAge})}){
+    async function validateEventCombo(c,row,line,input,userId,lock=false){
+        if(row.id_sessao_evento==null)return;
+        if(!row.event_active||!row.event_future||String(row.id_local)!==String(row.id_local_evento)
+            ||line.sessionId!==String(row.id_sessao_evento)||!input.lines.some(item=>item.kind==='SESSION'&&item.id===line.sessionId)){
+            throw new ApiError('O combo temático exige um ingresso da sessão vinculada no mesmo pedido.',409,null,'EVENT_COMBO_SESSION_REQUIRED');
+        }
+        let total=0, customer=0;
+        for(const order of await model.eventComboOrders(c,line.id,lock)){
+            total+=Number(order.quantidade);
+            if(String(order.id_usuario)===String(userId))customer+=Number(order.quantidade);
+        }
+        if(total+line.quantity>row.limite_evento)throw new ApiError('O lote do combo temático não tem a quantidade solicitada.',409,null,'EVENT_COMBO_SOLD_OUT');
+        if(customer+line.quantity>row.limite_cliente_evento)throw new ApiError('Limite deste combo temático por cliente atingido.',409,null,'EVENT_COMBO_CUSTOMER_LIMIT');
+    }
     async function quoteOnConnection(c,input,context){
         const user=await identity.activeActor(c,context);
         if(user.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
@@ -35,6 +49,7 @@ export function createOrderService({model,identity,pricing,selfDeclaredAge=false
             }else if(line.kind==='COMBO'){
                 const row=found(await model.combo(c,line.id));
                 if(!input.localId||idString(row.id_local)!==input.localId||!row.ativo||row.local_status!=='ATIVO')throw conflict('Combo indisponível no local');
+                await validateEventCombo(c,row,line,input,user.id_usuario);
                 if(line.sessionId){
                     const session=found(await model.session(c,line.sessionId));
                     if(idString(session.id_local)!==input.localId||!['AGENDADA','EM_CARTAZ'].includes(session.status)||session.sala_status!=='ATIVA'||session.local_status!=='ATIVO'||interval(session).end+1800000<=Date.now())throw conflict('Sessão de retirada indisponível');
@@ -65,8 +80,18 @@ export function createOrderService({model,identity,pricing,selfDeclaredAge=false
         if(actor.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
         const rows=await model.listOwn(c,actor.id_usuario,limit,cursor),page=rows.slice(0,limit);
         return {items:page.map(row=>({orderId:idString(row.id_pedido),financialStatus:row.status,
-            total:row.valor_total,currency:'BRL',createdAt:row.data_pedido==null?null:new Date(instant(row.data_pedido)).toISOString()})),
+            total:row.valor_total,currency:'BRL',...(row.proposta_admin&&row.status==='EM_ANDAMENTO'?{administrativeDraft:true}:{}),createdAt:row.data_pedido==null?null:new Date(instant(row.data_pedido)).toISOString()})),
             pagination:{limit,nextCursor:rows.length>limit?idString(page.at(-1).id_pedido):null}};
     },context);}
-    return {list,quoteOnConnection,quote:(input,context)=>identity.transaction(c=>quoteOnConnection(c,input,context),context),status};
+    const draft=(id,context)=>identity.transaction(async c=>{
+        const actor=await identity.activeActor(c,context);
+        if(actor.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
+        const row=found(await model.ownDraft(c,id,actor.id_usuario));
+        return typeof row.proposta_admin==='string'?JSON.parse(row.proposta_admin):row.proposta_admin;
+    },context);
+    async function confirmEventLimits(c,input,userId){
+        const combos=input.lines.filter(line=>line.kind==='COMBO').sort((a,b)=>Number(a.id)-Number(b.id));
+        for(const line of combos)await validateEventCombo(c,found(await model.combo(c,line.id,true)),line,input,userId,true);
+    }
+    return {list,draft,quoteOnConnection,confirmEventLimits,quote:(input,context)=>identity.transaction(c=>quoteOnConnection(c,input,context),context),status};
 }

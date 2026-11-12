@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useState } from 'react';
 
 const FAQ_ITEMS = [
   {
@@ -51,26 +51,23 @@ const normalize = (text = '') =>
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
 
-function FaqItem({ item, id, open, onToggle }) {
+function FaqItem({ item, open, onToggle }) {
+  const id = useId();
   return (
-    <div
-      className={`overflow-hidden rounded-xl border bg-card transition-colors duration-300 ${
-        open ? 'border-primary/60' : 'border-border hover:border-primary/40'
-      }`}
-    >
+    <div className={open ? 'bg-muted/35' : undefined}>
       <button
         type="button"
         id={`${id}-button`}
         aria-expanded={open}
         aria-controls={`${id}-panel`}
         onClick={onToggle}
-        className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-3.5 text-left transition-colors duration-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-4"
       >
-        <span className="text-base font-semibold sm:text-lg">{item.question}</span>
+        <span className="min-w-0 break-words text-sm font-semibold sm:text-base">{item.question}</span>
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
-          className={`h-5 w-5 shrink-0 text-primary transition-transform duration-300 ease-out motion-reduce:transition-none ${
+          className={`size-4 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none ${
             open ? 'rotate-180' : ''
           }`}
           fill="none"
@@ -87,15 +84,11 @@ function FaqItem({ item, id, open, onToggle }) {
         id={`${id}-panel`}
         role="region"
         aria-labelledby={`${id}-button`}
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
-          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}
+        hidden={!open}
       >
-        <div className="overflow-hidden">
-          <p className="whitespace-pre-wrap break-words px-5 pb-4 text-sm leading-6 text-muted-foreground sm:text-base">
+          <p className="max-w-[75ch] whitespace-pre-wrap break-words px-3 pb-4 text-sm leading-6 text-muted-foreground sm:px-4">
             {item.answer}
           </p>
-        </div>
       </div>
     </div>
   );
@@ -104,13 +97,8 @@ function FaqItem({ item, id, open, onToggle }) {
 export default function SupportFaq({ query = '' }) {
   const [openItems, setOpenItems] = useState(() => new Set());
 
-  const filtered = useMemo(() => {
-    const term = normalize(query);
-    if (!term) return FAQ_ITEMS;
-    return FAQ_ITEMS.filter((item) =>
-      normalize(`${item.question} ${item.answer}`).includes(term)
-    );
-  }, [query]);
+  const term = normalize(query);
+  const filtered = term ? FAQ_ITEMS.filter(item => normalize(`${item.question} ${item.answer}`).includes(term)) : FAQ_ITEMS;
 
   const toggle = (question) =>
     setOpenItems((prev) => {
@@ -121,24 +109,18 @@ export default function SupportFaq({ query = '' }) {
     });
 
   return (
-    <section className="mx-auto w-full max-w-[1120px] rounded-2xl border border-border bg-card p-6 sm:p-10">
-      <div className="text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-primary">
-          Central CineAstra
-        </p>
-        <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Principais dúvidas</h2>
-      </div>
+    <section id="support-faq" aria-labelledby="support-faq-title" className="mx-auto w-full max-w-[1120px]">
+      <h2 id="support-faq-title" className="text-xl font-bold sm:text-2xl">Principais dúvidas</h2>
 
       {filtered.length === 0 ? (
-        <p role="status" className="mt-8 text-center">
+        <p role="status" className="mt-4 text-sm text-muted-foreground">
           Nenhuma dúvida encontrada para esta pesquisa.
         </p>
       ) : (
-        <div className="mx-auto mt-8 flex w-full max-w-5xl flex-col gap-3">
-          {filtered.map((item, index) => (
+        <div className="mt-3 divide-y divide-border rounded-xl border border-border bg-card">
+          {filtered.map(item => (
             <FaqItem
               key={item.question}
-              id={`faq-${index}`}
               item={item}
               open={openItems.has(item.question)}
               onToggle={() => toggle(item.question)}

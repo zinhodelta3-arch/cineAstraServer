@@ -6,11 +6,16 @@ const shared={slug:{...text(100),pattern:'^[a-z0-9]+(?:-[a-z0-9]+)*$'},title:tex
 const obj=(properties,required=Object.keys(properties))=>({type:'object',additionalProperties:false,properties,...(required.length?{required}:{})});
 const tag='Conteúdo promocional';spec.tags=[...spec.tags.filter(t=>t.name!==tag),{name:tag}];
 for(const kind of ['partners','experiences','banners']){
- const properties={...shared,...(kind==='experiences'?{priceLabel:optional(100),unit:optional(150),details:{type:'array',maxItems:20,items:text(250)}}:{}),...(kind==='banners'?{placement}:{})};
+ const properties={...shared,...(kind==='experiences'?{locationId:{...id,nullable:true},priceLabel:optional(100),unit:optional(150),details:{type:'array',maxItems:20,items:text(250)}}:{}),...(kind==='banners'?{placement}:{})};
  const required=['slug','title','summary',...(kind==='banners'?['placement']:[])];
  spec.components.schemas[kind+'Create']=obj(properties,required);
  spec.components.schemas[kind+'Patch']={...obj({...properties,active:{type:'boolean'}},[]),minProperties:1};
- spec.components.schemas[kind+'Content']=obj({...properties,id},[...required,'active','id']);
+ const location=obj({
+  name:text(150),type:{type:'string',enum:['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO']},
+  eventCapacity:{type:'integer',minimum:1,maximum:100000,nullable:true},
+  eventSeating:{type:'string',enum:['NUMERADO','LIVRE',null],nullable:true}
+ });
+ spec.components.schemas[kind+'Content']=obj({...properties,id,...(kind==='experiences'?{location}:{})},[...required,'active','id']);
 }
 for(const r of promotionalOperations){
  const ref={$ref:'#/components/schemas/'+r.kind+'Content'},parameters=[];

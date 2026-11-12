@@ -36,23 +36,30 @@ function PixPanel({ payment }) {
     {!payment.ready && !payment.result?.paymentId && <p role="alert" className={styles.error}>Volte à seleção, confira a oferta e aceite os termos para iniciar a contagem.</p>}
     {payment.error && <p role="alert" className={styles.error}>{payment.error}</p>}
     {payment.error && payment.remaining === 0 && !payment.result?.paymentId && <button type="button" className={styles.retryButton} onClick={payment.retryPix} disabled={payment.pending}>Tentar novamente</button>}
-    {payment.result && <div role="status" className={styles.paymentResult}><strong>Pedido #{payment.result.orderId}</strong><span>Pagamento: {payment.result.status}</span><span>Pedido: {payment.result.orderStatus}</span>{["PAGO", "FINALIZADO"].includes(payment.result.orderStatus) && <Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link>}</div>}
+    {payment.result && <div role="status" className={styles.paymentResult}>
+      <strong>Pedido #{payment.result.orderId}</strong><span>Pagamento: {payment.result.status}</span><span>Pedido: {payment.result.orderStatus}</span>
+      {["PAGO", "FINALIZADO"].includes(payment.result.orderStatus) ? <Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link> :
+        payment.result.paymentId && <button type="button" className={styles.retryButton} disabled={payment.pending || payment.checkingPayment} onClick={() => payment.refreshPayment(payment.result.paymentId)}>Atualizar status</button>}
+      {payment.pollingPaused && <p>As consultas automáticas foram pausadas. Use Atualizar status para consultar o pedido.</p>}
+    </div>}
   </section>;
 }
 
-export default function CinemaPayment({ method = null }) {
-  const payment = usePayment(method);
+export default function CinemaPayment({ method = null, draftId = null }) {
+  const payment = usePayment(method, draftId);
+  const draftQuery = draftId ? `?draft=${draftId}` : "";
+  const returnHref = draftId ? "/cinema/minhascompras" : "/cinema/carrinho";
   const isCard = method === "credito" || method === "debito";
   return <main className={styles.page}>
     <div className={styles.container}>
-      <Link href={method ? "/cinema/pagamento" : "/cinema/carrinho"} className={styles.back}><ArrowLeft size={16} />{method ? "Voltar aos métodos" : "Voltar ao carrinho"}</Link>
+      <Link href={method ? `/cinema/pagamento${draftQuery}` : returnHref} className={styles.back}><ArrowLeft size={16} />{method ? "Voltar aos métodos" : draftId ? "Voltar às compras" : "Voltar ao carrinho"}</Link>
       <div className={styles.layout}>
         <div className={styles.primaryPanel}>
           {!method ? <>
             <h1 className={styles.pageTitle}>Selecione um método <span>de pagamento.</span></h1>
             <p className={styles.lead}>Escolha como deseja concluir sua compra.</p>
             <div className={styles.methodGrid}>
-              {methods.map(({ slug, label, icon: Icon }) => <Link key={slug} href={payment.ready ? `/cinema/pagamento/${slug}` : "#payment-consent"} aria-disabled={!payment.ready} onClick={event => { if (!payment.ready) event.preventDefault(); }} className={`${styles.methodTicket} ${!payment.ready ? styles.methodDisabled : ""}`}>
+              {methods.map(({ slug, label, icon: Icon }) => <Link key={slug} href={payment.ready ? `/cinema/pagamento/${slug}${draftQuery}` : "#payment-consent"} aria-disabled={!payment.ready} onClick={event => { if (!payment.ready) event.preventDefault(); }} className={`${styles.methodTicket} ${!payment.ready ? styles.methodDisabled : ""}`}>
                 <Icon size={25} aria-hidden="true" /><strong>{label}</strong>
               </Link>)}
             </div>
@@ -70,7 +77,7 @@ export default function CinemaPayment({ method = null }) {
             <PixPanel payment={payment} />
           </>}
         </div>
-        <PaymentSummary payment={payment} method={method} />
+        <PaymentSummary payment={payment} method={method} draftId={draftId} />
       </div>
     </div>
   </main>;

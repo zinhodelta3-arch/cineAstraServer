@@ -15,18 +15,28 @@ const inputItem = obj({ inputId: id, quantidade: { type: 'integer', minimum: 1, 
 const items = { type: 'array', minItems: 1, maxItems: 100, uniqueItems: true, items: inputItem };
 const name = { type: 'string', minLength: 1, maxLength: 150 };
 const description = { type: 'string', maxLength: 10000, nullable: true };
+const event = { ...obj({eventId:id,sessionId:id,totalLimit:{type:'integer',minimum:1,maximum:100000},customerLimit:{type:'integer',minimum:1,maximum:100}}), nullable:true };
 spec.components.schemas.Combo = obj({ id_combo: id, id_local: { ...id, nullable: true }, nome: name, descricao: description, preco: money, ativo: { type: 'boolean' }, data_cadastro: { type: 'string' }, items: { type: 'array', items: item } });
 spec.components.schemas.ManagedCombo = obj({ ...spec.components.schemas.Combo.properties, custo_operacional: { ...money, nullable: true } });
+for(const name of ['Combo','ManagedCombo'])spec.components.schemas[name].properties.event=event;
+const createFields = { localId: id, nome: name, descricao: description, custo_operacional: money, items, event };
+const createRequired = ['localId','nome','custo_operacional','items'];
 const bodies = {
-    create: obj({ localId: id, nome: name, descricao: description, preco: money, custo_operacional: money, items }, ['localId','nome','preco','custo_operacional','items']),
-    patch: { ...obj({ nome: name, descricao: description, preco: money, custo_operacional: money }, []), minProperties: 1 },
+    create: { oneOf: [
+        obj({ ...createFields, preco: money }, [...createRequired,'preco']),
+        obj({ ...createFields, priceMode:{type:'string',enum:['RULE']} }, [...createRequired,'priceMode'])
+    ] },
+    patch: { ...obj({ nome: name, descricao: description, preco: money, custo_operacional: money, event }, []), minProperties: 1 },
     replace: obj({ items })
 };
 const errors = { 400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable' };
 for (const r of comboOperations) {
     const op = { operationId: r.operationId, tags: ['Combos'], summary: `${r.action} combo`, description: r.admin ? 'ADMIN gerencia catálogo e composição. Em combo ativo referenciado em pedido, somente o custo operacional pode ser editado. DELETE arquiva.' : 'O catálogo público lista combos ativos com custo operacional cadastrado, local ativo e insumos disponíveis.', security: r.admin ? [{ bearerAuth: [] }] : [], parameters: [], responses: {} };
+    if (r.action === 'create') op.description += ' O modo RULE usa os custos dos insumos, o custo operacional e o markup de COMBO para salvar o preço oficial.';
     if (r.path.includes('{id}')) op.parameters.push({ name: 'id', in: 'path', required: true, schema: id });
     if (r.action === 'list') op.parameters.push({ name: 'localId', in: 'query', required: true, schema: id }, { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: id });
+    if (r.action === 'list') op.parameters.push({ name:'inStock', in:'query', schema:{type:'boolean'}, description:'Quando true, exige estoque disponível para uma unidade do combo.' });
+    if (r.action === 'list') op.parameters.push({ name:'sessionId', in:'query', schema:id, description:'Lista somente ofertas temáticas da sessão. Omitir para consultar o catálogo geral.' });
     if (bodies[r.action]) op.requestBody = { required: true, content: { 'application/json': { schema: bodies[r.action] } } };
     if (r.action === 'adminList') {
         op.description='Somente ADMIN com sessão ativa. Lista todos os combos, inclusive arquivados, sem composição, com insumos/local indisponíveis ou legado sem local. Filtros combinados por AND: localId opcional, active true/false e q por trecho literal do nome. Sem active retorna ambos. Cursor exclusivo, ID decrescente; itemCount é quantidade de linhas da composição, não unidades. Não representa elegibilidade de venda; detalhe/composição no GET administrativo por ID. Não modifica o catálogo público.';

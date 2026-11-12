@@ -6,7 +6,7 @@ import page from "../tabelaexemplo/example-table.module.css";
 import styles from "../catalog/catalog.module.css";
 
 const sections = [
-  { href: "/admin/locais", label: "Cinemas" },
+  { href: "/admin/locais", label: "Locais" },
   { href: "/admin/locais/salas", label: "Salas" },
   { href: "/admin/locais/assentos", label: "Assentos" },
 ];

@@ -23,8 +23,9 @@ export function createSupplyModel(database) {
         END AS estoque_origem`;
     const shipmentJoins = `FROM logistica l
         LEFT JOIN solicitacoes_estoque r ON r.id_solicitacao=l.id_solicitacao
-        LEFT JOIN sessoes s ON s.id_sessao=r.id_sessao`;
-    const shipmentProjection = `l.*, COALESCE(l.status='RECEBIDO' AND l.id_equipamento_origem IS NOT NULL
+        LEFT JOIN sessoes s ON s.id_sessao=r.id_sessao
+        LEFT JOIN fornecedor_transportes t ON t.id_transporte=l.id_transporte`;
+    const shipmentProjection = `l.*, t.nome AS nome_transporte, COALESCE(l.status='RECEBIDO' AND l.id_equipamento_origem IS NOT NULL
         AND r.status='FINALIZADA' AND s.status='ENCERRADA', FALSE) AS devolucao_disponivel`;
     const routeProjection = `SELECT rota.*, origem.nome AS nome_origem, destino.nome AS nome_destino
         FROM rotas_logistica rota JOIN locais origem ON origem.id_local=rota.id_local_origem
@@ -120,8 +121,22 @@ export function createSupplyModel(database) {
         request: (id,c=database,lock=false) => lock
             ? one(c,'SELECT * FROM solicitacoes_estoque WHERE id_solicitacao=? FOR UPDATE',[id])
             : one(c,`SELECT ${requestProjection} ${requestJoins} WHERE r.id_solicitacao=?`,[id]),
-        listRequests(q,c=database) { const where=['r.id_solicitacao > ?'],args=[q.cursor??'0']; if(q.localId){where.push('r.id_local=?');args.push(q.localId);} if(q.sessionId){where.push('r.id_sessao=?');args.push(q.sessionId);} if(q.userId){where.push('r.id_usuario=?');args.push(q.userId);} if(q.supplierId){where.push('COALESCE(i.id_fornecedor,e.id_fornecedor)=?');args.push(q.supplierId);} return rows(c,`SELECT ${requestProjection} ${requestJoins} WHERE ${where.join(' AND ')} ORDER BY r.id_solicitacao LIMIT ${q.limit+1}`,args); },
-        async createRequest(c,d) { const [r]=await c.execute("INSERT INTO solicitacoes_estoque(id_usuario,id_local,id_sessao,id_insumo,id_equipamento,quantidade,status,observacao) VALUES(?,?,?,?,?,?,'PENDENTE',?)",[d.actorId,d.localId,d.sessionId??null,d.inputId??null,d.equipmentId??null,d.quantity,d.note??null]);return idString(r.insertId); },
+        listRequests(q, c = database) {
+            const where = ['r.id_solicitacao > ?'], args = [q.cursor ?? '0'];
+            if (q.localId) { where.push('r.id_local=?'); args.push(q.localId); }
+            if (q.sessionId) { where.push('r.id_sessao=?'); args.push(q.sessionId); }
+            if (q.userId) { where.push('r.id_usuario=?'); args.push(q.userId); }
+            if (q.supplierId) {
+                where.push('COALESCE(i.id_fornecedor,e.id_fornecedor)=?', "(r.status_supervisao IS NULL OR r.status_supervisao='APROVADA')");
+                args.push(q.supplierId);
+            }
+            if (q.status) { where.push('r.status=?'); args.push(q.status); }
+            return rows(c, `SELECT ${requestProjection} ${requestJoins} WHERE ${where.join(' AND ')} ORDER BY r.id_solicitacao LIMIT ${q.limit + 1}`, args);
+        },
+        async createRequest(c,d) { const [r]=await c.execute("INSERT INTO solicitacoes_estoque(id_usuario,id_local,id_sessao,id_insumo,id_equipamento,quantidade,status,observacao,status_supervisao) VALUES(?,?,?,?,?,?,'PENDENTE',?,?)",[d.actorId,d.localId,d.sessionId??null,d.inputId??null,d.equipmentId??null,d.quantity,d.note??null,d.statusSupervisao??null]);return idString(r.insertId); },
+        setSupervisorReview: (c,id,review,actorId) => c.execute(
+            "UPDATE solicitacoes_estoque SET status_supervisao=?,id_supervisor_decisao=?,data_decisao_supervisao=UTC_TIMESTAMP(3),status=IF(?='RECUSADA','RECUSADA',status) WHERE id_solicitacao=? AND status_supervisao='PENDENTE' AND status='PENDENTE'",
+            [review,actorId,review,id]),
         setRequest: (c,id,status) => c.execute('UPDATE solicitacoes_estoque SET status=? WHERE id_solicitacao=?',[status,id]),
         shipment: (id,c=database,lock=false) => lock
             ? one(c,'SELECT * FROM logistica WHERE id_logistica=? FOR UPDATE',[id])
@@ -136,13 +151,19 @@ export function createSupplyModel(database) {
                 WHERE ${where.join(' AND ')} ORDER BY l.id_logistica LIMIT ?`,[...args,q.limit+1]);
         },
         async createShipment(c,d) { const [r]=await c.execute("INSERT INTO logistica(id_fornecedor,id_local_origem,id_local_destino,id_solicitacao,id_insumo_origem,id_equipamento_origem,quantidade,status,observacao) VALUES(?,?,?,?,?,?,?,'PENDENTE',?)",[d.supplierId,d.originId,d.destinationId,d.requestId,d.inputId??null,d.equipmentId??null,d.quantity,d.note??null]);return idString(r.insertId);},
-        setShipment(c,id,status,receiver=null) {
+        transport: (c, id, supplierId) => one(c, 'SELECT status FROM fornecedor_transportes WHERE id_transporte=? AND id_fornecedor=? FOR UPDATE', [id,supplierId]),
+        transportInUse: (c, id) => one(c, 'SELECT id_logistica FROM logistica WHERE transporte_em_uso=? FOR UPDATE', [id]),
+        shipmentEvent: (c,id,userId,type,status,description=null) => c.execute(
+            'INSERT INTO logistica_eventos(id_logistica,id_usuario,tipo,status,descricao) VALUES(?,?,?,?,?)', [id,userId,type,status,description]),
+        shipmentEvents: (c,id,q) => rows(c,`SELECT id_evento,id_usuario,tipo,status,descricao,criado_em
+            FROM logistica_eventos WHERE id_logistica=? AND id_evento>? ORDER BY id_evento LIMIT ?`,[id,q.cursor??'0',q.limit+1]),
+        setShipment(c,id,status,receiver=null,transportId=null) {
             if(status==='ENVIADO')return c.execute(`UPDATE logistica l
                 LEFT JOIN rotas_logistica rota ON rota.id_local_origem=l.id_local_origem
                     AND rota.id_local_destino=l.id_local_destino AND rota.status='ATIVO'
-                SET l.status='ENVIADO',l.data_envio=NOW(),
+                SET l.status='ENVIADO',l.id_transporte=?,l.data_envio=NOW(),
                     l.data_prevista=COALESCE(TIMESTAMPADD(MINUTE,rota.tempo_estimado_min,NOW()),l.data_prevista)
-                WHERE l.id_logistica=?`,[id]);
+                WHERE l.id_logistica=?`,[transportId,id]);
             if(status==='RECEBIDO')return c.execute(
                 'UPDATE logistica SET status=?,data_recebimento=NOW(),id_usuario_recebimento=? WHERE id_logistica=?',
                 [status,receiver,id]);
@@ -154,6 +175,6 @@ export function createSupplyModel(database) {
         changeInput: (c,id,delta) => c.execute('UPDATE insumos SET quantidade=quantidade+? WHERE id_insumo=? AND quantidade+? BETWEEN quantidade_reservada AND 2147483647',[delta,id,delta]),
         changeEquipment: (c,id,destinationId) => c.execute('UPDATE equipamentos SET id_local=? WHERE id_equipamento=?',[destinationId,id]),
         async movement(c,d) { const [r]=await c.execute('INSERT INTO movimentacoes_estoque(id_insumo,id_equipamento,id_reserva,id_logistica,id_usuario,tipo,quantidade,motivo) VALUES(?,?,NULL,?,?,?,?,?)',[d.inputId??null,d.equipmentId??null,d.shipmentId,d.actorId,d.type,d.quantity,d.reason]);return idString(r.insertId); },
-        equipmentInTransit: (id,c) => one(c,`SELECT id_logistica FROM logistica WHERE id_equipamento_origem=? AND ${outstandingEquipment} LIMIT 1`,[id])
+        equipmentInTransit: (id,c) => one(c,`SELECT id_logistica FROM logistica WHERE id_equipamento_origem=? AND ${outstandingEquipment} LIMIT 1 FOR SHARE`,[id])
     };
 }

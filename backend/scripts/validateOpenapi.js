@@ -30,6 +30,7 @@ import { pricingOperations } from '../src/routes/pricingRoutes.js';
 import { paymentMethodOperations } from '../src/routes/paymentMethodRoutes.js';
 import { paymentOperations } from '../src/routes/paymentRoutes.js';
 import { refundOperations } from '../src/routes/refundRoutes.js';
+import { salesOperations } from '../src/routes/salesRoutes.js';
 import { orderOperations } from '../src/routes/orderRoutes.js';
 import { ticketOperations } from '../src/routes/ticketRoutes.js';
 import { streamingOperations } from '../src/routes/streamingRoutes.js';
@@ -47,7 +48,7 @@ export async function validateOpenapi() {
     await SwaggerParser.validate(structuredClone(spec));
     const ids = new Set();
     const operations = Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, op]) => ({ path, method, op })));
-    const registered = [...streamingPhotoOperations, ...dashboardOperations, ...promotionalOperations, ...snackCatalogOperations, ...adminDirectoryOperations, ...streamingProgressOperations, ...streamingFavoriteOperations, ...streamingProfileOperations, ...infrastructureOperations, ...identityOperations, ...catalogOperations, ...imageUploadOperations, ...filmGalleryOperations, ...venueOperations, ...sessionOperations, ...teamLookupOperations, ...teamOperations, ...taskOperations, ...notificationOperations, ...supplierOperations, ...supplierTransportOperations, ...productOperations, ...comboOperations, ...commerceGalleryOperations, ...inventoryOperations, ...supplyOperations, ...pricingOperations, ...paymentMethodOperations, ...paymentOperations, ...refundOperations, ...orderOperations, ...ticketOperations, ...streamingOperations, ...planOperations, ...participationOperations, ...newsletterOperations, ...newsletterCampaignOperations, ...newsletterDeliveryOperations, ...supportOperations, ...contentOperations, ...reportOperations];
+    const registered = [...streamingPhotoOperations, ...dashboardOperations, ...promotionalOperations, ...snackCatalogOperations, ...adminDirectoryOperations, ...streamingProgressOperations, ...streamingFavoriteOperations, ...streamingProfileOperations, ...infrastructureOperations, ...identityOperations, ...catalogOperations, ...imageUploadOperations, ...filmGalleryOperations, ...venueOperations, ...sessionOperations, ...teamLookupOperations, ...teamOperations, ...taskOperations, ...notificationOperations, ...supplierOperations, ...supplierTransportOperations, ...productOperations, ...comboOperations, ...commerceGalleryOperations, ...inventoryOperations, ...supplyOperations, ...pricingOperations, ...paymentMethodOperations, ...paymentOperations, ...refundOperations, ...orderOperations, ...salesOperations, ...ticketOperations, ...streamingOperations, ...planOperations, ...participationOperations, ...newsletterOperations, ...newsletterCampaignOperations, ...newsletterDeliveryOperations, ...supportOperations, ...contentOperations, ...reportOperations];
     if (operations.length !== registered.length) throw new Error(`OpenAPI diverge das rotas registradas: ${operations.length}/${registered.length}`);
     for (const route of registered) {
         const op = spec.paths[route.path]?.[route.method];

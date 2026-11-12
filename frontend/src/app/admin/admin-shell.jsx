@@ -69,10 +69,10 @@ const items = [
   { label: "Suporte", href: "/admin/suporte", icon: Headset },
 ];
 
-export default function AdminShell({ children, initialUser }) {
+export default function AdminShell({ children }) {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const session = useSession(initialUser);
+  const session = useSession();
   return (
     <div className={styles.shell}>
       <a className={styles.skip} href="#admin-content">Pular para o conteúdo</a>

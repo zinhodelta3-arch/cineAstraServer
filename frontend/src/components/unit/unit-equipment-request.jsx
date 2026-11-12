@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { PackagePlus } from 'lucide-react';
 import { unitOperation, useUnitList } from '@/hooks/unit/use-unit-data';
-import { UnitListState, UnitMore } from './unit-layout';
+import { UnitFeedback, UnitListState, UnitMore } from './unit-layout';
 import styles from './unit.module.css';
 
 export default function UnitEquipmentRequest({ localId, canManage, sessionId, action }) {
@@ -30,7 +30,7 @@ export default function UnitEquipmentRequest({ localId, canManage, sessionId, ac
       method: 'POST',
       body: { localId, sessionId: selectedSession, equipmentId: equipment.id_equipamento,
         quantity: equipment.disponivel, ...(note ? { note } : {}) },
-    }, 'Solicitação de equipamento enviada ao fornecedor.')) {
+    }, canManage ? 'Solicitação de equipamento enviada ao fornecedor.' : 'Solicitação de equipamento enviada para avaliação do supervisor.')) {
       formElement.reset();
       setSelected('');
       sources.reload();
@@ -67,6 +67,7 @@ export default function UnitEquipmentRequest({ localId, canManage, sessionId, ac
             {action.pending ? 'Aguarde…' : 'Solicitar equipamento'}
           </button>
         </form>
+        <UnitFeedback error={action.error} notice={action.notice} />
         <UnitListState list={sources} empty="Não há equipamentos disponíveis para transferência." />
         <UnitMore list={sources} caption="Carregar mais equipamentos" />
         {canManage && <>

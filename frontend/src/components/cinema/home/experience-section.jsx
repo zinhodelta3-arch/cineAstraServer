@@ -2,7 +2,9 @@
 
 import { ArrowRight, Check } from "lucide-react";
 import { FEATURES } from "./data";
-import { SmartImg, Button, SectionTitle } from "./home-ui";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { SmartImg, SectionTitle } from "./home-ui";
 import { useHomeExperience } from "@/hooks/cinema/home/use-home-experience";
 
 export default function ExperienceSection() {
@@ -33,7 +35,7 @@ export default function ExperienceSection() {
                 </div>
               ))}
             </div>
-            <Button>Conhecer programação VIP <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" /></Button>
+            <Button nativeButton={false} render={<Link href="/cinema/experiencias" />}>Conhecer experiências <ArrowRight className="size-4" aria-hidden="true" /></Button>
           </div>
 
           <div className="lg:col-span-7">

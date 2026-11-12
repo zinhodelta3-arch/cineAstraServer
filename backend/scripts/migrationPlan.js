@@ -34,7 +34,14 @@ export async function migrationPlan() {
         '20261025_33_streaming_progress.sql',
         '20261026_35_promotional_content.sql',
         '20261026_36_streaming_profile_photos.sql',
-        '20261108_40_stock_replenishment_links.sql'
+        '20261108_40_stock_replenishment_links.sql',
+        '20261111_41_stock_supervisor_review.sql',
+        '20261111_42_logistics_transport.sql',
+        '20261111_43_admin_sales.sql',
+        '20261111_44_social_destinations.sql',
+        '20261111_45_venue_types.sql',
+        '20261111_46_event_combos.sql',
+        '20261111_47_responsive_film_banners.sql'
     ]);
     const sources = [
         ['20261001_02_create_tables.sql', sql => /^(CREATE TABLE|CREATE INDEX)\b/i.test(sql)],
@@ -81,7 +88,14 @@ export async function migrationPlan() {
         ['20261031_37_supervisor_locations.sql', () => true],
         ['20261105_38_supplier_transports.sql', () => true],
         ['20261108_39_logistics_routes.sql', () => true],
-        ['20261108_40_stock_replenishment_links.sql', () => true]
+        ['20261108_40_stock_replenishment_links.sql', () => true],
+        ['20261111_41_stock_supervisor_review.sql', () => true],
+        ['20261111_42_logistics_transport.sql', () => true],
+        ['20261111_43_admin_sales.sql', () => true],
+        ['20261111_44_social_destinations.sql', () => true],
+        ['20261111_45_venue_types.sql', () => true],
+        ['20261111_46_event_combos.sql', () => true],
+        ['20261111_47_responsive_film_banners.sql', () => true]
     ];
     const plan = [];
     for (const [file, filter] of sources) {

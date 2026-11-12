@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useAdminReport, useReportRange } from '@/hooks/admin/use-admin-reports';
-import ReportsLayout, { count, money, ReportFilters, ReportState } from './reports-layout';
+import ReportsLayout, { count, money, ReportDetails, ReportFilters, ReportSection, ReportState } from './reports-layout';
 import styles from '../catalog/catalog.module.css';
+import reports from './reports.module.css';
 
 const scopes = { ALL: 'Todas as operações', ORDERS: 'Pedidos', SUBSCRIPTIONS: 'Assinaturas' };
 
@@ -13,19 +14,33 @@ export default function FinanceAdmin() {
   const params = new URLSearchParams(range.applied ?? {}); params.set('scope', appliedScope);
   const report = useAdminReport(range.applied ? `finance?${params}` : null);
   const data = report.data;
-  const details = data ? [
-    ['Capturas', count(data.captureCount)], ['Estornos confirmados', count(data.refundCount)],
-    ['Pedidos', count(data.orderCount)], ['Cobranças de assinatura', count(data.subscriptionChargeCount)],
-    ['Possíveis capturas duplicadas', count(data.duplicateCaptureCandidates)], ['Pedidos com snapshot', count(data.orderSnapshotCount)],
-    ['Pedidos sem snapshot', count(data.missingOrderSnapshots)], ['Linhas sem custo', count(data.missingCostLines)],
-    ['Alertas de margem', count(data.marginAlertLines)], ['Alertas de margem projetada', count(data.projectedMarginAlertLines)]
-  ] : [];
-
   return <ReportsLayout title="Relatório financeiro" description="Consulte capturas, estornos e cobertura dos custos conhecidos.">
-    <section className={styles.panel} aria-labelledby="finance-title"><header className={styles.panelHeader}><div><h2 id="finance-title">Movimento financeiro</h2><p>Eventos registrados no período em UTC, incluindo as duas datas.</p></div>{data && <span className={styles.count}>{scopes[data.scope]}</span>}</header>
+    <ReportSection id="finance-title" title="Movimento financeiro" description="Eventos registrados no período em UTC, incluindo as duas datas.">
       <ReportFilters range={range} onSubmit={() => { if (range.commit()) setAppliedScope(scope); }}><label className={styles.filter}>Escopo<select value={scope} onChange={event => setScope(event.target.value)}>{Object.entries(scopes).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label></ReportFilters>
       {range.applied ? <ReportState report={report} /> : <p className={styles.state} role="status">Preparando período…</p>}
-      {data && <><div className={`${styles.summaryGrid} ${styles.stockSummary}`}><div><span>Capturado</span><strong>{money(data.grossCaptured)}</strong></div><div><span>Estornos confirmados</span><strong>{money(data.confirmedRefunds)}</strong></div><div><span>Movimento líquido</span><strong>{money(data.netCashMovement)}</strong></div></div><div className={styles.pricingForm}><dl className={styles.detailGrid}>{details.map(([title, value]) => <div key={title}><dt>{title}</dt><dd>{value}</dd></div>)}<div><dt>Custo conhecido dos pedidos</dt><dd>{data.knownOrderCost == null ? 'Não disponível neste escopo' : money(data.knownOrderCost)}</dd></div><div><dt>Lucro líquido</dt><dd>Não apurado pelo sistema</dd></div></dl></div>{data.notes?.length > 0 && <div className={styles.pricingForm}>{data.notes.map(note => <p key={note} className={styles.hint}>{note}</p>)}</div>}</>}
-    </section>
+      {data && <div className={reports.body}>
+        <p className={styles.hint}>{scopes[data.scope]}</p>
+        <dl className={reports.metrics}>
+          <div><dt>Movimento líquido</dt><dd>{money(data.netCashMovement)}</dd></div>
+          <div><dt>Capturado</dt><dd>{money(data.grossCaptured)}</dd></div>
+          <div><dt>Estornos confirmados</dt><dd>{money(data.confirmedRefunds)}</dd></div>
+        </dl>
+        <ReportDetails title="Operações do período" rows={[
+          ['Capturas', count(data.captureCount)], ['Estornos confirmados', count(data.refundCount)],
+          ['Pedidos', count(data.orderCount)], ['Cobranças de assinatura', count(data.subscriptionChargeCount)],
+          ['Possíveis capturas duplicadas', count(data.duplicateCaptureCandidates)]
+        ]} />
+        <ReportDetails title="Custos e margem" rows={[
+          ['Custo conhecido dos pedidos', data.knownOrderCost == null ? 'Indisponível neste escopo' : money(data.knownOrderCost)],
+          ['Lucro líquido', 'Não apurado pelo sistema'],
+          ['Pedidos com registro de precificação', count(data.orderSnapshotCount)],
+          ['Pedidos sem registro de precificação', count(data.missingOrderSnapshots)],
+          ['Itens sem custo', count(data.missingCostLines)],
+          ['Alertas de margem', count(data.marginAlertLines)],
+          ['Alertas de margem projetada', count(data.projectedMarginAlertLines)]
+        ]} />
+        {data.notes?.length > 0 && <div className={reports.notes}>{data.notes.map(note => <p key={note}>{note}</p>)}</div>}
+      </div>}
+    </ReportSection>
   </ReportsLayout>;
 }

@@ -1,30 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { SESSION_CHANGE_EVENT } from "@/lib/auth/session-events.mjs";
+
+export const STREAMING_ACCESS_CHANGE_EVENT = "cineastra-streaming-access-change";
+const RECHECK_MS = 30000;
 
 export default function useStreamingAccess(user) {
-  const pathname = usePathname();
   const userId = user?.id;
   const client = user?.role === "CLIENTE";
   const [access, setAccess] = useState(null);
 
   useEffect(() => {
     if (!client || !userId) return;
-    const controller = new AbortController();
-    let generation = 0;
+    let controller;
+    let lastCheck = 0;
     let expiryTimer;
 
     async function load() {
-      const current = ++generation;
+      controller?.abort();
+      const request = new AbortController();
+      controller = request;
+      lastCheck = Date.now();
       clearTimeout(expiryTimer);
       try {
         let cursor = "0";
         let expiresAt = 0;
+        const visited = new Set();
         const today = new Date().toISOString().slice(0, 10);
         do {
+          if (visited.has(cursor)) throw new Error("Paginação inválida.");
+          visited.add(cursor);
           const response = await fetch(`/api/plans/mine?cursor=${encodeURIComponent(cursor)}`, {
-            credentials: "same-origin", cache: "no-store", signal: controller.signal,
+            credentials: "same-origin", cache: "no-store", signal: request.signal,
           });
           if (!response.ok) throw new Error("Assinatura indisponível.");
           const data = await response.json();
@@ -42,7 +50,7 @@ export default function useStreamingAccess(user) {
           cursor = next;
         } while (cursor && !expiresAt);
 
-        if (controller.signal.aborted || current !== generation) return;
+        if (request.signal.aborted) return;
         const remaining = expiresAt - Date.now();
         setAccess({ userId, expiresAt: remaining > 0 ? expiresAt : 0 });
         if (remaining > 0) {
@@ -52,20 +60,23 @@ export default function useStreamingAccess(user) {
           }, Math.min(remaining, 2147483647));
         }
       } catch {
-        if (!controller.signal.aborted && current === generation) setAccess({ userId, expiresAt: 0 });
+        if (!request.signal.aborted) setAccess({ userId, expiresAt: 0 });
       }
     }
 
-    load();
-    window.addEventListener("focus", load);
-    window.addEventListener("cineastra-session", load);
+    const onFocus = () => { if (Date.now() - lastCheck >= RECHECK_MS) void load(); };
+    void load();
+    window.addEventListener("focus", onFocus);
+    window.addEventListener(SESSION_CHANGE_EVENT, load);
+    window.addEventListener(STREAMING_ACCESS_CHANGE_EVENT, load);
     return () => {
-      controller.abort();
+      controller?.abort();
       clearTimeout(expiryTimer);
-      window.removeEventListener("focus", load);
-      window.removeEventListener("cineastra-session", load);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener(SESSION_CHANGE_EVENT, load);
+      window.removeEventListener(STREAMING_ACCESS_CHANGE_EVENT, load);
     };
-  }, [client, userId, pathname]);
+  }, [client, userId]);
 
   return Boolean(client && userId && access?.userId === userId && access.expiresAt > 0);
 }

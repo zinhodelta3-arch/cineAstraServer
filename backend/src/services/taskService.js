@@ -19,7 +19,12 @@ export function createTaskService({ model, identity }) {
         const location = actor.tipo === 'SUPERVISOR' ? await model.supervisorLocation(actor.id, c) : null;
         const canManage = actor.tipo === 'ADMIN' || actor.tipo === 'SUPERVISOR' && location && idString(location.id_local) === idString(team.id_local);
         const member = canManage ? null : await model.membership(teamId, actor.id, c);
-        if (!canManage && !(actor.tipo === 'COLABORADOR' && member?.status === 'ATIVO' && member?.usuario_status === 'ATIVO' && member?.tipo_usuario === 'COLABORADOR' && member?.funcao?.trim())) throw ApiError.acessoNegado();
+        if (!canManage) {
+            if (actor.tipo !== 'COLABORADOR') throw ApiError.acessoNegado();
+            if (member?.status !== 'ATIVO' || member.usuario_status !== 'ATIVO' || member.tipo_usuario !== 'COLABORADOR' || !member.funcao?.trim()) {
+                throw new ApiError('Chamados exigem vínculo ativo e função na equipe.', 403, null, 'TASK_MEMBERSHIP_REQUIRED');
+            }
+        }
         return { ...team, canManage: Boolean(canManage) };
     }
     async function eligibleMember(c, teamId, userId) {
@@ -107,7 +112,7 @@ export function createTaskService({ model, identity }) {
             return mutate(teamId, context, async (c, actor, team) => {
                 const task = await taskInTeam(c, team, id, true);
                 if (!manager(actor, team) && actor.id !== idString(task.id_criador) && (task.id_responsavel == null || actor.id !== idString(task.id_responsavel))) throw ApiError.acessoNegado();
-                if (task.status !== 'RESOLVIDO') throw conflict('Transição inválida');
+                if (task.status !== 'RESOLVIDO') throw conflict('Só um chamado resolvido pode ser fechado.');
                 await model.update(c, teamId, id, { status: 'FECHADO', data_fechamento: new Date() });
                 await record(c, id, actor, 'FECHADO', 'RESOLVIDO', 'FECHADO', task.id_responsavel, context);
                 return taskDto(await taskInTeam(c, team, id));

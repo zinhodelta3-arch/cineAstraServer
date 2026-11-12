@@ -36,12 +36,14 @@ export function validateEnv(env = process.env) {
     const mode = env.NODE_ENV ?? 'development';
     if (!['development', 'test', 'staging', 'production'].includes(mode)) errors.add('NODE_ENV');
     const production = mode === 'production';
-    const origins = (env.CORS_ORIGINS ?? env.FRONTEND_URL ?? (production ? '' : 'http://localhost:3000')).split(',').map(s => s.trim()).filter(Boolean);
+    const configuredOrigins = env.CORS_ORIGINS?.trim() || env.FRONTEND_URL?.trim();
+    const origins = (configuredOrigins ?? (production ? '' : 'http://localhost:3000'))
+        .split(',').map(origin => origin.trim()).filter(Boolean).map(origin => origin.replace(/\/$/, ''));
     const validOrigin = value => {
         try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) && !u.username && !u.password && u.origin === value; }
         catch { return false; }
     };
-    if (!origins.length || origins.some(o => !validOrigin(o))) errors.add('CORS_ORIGINS');
+    if ((configuredOrigins && !origins.length) || origins.some(o => !validOrigin(o))) errors.add('CORS_ORIGINS');
     const secret = required('JWT_SECRET');
     if (secret && (Buffer.byteLength(secret) < 32 || /^(change|example|secret|senha|replace)/i.test(secret))) errors.add('JWT_SECRET');
     const docsEnabled = boolean('DOCS_ENABLED', !production);

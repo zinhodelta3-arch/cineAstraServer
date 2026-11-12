@@ -2,7 +2,7 @@ import useStreamHero from "@/hooks/streaming/home/use-stream-hero";
 import Image from "next/image";
 import { Play, Plus, BookmarkCheck, Info } from "lucide-react";
 import { ACCENT } from "./data";
-import Art from "./art";
+import ResponsiveFilmBanner from "@/components/cinema/filmes/responsive-film-banner";
 import Button from "./button";
 import HeroArrow from "./hero-arrow";
 
@@ -14,7 +14,7 @@ export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggle
     <section id="hero" aria-roledescription="carrossel" className="grain relative min-h-[90vh] bg-background flex items-center pt-28 pb-40 overflow-hidden">
       {heroes.map((m, i) => (
         <div key={m.id} aria-hidden={i !== cur} className={`absolute inset-y-0 right-0 w-full lg:w-[78%] transition-opacity duration-1000 ${i === cur ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
-          <Art movie={m} variant="backdrop" className="absolute inset-0 size-full object-cover" />
+          <ResponsiveFilmBanner filmId={m.id} context="STREAMING_HOME" legacyBanner={m.backdrop} cover={m.poster} active={i === cur} />
         </div>
       ))}
       <div className="absolute inset-0 z-10 bg-linear-to-r from-background via-background/85 to-transparent" />

@@ -35,6 +35,9 @@ function fixture() {
         async update(c, id, data) { Object.assign(team(id), data); },
         async member(id, memberId) { return state.members.find(m => m.id_equipe === String(id) && m.id_equipe_membro === String(memberId)) ?? null; },
         async memberByUser(id, userId) { return member(id, userId) ?? null; },
+        async activeMembership(userId) {
+            return state.members.find(m => m.id_usuario === userId && m.status === 'ATIVO' && team(m.id_equipe)?.status === 'ATIVA') ?? null;
+        },
         async activeMemberInLocal(userId, localId) {
             return state.members.find(m => {
                 const membershipTeam = team(m.id_equipe);
@@ -84,10 +87,6 @@ test('equipe exige sessão ativa e supervisor autorizado; outro supervisor não 
 
 test('solicitação não cria membro; apenas gestor próprio aceita e define função', async () => {
     const f = fixture(); await f.api('post', '/api/teams').send({ sessionId: '1', nome: 'A' }).expect(201);
-    await f.api('post', '/api/teams/1/entries/requests', '3').send({}).expect(403);
-    f.state.sessions.push({ id_sessao: '3', id_local: '10', status: 'AGENDADA' });
-    f.state.teams.push({ id_equipe: '99', id_sessao: '3', id_local: '10', status: 'ATIVA' });
-    f.state.members.push({ id_equipe_membro: '99', id_equipe: '99', id_usuario: '3', status: 'ATIVO' });
     const proposal = await f.api('post', '/api/teams/1/entries/requests', '3').send({}).expect(201);
     assert.ok(!f.state.members.some(m => m.id_equipe === '1'));
     await f.api('post', '/api/teams/1/entries/requests', '3').send({}).expect(409);

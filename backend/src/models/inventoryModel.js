@@ -8,6 +8,9 @@ export function createInventoryModel(database) {
     return {
         supervisorLocation: (id, c = database) => one(c, 'SELECT id_local FROM supervisor_locais WHERE id_supervisor = ?', [id]),
         item(kind, id, c = database, lock = false) { const s = spec(kind); return one(c, `SELECT ${s.id},id_fornecedor,id_local,nome,quantidade${kind === 'inputs' ? ',quantidade_reservada,quantidade_minima' : ''},status FROM ${s.table} WHERE ${s.id} = ?${lock ? ' FOR UPDATE' : ''}`, [id]); },
+        equipmentCommitment: (id, c = database, lock = false) => one(c, `SELECT id_logistica FROM logistica
+            WHERE id_equipamento_origem = ? AND status IN ('PENDENTE','ENVIADO','EM_TRANSITO','RECEBIDO')
+            LIMIT 1${lock ? ' FOR SHARE' : ''}`, [id]),
         operational: (supplierId, localId, c = database) => one(c, 'SELECT f.id_fornecedor,f.id_usuario,f.status AS fornecedor_status,u.status AS usuario_status,u.tipo_usuario,l.status AS local_status,fl.status AS vinculo_status FROM fornecedores f JOIN usuarios u ON u.id_usuario = f.id_usuario JOIN locais l ON l.id_local = ? LEFT JOIN fornecedor_locais fl ON fl.id_fornecedor = f.id_fornecedor AND fl.id_local = l.id_local WHERE f.id_fornecedor = ?', [localId,supplierId]),
         supplierByUser: (userId, c = database) => one(c, 'SELECT id_fornecedor,status FROM fornecedores WHERE id_usuario = ?', [userId]),
         combo: (id, c, lock = false) => one(c, `SELECT id_combo,id_local,ativo FROM combos WHERE id_combo = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
@@ -33,15 +36,22 @@ export function createInventoryModel(database) {
             const [result] = await c.execute('INSERT INTO movimentacoes_estoque (id_insumo,id_equipamento,id_reserva,id_usuario,tipo,quantidade,motivo) VALUES (?,?,?,?,?,?,?)', [data.inputId ?? null,data.equipmentId ?? null,data.reservationId ?? null,data.actorId,data.tipo,data.quantidade,data.motivo ?? null]);
             return idString(result.insertId);
         },
-        movement: (id, c = database) => one(c, 'SELECT id_movimentacao,id_insumo,id_equipamento,id_reserva,id_usuario,tipo,quantidade,motivo,data_movimentacao FROM movimentacoes_estoque WHERE id_movimentacao = ?', [id]),
+        movement: (id, c = database) => one(c, 'SELECT id_movimentacao,id_insumo,id_equipamento,id_reserva,id_logistica,id_usuario,tipo,quantidade,motivo,data_movimentacao FROM movimentacoes_estoque WHERE id_movimentacao = ?', [id]),
         listMovements(q, supplierId = null) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
             const where = ['m.id_movimentacao > ?'], args = [q.cursor ?? '0'];
             if (q.inputId) { where.push('m.id_insumo = ?'); args.push(q.inputId); }
             if (q.equipmentId) { where.push('m.id_equipamento = ?'); args.push(q.equipmentId); }
-            if (q.localId) { where.push('COALESCE(i.id_local,e.id_local) = ?'); args.push(q.localId); }
-            if (supplierId) { where.push('COALESCE(i.id_fornecedor,e.id_fornecedor) = ?'); args.push(supplierId); }
-            return rows(database, `SELECT m.id_movimentacao,m.id_insumo,m.id_equipamento,m.id_reserva,m.id_usuario,m.tipo,m.quantidade,m.motivo,m.data_movimentacao,i.nome AS nome_insumo,e.nome AS nome_equipamento FROM movimentacoes_estoque m LEFT JOIN insumos i ON i.id_insumo = m.id_insumo LEFT JOIN equipamentos e ON e.id_equipamento = m.id_equipamento WHERE ${where.join(' AND ')} ORDER BY m.id_movimentacao LIMIT ${q.limit + 1}`, args);
+            if (q.localId) {
+                where.push("COALESCE(CASE m.tipo WHEN 'ENTRADA' THEN l.id_local_destino WHEN 'SAIDA' THEN l.id_local_origem WHEN 'DEVOLUCAO' THEN l.id_local_origem END,i.id_local,e.id_local) = ?");
+                args.push(q.localId);
+            }
+            if (supplierId) { where.push('COALESCE(l.id_fornecedor,i.id_fornecedor,e.id_fornecedor) = ?'); args.push(supplierId); }
+            return rows(database, `SELECT m.id_movimentacao,m.id_insumo,m.id_equipamento,m.id_reserva,m.id_logistica,l.id_solicitacao,
+                m.id_usuario,m.tipo,m.quantidade,m.motivo,m.data_movimentacao,i.nome AS nome_insumo,e.nome AS nome_equipamento
+                FROM movimentacoes_estoque m LEFT JOIN logistica l ON l.id_logistica = m.id_logistica
+                LEFT JOIN insumos i ON i.id_insumo = m.id_insumo LEFT JOIN equipamentos e ON e.id_equipamento = m.id_equipamento
+                WHERE ${where.join(' AND ')} ORDER BY m.id_movimentacao LIMIT ${q.limit + 1}`, args);
         },
         alerts(q, supplierId = null) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');

@@ -14,7 +14,7 @@ export function contentRoutes(controller,{auth,limits}){
     r.get('/api/content/:slug',noStore,contentSlug,controller.get);
     r.post('/api/admin/content',noStore,auth,allowRoles('ADMIN'),...limits.checkout,body(publication,'contentInput'),controller.publish);
     r.get('/api/orders/:orderId/receipt',noStore,auth,allowRoles('CLIENTE'),(req,res,next)=>{if(!/^[1-9]\d{0,19}$/.test(req.params.orderId)||BigInt(req.params.orderId)>18446744073709551615n)throw ApiError.validacao('ID inválido');next();},controller.receipt);
-    r.post('/api/assistant/messages',noStore,auth,allowRoles('CLIENTE'),...limits.assistant,body(assistantMessage,'assistantInput'),controller.assistantMessage);
+    r.post('/api/assistant/messages',noStore,auth,allowRoles('CLIENTE','COLABORADOR','SUPERVISOR','FORNECEDOR','ADMIN'),...limits.assistant,body(assistantMessage,'assistantInput'),controller.assistantMessage);
     r.post('/api/assistant/handoff',noStore,auth,allowRoles('CLIENTE'),...limits.assistant,body(assistantHandoff,'assistantInput'),controller.assistantHandoff);
     return r;
 }

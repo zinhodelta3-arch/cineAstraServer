@@ -17,9 +17,9 @@ export default function SupportWorkspace(){
  return <div className="mx-auto mt-7 w-full max-w-[1120px] space-y-7">
   {s.notice&&<p role="status" className="rounded-xl border border-primary/30 bg-primary/5 p-4">{s.notice}</p>}
   {s.error&&<p role="alert" className="rounded-xl border border-destructive/40 p-4">{s.error}</p>}
-  <div className="grid items-start gap-7 lg:grid-cols-2">
-   <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-    <h2 className="text-2xl font-bold">Abrir chamado</h2>
+  <div className="grid items-start gap-4 lg:grid-cols-2">
+   <section className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6">
+    <h2 className="text-xl font-bold">Abrir chamado</h2>
     <p className="mt-2 text-sm text-muted-foreground">Descreva o que aconteceu. Não inclua senhas ou dados completos de pagamento.</p>
     <form className="mt-5 space-y-4" onSubmit={s.create}>
      <label className="block text-sm font-semibold">Assunto<Input className="mt-2" value={s.subject} onChange={e=>s.setSubject(e.target.value)} maxLength={150} required disabled={s.pending} /></label>
@@ -27,13 +27,13 @@ export default function SupportWorkspace(){
      <Button type="submit" disabled={s.pending||!s.subject.trim()||!s.message.trim()}>Abrir chamado</Button>
     </form>
    </section>
-   <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl font-bold">Meus chamados</h2><Button variant="outline" onClick={s.list.retry} disabled={s.list.loading||s.pending}>Atualizar chamados</Button></div>
-    <ul className="mt-5 space-y-3">{s.list.items.map(item=><li key={item.id}><button type="button" disabled={s.pending} aria-pressed={s.selected===item.id} onClick={()=>s.select(item.id)} className="w-full rounded-xl border border-border p-4 text-left hover:border-primary aria-pressed:border-primary"><span className="block break-words font-semibold">#{item.id} · {item.subject}</span><span className="mt-1 block text-sm text-muted-foreground">{statusLabels[item.status]||item.status}</span></button></li>)}</ul>
+   <section className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6">
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Meus chamados</h2><Button variant="outline" onClick={s.list.retry} disabled={s.list.loading||s.pending}>Atualizar chamados</Button></div>
+    <ul className="mt-4 space-y-2">{s.list.items.map(item=><li key={item.id}><button type="button" disabled={s.pending} aria-pressed={s.selected===item.id} onClick={()=>s.select(item.id)} className="w-full rounded-lg border border-border p-3 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-pressed:border-primary aria-pressed:bg-primary/5 disabled:opacity-60"><span className="block break-words font-semibold">#{item.id} · {item.subject}</span><span className="mt-1 block text-sm text-muted-foreground">{statusLabels[item.status]||item.status}</span></button></li>)}</ul>
     <ListStatus list={s.list} empty="Você ainda não possui chamados." more="Carregar mais chamados" />
    </section>
   </div>
-  {s.selected&&<section className="rounded-2xl border border-border bg-card p-6 sm:p-8" aria-labelledby="ticket-title">
+  {s.selected&&<section className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6" aria-labelledby="ticket-title">
    <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="ticket-title" className="text-2xl font-bold">Conversa do chamado #{s.selected}</h2><Button variant="outline" onClick={s.refresh} disabled={s.pending||s.detail.loading||s.messages.loading}>Atualizar conversa</Button></div>
    {s.detail.loading&&<p role="status" className="mt-4">Carregando chamado…</p>}
    {s.detail.error&&<div role="alert" className="mt-4"><p>{s.detail.error}</p><Button onClick={s.detail.retry} variant="outline">Tentar novamente</Button></div>}

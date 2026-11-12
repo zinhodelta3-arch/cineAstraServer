@@ -1,8 +1,8 @@
 import { ArrowUpRight, CalendarDays, CheckCircle2, MapPin, MessageCircle, PartyPopper } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { EXPERIENCES } from "./data"
+import Link from "next/link"
 
-export default function ExperienceInquiry({ selectedExperience, sent, submitInquiry, resetInquiry, changeExperience, minimumDate }) {
+export default function ExperienceInquiry({ selectedExperience, sent, submitInquiry, resetInquiry, changeExperience, minimumDate, experiences, form, update, pending, message, detailLoading, detailError, retryDetail, experience, session }) {
   return (
       <section id="reservar" className="scroll-mt-24 border-y border-border/70 bg-card/30">
         <div className="mx-auto grid max-w-[1600px] gap-10 px-5 py-14 md:px-10 md:py-20 lg:grid-cols-[.8fr_1.2fr]">
@@ -25,36 +25,38 @@ export default function ExperienceInquiry({ selectedExperience, sent, submitInqu
             {sent ? (
               <div role="status" className="rounded-xl border border-primary/30 bg-primary/10 p-6 text-center">
                 <CheckCircle2 className="mx-auto size-9 text-primary" />
-                <h4 className="mt-3 text-lg font-black">Solicitação preparada!</h4>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Esta é uma demonstração de interface: os dados não foram enviados a uma equipe nem geraram uma reserva real.</p>
-                <Button type="button" variant="outline" className="mt-4" onClick={resetInquiry}>Enviar outra solicitação</Button>
+                <h4 className="mt-3 text-lg font-black">Solicitação enviada</h4>
+                <p className="mt-2 text-sm text-muted-foreground">Chamado #{sent.id}. A equipe responderá pelo suporte.</p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <Button nativeButton={false} render={<Link href="/cinema/suporte" />}>Acompanhar no suporte</Button>
+                  <Button type="button" variant="outline" onClick={resetInquiry}>Enviar outra solicitação</Button>
+                </div>
               </div>
             ) : (
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">Nome
-                    <input required name="name" placeholder="Como podemos te chamar?" className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
-                  </label>
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">E-mail ou telefone
-                    <input required name="contact" placeholder="Seu melhor contato" className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
-                  </label>
                   <label className="grid gap-1.5 text-xs font-semibold text-foreground sm:col-span-2">Experiência desejada
-                    <select value={selectedExperience} onChange={changeExperience} className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
-                      {EXPERIENCES.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                    <select required disabled={pending || !experiences.length} value={selectedExperience} onChange={changeExperience} className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
+                      <option value="">Selecione uma experiência</option>{experiences.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
                     </select>
                   </label>
                   <label className="grid gap-1.5 text-xs font-semibold text-foreground">Data desejada
-                    <input type="date" name="date" min={minimumDate} className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+                    <input type="date" name="date" required disabled={pending} value={form.date} onChange={update("date")} min={minimumDate} className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
                   </label>
-                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">Quantidade de pessoas/veículos
-                    <input type="number" name="guests" min="1" placeholder="Ex.: 40" className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">{experience?.location ? "Quantidade de pessoas" : "Quantidade de pessoas/veículos"}
+                    <input type="number" name="guests" required disabled={pending} value={form.guests} onChange={update("guests")} min="1" max={experience?.location?.eventCapacity ?? 100000} placeholder="Ex.: 40" className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
                   </label>
                   <label className="grid gap-1.5 text-xs font-semibold text-foreground sm:col-span-2">Conte mais sobre seu evento
-                    <textarea name="details" rows={4} placeholder="Tipo de evento, cidade/local, duração e o que você imagina..." className="resize-y rounded-lg border border-border bg-background px-3 py-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+                    <textarea name="details" required disabled={pending} value={form.details} onChange={update("details")} minLength={10} maxLength={4000} rows={4} placeholder="Tipo de evento, cidade/local, duração e o que você imagina..." className="resize-y rounded-lg border border-border bg-background px-3 py-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
                   </label>
                 </div>
-                <Button type="submit" size="lg" className="mt-5 w-full">Solicitar informações <ArrowUpRight className="size-4" /></Button>
-                <p className="mt-3 text-center text-[10px] leading-5 text-muted-foreground">Preenchimento demonstrativo. A integração de envio e a confirmação de reservas serão implementadas posteriormente.</p>
+                {detailLoading && <p className="mt-3 text-sm" role="status">Consultando a experiência…</p>}
+                {detailError && <div className="mt-3"><p role="alert">{detailError}</p><Button type="button" variant="outline" onClick={retryDetail}>Tentar novamente</Button></div>}
+                {message && <p className="mt-3 text-sm text-destructive" role="alert">{message}</p>}
+                {session.loading ? <p className="mt-4 text-sm" role="status">Consultando sua conta…</p> : session.user?.role === "CLIENTE" ? (
+                  <Button type="submit" size="lg" disabled={pending || !experience} className="mt-5 w-full">{pending ? "Enviando…" : "Solicitar orçamento"} <ArrowUpRight className="size-4" /></Button>
+                ) : session.user ? <p className="mt-4 text-sm">Use uma conta de cliente para enviar a solicitação.</p> :
+                  <Button nativeButton={false} render={<Link href="/auth/login" />} className="mt-5 w-full">Entrar para solicitar orçamento</Button>}
               </>
             )}
           </form>

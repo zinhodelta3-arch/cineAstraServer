@@ -34,7 +34,21 @@ export function createTeamModel(database) {
         update(c, id, input) { const keys = Object.keys(input); if (!keys.length || keys.some(k => !['nome','status','id_supervisor'].includes(k))) throw new TypeError('Campos inválidos'); return c.execute(`UPDATE equipes SET ${keys.map(k => `${k} = ?`).join(',')} WHERE id_equipe = ?`, [...keys.map(k => input[k]), id]); },
         member: (teamId, memberId, c = database) => one(c, `SELECT ${memberFields} FROM equipe_membros WHERE id_equipe = ? AND id_equipe_membro = ?`, [teamId, memberId]),
         memberByUser: (teamId, userId, c = database) => one(c, `SELECT ${memberFields} FROM equipe_membros WHERE id_equipe = ? AND id_usuario = ?`, [teamId, userId]),
-        activeMemberInLocal: (userId, localId, c = database) => one(c, "SELECT m.id_equipe_membro FROM equipe_membros m JOIN equipes e ON e.id_equipe = m.id_equipe JOIN sessoes s ON s.id_sessao = e.id_sessao JOIN salas sa ON sa.id_sala = s.id_sala WHERE m.id_usuario = ? AND m.status = 'ATIVO' AND e.status = 'ATIVA' AND sa.id_local = ? LIMIT 1", [userId, localId]),
+        activeMemberInLocal: (userId, localId, c) => one(c, "SELECT m.id_equipe_membro FROM equipe_membros m JOIN equipes e ON e.id_equipe = m.id_equipe JOIN sessoes s ON s.id_sessao = e.id_sessao JOIN salas sa ON sa.id_sala = s.id_sala WHERE m.id_usuario = ? AND m.status = 'ATIVO' AND e.status = 'ATIVA' AND sa.id_local = ? LIMIT 1 FOR UPDATE", [userId, localId]),
+        activeMembership: (userId, c) => one(c, `SELECT m.id_equipe_membro FROM equipe_membros m
+            JOIN equipes e ON e.id_equipe = m.id_equipe
+            WHERE m.id_usuario = ? AND m.status = 'ATIVO' AND e.status = 'ATIVA' LIMIT 1 FOR UPDATE`, [userId]),
+        availableTeams: (userId, q, c) => rows(c, `SELECT e.id_equipe,e.nome,l.nome AS cinema,s.data,s.horario_inicio
+            FROM equipes e JOIN sessoes s ON s.id_sessao = e.id_sessao JOIN salas sa ON sa.id_sala = s.id_sala
+            JOIN locais l ON l.id_local = sa.id_local JOIN supervisor_locais sl ON sl.id_supervisor = e.id_supervisor AND sl.id_local = l.id_local
+            JOIN usuarios u ON u.id_usuario = e.id_supervisor AND u.status = 'ATIVO' AND u.tipo_usuario = 'SUPERVISOR'
+            WHERE e.id_equipe > ? AND e.status = 'ATIVA' AND s.status IN ('AGENDADA','EM_CARTAZ') AND l.status = 'ATIVO'
+            AND NOT EXISTS (SELECT 1 FROM equipe_entradas en WHERE en.id_equipe = e.id_equipe AND en.id_usuario = ? AND en.status = 'PENDENTE')
+            ORDER BY e.id_equipe LIMIT ?`, [q.cursor ?? '0', userId, q.limit + 1]),
+        ownRequests: (userId, q, c) => rows(c, `SELECT en.id_entrada,en.id_equipe,en.status,en.criado_em,en.decidido_em,e.nome
+            FROM equipe_entradas en JOIN equipes e ON e.id_equipe = en.id_equipe
+            WHERE en.id_usuario = ? AND en.tipo = 'SOLICITACAO' AND en.id_entrada > ?
+            ORDER BY en.id_entrada LIMIT ?`, [userId, q.cursor ?? '0', q.limit + 1]),
         listMembers(teamId, q) { if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido'); return rows(database, `SELECT ${memberFields} FROM equipe_membros WHERE id_equipe = ? AND id_equipe_membro > ? ORDER BY id_equipe_membro LIMIT ${q.limit + 1}`, [teamId, q.cursor ?? '0']); },
         async activateMember(c, teamId, userId, functionName, previous) {
             if (previous) { await c.execute("UPDATE equipe_membros SET status = 'ATIVO',funcao = ?,data_entrada = CURRENT_DATE WHERE id_equipe = ? AND id_usuario = ?", [functionName, teamId, userId]); return idString(previous.id_equipe_membro); }

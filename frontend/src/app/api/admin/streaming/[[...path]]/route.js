@@ -12,6 +12,10 @@ function target(method, parts, search) {
     if (parts.length === 2 && id(parts[1]) && ['GET', 'PATCH', 'DELETE'].includes(method)) return `/admin/plans/${parts[1]}`;
   }
   if (method === 'GET' && parts.length === 1 && ['subscriptions', 'accesses'].includes(parts[0])) return `/admin/streaming/${parts[0]}${search}`;
+  if (parts[0] === 'subscriptions') {
+    if (method === 'POST' && parts.length === 1) return '/admin/streaming/subscriptions';
+    if (method === 'PATCH' && parts.length === 2 && id(parts[1])) return `/admin/streaming/subscriptions/${parts[1]}`;
+  }
   return null;
 }
 
@@ -32,7 +36,7 @@ async function handle(request, { params }) {
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
     }
     const data = await backendAuth(path, { token, method, body });
-    return method === 'DELETE' ? new NextResponse(null, { status: 204 }) : json(data);
+    return method === 'DELETE' ? new NextResponse(null, { status: 204 }) : json(data, method === 'POST' && path.endsWith('/subscriptions') ? 201 : 200);
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: 'Sua sessão expirou. Entre novamente.', 403: 'Acesso negado.', 404: 'Registro não encontrado.', 409: error.message, 422: 'Confira os dados informados.' };

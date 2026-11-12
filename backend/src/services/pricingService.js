@@ -86,6 +86,15 @@ export function createPricingService({model,identity,simulated=false}){
         return {lines,total:money(total),couponId:coupon?idString(coupon.id_cupom):null,couponCode:coupon?.codigo??null,couponDiscountBps:couponBps,finalizable:!lines.some(x=>x.halfEligibilityUnverified||x.catalogOutOfSync),quotedAt:new Date().toISOString()};
     }
     return {
+        async catalogPriceForCreate(c,category,row,parts=null){
+            if(!catalogPriced(category))throw ApiError.validacao('Categoria sem precificação de cadastro.');
+            const parameter=found(await model.parameter(category,c,true));
+            const cost=costFor(category,row,parts,parameter,'MONTHLY');
+            const price=basePrice(cost,parameter.markup_bps);
+            if(price===0n)throw conflict('O custo total precisa ser positivo para calcular o preço pela regra.');
+            try { return money(price); }
+            catch(error) { if(error instanceof RangeError)throw conflict('O preço calculado excede o limite permitido. Revise os custos e o markup.'); throw error; }
+        },
         async quoteOnConnection(c,input,context){if(!c?.execute)throw new TypeError('Conexão transacional obrigatória');return publicQuote(await quoteWithConnection(c,input,context));},
         async quote(input,context){return tx(context,async c=>publicQuote(await quoteWithConnection(c,input,context)));},
         async adminQuote(input,context){return tx(context,async c=>{await admin(c,context);return quoteWithConnection(c,input,context);});},

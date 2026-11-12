@@ -34,7 +34,8 @@ function target(method, parts, search) {
   if (group === 'logistics') {
     if (parts.length === 1 && method === 'GET') return `/logistics${search}`;
     if (parts.length === 2 && id(second) && method === 'GET') return `/logistics/${second}`;
-    if (parts.length === 3 && id(second) && ['send', 'transit', 'return', 'cancel'].includes(third) && method === 'POST') return `/logistics/${second}/${third}`;
+    if (parts.length === 3 && id(second) && third === 'history' && method === 'GET') return `/logistics/${second}/history${search}`;
+    if (parts.length === 3 && id(second) && ['send', 'transit', 'return', 'cancel', 'incidents'].includes(third) && method === 'POST') return `/logistics/${second}/${third}`;
   }
   return null;
 }
@@ -49,14 +50,14 @@ async function handle(request, { params }) {
     const path = target(method, (await params).path ?? [], new URL(request.url).search);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
     let body;
-    if (['POST', 'PATCH'].includes(method) && !/\/(?:approve|refuse|send|transit|return|cancel)$/.test(path)) {
+    if (['POST', 'PATCH'].includes(method) && !/\/(?:approve|refuse|transit|return|cancel)$/.test(path)) {
       const raw = await request.text();
       if (raw.length > 25000) return json({ message: 'Dados muito longos.' }, 413);
       try { body = JSON.parse(raw); } catch { return json({ message: 'Dados inválidos.' }, 400); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
     }
     const data = await backendAuth(path, { token, method, body });
-    return method === 'DELETE' ? new NextResponse(null, { status: 204 }) : json(data);
+    return method === 'DELETE' ? new NextResponse(null, { status: 204 }) : json(data, method === 'POST' && path.endsWith('/incidents') ? 201 : 200);
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: 'Sua sessão expirou. Entre novamente.', 403: 'Acesso negado.', 404: 'Registro não encontrado.', 409: error.message, 422: 'Confira os dados informados.' };

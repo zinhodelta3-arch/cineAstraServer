@@ -28,7 +28,11 @@ const inputProduct = { id_insumo: id, ...base, quantidade_minima: count, preco: 
 spec.components.schemas.InputProduct = obj({ ...inputProduct, custo_receita: nullable(cost), custo_parceria: nullable(cost) }, Object.keys(inputProduct));
 spec.components.schemas.EquipmentProduct = obj({ id_equipamento: id, ...base, numero_patrimonio: patrimony, status: equipmentStatus });
 spec.components.schemas.SupplierLocationGrant = obj({ id_fornecedor: id, id_local: id, status: grantStatus, criado_em: { type: 'string' } });
-const inputCreate = obj({ ...common, supplierId: id, localId: id, quantidade_minima: count, preco: money, ...costs, venda_avulsa: {type:'boolean',default:false} }, ['nome','localId','preco']);
+const inputFields = { ...common, supplierId: id, localId: id, quantidade_minima: count, ...costs, venda_avulsa: {type:'boolean',default:false} };
+const inputCreate = { oneOf: [
+    obj({ ...inputFields, preco: money }, ['nome','localId','preco']),
+    obj({ ...inputFields, priceMode:{type:'string',enum:['RULE']}, venda_avulsa:{type:'boolean',enum:[true]} }, ['nome','supplierId','localId','priceMode','venda_avulsa','custo_receita','custo_parceria'])
+] };
 const equipmentCreate = obj({ ...common, supplierId: id, localId: id, numero_patrimonio: patrimony }, ['nome','localId']);
 const inputPatch = { ...obj({ ...common, quantidade_minima: count, preco: money, ...costs, venda_avulsa: {type:'boolean'}, status: inputStatus }, []), minProperties: 1 };
 const equipmentPatch = { ...obj({ ...common, numero_patrimonio: patrimony, status: equipmentStatus }, []), minProperties: 1 };
@@ -41,6 +45,7 @@ for (const r of productOperations) {
     const op = { operationId: r.operationId, tags: [tag], summary: `${r.action} ${r.type ?? 'fornecedor-local'}`, security: [{ bearerAuth: [] }], parameters: [], responses: {} };
     if (r.type) op.description = 'ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências.';
     if (r.type === 'inputs') op.description += ' A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos.';
+    if (r.type === 'inputs' && r.action === 'create') op.description += ' ADMIN pode selecionar priceMode=RULE e usar o markup de INPUT para calcular e salvar o preço oficial.';
     else op.description = r.admin ? 'Somente ADMIN gerencia o vínculo operacional fornecedor-local.' : 'FORNECEDOR consulta os próprios locais autorizados.';
     for (const param of ['id','supplierId','localId']) if (r.path.includes(`{${param}}`)) op.parameters.push({ name: param, in: 'path', required: true, schema: id });
     if (['list','grants','myGrants'].includes(r.action)) {

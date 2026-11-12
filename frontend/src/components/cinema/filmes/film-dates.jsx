@@ -6,7 +6,7 @@ const shortDate=day=>`${day.slice(8,10)}/${new Date(`${day}T12:00:00Z`).toLocale
 export default function FilmDates({film}){
  const {listRef,scroll}=useFilmDateScroll();
  const selectedLocal=film.locations.items.find(local=>String(local.id_local)===film.localId);
- return <section className="cf-date-band" aria-label="Datas das sessões"><div className="cf-date-head"><div><p className="cf-date-kicker"><CalendarDays size={14}/> Programação de {selectedLocal?.nome||'cinema'}</p><h2>Horários</h2></div><div className="cf-date-arrows"><button type="button" aria-label="Datas anteriores" onClick={()=>scroll(-1)}><ChevronLeft size={18}/></button><button type="button" aria-label="Próximas datas" onClick={()=>scroll(1)}><ChevronRight size={18}/></button></div></div>
+ return <section className="cf-date-band" aria-label="Datas das sessões"><div className="cf-date-head"><div><p className="cf-date-kicker"><CalendarDays size={14}/> Programação de {selectedLocal?.nome||film.availability.items.find(item=>item.localId===film.localId)?.name||'cinema'}</p><h2>Horários</h2></div><div className="cf-date-arrows"><button type="button" aria-label="Datas anteriores" onClick={()=>scroll(-1)}><ChevronLeft size={18}/></button><button type="button" aria-label="Próximas datas" onClick={()=>scroll(1)}><ChevronRight size={18}/></button></div></div>
   {film.days.loading&&<p role="status">Carregando dias disponíveis…</p>}
   {film.days.error&&<p role="alert">{film.days.error}</p>}
   {film.localId&&!film.days.loading&&!film.days.error&&!film.days.items.length&&<p>Nenhuma sessão futura deste filme neste cinema.</p>}

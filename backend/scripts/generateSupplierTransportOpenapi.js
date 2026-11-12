@@ -7,12 +7,13 @@ const object=(properties,required=Object.keys(properties))=>({type:'object',addi
 const reference=name=>({$ref:`#/components/schemas/${name}`});
 const text=(maxLength,nullable=false)=>({type:'string',maxLength,...(nullable?{nullable:true}:{minLength:1})});
 const fields={nome:text(120),tipo:text(60),identificacao:text(40,true),observacao:text(2000,true)};
-spec.components.schemas.SupplierTransport=object({id_transporte:id,id_fornecedor:id,...fields,status,criado_em:{type:'string'},atualizado_em:{type:'string'}});
+spec.components.schemas.SupplierTransport=object({id_transporte:id,id_fornecedor:id,...fields,status,em_uso:{type:'boolean'},criado_em:{type:'string'},atualizado_em:{type:'string'}});
 spec.components.schemas.SupplierTransportPage=object({items:{type:'array',items:reference('SupplierTransport')},pagination:object({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...id,nullable:true}})});
 for(const {method,path,operationId,action} of supplierTransportOperations){
     const op={operationId,tags:['Fornecedores'],summary:operationId.replaceAll('_',' '),description:'FORNECEDOR ativo autenticado. A empresa é obtida pela sessão; consultas e alterações são limitadas aos seus transportes. DELETE inativa, preservando o cadastro. Identificação é opcional e única dentro do fornecedor; PATCH pode reativar o registro.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
     if(path.includes('{id}'))op.parameters.push({name:'id',in:'path',required:true,schema:id});
     if(action==='list')op.parameters.push({name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:id},{name:'status',in:'query',schema:status},{name:'q',in:'query',schema:text(120)});
+    if(action==='list')op.parameters.push({name:'available',in:'query',schema:{type:'string',enum:['true']},description:'Retorna somente transportes ativos sem entrega em andamento.'});
     if(method==='post'||method==='patch')op.requestBody={required:true,content:{'application/json':{schema:method==='post'?object(fields,['nome','tipo']):{...object({...fields,status},[]),minProperties:1}}}};
     if(method==='delete')op.responses['204']={description:'Transporte inativado.'};
     else{

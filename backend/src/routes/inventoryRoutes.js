@@ -13,7 +13,7 @@ export const inventoryOperations = [
 export function inventoryRoutes(controller,{ auth }) {
     const router = Router();
     for (const r of inventoryOperations) {
-        const middleware = [(req,res,next) => { res.set('Cache-Control','no-store'); next(); },auth,allowRoles(...(r.method==='get'?['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR']:['ADMIN','FORNECEDOR','SUPERVISOR']))];
+        const middleware = [(req,res,next) => { res.set('Cache-Control','no-store'); next(); },auth,allowRoles('ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR')];
         if (r.path.includes('{id}')) middleware.push(inventoryParams);
         if (r.action === 'list' || r.action === 'alerts') middleware.push(inventoryQuery(r.action === 'list' ? inventorySchemas.movementsQuery : inventorySchemas.alertsQuery));
         if (r.action === 'move') middleware.push(validateBody(inventorySchemas.movement));

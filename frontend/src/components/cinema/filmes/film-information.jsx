@@ -1,6 +1,7 @@
 "use client";
 import {Clock3,Film} from 'lucide-react';
-import PosterImage from './poster-image';
+import FilmDetailBanner from './film-detail-banner';
+import {AgeRating} from './movie-ui';
 import ListStatus from '@/components/cinema/home/list-status';
 import {durationLabel} from './movie-utils';
 import FilmAvailability from './film-availability';
@@ -8,9 +9,9 @@ import TrailerButton from '@/components/cinema/home/trailer-modal';
 export default function FilmInformation({film}){
  const movie=film.movie;
  return <aside className="cf-film-scroll" aria-label="Informações do filme"><div className="cf-film-content">
-  <div className="cf-poster"><PosterImage movie={movie} className="h-full w-full object-cover" eager/><div className="cf-poster-shade"/><span className="cf-poster-status">{movie.status==='em-breve'?'EM BREVE':'EM CARTAZ'}</span><div className="cf-poster-type"><span>CINEASTRA APRESENTA</span><strong>{movie.title}</strong><small>{movie.releaseDate?.slice(0,4)||''}</small></div><span className="cf-age" aria-label={`Classificação ${movie.age}`}>{movie.age==='L'?'L':movie.age}</span></div>
+  <FilmDetailBanner movie={movie}/>
   <div className="cf-movie-title-row"><h2 className="cf-movie-title">{movie.title}</h2></div>
-  <div className="cf-movie-meta"><span className="inline-flex items-center gap-1"><Clock3 size={13}/>{durationLabel(movie.duration)}</span><span>{film.genres.items.map(genre=>genre.nome).join(' · ')}</span></div>
+  <div className="cf-movie-meta"><AgeRating age={movie.age}/><span className="inline-flex items-center gap-1"><Clock3 size={13}/>{durationLabel(movie.duration)}</span><span>{film.genres.items.map(genre=>genre.nome).join(' · ')}</span><span>{movie.status==='em-breve'?'Em breve':'Em cartaz'}</span></div>
   <FilmAvailability film={film}/>
   <ListStatus list={film.genres} empty="" more="Mais gêneros"/>
   <div className="cf-detail-section"><h3>Sinopse</h3><p>{movie.synopsis}</p></div>

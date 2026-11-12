@@ -8,16 +8,27 @@ export function createPlanModel(){return {
     plan:(c,id,lock=false)=>one(c,`SELECT ${projection} FROM planos WHERE id_plano=?${lock?' FOR UPDATE':''}`,[id]),
     plans:(c,admin,limit,cursor)=>rows(c,`SELECT ${projection} FROM planos WHERE id_plano>?${admin?'':' AND ativo=TRUE AND valor_mensal IS NOT NULL AND valor_anual IS NOT NULL'} ORDER BY id_plano LIMIT ?`,[cursor,limit+1]),
     benefits:(c,id)=>rows(c,'SELECT categoria,desconto_bps FROM plano_beneficios WHERE id_plano=? ORDER BY categoria',[id]),
-    combo:(c,id)=>one(c,'SELECT id_combo,ativo FROM combos WHERE id_combo=?',[id]),
+    combo:(c,id)=>one(c,'SELECT id_combo,ativo FROM combos WHERE id_combo=? AND id_evento IS NULL',[id]),
     async create(c,input){const [r]=await c.execute('INSERT INTO planos(nome,descricao,limite_membros,acesso_catalogo,id_combo_medio,combo_gratis_mes,ativo) VALUES(?,?,?,?,?,?,FALSE)',[input.name,input.description??null,input.maxMembers,input.catalogAccess,input.freeComboId??null,input.freeCombosPerMonth]);return idString(r.insertId);},
     patch(c,id,input){const keys=Object.keys(input),set=keys.map(key=>`${fields[key]}=?`).join(',');return c.execute(`UPDATE planos SET ${set} WHERE id_plano=?`,[...keys.map(key=>input[key]),id]);},
     userSubscriptions:(c,userId,limit,cursor)=>rows(c,'SELECT id_assinatura,id_plano,periodicidade,tipo_divisao,status,renovacao_automatica,inicio,fim,preco_contratado,contrato_snapshot FROM assinaturas WHERE id_usuario=? AND id_assinatura>? ORDER BY id_assinatura LIMIT ?',[userId,cursor,limit+1]),
     subscription:(c,id,lock=false)=>one(c,`SELECT id_assinatura,id_usuario,id_plano,periodicidade,tipo_divisao,status,renovacao_automatica,inicio,fim,suspenso_por_cobranca,preco_contratado,contrato_snapshot,limite_membros_contratado FROM assinaturas WHERE id_assinatura=?${lock?' FOR UPDATE':''}`,[id]),
     byKey:(c,userId,key)=>one(c,'SELECT id_assinatura,contratacao_hash FROM assinaturas WHERE id_usuario=? AND chave_contratacao=? FOR UPDATE',[userId,key]),
-    lockUser:(c,userId)=>one(c,'SELECT id_usuario FROM usuarios WHERE id_usuario=? FOR UPDATE',[userId]),
-    activeForUser:(c,userId)=>one(c,"SELECT id_assinatura FROM assinaturas WHERE id_usuario=? AND status IN ('PENDENTE','ATIVA') AND (fim IS NULL OR fim>=UTC_DATE()) LIMIT 1 FOR UPDATE",[userId]),
+    lockUser:(c,userId)=>one(c,'SELECT id_usuario,tipo_usuario,status FROM usuarios WHERE id_usuario=? FOR UPDATE',[userId]),
+    activeForUser:(c,userId)=>one(c,"SELECT id_assinatura,status,contrato_snapshot FROM assinaturas WHERE id_usuario=? AND status IN ('PENDENTE','ATIVA') AND (fim IS NULL OR fim>=UTC_DATE()) LIMIT 1 FOR UPDATE",[userId]),
     age:(c,userId)=>one(c,'SELECT faixa_etaria FROM verificacoes_idade WHERE id_usuario=? AND expiracao>UTC_TIMESTAMP(3) ORDER BY id_verificacao DESC LIMIT 1',[userId]),
     async subscribe(c,d){const [r]=await c.execute("INSERT INTO assinaturas(id_usuario,id_plano,inicio,periodicidade,tipo_divisao,status,renovacao_automatica,chave_contratacao,contratacao_hash,contrato_snapshot,preco_contratado,limite_membros_contratado) VALUES(?,?,UTC_DATE(),?,?,'PENDENTE',?,?,?,?,?,?)",[d.userId,d.planId,d.period,d.divisionMode,d.autoRenew,d.key,d.hash,JSON.stringify(d.snapshot),d.price,d.maxMembers]);return idString(r.insertId);},
+    async createDraft(c,{userId,planId,period}){
+        const [result]=await c.execute("INSERT INTO assinaturas(id_usuario,id_plano,inicio,periodicidade,tipo_divisao,status,renovacao_automatica,contrato_snapshot) VALUES(?,?,UTC_DATE(),?,'TITULAR_PAGA','PENDENTE',FALSE,?)",[userId,planId,period,JSON.stringify({administrativeDraft:true})]);
+        return idString(result.insertId);
+    },
+    patchDraft:(c,id,planId,period)=>c.execute('UPDATE assinaturas SET id_plano=?,periodicidade=? WHERE id_assinatura=?',[planId,period,id]),
+    stopRenewal:(c,id)=>c.execute('UPDATE assinaturas SET renovacao_automatica=FALSE WHERE id_assinatura=?',[id]),
+    async acceptDraft(c,id,d){
+        await c.execute(`UPDATE assinaturas SET id_plano=?,periodicidade=?,tipo_divisao=?,renovacao_automatica=?,
+            chave_contratacao=?,contratacao_hash=?,contrato_snapshot=?,preco_contratado=?,limite_membros_contratado=?,inicio=UTC_DATE()
+            WHERE id_assinatura=?`,[d.planId,d.period,d.divisionMode,d.autoRenew,d.key,d.hash,JSON.stringify(d.snapshot),d.price,d.maxMembers,id]);
+    },
     async initialCharge(c,subscriptionId,userId,price){const [r]=await c.execute("INSERT INTO assinatura_cobrancas(id_assinatura,id_usuario,competencia,valor_devido,status,data_vencimento) VALUES(?,?,DATE_FORMAT(UTC_DATE(),'%Y-%m-01'),?,'PENDENTE',UTC_DATE())",[subscriptionId,userId,price]);return idString(r.insertId);},
     firstCharge:(c,subscriptionId)=>one(c,'SELECT id_cobranca,status,valor_devido FROM assinatura_cobrancas WHERE id_assinatura=? ORDER BY id_cobranca LIMIT 1',[subscriptionId]),
     settlement:(c,chargeId)=>one(c,`SELECT ac.id_cobranca,ac.id_usuario,ac.data_vencimento,ac.status AS cobranca_status,a.id_assinatura,a.status AS assinatura_status,a.periodicidade,

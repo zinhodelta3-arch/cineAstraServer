@@ -22,7 +22,7 @@ export default function SupplierTransports() {
         <caption className="sr-only">Transportes próprios do fornecedor</caption>
         <thead><tr><th scope="col">Transporte</th><th scope="col">Tipo</th><th scope="col">Identificação</th><th scope="col">Estado</th><th scope="col">Ações</th></tr></thead>
         <tbody>{list.items.map(row=><tr key={row.id_transporte}>
-          <th scope="row">{row.nome}</th><td>{row.tipo}</td><td>{row.identificacao||'—'}</td><td><span className={`${styles.badge} ${row.status==='INATIVO'?styles.inactive:''}`}>{statusName(row.status)}</span></td>
+          <th scope="row">{row.nome}</th><td>{row.tipo}</td><td>{row.identificacao||'—'}</td><td><span className={`${styles.badge} ${row.status==='INATIVO'?styles.inactive:''}`}>{row.em_uso ? 'Em uso' : statusName(row.status)}</span></td>
           <td><div className={styles.actions}>
             <button type="button" className={styles.iconButton} title="Ver detalhes" aria-label={`Ver transporte ${row.nome}`} onClick={()=>transport.open('view',row)}><Eye size={16} aria-hidden="true"/></button>
             <button type="button" className={styles.iconButton} title="Editar transporte" aria-label={`Editar transporte ${row.nome}`} onClick={()=>transport.open('form',row)}><Pencil size={16} aria-hidden="true"/></button>
@@ -36,7 +36,7 @@ export default function SupplierTransports() {
       <DialogTitle className={styles.dialogTitle}>{dialog?.type==='view'?'Detalhes do transporte':dialog?.type==='status'?item?.status==='ATIVO'?'Inativar transporte':'Reativar transporte':item?'Editar transporte':'Novo transporte'}</DialogTitle>
       <DialogDescription className={styles.dialogDescription}>{dialog?.type==='status'?`Confirme a alteração de estado de ${item?.nome}. O cadastro será preservado.`:'Informe os dados de identificação do transporte próprio.'}</DialogDescription>
       {dialog?.type==='view'&&item&&<dl className={styles.detailGrid}>
-        <div><dt>Nome</dt><dd>{item.nome}</dd></div><div><dt>Tipo</dt><dd>{item.tipo}</dd></div><div><dt>Identificação / placa</dt><dd>{item.identificacao||'—'}</dd></div><div><dt>Estado</dt><dd>{statusName(item.status)}</dd></div><div><dt>Cadastrado em</dt><dd>{dateTime(item.criado_em)}</dd></div><div><dt>Atualizado em</dt><dd>{dateTime(item.atualizado_em)}</dd></div>{item.observacao&&<div><dt>Observações</dt><dd>{item.observacao}</dd></div>}
+        <div><dt>Nome</dt><dd>{item.nome}</dd></div><div><dt>Tipo</dt><dd>{item.tipo}</dd></div><div><dt>Identificação / placa</dt><dd>{item.identificacao||'—'}</dd></div><div><dt>Estado</dt><dd>{statusName(item.status)}</dd></div><div><dt>Em entrega</dt><dd>{item.em_uso ? 'Sim' : 'Não'}</dd></div><div><dt>Cadastrado em</dt><dd>{dateTime(item.criado_em)}</dd></div><div><dt>Atualizado em</dt><dd>{dateTime(item.atualizado_em)}</dd></div>{item.observacao&&<div><dt>Observações</dt><dd>{item.observacao}</dd></div>}
       </dl>}
       {dialog?.type==='form'&&<form key={item?.id_transporte??'new'} className={styles.form} onSubmit={transport.save}>
         <label className={styles.wide}>Nome<input name="nome" required maxLength={120} defaultValue={item?.nome??''}/></label>

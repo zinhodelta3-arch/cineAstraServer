@@ -5,10 +5,11 @@ import { supplySchemas } from '../src/validators/supplyValidators.js';
 
 function fixture(){
     let failReceipt=false;
-    let state={items:[{id_insumo:'10',id_fornecedor:'5',id_local:'1',nome:'Pipoca',descricao:null,categoria:'Alimento',quantidade:4,quantidade_reservada:0,quantidade_minima:1,preco:'1.00',status:'DISPONIVEL'}],equipment:[{id_equipamento:'20',id_fornecedor:'5',id_local:'1',quantidade:1,status:'DISPONIVEL'}],sessionStatus:'AGENDADA',requests:[],shipments:[],movements:[],audit:[],links:[]};
+    let state={items:[{id_insumo:'10',id_fornecedor:'5',id_local:'1',nome:'Pipoca',descricao:null,categoria:'Alimento',quantidade:4,quantidade_reservada:0,quantidade_minima:1,preco:'1.00',status:'DISPONIVEL'}],equipment:[{id_equipamento:'20',id_fornecedor:'5',id_local:'1',quantidade:1,status:'DISPONIVEL'}],sessionStatus:'AGENDADA',requests:[],shipments:[],movements:[],audit:[],links:[],events:[]};
     const model={
         async local(id){return {id_local:String(id),status:'ATIVO'};},
         async session(id){return {id_sessao:String(id),id_local:'2',status:state.sessionStatus,local_status:'ATIVO'};},
+        async supervisorLocation(user){return user==='8'?{id_local:'2'}:null;},
         async member(user,session){return user==='3'&&session==='7'?{id_equipe:'9'}:null;},
         async supplierByUser(user){return {id_fornecedor:user==='2'?'5':'6',status:'ATIVO'};},
         async grant(){return {supplier_status:'ATIVO',user_status:'ATIVO',tipo_usuario:'FORNECEDOR',grant_status:'ATIVO',local_status:'ATIVO'};},
@@ -17,13 +18,17 @@ function fixture(){
         async incoming(localId){return state.shipments.filter(x=>x.id_local_destino===String(localId)&&['ENVIADO','EM_TRANSITO'].includes(x.status)).map(x=>({...x,nome:'Pipoca'}));},
         async request(id){return state.requests.find(x=>x.id_solicitacao===String(id))??null;},
         async listRequests(){return state.requests;},
-        async createRequest(c,d){const id=String(state.requests.length+1);state.requests.push({id_solicitacao:id,id_usuario:d.actorId,id_local:d.localId,id_sessao:d.sessionId??null,id_insumo:d.inputId??null,id_equipamento:d.equipmentId??null,quantidade:d.quantity,status:'PENDENTE',observacao:null,data_solicitacao:'2026-10-09'});return id;},
+        async createRequest(c,d){const id=String(state.requests.length+1);state.requests.push({id_solicitacao:id,id_usuario:d.actorId,id_local:d.localId,id_sessao:d.sessionId??null,id_insumo:d.inputId??null,id_equipamento:d.equipmentId??null,quantidade:d.quantity,status:'PENDENTE',status_supervisao:d.statusSupervisao??null,observacao:null,data_solicitacao:'2026-10-09'});return id;},
+        async setSupervisorReview(c,id,status,userId){const r=state.requests.find(x=>x.id_solicitacao===id);r.status_supervisao=status;r.id_supervisor_decisao=userId;},
         async setRequest(c,id,status){state.requests.find(x=>x.id_solicitacao===String(id)).status=status;},
         async shipment(id){return state.shipments.find(x=>x.id_logistica===String(id))??null;},
         async shipmentByRequest(id){return state.shipments.find(x=>x.id_solicitacao===String(id))??null;},
         async listShipments(){return state.shipments;},
         async createShipment(c,d){const id=String(state.shipments.length+1);state.shipments.push({id_logistica:id,id_fornecedor:d.supplierId,id_local_origem:d.originId,id_local_destino:d.destinationId,id_solicitacao:d.requestId,id_insumo_origem:d.inputId??null,id_equipamento_origem:d.equipmentId??null,id_insumo_destino:null,quantidade:d.quantity,id_usuario_recebimento:null,data_envio:null,data_prevista:null,data_recebimento:null,status:'PENDENTE',observacao:null});return id;},
-        async setShipment(c,id,status,receiver){const s=state.shipments.find(x=>x.id_logistica===String(id));s.status=status;if(status==='RECEBIDO')s.id_usuario_recebimento=receiver;},
+        async transport(c,id,supplierId){return id==='11'&&supplierId==='5'?{status:'ATIVO'}:null;},
+        async transportInUse(c,id){return state.shipments.find(x=>x.id_transporte===id&&['ENVIADO','EM_TRANSITO'].includes(x.status));},
+        async shipmentEvent(c,id,userId,type,status){state.events.push({id,userId,type,status});},
+        async setShipment(c,id,status,receiver,transportId){const s=state.shipments.find(x=>x.id_logistica===String(id));s.status=status;if(status==='ENVIADO')s.id_transporte=transportId;if(status==='RECEBIDO')s.id_usuario_recebimento=receiver;},
         async setDestinationItem(c,id,itemId){state.shipments.find(x=>x.id_logistica===String(id)).id_insumo_destino=itemId;},
         async inputLink(c,sourceId,localId){return state.links.find(row=>row.id_insumo_origem===sourceId&&row.id_local_destino===localId)??null;},
         async saveInputLink(c,sourceId,localId,targetId){
@@ -61,9 +66,10 @@ test('solicitação valida item único, quantidade e vínculo de sessão/local',
 test('envio e recebimento alteram saldos uma vez; repetição e local errado são bloqueados',async()=>{
     const f=fixture(),staff=f.ctx('3','COLABORADOR'),supplier=f.ctx('2','FORNECEDOR');
     const req=await f.service.createRequest({localId:'2',sessionId:'7',inputId:'10',quantity:2},staff);
+    await f.service.review(req.id_solicitacao,'APROVADA',f.ctx('8','SUPERVISOR'));
     await assert.rejects(f.service.decide(req.id_solicitacao,'APROVADA',f.ctx('4','FORNECEDOR')),{statusCode:403});
     await f.service.decide(req.id_solicitacao,'APROVADA',supplier);
-    await f.service.transitionShipment('1','send',supplier);
+    await f.service.transitionShipment('1','send',supplier,{transportId:'11'});
     assert.equal(f.state.items[0].quantidade,2);
     await assert.rejects(f.service.transitionShipment('1','receive',supplier),{statusCode:403});
     f.failReceipt=true;
@@ -81,9 +87,10 @@ test('envio e recebimento alteram saldos uma vez; repetição e local errado sã
 test('estoque mostra a chegar; equipamento só volta após sessão encerrada e uma vez',async()=>{
     const f=fixture(),staff=f.ctx('3','COLABORADOR'),supplier=f.ctx('2','FORNECEDOR');
     await f.service.createRequest({localId:'2',sessionId:'7',equipmentId:'20',quantity:1},staff);
+    await f.service.review('1','APROVADA',f.ctx('8','SUPERVISOR'));
     await f.service.decide('1','APROVADA',supplier);
     assert.equal((await f.service.stock({localId:'2',sessionId:'7'},staff)).a_chegar.length,0);
-    await f.service.transitionShipment('1','send',supplier);
+    await f.service.transitionShipment('1','send',supplier,{transportId:'11'});
     assert.equal((await f.service.stock({localId:'2',sessionId:'7'},staff)).a_chegar.length,1);
     await f.service.transitionShipment('1','receive',staff);
     assert.equal(f.state.equipment[0].id_local,'2');
@@ -105,8 +112,9 @@ test('recebimento com vínculo repõe somente o insumo existente do mesmo fornec
     await assert.rejects(f.service.saveInputLink({sourceId:'10',targetId:'12'},admin),{statusCode:409});
     await f.service.saveInputLink({sourceId:'10',targetId:'11'},admin);
     await f.service.createRequest({localId:'2',sessionId:'7',inputId:'10',quantity:2},staff);
+    await f.service.review('1','APROVADA',f.ctx('8','SUPERVISOR'));
     await f.service.decide('1','APROVADA',supplier);
-    await f.service.transitionShipment('1','send',supplier);
+    await f.service.transitionShipment('1','send',supplier,{transportId:'11'});
 
     f.failReceipt=true;
     await assert.rejects(f.service.transitionShipment('1','receive',staff),/history failed/);

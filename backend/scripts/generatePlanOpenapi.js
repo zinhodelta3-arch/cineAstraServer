@@ -14,6 +14,7 @@ const planInput={name:{type:'string',maxLength:100},description:{type:'string',n
 spec.components.schemas.Plan=obj({id:id,...planInput,monthlyPrice:money,annualPrice:money,discounts:{type:'object',additionalProperties:{type:'integer',minimum:0,maximum:10000}},active:{type:'boolean'}});
 spec.components.schemas.PlanAdmin=obj({...spec.components.schemas.Plan.properties,monthlyBenefitCost:money,annualBenefitCost:money});
 spec.components.schemas.PlanContract=obj({id:id,planId:id,period:{type:'string',enum:['MENSAL','ANUAL']},divisionMode:{type:'string',enum:['TITULAR_PAGA','DIVISAO_IGUAL']},status:{type:'string',enum:['PENDENTE','ATIVA','CANCELADA','EXPIRADA']},autoRenew:{type:'boolean'},startsOn:{type:'string',format:'date',nullable:true},endsOn:{type:'string',format:'date',nullable:true},contractPrice:money,contract:{...ref('Plan'),nullable:true},chargeId:id,chargeStatus:{type:'string',enum:['PENDENTE','PAGO','ATRASADO','ISENTO']},paymentPath:{type:'string'}},['id','planId','period','divisionMode','status','autoRenew','startsOn','endsOn','contractPrice','contract']);
+spec.components.schemas.PlanContract.properties.administrativeDraft={type:'boolean'};
 spec.components.schemas.PlanComboRequest=obj({id,subscriptionId:id,comboId:id,competence:{type:'string',format:'date'},status:{type:'string',enum:['SOLICITADO']}});
 const body=schema=>({required:true,content:{'application/json':{schema}}});
 const pathId=name=>({name,in:'path',required:true,schema:id});
@@ -28,6 +29,20 @@ for(const route of planOperations){
   if(['list_public_plans','list_admin_plans','list_my_subscriptions'].includes(route.operationId))op.parameters=pagination;
   if(route.operationId==='create_plan')op.requestBody=body(obj(planInput,['name','maxMembers']));
   if(route.operationId==='update_plan')op.requestBody=body(obj({...planInput,active:{type:'boolean'}},[]));
+  const draftFields={planId:id,period:{type:'string',enum:['MENSAL','ANUAL']}};
+  if(route.operationId==='create_admin_subscription_draft'){
+    op.summary='Registrar proposta de assinatura para cliente ativo';
+    op.description='ADMIN. Valida o plano publicado e registra proposta pendente. O cliente confirma a oferta na contratação; a proposta não gera cobrança nem acesso.';
+    op.requestBody=body(obj({userId:id,...draftFields}));
+  }
+  if(route.operationId==='update_admin_subscription'){
+    op.summary='Editar proposta ou desativar renovação';
+    op.description='ADMIN. Permite alterar plano e período antes do aceite. Para contrato existente, preserva o conteúdo contratado e permite desativar a renovação automática.';
+    op.requestBody=body({oneOf:[
+      obj({action:{type:'string',enum:['updateDraft']},...draftFields}),
+      obj({action:{type:'string',enum:['stopRenewal']}})
+    ]});
+  }
   if(route.operationId==='create_subscription_contract'){
     op.parameters=[{name:'Idempotency-Key',in:'header',required:true,schema:{type:'string',minLength:8,maxLength:120}}];
     op.requestBody=body(obj({planId:id,period:{type:'string',enum:['MENSAL','ANUAL']},autoRenew:{type:'boolean'},divisionMode:{type:'string',enum:['TITULAR_PAGA','DIVISAO_IGUAL']}},['planId','period']));

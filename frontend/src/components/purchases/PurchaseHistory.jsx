@@ -22,7 +22,7 @@ function History(){
    <p className="mb-4 text-xs text-muted-foreground">{s.matching.length} de {s.list.items.length} pedidos carregados · filtros aplicados aos itens carregados.</p>
    <ul className="space-y-4">{s.matching.map(order=><li key={order.orderId} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-5">
     <div><h3 className="text-lg font-bold">Pedido #{order.orderId}</h3><p className="mt-1 text-sm text-muted-foreground">{purchaseDate(order.createdAt)} (Brasília)</p><p className="mt-2 text-sm font-semibold text-primary">{orderStatuses[order.financialStatus]||order.financialStatus}</p></div>
-    <div className="flex flex-wrap items-center gap-4"><p className="font-bold">{purchaseMoney(order.total)}</p><Button variant="outline" onClick={()=>s.setSelection(order)}>Ver pedido #{order.orderId}</Button></div>
+    <div className="flex flex-wrap items-center gap-4">{order.administrativeDraft ? <Button nativeButton={false} render={<Link href={`/cinema/pagamento?draft=${order.orderId}`} />}>Revisar proposta</Button> : <><p className="font-bold">{purchaseMoney(order.total)}</p><Button variant="outline" onClick={()=>s.setSelection(order)}>Ver pedido #{order.orderId}</Button></>}</div>
    </li>)}</ul>
    {!s.list.loading&&!s.list.error&&s.list.items.length>0&&!s.matching.length&&<p>Nenhum pedido carregado corresponde aos filtros.</p>}
    <ListStatus list={s.list} empty="Você ainda não possui pedidos." more="Carregar mais pedidos" />

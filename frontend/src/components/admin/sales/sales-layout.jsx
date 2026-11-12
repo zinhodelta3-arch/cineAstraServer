@@ -11,10 +11,10 @@ const sections = [
   { href: '/admin/vendas/reembolsos', label: 'Reembolsos' }
 ];
 
-export default function SalesLayout({ title, description, children }) {
+export default function SalesLayout({ title, description, action, children }) {
   const pathname = usePathname();
   return <main id="admin-content" tabIndex={-1} className={page.page}>
-    <header className={page.heading}><div><h1>{title}</h1><p>{description}</p></div></header>
+    <header className={page.heading}><div><h1>{title}</h1><p>{description}</p></div>{action}</header>
     <nav className={styles.tabs} aria-label="Seções de Vendas">{sections.map(section => <Link key={section.href} href={section.href} aria-current={pathname === section.href ? 'page' : undefined}>{section.label}</Link>)}</nav>
     {children}
   </main>;

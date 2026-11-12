@@ -57,6 +57,7 @@ export function CartProvider({ children }) {
       discountSources: Array.isArray(product.discountSources) ? product.discountSources : [],
       image: product.image || "",
       details: product.details || "",
+      ...(product.purchaseKind === 'COMBO' && product.eventSessionId ? {eventSessionId:String(product.eventSessionId)} : {}),
       ...(product.sourceId && product.localId && ["INPUT", "COMBO", "SESSION"].includes(product.purchaseKind) ? {sourceId:String(product.sourceId),localId:String(product.localId),purchaseKind:product.purchaseKind,...(product.purchaseKind === "SESSION" && product.seatId ? {seatId:String(product.seatId)} : {})} : {}),
     }
     setItems((current) => {

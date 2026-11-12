@@ -8,7 +8,7 @@ const key = type => type === 'inputs' ? 'id_insumo' : 'id_equipamento';
 const productDto = (type, row, role) => ({ [key(type)]: idString(row[key(type)]), id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, categoria: row.categoria ?? null, ...(type === 'inputs' ? { quantidade_minima: row.quantidade_minima, venda_avulsa: Boolean(row.venda_avulsa), preco: moneyString(row.preco), ...(role === 'ADMIN' ? { custo_receita: row.custo_receita ?? null, custo_parceria: row.custo_parceria ?? null } : {}) } : { numero_patrimonio: row.numero_patrimonio ?? null }), quantidade: row.quantidade, status: row.status, data_cadastro: row.data_cadastro });
 const grantDto = row => ({ id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), status: row.status, criado_em: row.criado_em });
 const page = (rows, q, dto, id) => { const items = rows.slice(0, q.limit); return { items: items.map(dto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1)[id]) : null } }; };
-export function createProductService({ model, identity }) {
+export function createProductService({ model, identity, pricing }) {
     function checkCostsPermission(input, user) {
         if (user.tipo !== 'ADMIN' && (Object.hasOwn(input, 'custo_receita') || Object.hasOwn(input, 'custo_parceria'))) {
             throw ApiError.acessoNegado();
@@ -51,15 +51,18 @@ export function createProductService({ model, identity }) {
         },
         async create(type, input, context) {
             return transaction(context, async (c, u) => {
+                if (input.priceMode === 'RULE' && u.tipo !== 'ADMIN') throw ApiError.acessoNegado();
                 let supplierId;
                 if (u.tipo === 'ADMIN') { if (!input.supplierId) throw ApiError.validacao('supplierId obrigatório para ADMIN'); supplierId = input.supplierId; }
                 else { if (input.supplierId) throw ApiError.acessoNegado(); supplierId = idString((await ownSupplier(c, u.id)).id_fornecedor); }
                 await allowedContext(c, supplierId, input.localId);
+                const { priceMode, ...data } = input;
                 if (type === 'inputs') {
-                    checkCostsPermission(input, u);
-                    validateRetailInput({ ...input, status: 'DISPONIVEL' });
+                    checkCostsPermission(data, u);
+                    if (priceMode === 'RULE') data.preco = await pricing.catalogPriceForCreate(c, 'INPUT', data);
+                    validateRetailInput({ ...data, status: 'DISPONIVEL' });
                 }
-                const id = await model.create(type, c, { ...input, supplierId });
+                const id = await model.create(type, c, { ...data, supplierId });
                 await identity.audit(c, `PRODUCT.${type.toUpperCase()}.CREATED`, id, context);
                 return productDto(type, found(await model.product(type, id, c)), u.tipo);
             });

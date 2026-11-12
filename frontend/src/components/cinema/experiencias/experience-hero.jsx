@@ -1,8 +1,8 @@
-import { ArrowDownRight, CheckCircle2, ChevronRight, Sparkles } from "lucide-react"
+import { CheckCircle2, ChevronRight, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { U } from "./data"
 
-export default function ExperienceHero({ chooseExperience, showExperiences }) {
+export default function ExperienceHero({ showExperiences }) {
   return (
       <section className="relative isolate min-h-[590px] overflow-hidden border-b border-border/70 bg-background md:min-h-[690px]">
         <img
@@ -27,10 +27,7 @@ export default function ExperienceHero({ chooseExperience, showExperiences }) {
               Escolha o formato e vamos planejar uma experiência que tem tudo a ver com seu evento.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" onClick={() => chooseExperience("sala-privativa")}>
-                Planejar minha experiência <ArrowDownRight className="size-4" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={showExperiences}>
+              <Button size="lg" onClick={showExperiences}>
                 Conhecer as opções <ChevronRight className="size-4" />
               </Button>
             </div>

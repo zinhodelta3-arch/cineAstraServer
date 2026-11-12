@@ -26,8 +26,7 @@ export const pricingOperations=[
 export function pricingRoutes(controller,{auth}){
     const router=Router();
     for(const r of pricingOperations){
-        const middleware=[(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth];
-        if(r.admin)middleware.push(allowRoles('ADMIN'));
+        const middleware=[(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth,allowRoles(r.admin?'ADMIN':'CLIENTE')];
         if(['promotions','coupons'].includes(r.action))middleware.push(pricingListQuery);
         if(r.path.includes('{'))middleware.push(pricingParams);
         if(r.action==='setPlanBenefit')middleware.push((req,res,next)=>{if(req.params.category==='PLAN')throw ApiError.validacao('Categoria inválida');next();});

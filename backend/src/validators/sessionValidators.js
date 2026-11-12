@@ -17,7 +17,7 @@ export const sessionSchemas = {
     patch: z.object({ id_filme: catalogId, data: date, horario_inicio: time, horario_fim: time,
         idioma: language, preco_inteira: price, status: state }).partial().strict().refine(v => Object.keys(v).length > 0),
     query: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),
-        cursor: catalogId.optional(), localId: catalogId.optional(), date: date.optional(), startFrom: time.optional(), startUntil: time.optional() }).strict(),
+        cursor: catalogId.optional(), localId: catalogId.optional(), filmId: catalogId.optional(), date: date.optional(), startFrom: time.optional(), startUntil: time.optional() }).strict(),
     adminQuery: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),
         cursor: catalogId.optional(), localId: catalogId.optional(), date: date.optional(), startFrom: time.optional(), startUntil: time.optional(), status: state.optional() }).strict()
 };

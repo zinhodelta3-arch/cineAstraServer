@@ -11,6 +11,7 @@ export default function LocationPanel({loc:initial}){
  return <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
   <div className="bulbs" aria-hidden="true"/>
   <div className="p-5 md:p-8"><h2 className="f-display text-3xl md:text-5xl font-black text-foreground">{loc.name}</h2>
+   <p className="mt-2 text-sm text-muted-foreground">{[loc.type,loc.eventCapacity && `Eventos para até ${loc.eventCapacity.toLocaleString('pt-BR')} pessoas`,loc.eventSeating].filter(Boolean).join(' · ')}</p>
    <div className="mt-6 grid gap-5 md:grid-cols-[1fr_auto]">
     <div><h3 className="flex items-center gap-2 font-semibold"><MapPin className="size-4 text-primary"/>Endereço</h3><p className="f-title mt-2 text-xl">{loc.street}</p><p className="mt-1 text-sm text-muted-foreground">{loc.district}{loc.cep?` · CEP ${loc.cep}`:''}</p>{loc.phone&&<p className="mt-3 text-sm">Telefone: {loc.phone}</p>}</div>
     {loc.fullAddress&&<div className="flex flex-wrap items-start gap-2"><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${loc.name}, ${loc.fullAddress}`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"><Navigation className="mr-2 size-4"/>Como chegar</a><Button variant="outline" onClick={copy}>{copied?<Check className="mr-2 size-4"/>:<Copy className="mr-2 size-4"/>}{copied?'Endereço copiado':'Copiar endereço'}</Button></div>}

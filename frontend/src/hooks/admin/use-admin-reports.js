@@ -4,13 +4,16 @@ import { usePaginatedList } from '@/hooks/use-paginated-list';
 import { useEffect, useState } from 'react';
 import { sessionFetch, readSessionResponse } from '@/lib/auth/session-response.mjs';
 
-export async function reportRequest(path, { signal } = {}) {
-  const response = await sessionFetch(`/api/admin/reports/${path}`, { cache: 'no-store', credentials: 'same-origin', signal });
+export async function reportRequest(path, { signal, method = 'GET', body } = {}) {
+  const response = await sessionFetch(`/api/admin/reports/${path}`, {
+    cache: 'no-store', credentials: 'same-origin', signal, method,
+    ...(body && { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  });
   return readSessionResponse(response);
 }
 
 export function useAdminReport(path) {
-  return usePaginatedList(path, reportRequest, { mode: /^(audit|http)(\?|$)/.test(path ?? '') ? 'list' : 'resource' });
+  return usePaginatedList(path, reportRequest, { mode: /^(audit|http|destinations)([/?]|$)/.test(path ?? '') ? 'list' : 'resource' });
 }
 
 export function useReportRange() {

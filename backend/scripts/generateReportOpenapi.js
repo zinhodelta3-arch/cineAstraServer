@@ -17,7 +17,41 @@ const data={
 data.social.properties.amount={type:'string',nullable:true};
 const response=schema=>({description:'Consulta autorizada',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data:schema,requestId:{type:'string',format:'uuid'}})}}});
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
+const text=maxLength=>({type:'string',minLength:1,maxLength});
+const fields={
+    institution:text(150),category:{type:'string',enum:['CARIDADE','ONG','EMPRESA_VULNERAVEL']},
+    description:text(1000),purpose:text(500),resource:{...text(150),nullable:true},
+    amount:{type:'string',pattern:'^(0|[1-9][0-9]{0,9})\\.[0-9]{2}$',nullable:true},
+    accountingReference:{...text(150),nullable:true}
+};
+const revision={type:'integer',minimum:1};
+const destination=obj({id,revision,...fields});
+const history=obj({revision,actorId:id,recordedAt:{type:'string',format:'date-time'},details:obj(fields)});
+const page=items=>obj({items:{type:'array',items},pagination});
+const destinations={
+    destinations:{summary:'Listar destinações sociais',schema:page(destination)},
+    createDestination:{summary:'Cadastrar destinação social',schema:destination,body:obj(fields)},
+    updateDestination:{summary:'Editar destinação social',schema:destination,body:obj({revision,...fields})},
+    destinationHistory:{summary:'Consultar histórico de destinação social',schema:page(history)}
+};
 for(const r of reportOperations){const common=[{name:'from',in:'query',required:true,schema:{type:'string',format:'date'}},{name:'to',in:'query',required:true,schema:{type:'string',format:'date'}}];
+    const item=destinations[r.action];
+    if(item){
+        const parameters=[];
+        if(r.path.includes('{id}'))parameters.push({name:'id',in:'path',required:true,schema:id});
+        if(r.method==='get')parameters.push({name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:id});
+        const op={
+            operationId:r.operationId,tags:['Relatórios'],summary:item.summary,security:[{bearerAuth:[]}],parameters,
+            responses:{[r.method==='post'?'201':'200']:response(item.schema)}
+        };
+        if(item.body){
+            op.description='ADMIN. Valor positivo em BRL exige recurso e referência contábil. O registro não movimenta fundos. A edição exige a revisão atual.';
+            op.requestBody={required:true,content:{'application/json':{schema:item.body}}};
+        }
+        for(const [code,name] of Object.entries(errors))op.responses[code]={$ref:`#/components/responses/${name}`};
+        (spec.paths[r.path]??={})[r.method]=op;
+        continue;
+    }
     const isFinancial=['finance','social'].includes(r.action);
     const op={operationId:r.operationId,tags:['Relatórios'],summary:{finance:'Apurar movimento financeiro do período',social:'Consultar elegibilidade da destinação social',audit:'Consultar eventos de auditoria redigidos',http:'Consultar logs HTTP redigidos'}[r.action],description:{finance:'Capturas aprovadas e estornos confirmados são agregados separadamente por data UTC. Custo conhecido vem uma vez do snapshot de cada pedido; não é lucro líquido. Duplicidade de captura é sinalizada, sem apagar entrada financeira real. Inclui contagem de alertas RN18.',social:'RN17 prevê 5% a 10% do lucro líquido apurado. Sem contabilidade completa, não calcula base ou valor; folha RN14 permanece fora.',audit:'Somente campos mínimos de auditoria, sem payload/outbox. ADMIN; paginação por id BIGINT.',http:'Somente rota template, método, status, latência e instante; sem IP, user-agent, request/response ou tokens. ADMIN; paginação por id BIGINT.'}[r.action],security:[{bearerAuth:[]}],parameters:isFinancial?[...common,{name:'scope',in:'query',required:false,schema:{type:'string',enum:['ALL','ORDERS','SUBSCRIPTIONS'],default:'ALL'}}]:[...common,{name:'limit',in:'query',required:false,schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',required:false,schema:id},{name:'actorId',in:'query',required:false,schema:id},...(r.action==='audit'?[{name:'eventType',in:'query',required:false,schema:str}]:[{name:'status',in:'query',required:false,schema:{type:'integer',minimum:100,maximum:599}}])],responses:{'200':response(data[r.action])}};
     for(const [code,name] of Object.entries(errors))op.responses[code]={$ref:`#/components/responses/${name}`};

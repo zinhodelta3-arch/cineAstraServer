@@ -19,12 +19,11 @@ export default function SnackImagesAdmin() {
   const [kind, setKind] = useState('inputs'), [query, setQuery] = useState(''), [selected, setSelected] = useState(null);
   const [dialog, setDialog] = useState(null), [preview, setPreview] = useState(null), [pending, setPending] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
   const lock = useRef(false), search = useDeferredValue(query.trim());
-  const inputs = useAdminSnacks(kind === 'inputs' ? 'inputs?limit=100' : null);
-  const combos = useAdminSnacks(kind === 'combos' ? `combos?limit=100${search ? `&q=${encodeURIComponent(search)}` : ''}` : null);
-  const products = kind === 'inputs' ? inputs : combos;
+  const params = new URLSearchParams({ limit: '20' });
+  if (search) params.set('q', search);
+  const products = useAdminSnacks(`${kind}?${params}`);
   const itemId = selected?.[kinds[kind].id];
   const images = useAdminSnacks(itemId ? `${kind}/${itemId}/images?limit=20` : null);
-  const visible = kind === 'inputs' && search ? products.items.filter(item => item.nome.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'))) : products.items;
   const image = dialog?.image;
 
   useEffect(() => {
@@ -75,11 +74,10 @@ export default function SnackImagesAdmin() {
 
   return <SnackLayout title="Imagens do AstraSnack" description="Gerencie as imagens dos insumos e combos cadastrados." action={<button type="button" className={styles.primary} onClick={() => open('form')} disabled={!selected}><Plus size={16} aria-hidden="true" />Adicionar imagem</button>}>
     {notice && <p className={styles.notice} role="status">{notice}</p>}
-    <section className={styles.filmPicker} aria-labelledby="snack-image-picker"><div className={local.pickerHeader}><h2 id="snack-image-picker">Selecione um produto</h2><p>{selected ? `Selecionado: ${selected.nome}` : 'Escolha um insumo ou combo para abrir a galeria.'}</p></div><div className={styles.pickerControl}><label>Tipo<select value={kind} onChange={event => changeKind(event.target.value)}><option value="inputs">Insumos</option><option value="combos">Combos</option></select></label><label>Busca<input type="search" maxLength={150} value={query} onChange={event => setQuery(event.target.value)} placeholder={kind === 'inputs' ? 'Buscar entre os carregados' : 'Buscar combo'} /></label></div>
-      <div className={styles.pickerList}>{visible.map(item => <button key={item[kinds[kind].id]} type="button" aria-pressed={itemId === item[kinds[kind].id]} onClick={() => choose(item)}>{item.nome} · #{item[kinds[kind].id]}</button>)}</div>
-      <SnackState list={products} empty={`Nenhum ${kind === 'inputs' ? 'insumo' : 'combo'} cadastrado.`} noun={kind === 'inputs' ? 'insumos' : 'combos'} />
-      {!products.loading && !products.error && products.items.length > 0 && visible.length === 0 && <p className={styles.hint}>Nenhum item carregado corresponde à busca.</p>}
-      {products.nextCursor && <button type="button" className={styles.secondary} onClick={products.loadMore} disabled={products.loadingMore}>{products.loadingMore ? 'Carregando…' : `Mais ${kinds[kind].label.toLowerCase()}`}</button>}
+    <section className={styles.filmPicker} aria-labelledby="snack-image-picker"><div className={local.pickerHeader}><h2 id="snack-image-picker">Selecione um produto</h2><p>{selected ? `Selecionado: ${selected.nome}` : 'Escolha um insumo ou combo para abrir a galeria.'}</p></div><div className={styles.pickerControl}><label>Tipo<select value={kind} onChange={event => changeKind(event.target.value)}><option value="inputs">Insumos</option><option value="combos">Combos</option></select></label><label>Busca<input type="search" maxLength={150} value={query} onChange={event => setQuery(event.target.value)} placeholder={kind === 'inputs' ? 'Buscar insumo' : 'Buscar combo'} /></label></div>
+      <div className={styles.pickerList}>{products.items.map(item => <button key={item[kinds[kind].id]} type="button" aria-pressed={itemId === item[kinds[kind].id]} onClick={() => choose(item)}>{item.nome} · #{item[kinds[kind].id]}</button>)}</div>
+      <SnackState list={products} empty={search ? "Nenhum produto corresponde à busca." : `Nenhum ${kind === 'inputs' ? 'insumo' : 'combo'} cadastrado.`} noun={kind === 'inputs' ? 'insumos' : 'combos'} />
+      <TablePagination list={products} noun={kinds[kind].label.toLowerCase()} />
     </section>
     <section className={styles.panel} aria-labelledby="snack-images-title"><header className={styles.panelHeader}><div><h2 id="snack-images-title">{selected ? `Galeria · ${selected.nome}` : 'Galeria de imagens'}</h2><p>{selected ? 'A imagem principal aparece primeiro nos pontos de venda.' : 'Selecione um produto para ver suas imagens.'}</p></div>{selected && <span className={styles.count}>{images.items.length} carregadas</span>}</header>
       {!selected && <p className={styles.state}>Selecione um produto acima para começar.</p>}

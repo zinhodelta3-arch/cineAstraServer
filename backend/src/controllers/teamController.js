@@ -5,6 +5,8 @@ export function createTeamController(service) {
         context: async (req, res) => success(res, await service.context(context(req))),
         collaborator: async (req, res) => success(res, await service.collaborator(req.query.email.trim().toLowerCase(), context(req))),
         list: async (req, res) => success(res, await service.listTeams(req.teamQuery, context(req))),
+        available: async (req, res) => success(res, await service.available(req.teamQuery, context(req))),
+        ownRequests: async (req, res) => success(res, await service.ownRequests(req.teamQuery, context(req))),
         get: async (req, res) => success(res, await service.team(req.params.id, context(req))),
         create: async (req, res) => { const data = await service.create(req.input, context(req)); res.location(`/api/teams/${data.id_equipe}`); success(res, data, 201); },
         patch: async (req, res) => success(res, await service.patch(req.params.id, req.input, context(req))),

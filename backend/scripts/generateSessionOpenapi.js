@@ -15,6 +15,11 @@ const fields = { id_filme: id, id_sala: id, data: date, horario_inicio: time, ho
 const object = (properties, required = Object.keys(properties)) => ({ type: 'object', additionalProperties: false, properties, required });
 const example = { id_sessao: '1', id_filme: '1', id_sala: '2', id_local: '1', data: '2026-10-10', data_fim: '2026-10-11', horario_inicio: '23:30:00', horario_fim: '01:00:00', idioma: 'DUBLADO', preco_inteira: '20.00', status: 'AGENDADA' };
 spec.components.schemas.Session = { ...object({ id_sessao: id, ...fields, id_local: id, data_fim: date, status }), example };
+const seatCount = { type: 'integer', minimum: 0 };
+Object.assign(spec.components.schemas.Session.properties, {
+    activeSeats: { ...seatCount, description: 'Assentos ativos. Presente na listagem pública com filmId.' },
+    availableSeats: { ...seatCount, description: 'Assentos ativos sem venda confirmada ou reserva vigente no instante da consulta.' }
+});
 spec.components.schemas.SessionCreate = { ...object(fields, ['id_filme','id_sala','data','horario_inicio','horario_fim','preco_inteira']), example: Object.fromEntries(Object.entries(example).filter(([key]) => key in fields)) };
 const patchFields = { ...fields, status }; delete patchFields.id_sala;
 spec.components.schemas.SessionPatch = { type: 'object', additionalProperties: false, minProperties: 1, properties: patchFields, example: { horario_inicio: '23:45', horario_fim: '01:15' } };
@@ -33,6 +38,10 @@ for (const r of sessionOperations) {
             { name: 'cursor', in: 'query', schema: id }, { name: 'localId', in: 'query', schema: id }, { name: 'date', in: 'query', schema: date },
             { name: 'startFrom', in: 'query', schema: time }, { name: 'startUntil', in: 'query', schema: time });
         if (r.admin) op.parameters.push({ name: 'status', in: 'query', schema: status });
+        else {
+            op.parameters.push({ name: 'filmId', in: 'query', schema: id });
+            op.description += ' Com filmId, lista sessões futuras do filme e informa a disponibilidade no instante da consulta. O checkout revalida a disponibilidade.';
+        }
         op.responses['200'] = response(object({ items: { type: 'array', items: ref('Session') }, pagination: ref('Pagination') }));
     } else if (r.action === 'get') op.responses['200'] = response(ref('Session'));
     else if (r.action === 'cancel') op.responses['204'] = { description: 'Sessão marcada CANCELADA; registro e histórico preservados.' };

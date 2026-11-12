@@ -11,6 +11,7 @@ function target(method, parts, search) {
   const [teamId, section, recordId, action] = parts;
   if (!parts.length && ['GET', 'POST'].includes(method)) return `/teams${method === 'GET' ? search : ''}`;
   if (parts.length === 1 && teamId === 'context' && method === 'GET' && !search) return '/teams/context';
+  if (parts.length === 1 && ['available', 'my-requests'].includes(teamId) && method === 'GET') return `/teams/${teamId}${search}`;
   if (parts.length === 1 && teamId === 'collaborator' && method === 'GET') {
     const query = new URLSearchParams(search);
     const email = query.get('email');
@@ -25,13 +26,13 @@ function target(method, parts, search) {
   }
   if (section === 'entries') {
     if (parts.length === 2 && method === 'GET') return `${base}/entries${search}`;
-    if (parts.length === 3 && recordId === 'invitations' && method === 'POST') return `${base}/entries/invitations`;
+    if (parts.length === 3 && ['invitations', 'requests'].includes(recordId) && method === 'POST') return `${base}/entries/${recordId}`;
     if (parts.length === 4 && entryId(recordId) && action === 'decision' && method === 'POST') return `${base}/entries/${recordId}/decision`;
   }
   if (section === 'chamados') {
     if (parts.length === 2 && ['GET', 'POST'].includes(method)) return `${base}/chamados${method === 'GET' ? search : ''}`;
     if (!id(recordId)) return null;
-    if (parts.length === 3 && ['GET', 'PATCH'].includes(method)) return `${base}/chamados/${recordId}`;
+    if (parts.length === 3 && ['GET', 'PATCH', 'DELETE'].includes(method)) return `${base}/chamados/${recordId}`;
     if (parts.length === 4 && ['accept', 'resolve', 'close', 'assign'].includes(action) && method === 'POST') return `${base}/chamados/${recordId}/${action}`;
   }
   return null;
@@ -47,6 +48,7 @@ async function handle(request, { params }) {
     if (!['SUPERVISOR', 'COLABORADOR'].includes(user?.role)) return json({ message: 'Acesso restrito à equipe da unidade.' }, 403);
     const path = target(method, (await params).path ?? [], new URL(request.url).search);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
+    if (method === 'DELETE' && user.role !== 'SUPERVISOR') return json({ message: 'Cancelamento reservado ao supervisor.' }, 403);
     if (user.role === 'COLABORADOR' && (method === 'PATCH' && !path.includes('/chamados/') || method === 'POST' && (path === '/teams' || path.endsWith('/invitations') || path.endsWith('/assign')))) return json({ message: 'Operação reservada ao supervisor.' }, 403);
     let body;
     if (['POST', 'PATCH'].includes(method) && !/\/(?:accept|resolve|close)$/.test(path)) {
@@ -56,7 +58,8 @@ async function handle(request, { params }) {
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
     }
     const data = await backendAuth(path, { token, method, body });
-    return json(data, method === 'POST' && (path === '/teams' || path.endsWith('/invitations') || path.endsWith('/chamados')) ? 201 : 200);
+    if (method === 'DELETE') return new NextResponse(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
+    return json(data, method === 'POST' && (path === '/teams' || /\/(?:invitations|requests|chamados)$/.test(path)) ? 201 : 200);
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;
     return json(authErrorPayload(error, { message: error instanceof AuthError ? error.message : 'Não foi possível acessar sua unidade.' }), status);
@@ -66,3 +69,4 @@ async function handle(request, { params }) {
 export const GET = handle;
 export const POST = handle;
 export const PATCH = handle;
+export const DELETE = handle;

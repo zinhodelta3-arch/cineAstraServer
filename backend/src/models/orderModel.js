@@ -7,10 +7,13 @@ export function createOrderModel(){return {
         const before=cursor ? ' AND id_pedido<?' : '';
         if(cursor)args.push(cursor);
         args.push(limit+1);
-        return (await c.execute(`SELECT id_pedido,status,valor_total,data_pedido FROM pedidos
+        return (await c.execute(`SELECT id_pedido,status,valor_total,data_pedido,proposta_admin IS NOT NULL AS proposta_admin FROM pedidos
             WHERE id_usuario=?${before} ORDER BY id_pedido DESC LIMIT ?`,args))[0];
     },
     ownStatus:(c,id,userId)=>one(c,'SELECT id_pedido,status,valor_total FROM pedidos WHERE id_pedido=? AND id_usuario=?',[id,userId]),
+    ownDraft:(c,id,userId,lock=false)=>one(c,`SELECT id_pedido,proposta_admin FROM pedidos
+        WHERE id_pedido=? AND id_usuario=? AND status='EM_ANDAMENTO' AND proposta_admin IS NOT NULL${lock?' FOR UPDATE':''}`,[id,userId]),
+    claimDraft:(c,id,key,hash)=>c.execute('UPDATE pedidos SET checkout_key=?,checkout_hash=?,checkout_expira_em=DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 15 MINUTE) WHERE id_pedido=?',[key,hash,id]),
     operationalRows:async(c,id)=>(await c.execute(`SELECT ip.id_item,ip.id_insumo,ip.id_combo,ip.id_sessao,s.data,s.horario_inicio,s.horario_fim,
         t.id_ticket,t.status AS ticket_status,
         (SELECT tp.tipo FROM ticket_passagens tp WHERE tp.id_ticket=t.id_ticket ORDER BY tp.id_passagem DESC LIMIT 1) AS ultima_passagem
@@ -45,7 +48,15 @@ export function createOrderModel(){return {
     input:(c,id)=>one(c,`SELECT i.id_local,i.status,i.venda_avulsa,l.status AS local_status,f.status AS fornecedor_status,u.status AS usuario_status,fl.status AS vinculo_status
         FROM insumos i JOIN locais l ON l.id_local=i.id_local JOIN fornecedores f ON f.id_fornecedor=i.id_fornecedor JOIN usuarios u ON u.id_usuario=f.id_usuario
         JOIN fornecedor_locais fl ON fl.id_fornecedor=f.id_fornecedor AND fl.id_local=i.id_local WHERE i.id_insumo=? FOR UPDATE`,[id]),
-    combo:(c,id)=>one(c,'SELECT co.id_local,co.ativo,l.status AS local_status FROM combos co JOIN locais l ON l.id_local=co.id_local WHERE co.id_combo=?',[id]),
+    combo:(c,id,lock=false)=>one(c,`SELECT co.id_local,co.ativo,l.status AS local_status,co.id_sessao_evento,
+        co.limite_evento,co.limite_cliente_evento,e.ativo AS event_active,e.id_local_evento,
+        TIMESTAMP(s.data,s.horario_inicio)>UTC_TIMESTAMP(3) AS event_future
+        FROM combos co JOIN locais l ON l.id_local=co.id_local
+        LEFT JOIN conteudos_promocionais e ON e.id_conteudo=co.id_evento AND e.tipo='experiences'
+        LEFT JOIN sessoes s ON s.id_sessao=co.id_sessao_evento WHERE co.id_combo=?${lock?' FOR UPDATE':''}`,[id]),
+    eventComboOrders:async(c,id,lock)=>(await c.execute(`SELECT p.id_usuario,ip.quantidade
+        FROM itens_pedido ip JOIN pedidos p ON p.id_pedido=ip.id_pedido
+        WHERE ip.id_combo=? AND p.status IN ('AGUARDANDO_PAGAMENTO','PAGO','FINALIZADO')${lock?' FOR UPDATE':''}`,[id]))[0],
     comboParts:async(c,id)=>(await c.execute('SELECT id_insumo,quantidade FROM combo_itens WHERE id_combo=? ORDER BY id_insumo',[id]))[0],
     stock:(c,id)=>one(c,`SELECT i.quantidade,i.quantidade_reservada,i.status,i.id_local,l.status AS local_status,f.status AS fornecedor_status,u.status AS usuario_status,fl.status AS vinculo_status
         FROM insumos i JOIN locais l ON l.id_local=i.id_local JOIN fornecedores f ON f.id_fornecedor=i.id_fornecedor JOIN usuarios u ON u.id_usuario=f.id_usuario

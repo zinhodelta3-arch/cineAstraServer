@@ -23,8 +23,8 @@ const supervisorItems = [
   ...teamItems.slice(1),
 ];
 
-export default function UnitShell({ children, initialUser }) {
-  const session = useSession(initialUser);
+export default function UnitShell({ children }) {
+  const session = useSession();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const areaLabel = session.user?.role === 'SUPERVISOR' ? 'Supervisão da unidade' : 'Equipe da unidade';

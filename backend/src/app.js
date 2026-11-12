@@ -237,7 +237,8 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     const checkout=createCheckoutService({model:orderModel,orders,identity,pricing,inventory,seats:createSeatOccupancyService(),tickets,streaming,contracts:content});
     app.locals.checkout=checkout;
     const paymentMethods=createPaymentMethodService({ model: createPaymentMethodModel(database), identity, provider: paymentProvider });
-    const payments=createPaymentController(createPaymentService({ model: createPaymentModel(database), methods:paymentMethods, identity, provider:paymentProvider,checkout,subscriptions:plans }));
+    const paymentService=createPaymentService({ model: createPaymentModel(database), methods:paymentMethods, identity, provider:paymentProvider,checkout,subscriptions:plans });
+    const payments=createPaymentController(paymentService);
     app.use('/api/payments/webhooks',express.raw({type:'application/json',limit:'64kb',inflate:false}),paymentWebhookRoutes(payments));
     const newsletterDelivery=createNewsletterDeliveryService({database,model:createNewsletterDeliveryModel(),provider:newsletterEmailProvider});
     app.locals.newsletterDelivery=newsletterDelivery;
@@ -281,7 +282,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     });
     app.use(contentRoutes(createContentController(content,createAssistantService({identity,support,provider:assistant})),dependencies));
     app.use(reportRoutes(createReportController(createReportService({model:createReportModel(),identity,allowedRoutes:Object.keys(specification.paths).map(path=>path.replace(/\{(\w+)\}/g,':$1'))})),dependencies));
-    app.use(salesRoutes(createSalesController(createSalesService({model:createSalesModel(),identity})),dependencies));
+    app.use(salesRoutes(createSalesController(createSalesService({model:createSalesModel(),identity,checkout,paymentService})),dependencies));
     app.use(adminStreamingRoutes(createAdminStreamingController(createAdminStreamingService({model:createAdminStreamingModel(),identity})),dependencies));
     app.use(catalogRoutes(createCatalogController(catalog), dependencies));
     const staging = createImageStorage({ ...config.imageUpload, enforceOwner: true });
@@ -301,7 +302,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(taskRoutes(createTaskController(createTaskService({ model: createTaskModel(database), identity })), dependencies));
     app.use(notificationRoutes(createNotificationController(notifications), dependencies));
     app.use(supplierRoutes(createSupplierController(createSupplierService({ model: createSupplierModel(database), identity })), dependencies));
-    app.use(productRoutes(createProductController(createProductService({ model: createProductModel(database), identity })), dependencies));
+    app.use(productRoutes(createProductController(createProductService({ model: createProductModel(database), identity, pricing })), dependencies));
     app.use(commerceGalleryRoutes(createCommerceGalleryController(createCommerceGalleryService({
         model: createCommerceGalleryModel(database), identity,
         storage: {
@@ -309,7 +310,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
             combos: createGalleryStorage({ directory: config.gallery?.directory ? join(config.gallery.directory, 'combos') : null, staging, namespace: 'combo-images' })
         }
     })), dependencies));
-    app.use(comboRoutes(createComboController(createComboService({ model: createComboModel(database), identity })), dependencies));
+    app.use(comboRoutes(createComboController(createComboService({ model: createComboModel(database), identity, pricing })), dependencies));
     app.use(supplierTransportRoutes(createSupplierTransportController(createSupplierTransportService({ model: createSupplierTransportModel(), identity })), dependencies));
     app.use(inventoryRoutes(createInventoryController(inventory), dependencies));
     app.use(supplyRoutes(createSupplyController(createSupplyService({ model: createSupplyModel(database), identity, notifications })), dependencies));

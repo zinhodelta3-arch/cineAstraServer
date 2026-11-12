@@ -6,6 +6,7 @@ import useCinemaCart from "@/hooks/cinema/carrinho/use-cinema-cart"
 import CartItem from "./cart-item"
 import EmptyCart from "./empty-cart"
 import CartSummary from "./cart-summary"
+import CartSnacks from "./cart-snacks"
 
 export default function CinemaCart() {
   const { items, itemCount, increase, decrease, remove, goBack, summary } = useCinemaCart()
@@ -27,6 +28,7 @@ export default function CinemaCart() {
               {items.map((item) => (
 <CartItem key={item.type + item.id + item.details} item={item} decrease={decrease} increase={increase} remove={remove} />
               ))}
+              <CartSnacks session={summary.session} coupon={summary.coupon} enabled={!summary.issue} />
               <div className="pt-3"><Button variant="outline" onClick={goBack}><ArrowLeft className="size-4" /> Voltar</Button></div>
             </section>
 

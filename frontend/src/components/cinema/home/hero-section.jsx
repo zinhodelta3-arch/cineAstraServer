@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Badge, SmartImg, Button } from "./home-ui";
 import { useHomeHero } from "@/hooks/cinema/home/use-home-hero";
 import TrailerButton from "./trailer-modal";
+import ResponsiveFilmBanner from "../filmes/responsive-film-banner";
 
 export default function HeroSection({ movies, onSelectMovie }) {
   const [trailerOpen, setTrailerOpen] = useState(false);
@@ -17,7 +18,7 @@ export default function HeroSection({ movies, onSelectMovie }) {
       {movies.map((m, i) => (
         <div key={m.id} className={`absolute inset-0 transition-opacity duration-1000 ${i === cur ? "opacity-100 z-10" : "opacity-0 z-0"}`}>
           <div className="absolute inset-0 bg-gradient-to-br from-secondary/40 via-card to-background" />
-          <div className="absolute inset-0 bg-cover" style={{ backgroundImage: `url(${m.image})`, backgroundPosition: "72% center" }} />
+          <ResponsiveFilmBanner filmId={m.id} context="CINEMA_HOME" cover={m.image} active={i === cur} />
           <div className="absolute inset-0 hero-scrim-x" />
           <div className="absolute inset-0 hero-scrim-y" />
           <div className="absolute inset-0 hero-tint" />

@@ -18,16 +18,21 @@ export async function GET(request,{params}){
 export async function POST(request,{params}){
  if(!isAllowedAuthOrigin(request))return json({message:'Origem não permitida.'},403);
  const action=(await params).action;
- if(!['summary','subscribe'].includes(action))return json({message:'Recurso não encontrado.'},404);
+ if(!['summary','subscribe','cancel'].includes(action))return json({message:'Recurso não encontrado.'},404);
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({message:'Entre na sua conta para contratar.'},401);
  try{
   const text=await request.text();if(text.length>2048)return json({message:'Dados excessivos.'},413);
   let raw;try{raw=JSON.parse(text);}catch{return json({message:'Dados inválidos.'},400);}
+  if(action==='cancel'){
+   const id=raw?.subscriptionId;
+   if(typeof id!=='string'||! /^[1-9]\d{0,9}$/.test(id)||BigInt(id)>4294967295n)return json({message:'Assinatura inválida.'},422);
+   return json(await backendAuth(`/subscriptions/${id}/cancel`,{token,method:'POST'}));
+  }
   const input=subscriptionInput(raw,action==='subscribe');
   if(!input)return json({message:'Confira o plano, período e aceite do contrato.'},422);
   const key=request.headers.get('Idempotency-Key');
   if(action==='subscribe'&&!/^[A-Za-z0-9._:-]{8,120}$/.test(key||''))return json({message:'Identificador da contratação inválido.'},422);
   return json(await backendAuth(action==='summary'?'/subscriptions/summary':'/subscriptions',{token,method:'POST',body:input,idempotencyKey:action==='subscribe'?key:undefined}),action==='subscribe'?201:200);
- }catch(e){return failure(e);}
+ }catch(e){return action==='cancel' ? json(authErrorPayload(e,{message:'Não foi possível cancelar a assinatura.'}),e instanceof AuthError?e.status:500) : failure(e);}
 }

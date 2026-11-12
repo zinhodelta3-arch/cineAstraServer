@@ -21,7 +21,8 @@ export function sessionDto(row) {
     return { id_sessao: idString(row.id_sessao), id_filme: idString(row.id_filme), id_sala: idString(row.id_sala), id_local: idString(row.id_local),
         titulo_filme: row.titulo_filme ?? null, nome_sala: row.nome_sala ?? null, nome_local: row.nome_local ?? null,
         data: row.data, data_fim: day(end), horario_inicio: row.horario_inicio, horario_fim: row.horario_fim,
-        idioma: row.idioma, preco_inteira: moneyString(row.preco_inteira), status: row.status };
+        idioma: row.idioma, preco_inteira: moneyString(row.preco_inteira), status: row.status,
+        ...(row.assentos_ativos!=null && { activeSeats:Number(row.assentos_ativos), availableSeats:Number(row.assentos_disponiveis) }) };
 }
 export function createSessionService({ model, identity }) {
     async function unitLocation(c, context) {
@@ -70,7 +71,15 @@ export function createSessionService({ model, identity }) {
     }
     async function mutate(operation, context, localId, unit) { return identity.transaction(async c => { await authorize(c, context, localId, unit); return operation(c); }, context); }
     return {
-        async filmAvailability(filmId) { return { locations: (await model.filmAvailability(filmId)).map(row => ({ localId: idString(row.id_local), sessions: Number(row.session_count), formats: row.formats?.split(' · ') ?? [] })) }; },
+        async filmAvailability(filmId) {
+            const rows=await model.filmAvailability(filmId);
+            return {locations:rows.map((row,index)=>({
+                localId:idString(row.id_local),name:row.nome,sessions:Number(row.session_count),
+                openSessions:Number(row.open_sessions),nextDate:row.next_open?.slice(0,10)??null,
+                nextTime:row.next_open?.slice(11,16)??null,popular:index===0&&Number(row.sold)>0&&Number(row.sold)>Number(rows[1]?.sold??0),
+                formats:row.formats?.split(' · ')??[]
+            }))};
+        },
         async availableDays(filmId, localId) { return { days: (await model.availableDays(filmId, localId)).map(row => row.date.slice(0, 10)) }; },
         async upcomingForFilm(filmId, filters) {
             const rows = await model.upcomingForFilm(filmId, filters);

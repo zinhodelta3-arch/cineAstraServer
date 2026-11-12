@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {isDeepStrictEqual} from 'node:util';
 import {ApiError} from '../utils/ApiError.js';
 import {idString} from '../utils/dto.js';
 import {pricingInput} from './orderService.js';
@@ -19,21 +20,30 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
             if(actor.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
             const previous=await model.checkoutByKey(c,actor.id_usuario,key);
             if(previous){if(previous.checkout_hash!==hash)throw conflict('Chave reutilizada com conteúdo diferente');return dto(previous);}
+            const {draftOrderId,acceptance,...orderInput}=input;
+            if(draftOrderId){
+                const draft=await model.ownDraft(c,draftOrderId,actor.id_usuario,true);
+                if(!draft)throw ApiError.naoEncontrado();
+                const data=typeof draft.proposta_admin==='string'?JSON.parse(draft.proposta_admin):draft.proposta_admin;
+                if(!isDeepStrictEqual(data,orderInput))throw conflict('A proposta foi atualizada. Abra o pedido novamente.');
+            }
             const quote=await orders.quoteOnConnection(c,input,context);
             if(quote.guardianAuthorizationRequired)throw new ApiError('Este pedido exige autorização vigente do responsável',403,null,'GUARDIAN_AUTHORIZATION_REQUIRED');
             if(quote.lines.some(line=>line.catalogOutOfSync))throw new ApiError('O preço publicado precisa ser atualizado pelo cinema',409,null,'CATALOG_PRICE_OUT_OF_SYNC');
             if(!quote.finalizable)throw conflict('Cotação não finalizável; confira idade, meia e preço');
             if(quote.total==='0.00')throw conflict('Total deve ser positivo');
             const contract=contracts?await contracts.contract(c,input,quote):null;
-            if(contracts&&(!input.acceptance?.accepted||input.acceptance.offerHash!==contract.offerHash))throw conflict('Aceite da oferta atual necessário');
+            if(contracts&&(!acceptance?.accepted||acceptance.offerHash!==contract.offerHash))throw conflict('Aceite da oferta atual necessário');
             if(streaming)await streaming.ensureSellable(c,input.lines);
-            const orderId=await model.createCheckout(c,actor.id_usuario,key,hash);
+            const orderId=draftOrderId??await model.createCheckout(c,actor.id_usuario,key,hash);
+            if(draftOrderId)await model.claimDraft(c,orderId,key,hash);
             const snapshot=await pricing.commit(c,{orderId,input:pricingInput(input),context});
             if(snapshot.total!==quote.total||snapshot.lines.length!==input.lines.length)throw conflict('Cotação mudou; tente novamente');
             const seatsToReserve=input.lines.filter(x=>x.kind==='SESSION').sort((a,b)=>idSort(a.id,b.id)||idSort(a.seatId,b.seatId));
             for(const line of seatsToReserve)await seats.reserve(c,{orderId,sessionId:line.id,seatId:line.seatId});
             const stockLines=input.lines.filter(x=>x.kind==='INPUT'||x.kind==='COMBO').map(x=>({...(x.kind==='INPUT'?{inputId:x.id}:{comboId:x.id}),quantidade:x.quantity}));
             if(stockLines.length)await inventory.reserve(c,{orderId,localId:input.localId,lines:stockLines});
+            await orders.confirmEventLimits(c,input,actor.id_usuario);
             for(let i=0;i<input.lines.length;i++)await model.insertCheckoutItem(c,orderId,input.lines[i],snapshot.lines[i]);
             await model.finalizeCheckout(c,orderId,snapshot.total,snapshot.couponId);
             if(contract)await contracts.save(c,orderId,contract.offerHash,contract);
@@ -77,19 +87,19 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
         }
         return {cancelled};
     }
-    async function cancel(orderId,key,context){
+    async function cancel(orderId,key,context,administrative=false){
         const conflict=()=>new ApiError('Pedido não pode ser cancelado nesta etapa',409,null,'ORDER_CANCEL_CONFLICT');
         const record=async(c,owner)=>{try{await model.recordCancelKey(c,owner,orderId,key);}catch(error){if(error.code==='ER_DUP_ENTRY')throw conflict();throw error;}};
         return identity.transaction(async c=>{
             const actor=await identity.activeActor(c,context);
-            if(actor.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
-            const order=await model.ownOrderForCancel(c,orderId,actor.id_usuario);
+            if(actor.tipo_usuario!==(administrative?'ADMIN':'CLIENTE'))throw ApiError.acessoNegado();
+            const order=administrative?await model.checkoutOrder(c,orderId):await model.ownOrderForCancel(c,orderId,actor.id_usuario);
             if(!order)throw ApiError.naoEncontrado();
-            const previous=await model.cancelKey(c,actor.id_usuario,key);
+            const previous=administrative?null:await model.cancelKey(c,actor.id_usuario,key);
             if(previous&&idString(previous.id_pedido)!==idString(orderId))throw conflict();
             const result={orderId:idString(orderId),status:'CANCELADO'};
             if(order.status==='CANCELADO'){
-                if(!previous)await record(c,actor.id_usuario);
+                if(!previous&&!administrative)await record(c,actor.id_usuario);
                 return result;
             }
             if(order.status!=='AGUARDANDO_PAGAMENTO'||await model.hasTicket(c,orderId))throw conflict();
@@ -100,10 +110,10 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
             if(await model.hasStock(c,orderId))await inventory.transition(c,{orderId,action:'LIBERAR'});
             await seats.releaseCancelled(c,{orderId});
             await pricing.settleCoupon(c,{orderId,action:'LIBERAR'});
-            await record(c,actor.id_usuario);
-            await identity.audit(c,'ORDER.CANCELLED_BY_OWNER',orderId,context);
+            if(!administrative)await record(c,actor.id_usuario);
+            await identity.audit(c,administrative?'ORDER.CANCELLED_BY_ADMIN':'ORDER.CANCELLED_BY_OWNER',orderId,context);
             return result;
         },context);
     }
-    return {checkout,ready,confirm,expireBatch,cancel};
+    return {checkout,ready,confirm,expireBatch,cancel,cancelByAdmin:(id,context)=>cancel(id,null,context,true)};
 }

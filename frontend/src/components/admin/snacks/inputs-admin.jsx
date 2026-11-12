@@ -14,8 +14,10 @@ function inputFields(form, existing) {
   const value = (key) => String(form.get(key) ?? "").trim();
   const minimum = Number(value("quantidade_minima"));
   const price = Number(value("preco"));
-  if (!value("nome") || value("nome").length > 150 || !Number.isInteger(minimum) || minimum < 0 || minimum > 2147483647 || !Number.isFinite(price) || price < 0 || price > 99999999.99) throw new Error("Confira nome, estoque mínimo e preço.");
-  const body = { nome: value("nome"), descricao: value("descricao") || null, categoria: value("categoria") || null, quantidade_minima: minimum, preco: price.toFixed(2), venda_avulsa: form.has("venda_avulsa") };
+  const useRule = !existing && form.has("usePricingRule");
+  if (!value("nome") || value("nome").length > 150 || !Number.isInteger(minimum) || minimum < 0 || minimum > 2147483647 || (!useRule && (!Number.isFinite(price) || price < 0 || price > 99999999.99))) throw new Error("Confira nome, estoque mínimo e preço.");
+  const body = { nome: value("nome"), descricao: value("descricao") || null, categoria: value("categoria") || null, quantidade_minima: minimum, ...(useRule ? { priceMode: "RULE" } : { preco: price.toFixed(2) }), venda_avulsa: form.has("venda_avulsa") };
+  if (useRule && !body.venda_avulsa) throw new Error("Ative a venda avulsa para usar a regra de preço.");
   const costs = ["custo_receita", "custo_parceria"];
   for (const key of costs) {
     const raw = value(key).replace(",", ".");
@@ -27,7 +29,7 @@ function inputFields(form, existing) {
   if (available && body.venda_avulsa) {
     if (costs.some(key => body[key] === undefined)) throw new Error("Preencha os dois custos para ativar a venda avulsa.");
     const total = costs.reduce((sum, key) => sum + Math.round(Number(body[key]) * 100), 0);
-    if (price <= 0 || Math.round(price * 100) < total) throw new Error("O preço de venda deve ser positivo e cobrir a soma dos custos.");
+    if (!useRule && (price <= 0 || Math.round(price * 100) < total)) throw new Error("O preço de venda deve ser positivo e cobrir a soma dos custos.");
   }
   if (!existing) return { ...body, supplierId: value("supplierId"), localId: value("localId") };
   body.status = value("status");
@@ -36,6 +38,7 @@ function inputFields(form, existing) {
 
 export default function InputsAdmin() {
   const [query, setQuery] = useState("");
+  const [usePricingRule, setUsePricingRule] = useState(false);
   const [localId, setLocalId] = useState("");
   const [status, setStatus] = useState("Todos");
   const [formSupplierId, setFormSupplierId] = useState("");
@@ -57,7 +60,7 @@ export default function InputsAdmin() {
   const visible = list.items;
   const grant = grants.items.find((row) => row.id_local === formLocalId && row.status === "ATIVO");
 
-  function open(type, row = null) { setGrantError(""); setFormSupplierId(row?.id_fornecedor ?? ""); setFormLocalId(row?.id_local ?? ""); actions.open(type, row); }
+  function open(type, row = null) { setUsePricingRule(false); setGrantError(""); setFormSupplierId(row?.id_fornecedor ?? ""); setFormLocalId(row?.id_local ?? ""); actions.open(type, row); }
   async function authorize() {
     if (!formSupplierId || !formLocalId || grantPending) return;
     setGrantPending(true); setGrantError("");
@@ -92,7 +95,9 @@ export default function InputsAdmin() {
         {!item && <><label>Fornecedor<select name="supplierId" value={formSupplierId} onChange={(event) => setFormSupplierId(event.target.value)} required><option value="">Selecione</option>{suppliers.items.map((supplier) => <option key={supplier.id_fornecedor} value={supplier.id_fornecedor}>{supplier.nome_cine || supplier.razao_social}</option>)}</select></label><label>Cinema<select name="localId" value={formLocalId} onChange={(event) => setFormLocalId(event.target.value)} required><option value="">Selecione</option>{locals.items.filter((local) => local.status === "ATIVO").map((local) => <option key={local.id_local} value={local.id_local}>{local.nome}</option>)}</select></label>
           {formSupplierId && formLocalId && <div className={styles.wide}>{grants.loading ? <p className={styles.hint}>Verificando autorização…</p> : grant ? <p className={styles.hint}>Fornecedor autorizado para este cinema.</p> : <button type="button" className={styles.secondary} onClick={authorize} disabled={grantPending}>{grantPending ? "Autorizando…" : "Autorizar fornecedor neste cinema"}</button>}{grantError && <p className={styles.error} role="alert">{grantError}</p>}{grants.error && <p className={styles.error} role="alert">{grants.error}</p>}</div>}</>}
         {item && <p className={`${styles.hint} ${styles.wide}`}>{supplierName(item.id_fornecedor)} · {localName(item.id_local)}. Esses vínculos não podem ser alterados após o cadastro.</p>}
-        <label className={styles.wide}>Nome<input name="nome" required maxLength={150} defaultValue={item?.nome ?? ""} /></label><label>Categoria<select name="categoria" defaultValue={item?.categoria ?? ""}><option value="">Sem categoria</option>{item?.categoria && !categories.items.some(row => row.name === item.categoria) && <option value={item.categoria}>{item.categoria}</option>}{categories.items.map(row => <option key={row.name} value={row.name}>{row.name}</option>)}</select></label>{categories.error && <p role="alert">{categories.error}</p>}{categories.nextCursor && <button type="button" className={styles.secondary} onClick={categories.loadMore} disabled={categories.loadingMore}>Mais categorias</button>}<label>Preço (R$)<input name="preco" type="number" min="0" max="99999999.99" step="0.01" required defaultValue={item?.preco ?? ""} /></label>
+        <label className={styles.wide}>Nome<input name="nome" required maxLength={150} defaultValue={item?.nome ?? ""} /></label><label>Categoria<select name="categoria" defaultValue={item?.categoria ?? ""}><option value="">Sem categoria</option>{item?.categoria && !categories.items.some(row => row.name === item.categoria) && <option value={item.categoria}>{item.categoria}</option>}{categories.items.map(row => <option key={row.name} value={row.name}>{row.name}</option>)}</select></label>{categories.error && <p role="alert">{categories.error}</p>}{categories.nextCursor && <button type="button" className={styles.secondary} onClick={categories.loadMore} disabled={categories.loadingMore}>Mais categorias</button>}{!item && <div className={`${styles.checkboxList} ${styles.wide}`}><label><input type="checkbox" name="usePricingRule" checked={usePricingRule} onChange={event => setUsePricingRule(event.target.checked)} /> Calcular preço pela regra cadastrada</label></div>}
+        {!usePricingRule && <label>Preço (R$)<input name="preco" type="number" min="0" max="99999999.99" step="0.01" required defaultValue={item?.preco ?? ""} /></label>}
+        {usePricingRule && <p className={`${styles.hint} ${styles.wide}`}>O preço será calculado com os custos informados e o markup da categoria, no momento de salvar.</p>}
         <label>Custo da receita (R$)<input name="custo_receita" type="number" min="0" max="99999999.99" step="0.01" defaultValue={item?.custo_receita ?? ""} /></label>
         <label>Custo da parceria (R$)<input name="custo_parceria" type="number" min="0" max="99999999.99" step="0.01" defaultValue={item?.custo_parceria ?? ""} /></label>
         <p className={styles.wide}>Para vender avulso, preencha os dois custos. Informe R$ 0,00 quando um custo não se aplicar.</p>

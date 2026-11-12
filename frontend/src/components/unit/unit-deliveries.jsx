@@ -1,13 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowDownToLine, RotateCcw } from 'lucide-react';
+import { ArrowDownToLine, History, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import ShipmentHistory from '@/components/logistics/shipment-history';
+import { unitOperation } from '@/hooks/unit/use-unit-data';
 import { UnitFeedback, UnitListState, UnitMore, dateTime, label } from './unit-layout';
 import styles from './unit.module.css';
 
 export default function UnitDeliveries({ list, action }) {
   const [returning, setReturning] = useState(null);
+  const [tracking, setTracking] = useState(null);
 
   function close() {
     if (action.pending) return;
@@ -27,6 +30,7 @@ export default function UnitDeliveries({ list, action }) {
       <p>Confirme recebimentos e registre a devolução de equipamentos após o encerramento da sessão.</p>
     </div></header>
     <div className={styles.body}>
+      <UnitFeedback error={!returning && action.error} notice={action.notice} />
       <UnitListState list={list} empty="Nenhuma entrega cadastrada." />
       {list.items.length > 0 && <div className={styles.tableWrap}>
         <table className={styles.table}>
@@ -41,6 +45,8 @@ export default function UnitDeliveries({ list, action }) {
             <td>{row.status === 'RECEBIDO' && row.id_insumo_origem ? `#${row.id_insumo_destino ?? row.id_insumo_origem}` : '—'}</td>
             <td>{dateTime(row.data_devolucao)}</td>
             <td>
+              <button type="button" className={styles.iconButton} title="Histórico da entrega"
+                aria-label={`Histórico da entrega ${row.id_logistica}`} onClick={() => setTracking(row)}><History size={16} aria-hidden="true" /></button>
               {['ENVIADO', 'EM_TRANSITO'].includes(row.status) && <button type="button"
                 className={styles.iconButton} title="Confirmar recebimento"
                 aria-label={`Confirmar recebimento da entrega ${row.id_logistica}`} disabled={action.pending}
@@ -58,6 +64,13 @@ export default function UnitDeliveries({ list, action }) {
       </div>}
       <UnitMore list={list} />
     </div>
+    <Dialog open={Boolean(tracking)} onOpenChange={open => { if (!open) setTracking(null); }}>
+      <DialogContent className={styles.dialog}>
+        <DialogTitle>Histórico da entrega #{tracking?.id_logistica}</DialogTitle>
+        <DialogDescription>{tracking?.nome_transporte ?? 'Sem transporte vinculado'}. {tracking?.data_prevista ? `Chegada estimada pela rota em ${dateTime(tracking.data_prevista)}.` : 'Sem estimativa de chegada.'}</DialogDescription>
+        {tracking && <ShipmentHistory path={`/logistics/${tracking.id_logistica}/history?limit=10`} request={unitOperation} />}
+      </DialogContent>
+    </Dialog>
     <Dialog open={Boolean(returning)} onOpenChange={open => { if (!open) close(); }}>
       <DialogContent className={styles.dialog}>
         <DialogTitle>Devolução da entrega #{returning?.id_logistica}</DialogTitle>

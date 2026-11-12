@@ -9,6 +9,7 @@ export async function unitRequest(path, { method = 'GET', body, signal } = {}) {
     method, cache: 'no-store', credentials: 'same-origin', signal,
     headers: body == null ? undefined : { 'Content-Type': 'application/json' },
     body: body == null ? undefined : JSON.stringify(body) });
+  if (response.status === 204) return null;
   return readSessionResponse(response);
 }
 
