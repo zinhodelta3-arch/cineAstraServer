@@ -1,7 +1,10 @@
 import {success} from '../utils/dto.js';
+import {report} from '../utils/telemetry.js';
 const context=req=>({actor:req.usuario,signal:req.signal,requestId:req.res.locals.requestId});
 const respond=(service,req,res,result,status=200,refund=result)=>{
-    if(refund?.status==='RECEBIDA')res.once('finish',()=>setImmediate(()=>service.dispatch(refund.id,{actor:req.usuario,requestId:res.locals.requestId}).catch(()=>{})));
+    if(refund?.status==='RECEBIDA')res.once('finish',()=>setImmediate(()=>Promise.resolve()
+        .then(()=>service.dispatch(refund.id,{actor:req.usuario,requestId:res.locals.requestId}))
+        .catch(error=>report('refund_dispatch_failed',{requestId:res.locals.requestId,error}))));
     return success(res,result,status);
 };
 export function createRefundController(service){return {

@@ -1,4 +1,5 @@
 import {ApiError} from '../utils/ApiError.js';
+import {report} from '../utils/telemetry.js';
 import {instant} from './identityService.js';
 import {idString} from '../utils/dto.js';
 import {cents,money} from './pricingMath.js';
@@ -57,7 +58,10 @@ export function createRefundService({model,identity,provider,termsVersion}){
         try{
             const result=await provider.refund({idempotencyKey:`refund:${id}`,transactionId:claimed.transactionId,amount:claimed.amount,currency:'BRL',signal:context.signal});
             if(result)await applyResult(id,result,context);
-        }catch{/* resultado incerto: consultar, nunca redisparar refund */}
+        }catch(error){
+            // Resultado incerto: consultar, nunca redisparar refund.
+            report('refund_dispatch_uncertain',{requestId:context.requestId,error});
+        }
     }
     async function applyResult(id,result,context){
         if(!result||!['PENDING','CONFIRMED','FAILED'].includes(result.status)||result.currency!=='BRL'||typeof result.amount!=='string'||

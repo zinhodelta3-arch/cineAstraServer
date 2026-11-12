@@ -24,7 +24,7 @@ function fixture({ageDays=2,providerMode='PENDING',planPaid=false}={}){
     const provider={name:'gateway',available:true,async refund(){state.calls++;if(state.mode==='THROW')throw new Error('timeout');return {status:state.mode,refundId:'refund_1',amount:requests.at(-1).valor_solicitado,currency:'BRL'};},async consultRefund(){return state.consult;}};
     const service=createRefundService({model,identity,provider,termsVersion:'2026-10'});
     const client={actor:{id:'9',tipo:'CLIENTE'}},admin={actor:{id:'1',tipo:'ADMIN'}};
-    return {service,payment,requests,audits,state,client,admin};
+    return {service,payment,requests,audits,state,client,admin,provider};
 }
 
 test('arrependimento em sete dias confirma recebimento e não inventa estorno',async()=>{
@@ -103,3 +103,43 @@ test('HTTP confirma recebimento mesmo com despacho que nunca termina',async()=>{
     assert.equal(response.status,202);assert.equal(response.body.data.status,'RECEBIDA');
     await new Promise(resolve=>setImmediate(resolve));assert.equal(started,true);
 });
+
+test('timeout de estorno gera diagnóstico seguro e não redispara o gateway',async t=>{
+    const logs=[];
+    t.mock.method(console,'error',line=>logs.push(JSON.parse(line)));
+    const f=fixture();
+    f.provider.refund=async()=>{f.state.calls++;throw Object.assign(new Error('segredo_gateway SQL token'),{code:'ETIMEDOUT'});};
+    const receipt=await f.service.request('7',{reason:'ARREPENDIMENTO'},'refund_diagnostic_123',f.client);
+    await f.service.dispatch(receipt.id,{...f.client,requestId:'00000000-0000-4000-8000-000000000001'});
+    assert.equal((await f.service.get(receipt.id,f.client)).status,'ENVIADA');
+    assert.equal(f.payment.status,'APROVADO');
+    await f.service.dispatch(receipt.id,f.client);
+    assert.equal(f.state.calls,1);
+    assert.equal(logs.length,1);
+    assert.equal(logs[0].event,'refund_dispatch_uncertain');
+    assert.equal(logs[0].errorCode,'ETIMEDOUT');
+    assert.equal(logs[0].requestId,'00000000-0000-4000-8000-000000000001');
+    assert.doesNotMatch(JSON.stringify(logs),/segredo_gateway|SQL|token/);
+});
+
+for(const failure of ['rejeição','exceção síncrona']){
+    test(`${failure} do despacho após resposta gera diagnóstico sem derrubar HTTP`,async t=>{
+        const logs=[];
+        t.mock.method(console,'error',line=>logs.push(JSON.parse(line)));
+        const error=Object.assign(new Error('segredo_database SELECT senha'),{code:'ER_NO_SUCH_TABLE'});
+        const service={request:async()=>({id:'1',status:'RECEBIDA'}),dispatch(){if(failure==='rejeição')return Promise.reject(error);throw error;}};
+        const app=express();
+        app.use((req,res,next)=>{req.usuario={id:'9',tipo:'CLIENTE'};res.locals.requestId='00000000-0000-4000-8000-000000000001';next();});
+        app.post('/refund/:id',createRefundController(service).request);
+        app.get('/health',(req,res)=>res.json({status:'ok'}));
+        const response=await request(app).post('/refund/7').expect(202);
+        await new Promise(resolve=>setImmediate(resolve));
+        await request(app).get('/health').expect(200);
+        assert.equal(response.body.data.status,'RECEBIDA');
+        assert.equal(logs.length,1);
+        assert.equal(logs[0].event,'refund_dispatch_failed');
+        assert.equal(logs[0].errorCode,'ER_NO_SUCH_TABLE');
+        assert.equal(logs[0].requestId,'00000000-0000-4000-8000-000000000001');
+        assert.doesNotMatch(JSON.stringify(logs)+response.text,/segredo_database|SELECT|senha/);
+    });
+}

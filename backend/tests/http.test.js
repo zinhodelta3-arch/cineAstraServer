@@ -107,3 +107,25 @@ test('BigInt JSON e IDs grandes são transmitidos sem arredondamento', async () 
     const res = await request(app).get('/__test/id').expect(200);
     assert.equal(res.body.id, '9007199254740993');
 });
+
+test('falhas de integridade, concorrência e conexão devolvem HTTP seguro e mantêm a API disponível', async () => {
+    const cases = [
+        ['ER_DUP_ENTRY', 409, 'DUPLICATE_RESOURCE'],
+        ['ER_NO_REFERENCED_ROW_2', 422, 'INVALID_REFERENCE'],
+        ['ER_LOCK_DEADLOCK', 409, 'TRANSACTION_CONFLICT'],
+        ['ECONNREFUSED', 503, 'DEPENDENCY_UNAVAILABLE'],
+        ['UNEXPECTED_PROVIDER_FAILURE', 500, 'INTERNAL_ERROR'],
+    ];
+    const { app } = fixture({ registerRoutes(app) {
+        app.post('/__test/persistence-error/:code', async req => {
+            throw Object.assign(new Error('SELECT senha token segredo_interno'), { code: req.params.code });
+        });
+    } });
+    for (const [code, status, expected] of cases) {
+        const response = await request(app).post(`/__test/persistence-error/${code}`).send({ value: 'segredo_cliente' }).expect(status);
+        assert.equal(response.body.code, expected);
+        assert.equal(response.body.requestId, response.headers['x-request-id']);
+        assert.doesNotMatch(response.text, /SELECT|senha|token|segredo|stack/);
+        await request(app).get('/health').expect(200);
+    }
+});

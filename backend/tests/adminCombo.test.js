@@ -20,7 +20,7 @@ function fixture(){
 }
 test('admin lista ativos, arquivados e legado sem local/composição com paginação e filtros',async()=>{
  const f=fixture(),first=await f.api('?limit=2').expect(200);assert.equal(first.headers['cache-control'],'no-store');
- assert.deepEqual(first.body.data.items[0],{id_combo:'3',id_local:null,nome:'Legado',descricao:null,preco:'12.00',ativo:false,data_cadastro:null,itemCount:0});assert.equal(first.body.data.pagination.nextCursor,'2');
+ assert.deepEqual(first.body.data.items[0],{id_combo:'3',id_local:null,nome:'Legado',descricao:null,preco:'12.00',custo_operacional:null,ativo:false,data_cadastro:null,itemCount:0});assert.equal(first.body.data.pagination.nextCursor,'2');
  const last=await f.api('?limit=2&cursor=2').expect(200);assert.deepEqual(last.body.data.items.map(x=>x.id_combo),['1']);assert.equal(last.body.data.pagination.nextCursor,null);
  assert.deepEqual((await f.api('?active=false')).body.data.items.map(x=>x.id_combo),['3','1']);
  assert.deepEqual((await f.api('?localId=1&active=true&q=pipoca')).body.data.items.map(x=>x.id_combo),['2']);
