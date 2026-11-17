@@ -2,6 +2,7 @@ import {idString} from '../utils/dto.js';
 import {ApiError} from '../utils/ApiError.js';
 const one=async(c,sql,args=[])=> (await c.execute(sql,args))[0][0]??null;
 export function createOrderModel(){return {
+    recordAdminCancellation:(c,id,adminId,reason)=>c.execute('UPDATE pedidos SET cancelado_por_admin=?,motivo_cancelamento_admin=? WHERE id_pedido=?',[adminId,reason,id]),
     async listOwn(c,userId,limit,cursor){
         const args=[userId];
         const before=cursor ? ' AND id_pedido<?' : '';
@@ -36,7 +37,7 @@ export function createOrderModel(){return {
             if(!film||film.status!=='ATIVO'||!film.disponivel_streaming||!Number.isInteger(film.dias_acesso_aluguel)||film.dias_acesso_aluguel<1||film.dias_acesso_aluguel>36500)throw new ApiError('Prazo de aluguel indisponível',409,null,'ORDER_CONFLICT');
             rentalDays=film.dias_acesso_aluguel;
         }
-        const [r]=await c.execute('INSERT INTO itens_pedido(id_pedido,id_insumo,id_combo,id_sessao,id_assento,id_filme,id_sessao_retirada,tipo_streaming,tipo_ingresso,quantidade,valor_unitario,subtotal,dias_acesso_aluguel_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',[orderId,...ids,line.kind==='COMBO'?line.sessionId:null,line.kind==='STREAMING'?line.mode:null,'INTEIRA',line.quantity,price.unitPrice,price.subtotal,rentalDays]);return idString(r.insertId);},
+        const [r]=await c.execute('INSERT INTO itens_pedido(id_pedido,id_insumo,id_combo,id_sessao,id_assento,id_filme,id_sessao_retirada,tipo_streaming,tipo_ingresso,quantidade,valor_unitario,subtotal,dias_acesso_aluguel_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',[orderId,...ids,line.kind==='COMBO'?line.sessionId??null:null,line.kind==='STREAMING'?line.mode:null,price.benefit==='MEIA'?'MEIA':'INTEIRA',line.quantity,price.unitPrice,price.subtotal,rentalDays]);return idString(r.insertId);},
     finalizeCheckout:(c,id,total,couponId)=>c.execute("UPDATE pedidos SET status='AGUARDANDO_PAGAMENTO',valor_total=?,id_cupom=? WHERE id_pedido=? AND status='EM_ANDAMENTO'",[total,couponId,id]),
     expiredIds:async(c,limit)=>(await c.execute("SELECT id_pedido FROM pedidos WHERE status='AGUARDANDO_PAGAMENTO' AND checkout_expira_em<=UTC_TIMESTAMP(3) ORDER BY checkout_expira_em,id_pedido LIMIT ?",[limit]))[0],
     cancelExpired:async(c,id)=>{const [r]=await c.execute("UPDATE pedidos SET status='CANCELADO' WHERE id_pedido=? AND status='AGUARDANDO_PAGAMENTO' AND checkout_expira_em<=UTC_TIMESTAMP(3)",[id]);return r.affectedRows===1;},

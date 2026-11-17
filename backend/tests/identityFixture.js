@@ -70,8 +70,20 @@ export async function identityFixture(overrides = {}) {
         async deleteResource(c, kind, id, userId) { state[kind] = state[kind].filter(r => !(r[pk(kind)] === id && r.userId === userId)); },
         async preferences(id) { return state.preferences[id] ?? null; },
         async updatePreferences(c, id, input) { state.preferences[id] = { tema: 'SISTEMA', tamanho_fonte: 'MEDIO', alto_contraste: false, modo_acessibilidade: false, idioma: 'pt-BR', aparencia: 'cineastra', ...state.preferences[id], ...input }; },
-        async privacyRequest(c, userId) { const r = { id_solicitacao: next(), id_usuario: userId, status: 'RECEBIDA' }; state.privacy.push(r); return r; },
+        async privacyRequest(c, userId) {
+            const open = state.privacy.find(r => r.id_usuario === userId && ['RECEBIDA','EM_ANALISE'].includes(r.status));
+            if (open) return open;
+            const r = { id_solicitacao: next(), id_usuario: userId, status: 'RECEBIDA' };
+            state.privacy.push(r);
+            return r;
+        },
         async privacyStatus(c, id) { return state.privacy.find(r => r.id_solicitacao === id); },
+        async ownPrivacyStatus(c, id) { return state.privacy.findLast(r => r.id_usuario === id); },
+        async privacyObligations() { return {}; },
+        async resolvePrivacy(c, id, status, reason) { Object.assign(state.privacy.find(r => r.id_solicitacao === id), { status, motivo_decisao: reason }); },
+        async anonymizeCustomer(c, id, replacement) { Object.assign(state.users.find(user => user.id_usuario === id), {
+            status: 'INATIVO', nome: 'Conta excluída', cpf: replacement.cpf, email: replacement.email, senha: replacement.hash
+        }); },
         async adminGuard() {},
         async adminCount() { return { total: state.users.filter(u => u.tipo_usuario === 'ADMIN' && u.status === 'ATIVO').length }; },
         async exportSection() { return []; }

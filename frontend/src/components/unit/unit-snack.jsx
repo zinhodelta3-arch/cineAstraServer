@@ -19,7 +19,11 @@ export default function UnitSnack({ canManage = false }) {
   const [stock, setStock] = useState({ inputs: [], equipment: [], loading: true, error: '' });
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
-  const combos = useUnitList(localId ? `/combos?limit=20&localId=${localId}` : null, unitOperation);
+  const [view,setView] = useState('combos');
+  const [search,setSearch] = useState('');
+  const comboQuery = new URLSearchParams({limit:'20',localId:localId??''});
+  if(search) comboQuery.set('q',search);
+  const combos = useUnitList(localId && view==='combos' ? `/combos?${comboQuery}` : null, unitOperation);
 
   useEffect(() => {
     if (!localId) return;
@@ -58,12 +62,23 @@ export default function UnitSnack({ canManage = false }) {
     <UnitFeedback error={context.error || stock.error} />
     <div className={styles.grid}>
       <div className={styles.card}><strong>Insumos</strong><p>{stock.loading ? 'Carregando…' : `${stock.inputs.length} itens neste cinema`}</p></div>
-      <div className={styles.card}><strong>Combos</strong><p>{combos.loading ? 'Carregando…' : `${combos.items.length} combos nesta página`}</p></div>
+      <div className={styles.card}><strong>Combos</strong><p>Consulte a composição e o preço.</p></div>
       <div className={styles.card}><strong>Equipamentos</strong><p>{stock.loading ? 'Carregando…' : `${stock.equipment.length} itens neste cinema`}</p></div>
     </div>
-    <section className={styles.panel}>
+    <div className={styles.toolbar}><label className={styles.field}>Consultar AstraSnack
+      <select value={view} onChange={event=>setView(event.target.value)}>
+        <option value="combos">Combos</option><option value="stock">Estoque local</option>
+        <option value="sources">Solicitar reposição</option><option value="equipment">Solicitar equipamento</option>
+        <option value="requests">Solicitações</option><option value="deliveries">Entregas</option>
+        <option value="alerts">Alertas de reposição</option><option value="movements">Movimentações</option>
+      </select></label></div>
+    {view==='combos' && <section className={styles.panel}>
       <div className={styles.panelHeader}><div><h2>Combos</h2><p>Selecione um combo para consultar a composição e o preço oficial.</p></div></div>
       <div className={styles.body}>
+        <form className={styles.form} onSubmit={event=>{event.preventDefault(); setSearch(String(new FormData(event.currentTarget).get('comboSearch')).trim());}}>
+          <label>Buscar combo<input name="comboSearch" type="search" maxLength={150} defaultValue={search} /></label>
+          <button className={styles.secondary}>Buscar</button>
+        </form>
         <UnitListState list={combos} empty="Nenhum combo disponível neste cinema." />
         {combos.items.length > 0 && <div className={styles.tableWrap}><table className={styles.table}>
           <thead><tr><th scope="col">Combo</th><th scope="col">Insumos</th><th scope="col">Preço</th><th scope="col">Composição</th></tr></thead>
@@ -72,11 +87,11 @@ export default function UnitSnack({ canManage = false }) {
             <td><button type="button" className={styles.iconButton} title="Ver composição" aria-label={`Ver composição de ${row.nome}`} onClick={() => selectCombo(row)}><ListPlus size={16} aria-hidden="true" /></button></td>
           </tr>)}</tbody>
         </table></div>}
-        <UnitMore list={combos} />
+        <UnitMore list={combos} noun="combos" />
       </div>
-    </section>
-    <section className={`${styles.panel} ${styles.ticket}`}><div className={styles.panelHeader}><div><h2>Estoque local</h2><p>Saldos disponíveis para atendimento e composição.</p></div><button type="button" className={styles.secondary} disabled={!localId} onClick={refreshStock}>Atualizar</button></div><div className={styles.body}>{stock.loading && <p className={styles.empty}>Carregando estoque…</p>}{!stock.loading && !stock.inputs.length && <p className={styles.empty}>Nenhum insumo neste cinema.</p>}{stock.inputs.length > 0 && <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Insumo</th><th>Em mãos</th><th>Disponível</th><th>Estado</th></tr></thead><tbody>{stock.inputs.map(row => <tr key={row.id_insumo}><th scope="row">{row.nome}</th><td>{row.quantidade}</td><td>{row.disponivel}</td><td><span className={styles.badge}>{label(row.status)}</span></td></tr>)}</tbody></table></div>}</div></section>
-    <UnitStockOperations canManage={canManage} sessionId={sessionId} localId={localId} inputs={stock.inputs} reloadStock={refreshStock} />
+    </section>}
+    {view==='stock' && <section className={`${styles.panel} ${styles.ticket}`}><div className={styles.panelHeader}><div><h2>Estoque local</h2><p>Saldos disponíveis para atendimento e composição.</p></div><button type="button" className={styles.secondary} disabled={!localId} onClick={refreshStock}>Atualizar</button></div><div className={styles.body}>{stock.loading && <p className={styles.empty}>Carregando estoque…</p>}{!stock.loading && !stock.inputs.length && <p className={styles.empty}>Nenhum insumo neste cinema.</p>}{stock.inputs.length > 0 && <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Insumo</th><th>Em mãos</th><th>Disponível</th><th>Estado</th></tr></thead><tbody>{stock.inputs.map(row => <tr key={row.id_insumo}><th scope="row">{row.nome}</th><td>{row.quantidade}</td><td>{row.disponivel}</td><td><span className={styles.badge}>{label(row.status)}</span></td></tr>)}</tbody></table></div>}</div></section>}
+    {view!=='combos' && <UnitStockOperations view={view} canManage={canManage} sessionId={sessionId} localId={localId} inputs={stock.inputs} reloadStock={refreshStock} />}
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null); }}>
       <DialogContent className={styles.dialog}>
         <DialogTitle>{detail?.data?.nome ?? selected?.nome}</DialogTitle>

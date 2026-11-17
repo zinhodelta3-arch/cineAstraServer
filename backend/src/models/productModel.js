@@ -22,9 +22,11 @@ export function createProductModel(database) {
         grant: (supplierId, localId, c = database, lock = false) => one(c, `SELECT id_fornecedor,id_local,status,criado_em FROM fornecedor_locais WHERE id_fornecedor = ? AND id_local = ?${lock ? ' FOR UPDATE' : ''}`, [supplierId, localId]),
         listGrants(supplierId, q) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
-            const where = ['id_fornecedor = ?', 'id_local > ?'], args = [supplierId, q.cursor ?? '0'];
-            if (q.status) { where.push('status = ?'); args.push(q.status); }
-            return rows(database, `SELECT id_fornecedor,id_local,status,criado_em FROM fornecedor_locais WHERE ${where.join(' AND ')} ORDER BY id_local LIMIT ${q.limit + 1}`, args);
+            const where = ['g.id_fornecedor = ?', 'g.id_local > ?'], args = [supplierId, q.cursor ?? '0'];
+            if (q.status) { where.push('g.status = ?'); args.push(q.status); }
+            return rows(database, `SELECT g.id_fornecedor,g.id_local,g.status,g.criado_em,l.nome AS nome_local
+                FROM fornecedor_locais g LEFT JOIN locais l ON l.id_local=g.id_local AND l.status='ATIVO'
+                WHERE ${where.join(' AND ')} ORDER BY g.id_local LIMIT ${q.limit + 1}`, args);
         },
         upsertGrant: (c, supplierId, localId) => c.execute("INSERT INTO fornecedor_locais (id_fornecedor,id_local,status) VALUES (?,?,'ATIVO') ON DUPLICATE KEY UPDATE status = 'ATIVO'", [supplierId, localId]),
         archiveGrant: (c, supplierId, localId) => c.execute("UPDATE fornecedor_locais SET status = 'INATIVO' WHERE id_fornecedor = ? AND id_local = ?", [supplierId, localId]),

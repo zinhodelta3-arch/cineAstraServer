@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "CineAstra API",
-    "version": "1.32.0",
-    "description": "CAPTCHA e 2FA ficam em standby por padrão (CAPTCHA_ENABLED=false, TWO_FACTOR_ENABLED=false). Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. Cadastro requer CAPTCHA, termos aprovados e prova de idade; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva. Tarefa14: catálogo administrativo e consultas públicas de filmes/gêneros ativos; uploads/galerias ficam15/16. Tarefa34: checkout transacional com TTL de 15 minutos, pagamento separado e aprovação autenticada; tickets por unidade emitidos na aprovação e consumidos por equipe vinculada."
+    "version": "1.1.0",
+    "description": "Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. CAPTCHA e 2FA ficam em standby por padrão (CAPTCHA_ENABLED=false, TWO_FACTOR_ENABLED=false). Cadastro requer termos aprovados; sem ageProof, ALLOW_SELF_DECLARED_AGE=true permite idade não verificada; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva."
   },
   "servers": [
     {
@@ -22,132 +22,8 @@
       "name": "Identidade"
     },
     {
-      "name": "Catálogo"
-    },
-    {
-      "name": "Galeria de filmes",
-      "description": "Imagens públicas de filmes ativos e gestão ADMIN."
-    },
-    {
-      "name": "Locais",
-      "description": "Locais, salas e assentos; estrutura de sessões presenciais."
-    },
-    {
-      "name": "Sessões",
-      "description": "Agendamento, consulta e cancelamento de sessões presenciais."
-    },
-    {
-      "name": "Equipes",
-      "description": "Equipes por sessão, membros, solicitações e convites."
-    },
-    {
-      "name": "Chamados internos",
-      "description": "Chamados vinculados a equipe e sessão; separados de suporte ao cliente."
-    },
-    {
-      "name": "Notificações",
-      "description": "Consulta e leitura de notificações próprias; emissão somente por serviço interno."
-    },
-    {
-      "name": "Fornecedores",
-      "description": "Cadastro administrativo e consulta da própria conta de fornecedor."
-    },
-    {
-      "name": "Combos",
-      "description": "Composição de insumos por local; preço/desconto final pertence ao serviço comercial."
-    },
-    {
-      "name": "Uploads",
-      "description": "Staging privado por usuário ADMIN ou FORNECEDOR; não publica galeria."
-    },
-    {
-      "name": "Galerias comerciais",
-      "description": "Imagens de insumos e combos; PRINCIPAL única e alternativas de apresentação."
-    },
-    {
-      "name": "Estoque",
-      "description": "Saldo físico, reservado, movimentos e alerta de reposição por local."
-    },
-    {
-      "name": "Métodos de pagamento",
-      "description": "Métodos próprios tokenizados por gateway externo."
-    },
-    {
-      "name": "Pagamentos",
-      "description": "Intenções, consulta e webhook de gateway verificado."
-    },
-    {
-      "name": "Reembolsos",
-      "description": "Solicitação, revisão, estorno confirmado e cancelamento da assinatura."
-    },
-    {
-      "name": "Pedidos",
-      "description": "Cotação e criação de carrinho próprio, sem emissão de direitos."
-    },
-    {
-      "name": "Precificação",
-      "description": "Custos, parâmetros, benefícios, promoções, cupons e cotação."
-    },
-    {
-      "name": "Carrinho",
-      "description": "Cotação e checkout de pedidos avulsos."
-    },
-    {
-      "name": "Tickets",
-      "description": "Tickets por unidade, consulta e consumo por equipe vinculada."
-    },
-    {
-      "name": "Plans",
-      "description": "Planos, contratos de assinatura e solicitação de combo mensal."
-    },
-    {
-      "name": "Participation",
-      "description": "Convites, participantes e concordância de rateio de assinaturas."
-    },
-    {
-      "name": "Streaming",
-      "description": "Direitos avulsos pagos ou benefício vigente de assinatura, com reprodução privada temporária."
-    },
-    {
-      "name": "Newsletter",
-      "description": "Consentimento específico, double opt-in e categorias independentes."
-    },
-    {
-      "name": "NewsletterAdmin",
-      "description": "Gestão administrativa de categorias, campanhas e audiência elegível."
-    },
-    {
-      "name": "NewsletterDelivery",
-      "description": "Notificações autenticadas de falha de entrega e reclamação do provedor."
-    },
-    {
-      "name": "Suporte",
-      "description": "Solicitações próprias, histórico e atendimento ADMIN."
-    },
-    {
-      "name": "Conteúdo e IA",
-      "description": "Conteúdo aprovado, comprovante próprio e assistente com suporte humano."
-    },
-    {
-      "name": "Favoritos de streaming",
-      "description": "Minha lista por perfil de visualização."
-    },
-    {
-      "name": "Admin: usuários e privacidade"
-    },
-    {
-      "name": "Bomboniere pública"
-    },
-    {
-      "name": "Conteúdo promocional"
-    },
-    {
-      "name": "Perfis de streaming",
-      "description": "Perfis de visualização próprios do cliente, separados da identidade da conta."
-    },
-    {
-      "name": "Progresso de streaming",
-      "description": "Histórico resumido e continuar assistindo por perfil."
+      "name": "Programa social",
+      "description": "Iniciativas por competência e destinação custeada pelo CineAstra."
     },
     {
       "name": "Insumos",
@@ -160,14 +36,6 @@
     {
       "name": "Fornecedor locais",
       "description": "Autorização operacional explícita por fornecedor e local."
-    },
-    {
-      "name": "Suprimentos",
-      "description": "Solicitações, envio, trânsito e recebimento de materiais."
-    },
-    {
-      "name": "Relatórios",
-      "description": "Consulta administrativa paginada e apuração financeira sem lucro fictício."
     }
   ],
   "security": [
@@ -435,7 +303,7 @@
           "Identidade"
         ],
         "summary": "Cadastro somente CLIENTE, com termos/privacidade atuais",
-        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Cadastro somente CLIENTE, com termos/privacidade atuais. ALLOW_SELF_DECLARED_AGE=true por padrão permite omitir ageProof: não cria verificação nem vínculo e retorna ageVerified=false. Com prova, exige provider válido e responsável quando aplicável. false restaura exigência de prova. Nenhum JWT no cadastro; CAPTCHA conforme flag. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429. documentsSource=LOCAL_TEST_PDF permite usar os PDFs locais 2.0 sem conteúdo publicado; ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true por padrão temporário. Aceite registrado como ACEITE_PDF_LOCAL_TESTE, não publicação final.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Cadastro somente CLIENTE, com termos/privacidade atuais. ALLOW_SELF_DECLARED_AGE=true por padrão permite omitir ageProof: não cria verificação nem vínculo e retorna ageVerified=false. Com prova, exige provider válido e responsável quando aplicável. false restaura exigência de prova. documentsSource=LOCAL_TEST_PDF aceita apenas versões 2.0, sem prova, com ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true (padrão temporário). Registra ACEITE_PDF_LOCAL_TESTE; não é publicação final. Nenhum JWT no cadastro; CAPTCHA conforme flag. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [],
         "responses": {
           "201": {
@@ -541,7 +409,7 @@
           "Identidade"
         ],
         "summary": "Alias compatível de POST /api/auth/register.",
-        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Alias compatível de POST /api/auth/register. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429. documentsSource=LOCAL_TEST_PDF permite usar os PDFs locais 2.0 sem conteúdo publicado; ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true por padrão temporário. Aceite registrado como ACEITE_PDF_LOCAL_TESTE, não publicação final.",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Público; sem bearer obrigatório. Alias compatível de POST /api/auth/register. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [],
         "responses": {
           "201": {
@@ -1475,8 +1343,8 @@
         "tags": [
           "Identidade"
         ],
-        "summary": "Desativa conta e revoga autenticação; registra solicitação durável",
-        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Desativa conta e revoga autenticação; registra solicitação durável. 202 confirma recebimento, NÃO exclusão/anonimização concluída. Retenção financeira e política de anonimização exigem decisão de privacidade. Location aponta consulta administrativa; guardar id para atendimento. Último ADMIN ativo não é desativado. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "summary": "Registra solicitação do CLIENTE após reautenticação",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Registra solicitação do CLIENTE após reautenticação. A conta permanece ativa enquanto o ADMIN analisa. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -1951,7 +1819,7 @@
         "tags": [
           "Identidade"
         ],
-        "summary": "Somente ADMIN com 2FA",
+        "summary": "Cria contas de clientes e contas internas com CPF e e-mail únicos",
         "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Cria contas de clientes e contas internas com CPF e e-mail únicos. O cadastro administrativo não registra aceite dos termos nem verificação de idade em nome do cliente. Novo ADMIN/SUPERVISOR passa por enrollment obrigatório. Primeiro ADMIN via CLI seguro bootstrap:admin. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
@@ -2481,6 +2349,118 @@
             }
           }
         ]
+      },
+      "patch": {
+        "operationId": "privacyDecision",
+        "tags": [
+          "Identidade"
+        ],
+        "summary": "Somente ADMIN",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Somente ADMIN. Pendências comerciais impedem concluir a exclusão; aprovação anonimiza o cadastro e revoga as sessões. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/IdentityPrivacyStatus"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMedia"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityInput_privacyDecision"
+              }
+            }
+          }
+        }
       }
     },
     "/api/users/me/children/{id}/controls": {
@@ -10031,6 +10011,15 @@
                 "CANCELADA"
               ]
             }
+          },
+          {
+            "name": "roomId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$",
+              "description": "INT UNSIGNED decimal, máximo 4294967295."
+            }
           }
         ],
         "responses": {
@@ -11787,7 +11776,7 @@
           "Equipes"
         ],
         "summary": "Aceitar ou recusar entrada",
-        "description": "Solicitação: ADMIN ou supervisor vinculado ao cinema aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.",
+        "description": "Solicitação: ADMIN ou supervisor responsável aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.",
         "security": [
           {
             "bearerAuth": []
@@ -14068,7 +14057,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
+        "description": "FORNECEDOR consulta os próprios locais autorizados."
       },
       "post": {
         "operationId": "create_inputs",
@@ -14375,7 +14364,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
+        "description": "FORNECEDOR consulta os próprios locais autorizados."
       },
       "patch": {
         "operationId": "update_inputs",
@@ -14463,7 +14452,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos.",
+        "description": "FORNECEDOR consulta os próprios locais autorizados.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14583,7 +14572,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
+        "description": "FORNECEDOR consulta os próprios locais autorizados."
       }
     },
     "/api/equipment": {
@@ -20089,7 +20078,7 @@
           "Suprimentos"
         ],
         "summary": "send logistics",
-        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível. Exige transporte ativo, próprio do fornecedor e sem entrega em andamento.",
+        "description": "Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível. Exige transporte ativo, próprio do fornecedor e sem entrega em andamento. Se houver rota ativa, registra seus dados de referência no envio.",
         "security": [
           {
             "bearerAuth": []
@@ -23927,12 +23916,23 @@
                     "type": "string",
                     "enum": [
                       "APPROVE",
-                      "DENY"
+                      "DENY",
+                      "CANCEL"
                     ]
                   },
                   "amount": {
                     "type": "string",
                     "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$"
+                  },
+                  "itemIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]{0,19}$"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "uniqueItems": true
                   },
                   "termsVersion": {
                     "type": "string"
@@ -24182,7 +24182,7 @@
           "Carrinho"
         ],
         "summary": "Finalizar checkout avulso",
-        "description": "CLIENTE cria pedido, itens, snapshot, reserva de cupom/estoque/assento numa transação. Combo exige sessionId do mesmo local e gera retirada vinculada à sessão. Máximo de 500 unidades por checkout. Idempotency-Key é única por usuário e entrada; repetição idêntica devolve o mesmo pedido, alteração retorna 409. Reserva dura 15 minutos; não pago é cancelado sem ticket. O gateway é chamado depois via POST /api/payments com orderId e methodId. Aprovação autenticada dentro do prazo consome reservas e emite tickets por unidade; aprovação tardia requer revisão. Meia sem comprovação e menor sem autorização não finalizam. Taxa deste fluxo: 0.00; encargos RN12 aplicam-se a assinaturas vencidas, não a pedido avulso que expira. Exige acceptance.accepted=true e offerHash vigente da cotação. O contrato é gravado em snapshot na mesma transação e pode ser conservado via GET /api/orders/{orderId}/receipt. Exige acceptance.accepted=true e offerHash vigente da cotação. O contrato é gravado em snapshot na mesma transação e pode ser conservado via GET /api/orders/{orderId}/receipt. Exige acceptance.accepted=true e offerHash vigente da cotação. O contrato é gravado em snapshot na mesma transação e pode ser conservado via GET /api/orders/{orderId}/receipt.",
+        "description": "CLIENTE cria pedido, itens, snapshot, reserva de cupom/estoque/assento numa transação. Combos comuns podem ser comprados sozinhos para retirada no cinema. Quando há sessionId, a retirada é vinculada à sessão. Combos temáticos mantêm a exigência de ingresso da sessão vinculada. Máximo de 500 unidades por checkout. Idempotency-Key é única por usuário e entrada; repetição idêntica devolve o mesmo pedido, alteração retorna 409. Reserva dura 15 minutos; não pago é cancelado sem ticket. O gateway é chamado depois via POST /api/payments com orderId e methodId. Aprovação autenticada dentro do prazo consome reservas e emite tickets por unidade; aprovação tardia requer revisão. Meia sem comprovação e menor sem autorização não finalizam. Taxa deste fluxo: 0.00; encargos RN12 aplicam-se a assinaturas vencidas, não a pedido avulso que expira. Exige acceptance.accepted=true e offerHash vigente da cotação. O contrato é gravado em snapshot na mesma transação e pode ser conservado via GET /api/orders/{orderId}/receipt. Exige acceptance.accepted=true e offerHash vigente da cotação. O contrato é gravado em snapshot na mesma transação e pode ser conservado via GET /api/orders/{orderId}/receipt. Exige acceptance.accepted=true e offerHash vigente da cotação. O contrato é gravado em snapshot na mesma transação e pode ser conservado via GET /api/orders/{orderId}/receipt.",
         "security": [
           {
             "bearerAuth": []
@@ -24459,7 +24459,7 @@
           "Tickets"
         ],
         "summary": "Ver tickets da sessão vinculada",
-        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe da sessão consulta tickets sem ver códigos.",
+        "description": "ADMIN, supervisor do cinema ou colaborador membro ativo da equipe da sessão consultam tickets sem ver códigos.",
         "security": [
           {
             "bearerAuth": []
@@ -24608,7 +24608,7 @@
           "Tickets"
         ],
         "summary": "Validar ticket sem consumir",
-        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe consulta validade sem mudar estado.",
+        "description": "ADMIN, supervisor do cinema ou colaborador membro ativo da equipe consultam validade sem mudar estado.",
         "security": [
           {
             "bearerAuth": []
@@ -24707,6 +24707,11 @@
                   "code": {
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_-]{43}$"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,19}$",
+                    "description": "Quando informado, exige ingresso da sessão indicada."
                   }
                 },
                 "required": [
@@ -24714,7 +24719,8 @@
                 ]
               },
               "example": {
-                "code": "mJQnV2DaK6x7B5tR8uYwQ9cE0fGhI1jKlMnOpQrStUv"
+                "code": "mJQnV2DaK6x7B5tR8uYwQ9cE0fGhI1jKlMnOpQrStUv",
+                "sessionId": "5"
               }
             }
           }
@@ -24728,7 +24734,7 @@
           "Tickets"
         ],
         "summary": "Consumir ticket uma vez",
-        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe consome ticket uma vez. Ingresso cria a primeira entrada no histórico; retirada de insumo não cria presença. Meia exige conferência presencial mínima. Ticket expirado ou repetido retorna 409.",
+        "description": "ADMIN, supervisor do cinema ou colaborador membro ativo da equipe consomem ticket uma vez. Ingresso cria a primeira entrada no histórico; retirada de insumo não cria presença. Meia exige conferência presencial mínima. Ticket expirado ou repetido retorna 409.",
         "security": [
           {
             "bearerAuth": []
@@ -24826,6 +24832,11 @@
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_-]{43}$"
                   },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,19}$",
+                    "description": "Quando informado, exige ingresso da sessão indicada."
+                  },
                   "halfEvidenceType": {
                     "type": "string",
                     "enum": [
@@ -24842,6 +24853,7 @@
               },
               "example": {
                 "code": "mJQnV2DaK6x7B5tR8uYwQ9cE0fGhI1jKlMnOpQrStUv",
+                "sessionId": "5",
                 "halfEvidenceType": "CIE"
               }
             }
@@ -24856,7 +24868,7 @@
           "Tickets"
         ],
         "summary": "Registrar saída do ingresso",
-        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe registra saída somente após entrada ativa; a passagem é append-only.",
+        "description": "ADMIN, supervisor do cinema ou colaborador membro ativo da equipe registram saída somente após entrada ativa; a passagem é append-only.",
         "security": [
           {
             "bearerAuth": []
@@ -24952,6 +24964,11 @@
                   "code": {
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_-]{43}$"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,19}$",
+                    "description": "Quando informado, exige ingresso da sessão indicada."
                   }
                 },
                 "required": [
@@ -24959,7 +24976,8 @@
                 ]
               },
               "example": {
-                "code": "mJQnV2DaK6x7B5tR8uYwQ9cE0fGhI1jKlMnOpQrStUv"
+                "code": "mJQnV2DaK6x7B5tR8uYwQ9cE0fGhI1jKlMnOpQrStUv",
+                "sessionId": "5"
               }
             }
           }
@@ -25195,7 +25213,7 @@
           "Tickets"
         ],
         "summary": "Histórico de entradas e saídas da sessão",
-        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe da sessão consulta histórico de passagens, sem códigos de tickets ou documentos.",
+        "description": "ADMIN, supervisor do cinema ou colaborador membro ativo da equipe da sessão consultam passagens, sem códigos ou documentos.",
         "security": [
           {
             "bearerAuth": []
@@ -25385,7 +25403,7 @@
           "Tickets"
         ],
         "summary": "Registrar reentrada do ingresso",
-        "description": "ADMIN ou supervisor do cinema ou colaborador membro ativo da equipe registra reentrada somente após saída, antes do vencimento, com nova conferência de meia; UTILIZADO permanece.",
+        "description": "ADMIN, supervisor do cinema ou colaborador membro ativo da equipe registram reentrada somente após saída, antes do vencimento, com nova conferência de meia; UTILIZADO permanece.",
         "security": [
           {
             "bearerAuth": []
@@ -25483,6 +25501,11 @@
                     "type": "string",
                     "pattern": "^[A-Za-z0-9_-]{43}$"
                   },
+                  "sessionId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,19}$",
+                    "description": "Quando informado, exige ingresso da sessão indicada."
+                  },
                   "halfEvidenceType": {
                     "type": "string",
                     "enum": [
@@ -25499,6 +25522,7 @@
               },
               "example": {
                 "code": "mJQnV2DaK6x7B5tR8uYwQ9cE0fGhI1jKlMnOpQrStUv",
+                "sessionId": "5",
                 "halfEvidenceType": "CIE"
               }
             }
@@ -26820,26 +26844,6 @@
                       "TITULAR_PAGA",
                       "DIVISAO_IGUAL"
                     ]
-                  },
-                  "acceptance": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                      "offerHash": {
-                        "type": "string",
-                        "pattern": "^[a-f0-9]{64}$"
-                      },
-                      "accepted": {
-                        "type": "boolean",
-                        "enum": [
-                          true
-                        ]
-                      }
-                    },
-                    "required": [
-                      "offerHash",
-                      "accepted"
-                    ]
                   }
                 },
                 "required": [
@@ -26850,7 +26854,7 @@
             }
           }
         },
-        "description": "Cria snapshot imutável da oferta e cobrança PENDENTE. Use o chargeId retornado em POST /api/payments com outro Idempotency-Key. A assinatura só ativa após confirmação autenticada do gateway. Contratação exige hash e aceite do sumário vigente; o snapshot da assinatura contém as versões empresariais, termos e privacidade e fica acessível ao titular. Contratação exige hash e aceite do sumário vigente; o snapshot da assinatura contém as versões empresariais, termos e privacidade e fica acessível ao titular."
+        "description": "Cria snapshot imutável da oferta e cobrança PENDENTE. Use o chargeId retornado em POST /api/payments com outro Idempotency-Key. A assinatura só ativa após confirmação autenticada do gateway."
       }
     },
     "/api/subscriptions/{subscriptionId}/benefits/combo/redeem": {
@@ -33867,77 +33871,16 @@
       "post": {
         "operationId": "subscription_contract_summary",
         "tags": [
-          "Conteúdo e IA"
+          "Plans"
         ],
-        "summary": "Obter sumário do contrato de assinatura",
-        "description": "Calcula preço, plano e conteúdo oficial vigente antes do aceite; sem publicação retorna 503. O offerHash deve ser enviado em POST /api/subscriptions.",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "planId": {
-                    "type": "string",
-                    "pattern": "^[1-9][0-9]{0,19}$"
-                  },
-                  "period": {
-                    "type": "string",
-                    "enum": [
-                      "MENSAL",
-                      "ANUAL"
-                    ]
-                  },
-                  "autoRenew": {
-                    "type": "boolean"
-                  },
-                  "divisionMode": {
-                    "type": "string",
-                    "enum": [
-                      "TITULAR_PAGA",
-                      "DIVISAO_IGUAL"
-                    ]
-                  },
-                  "acceptance": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                      "offerHash": {
-                        "type": "string",
-                        "pattern": "^[a-f0-9]{64}$"
-                      },
-                      "accepted": {
-                        "type": "boolean",
-                        "enum": [
-                          true
-                        ]
-                      }
-                    },
-                    "required": [
-                      "offerHash",
-                      "accepted"
-                    ]
-                  }
-                },
-                "required": [
-                  "planId",
-                  "period"
-                ]
-              }
-            }
-          }
-        },
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "Sucesso",
             "content": {
               "application/json": {
                 "schema": {
@@ -33951,169 +33894,7 @@
                       ]
                     },
                     "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "business": {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "properties": {
-                            "slug": {
-                              "type": "string"
-                            },
-                            "version": {
-                              "type": "string"
-                            },
-                            "title": {
-                              "type": "string"
-                            },
-                            "body": {
-                              "type": "object",
-                              "additionalProperties": true
-                            },
-                            "source": {
-                              "type": "string",
-                              "format": "uri"
-                            },
-                            "publishedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            }
-                          },
-                          "required": [
-                            "slug",
-                            "version",
-                            "title",
-                            "body",
-                            "source",
-                            "publishedAt"
-                          ]
-                        },
-                        "terms": {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "properties": {
-                            "slug": {
-                              "type": "string"
-                            },
-                            "version": {
-                              "type": "string"
-                            },
-                            "title": {
-                              "type": "string"
-                            },
-                            "body": {
-                              "type": "object",
-                              "additionalProperties": true
-                            },
-                            "source": {
-                              "type": "string",
-                              "format": "uri"
-                            },
-                            "publishedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            }
-                          },
-                          "required": [
-                            "slug",
-                            "version",
-                            "title",
-                            "body",
-                            "source",
-                            "publishedAt"
-                          ]
-                        },
-                        "privacy": {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "properties": {
-                            "slug": {
-                              "type": "string"
-                            },
-                            "version": {
-                              "type": "string"
-                            },
-                            "title": {
-                              "type": "string"
-                            },
-                            "body": {
-                              "type": "object",
-                              "additionalProperties": true
-                            },
-                            "source": {
-                              "type": "string",
-                              "format": "uri"
-                            },
-                            "publishedAt": {
-                              "type": "string",
-                              "format": "date-time"
-                            }
-                          },
-                          "required": [
-                            "slug",
-                            "version",
-                            "title",
-                            "body",
-                            "source",
-                            "publishedAt"
-                          ]
-                        },
-                        "offer": {
-                          "type": "object",
-                          "additionalProperties": false,
-                          "properties": {
-                            "lines": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "additionalProperties": true
-                              }
-                            },
-                            "total": {
-                              "type": "string"
-                            },
-                            "fees": {
-                              "type": "string"
-                            },
-                            "currency": {
-                              "type": "string",
-                              "enum": [
-                                "BRL"
-                              ]
-                            },
-                            "paymentPath": {
-                              "type": "string"
-                            },
-                            "paymentMethodsPath": {
-                              "type": "string"
-                            },
-                            "conditions": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "lines",
-                            "total",
-                            "fees",
-                            "currency",
-                            "paymentPath",
-                            "paymentMethodsPath",
-                            "conditions"
-                          ]
-                        },
-                        "offerHash": {
-                          "type": "string",
-                          "pattern": "^[a-f0-9]{64}$"
-                        }
-                      },
-                      "required": [
-                        "business",
-                        "terms",
-                        "privacy",
-                        "offer",
-                        "offerHash"
-                      ]
+                      "$ref": "#/components/schemas/PlanContract"
                     },
                     "requestId": {
                       "type": "string",
@@ -35204,7 +34985,7 @@
         ],
         "summary": "Consultar disponibilidade dos assentos por sessão",
         "security": [],
-        "description": "Consulta pública sem cache: mapa físico e ocupação no instante da leitura. Retorna apenas sessões AGENDADA/EM_CARTAZ com filme, sala e local ativos e filme disponível para cinema. Sessão não pública/inexistente retorna 404. Assento inativo é INDISPONIVEL; ocupação CONFIRMADA é VENDIDO; RESERVADA com expira_em maior que o relógio UTC do banco é RESERVADO; reserva expirada é ignorada sem alteração de dados. Não expõe comprador, pedido, ticket ou prazo individual. Não reserva nem garante compra: checkout revalida disponibilidade e concorrência. Tipo do assento informa acessibilidade. A elegibilidade segue status cadastral da sessão; não é autorização de compra.",
+        "description": "Consulta pública sem cache: mapa físico e ocupação no instante da leitura. Retorna apenas sessões AGENDADA/EM_CARTAZ com filme, sala e local ativos e filme disponível para cinema. Sessão iniciada, não pública ou inexistente retorna 404. Assento inativo é INDISPONIVEL; ocupação CONFIRMADA é VENDIDO; RESERVADA com expira_em maior que o relógio UTC do banco é RESERVADO; reserva expirada é ignorada sem alteração de dados. Não expõe comprador, pedido, ticket ou prazo individual. Não reserva nem garante compra: checkout revalida disponibilidade e concorrência. Tipo do assento informa acessibilidade. A elegibilidade segue status cadastral da sessão; não é autorização de compra.",
         "parameters": [
           {
             "name": "id",
@@ -37088,7 +36869,8 @@
                 "ENVIADA",
                 "CONFIRMADA",
                 "NEGADA",
-                "FALHOU"
+                "FALHOU",
+                "CANCELADA"
               ]
             }
           },
@@ -37168,7 +36950,8 @@
                                   "ENVIADA",
                                   "CONFIRMADA",
                                   "NEGADA",
-                                  "FALHOU"
+                                  "FALHOU",
+                                  "CANCELADA"
                                 ]
                               },
                               "requestedAmount": {
@@ -37396,7 +37179,8 @@
                             "ENVIADA",
                             "CONFIRMADA",
                             "NEGADA",
-                            "FALHOU"
+                            "FALHOU",
+                            "CANCELADA"
                           ]
                         },
                         "requestedAmount": {
@@ -37473,6 +37257,60 @@
                         "decisionBasis": {
                           "type": "string",
                           "nullable": true
+                        },
+                        "remainingAmount": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$"
+                        },
+                        "selectedItems": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "itemId": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,19}$"
+                              },
+                              "amount": {
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$"
+                              }
+                            },
+                            "required": [
+                              "itemId",
+                              "amount"
+                            ]
+                          }
+                        },
+                        "eligibleItems": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,19}$"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "integer"
+                              },
+                              "remainingAmount": {
+                                "type": "string",
+                                "pattern": "^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "quantity",
+                              "remainingAmount"
+                            ]
+                          }
                         }
                       },
                       "required": [
@@ -37494,7 +37332,10 @@
                         "paymentStatus",
                         "details",
                         "termsVersion",
-                        "decisionBasis"
+                        "decisionBasis",
+                        "remainingAmount",
+                        "selectedItems",
+                        "eligibleItems"
                       ]
                     },
                     "requestId": {
@@ -40150,8 +39991,8 @@
         "tags": [
           "Identidade"
         ],
-        "summary": "Consultar cinema do supervisor",
-        "description": "ADMIN autenticado. Consulta o cinema atribuído a um supervisor ativo. Cache-Control: no-store.",
+        "summary": "Somente ADMIN",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Somente ADMIN. Consulta o cinema atribuído a um supervisor ativo. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -40252,8 +40093,8 @@
         "tags": [
           "Identidade"
         ],
-        "summary": "Atribuir cinema ao supervisor",
-        "description": "ADMIN autenticado. Um supervisor ativo pode ser vinculado a um cinema ativo por vez. Equipes ativas de outro cinema impedem mudança ou remoção do vínculo. Cache-Control: no-store.",
+        "summary": "Somente ADMIN",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. ADMIN autenticado e 2FA completo. Somente ADMIN. Atribui um cinema ativo por supervisor. Equipes ativas de outro cinema impedem transferência ou remoção do vínculo. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
         "security": [
           {
             "bearerAuth": []
@@ -40886,7 +40727,7 @@
           "Suprimentos"
         ],
         "summary": "list logistics routes",
-        "description": "Exclusivo para ADMIN. Cada direção possui uma rota que pode ser editada ou inativada.",
+        "description": "Exclusivo para ADMIN. Cada direção possui uma rota de referência que pode ser editada, arquivada ou reativada.",
         "security": [
           {
             "bearerAuth": []
@@ -40998,7 +40839,7 @@
           "Suprimentos"
         ],
         "summary": "create logistics route",
-        "description": "Exclusivo para ADMIN. Cada direção possui uma rota que pode ser editada ou inativada.",
+        "description": "Exclusivo para ADMIN. Cada direção possui uma rota de referência que pode ser editada, arquivada ou reativada.",
         "security": [
           {
             "bearerAuth": []
@@ -41113,7 +40954,7 @@
           "Suprimentos"
         ],
         "summary": "update logistics route",
-        "description": "Exclusivo para ADMIN. Cada direção possui uma rota que pode ser editada ou inativada.",
+        "description": "Exclusivo para ADMIN. Cada direção possui uma rota de referência que pode ser editada, arquivada ou reativada.",
         "security": [
           {
             "bearerAuth": []
@@ -41627,7 +41468,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
+        "description": "FORNECEDOR consulta os próprios locais autorizados."
       }
     },
     "/api/equipment/categories": {
@@ -43303,6 +43144,16 @@
           "503": {
             "$ref": "#/components/responses/Unavailable"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminSalesCancellation"
+              }
+            }
+          }
         }
       }
     },
@@ -44562,6 +44413,3262 @@
           }
         }
       }
+    },
+    "/api/sessions/{sessionId}/pending-orders": {
+      "get": {
+        "operationId": "list_session_pending_orders",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Listar pedidos da sessão aguardando pagamento",
+        "description": "ADMIN, supervisor do cinema ou colaborador membro ativo da sessão consultam pedidos com reserva vigente, sem dados de clientes.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de pedidos pendentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "orderId": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,19}$"
+                              },
+                              "expiresAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "orderId",
+                              "expiresAt"
+                            ]
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "nextCursor": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,19}$",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "limit",
+                            "nextCursor"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "items": [],
+                    "pagination": {
+                      "limit": 50,
+                      "nextCursor": null
+                    }
+                  },
+                  "requestId": "00000000-0000-4000-8000-000000000001"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/unit/sessions/{sessionId}/counter": {
+      "get": {
+        "operationId": "counter_catalog",
+        "tags": [
+          "Carrinho"
+        ],
+        "summary": "Consultar catálogo da sessão para venda presencial",
+        "description": "Somente colaborador ativo da equipe da sessão.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consultar catálogo da sessão para venda presencial",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "classification": {
+                          "type": "string",
+                          "enum": [
+                            "L",
+                            "10",
+                            "12",
+                            "14",
+                            "16",
+                            "18"
+                          ]
+                        },
+                        "seats": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,19}$"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "label"
+                            ]
+                          }
+                        },
+                        "snacks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,19}$"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "INPUT",
+                                  "COMBO"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "kind"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "classification",
+                        "seats",
+                        "snacks"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/unit/sessions/{sessionId}/counter/quote": {
+      "post": {
+        "operationId": "counter_quote",
+        "tags": [
+          "Carrinho"
+        ],
+        "summary": "Cotar venda presencial",
+        "description": "Somente colaborador ativo da equipe da sessão.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "SESSION"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,19}$"
+                            },
+                            "seatId": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,19}$"
+                            },
+                            "quantity": {
+                              "type": "integer",
+                              "enum": [
+                                1
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "seatId",
+                            "quantity"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "INPUT"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,19}$"
+                            },
+                            "quantity": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 100
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "quantity"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "COMBO"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,19}$"
+                            },
+                            "quantity": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 100
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "quantity"
+                          ]
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  },
+                  "ageConfirmed": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "lines"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cotar venda presencial",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/OrderCartQuote"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/unit/sessions/{sessionId}/counter/orders": {
+      "post": {
+        "operationId": "counter_sale",
+        "tags": [
+          "Carrinho"
+        ],
+        "summary": "Pagar no balcão ou enviar pedido à conta do cliente",
+        "description": "Somente colaborador ativo da equipe da sessão.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{8,120}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SESSION"
+                                  ]
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,19}$"
+                                },
+                                "seatId": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,19}$"
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "enum": [
+                                    1
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "id",
+                                "seatId",
+                                "quantity"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "INPUT"
+                                  ]
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,19}$"
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "id",
+                                "quantity"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "COMBO"
+                                  ]
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,19}$"
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "id",
+                                "quantity"
+                              ]
+                            }
+                          ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 50
+                      },
+                      "ageConfirmed": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "channel": {
+                        "type": "string",
+                        "enum": [
+                          "BALCAO"
+                        ]
+                      },
+                      "expectedTotal": {
+                        "type": "string",
+                        "pattern": "^[0-9]{1,8}\\.[0-9]{2}$"
+                      }
+                    },
+                    "required": [
+                      "lines",
+                      "channel",
+                      "expectedTotal"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SESSION"
+                                  ]
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,19}$"
+                                },
+                                "seatId": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,19}$"
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "enum": [
+                                    1
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "id",
+                                "seatId",
+                                "quantity"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "INPUT"
+                                  ]
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,19}$"
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "id",
+                                "quantity"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "COMBO"
+                                  ]
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[1-9][0-9]{0,19}$"
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "id",
+                                "quantity"
+                              ]
+                            }
+                          ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 50
+                      },
+                      "ageConfirmed": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "channel": {
+                        "type": "string",
+                        "enum": [
+                          "APP"
+                        ]
+                      },
+                      "customerEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254
+                      }
+                    },
+                    "required": [
+                      "lines",
+                      "channel",
+                      "customerEmail"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pagar no balcão ou enviar pedido à conta do cliente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "orderId": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,19}$"
+                        },
+                        "channel": {
+                          "type": "string",
+                          "enum": [
+                            "BALCAO",
+                            "APP"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "EM_ANDAMENTO",
+                            "AGUARDANDO_PAGAMENTO",
+                            "PAGO",
+                            "FINALIZADO",
+                            "CANCELADO"
+                          ]
+                        },
+                        "total": {
+                          "type": "string",
+                          "pattern": "^[0-9]{1,8}\\.[0-9]{2}$",
+                          "nullable": true
+                        },
+                        "tickets": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "INGRESSO_SESSAO",
+                                  "RETIRADA_INSUMO"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "type"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "orderId",
+                        "channel",
+                        "status",
+                        "total",
+                        "tickets"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/refunds": {
+      "get": {
+        "operationId": "list_own_order_refunds",
+        "tags": [
+          "Reembolsos"
+        ],
+        "summary": "list own order refunds",
+        "description": "Lista solicitações do pedido do cliente autenticado e informa se há pagamento elegível.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "eligible": {
+                          "type": "boolean"
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Refund"
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "nextCursor": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,19}$",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "limit",
+                            "nextCursor"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "eligible",
+                        "items",
+                        "pagination"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      },
+      "post": {
+        "operationId": "request_own_order_refund",
+        "tags": [
+          "Reembolsos"
+        ],
+        "summary": "request own order refund",
+        "description": "Abre solicitação em análise vinculada ao pagamento do pedido. O pedido permanece no histórico.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 120
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Refund"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "ARREPENDIMENTO",
+                      "DEFEITO",
+                      "OUTRO"
+                    ]
+                  },
+                  "details": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              },
+              "example": {
+                "reason": "ARREPENDIMENTO"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/sales/orders/{id}/refunds": {
+      "post": {
+        "operationId": "request_admin_order_refund",
+        "tags": [
+          "Reembolsos"
+        ],
+        "summary": "request admin order refund",
+        "description": "Abre solicitação em análise vinculada ao pagamento do pedido. O pedido permanece no histórico.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 120
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Refund"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "ARREPENDIMENTO",
+                      "DEFEITO",
+                      "OUTRO"
+                    ]
+                  },
+                  "details": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              },
+              "example": {
+                "reason": "ARREPENDIMENTO"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/refunds/{id}/reconcile": {
+      "post": {
+        "operationId": "reconcile_admin_refund",
+        "tags": [
+          "Reembolsos"
+        ],
+        "summary": "reconcile admin refund",
+        "description": "Solicitação confirmada imediatamente como recebida; estorno só é confirmado pelo gateway. Direito de arrependimento elegível pede valor integral. Outros casos exigem decisão documentada conforme versão dos Termos. Compensação de direitos do checkout pode ficar pendente.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Refund"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/subscriptions/current": {
+      "get": {
+        "operationId": "get_current_subscription",
+        "tags": [
+          "Plans"
+        ],
+        "summary": "Consultar o plano atual do titular ou participante",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "subscription": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "planName": {
+                              "type": "string"
+                            },
+                            "period": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "endsOn": {
+                              "type": "string",
+                              "format": "date",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "planName",
+                            "period",
+                            "status",
+                            "endsOn"
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "subscription"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/subscriptions/{subscriptionId}/change": {
+      "post": {
+        "operationId": "schedule_subscription_change",
+        "tags": [
+          "Plans"
+        ],
+        "summary": "Agendar mudança para o próximo ciclo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanContract"
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        ],
+        "description": "Preserva o ciclo atual. A mudança passa a valer após confirmação da cobrança do próximo ciclo.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "planId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,19}$"
+                  },
+                  "period": {
+                    "type": "string",
+                    "enum": [
+                      "MENSAL",
+                      "ANUAL"
+                    ]
+                  },
+                  "autoRenew": {
+                    "type": "boolean"
+                  },
+                  "divisionMode": {
+                    "type": "string",
+                    "enum": [
+                      "TITULAR_PAGA",
+                      "DIVISAO_IGUAL"
+                    ]
+                  },
+                  "acceptance": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "accepted": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "offerHash": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    },
+                    "required": [
+                      "accepted",
+                      "offerHash"
+                    ]
+                  }
+                },
+                "required": [
+                  "planId",
+                  "period",
+                  "acceptance"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/experience-requests": {
+      "get": {
+        "operationId": "list_experience_requests",
+        "summary": "Listar solicitações visíveis à conta",
+        "tags": [
+          "Solicitações de experiências"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,9}$"
+                              },
+                              "protocol": {
+                                "type": "string",
+                                "maxLength": 14
+                              },
+                              "title": {
+                                "type": "string",
+                                "maxLength": 150
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "RECEBIDA",
+                                  "EM_ANALISE",
+                                  "PROPOSTA_ENVIADA",
+                                  "CONCLUIDA",
+                                  "CANCELADA"
+                                ]
+                              },
+                              "locationId": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,9}$",
+                                "nullable": true
+                              },
+                              "location": {
+                                "type": "string",
+                                "maxLength": 150,
+                                "nullable": true
+                              },
+                              "date": {
+                                "type": "string",
+                                "format": "date"
+                              },
+                              "time": {
+                                "type": "string",
+                                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                                "nullable": true
+                              },
+                              "guests": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100000
+                              },
+                              "details": {
+                                "type": "string",
+                                "maxLength": 4000
+                              },
+                              "preferences": {
+                                "type": "string",
+                                "maxLength": 1000,
+                                "nullable": true
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "protocol",
+                              "title",
+                              "status",
+                              "locationId",
+                              "location",
+                              "date",
+                              "time",
+                              "guests",
+                              "details",
+                              "preferences",
+                              "updatedAt"
+                            ]
+                          }
+                        },
+                        "nextCursor": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "nextCursor"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "create_experience_request",
+        "summary": "Criar solicitação como cliente",
+        "tags": [
+          "Solicitações de experiências"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "experienceId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,9}$"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "time": {
+                    "type": "string",
+                    "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  },
+                  "guests": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "details": {
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "preferences": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "experienceId",
+                  "date",
+                  "guests",
+                  "details"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$"
+                        },
+                        "protocol": {
+                          "type": "string",
+                          "maxLength": 14
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 150
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "RECEBIDA",
+                            "EM_ANALISE",
+                            "PROPOSTA_ENVIADA",
+                            "CONCLUIDA",
+                            "CANCELADA"
+                          ]
+                        },
+                        "locationId": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$",
+                          "nullable": true
+                        },
+                        "location": {
+                          "type": "string",
+                          "maxLength": 150,
+                          "nullable": true
+                        },
+                        "date": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "time": {
+                          "type": "string",
+                          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                          "nullable": true
+                        },
+                        "guests": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100000
+                        },
+                        "details": {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        "preferences": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "nullable": true
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "maxLength": 40
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "protocol",
+                        "title",
+                        "status",
+                        "locationId",
+                        "location",
+                        "date",
+                        "time",
+                        "guests",
+                        "details",
+                        "preferences",
+                        "updatedAt"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/experience-requests/{id}": {
+      "get": {
+        "operationId": "get_experience_request",
+        "summary": "Consultar solicitação e histórico",
+        "tags": [
+          "Solicitações de experiências"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$"
+                        },
+                        "protocol": {
+                          "type": "string",
+                          "maxLength": 14
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 150
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "RECEBIDA",
+                            "EM_ANALISE",
+                            "PROPOSTA_ENVIADA",
+                            "CONCLUIDA",
+                            "CANCELADA"
+                          ]
+                        },
+                        "locationId": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$",
+                          "nullable": true
+                        },
+                        "location": {
+                          "type": "string",
+                          "maxLength": 150,
+                          "nullable": true
+                        },
+                        "date": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "time": {
+                          "type": "string",
+                          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                          "nullable": true
+                        },
+                        "guests": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100000
+                        },
+                        "details": {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        "preferences": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "nullable": true
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "canClaim": {
+                          "type": "boolean"
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,9}$"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "STATUS",
+                                  "MENSAGEM",
+                                  "ATRIBUICAO"
+                                ]
+                              },
+                              "sender": {
+                                "type": "string",
+                                "enum": [
+                                  "CLIENTE",
+                                  "EQUIPE"
+                                ]
+                              },
+                              "text": {
+                                "type": "string",
+                                "maxLength": 4000
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "type",
+                              "sender",
+                              "text",
+                              "createdAt"
+                            ]
+                          }
+                        },
+                        "nextCursor": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "protocol",
+                        "title",
+                        "status",
+                        "locationId",
+                        "location",
+                        "date",
+                        "time",
+                        "guests",
+                        "details",
+                        "preferences",
+                        "updatedAt",
+                        "canClaim",
+                        "events",
+                        "nextCursor"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "update_experience_request",
+        "summary": "Atualizar status ou encaminhar solicitação",
+        "tags": [
+          "Solicitações de experiências"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "RECEBIDA",
+                      "EM_ANALISE",
+                      "PROPOSTA_ENVIADA",
+                      "CONCLUIDA",
+                      "CANCELADA"
+                    ]
+                  },
+                  "locationId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,9}$"
+                  },
+                  "supervisorId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,9}$"
+                  }
+                },
+                "minProperties": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$"
+                        },
+                        "protocol": {
+                          "type": "string",
+                          "maxLength": 14
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 150
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "RECEBIDA",
+                            "EM_ANALISE",
+                            "PROPOSTA_ENVIADA",
+                            "CONCLUIDA",
+                            "CANCELADA"
+                          ]
+                        },
+                        "locationId": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$",
+                          "nullable": true
+                        },
+                        "location": {
+                          "type": "string",
+                          "maxLength": 150,
+                          "nullable": true
+                        },
+                        "date": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "time": {
+                          "type": "string",
+                          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                          "nullable": true
+                        },
+                        "guests": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100000
+                        },
+                        "details": {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        "preferences": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "nullable": true
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "maxLength": 40
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "protocol",
+                        "title",
+                        "status",
+                        "locationId",
+                        "location",
+                        "date",
+                        "time",
+                        "guests",
+                        "details",
+                        "preferences",
+                        "updatedAt"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/experience-requests/{id}/messages": {
+      "post": {
+        "operationId": "message_experience_request",
+        "summary": "Enviar mensagem à outra parte",
+        "tags": [
+          "Solicitações de experiências"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/users/me/privacy-request": {
+      "get": {
+        "operationId": "ownPrivacyStatus",
+        "tags": [
+          "Identidade"
+        ],
+        "summary": "ownPrivacyStatus",
+        "description": "As regras de CAPTCHA/2FA descritas abaixo só se aplicam com CAPTCHA_ENABLED=true/TWO_FACTOR_ENABLED=true; ambos são false por padrão. Todos os perfis autenticados; apenas dados próprios e vínculos comprovados, sem bypass ADMIN. Campos estritos; propriedade validada em toda operação. Principais alterados atomicamente sob lock do usuário, constraints UNIQUE preservadas. Cache-Control: no-store. IDs em strings. Limites geral e de fluxo podem retornar 429.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "request"
+                      ],
+                      "properties": {
+                        "request": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMedia"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/api/social-destinations": {
+      "get": {
+        "operationId": "list_public_social_initiatives",
+        "summary": "Consultar iniciativas mensais e valores registrados",
+        "tags": [
+          "Programa social"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,19}$"
+                              },
+                              "month": {
+                                "type": "string",
+                                "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"
+                              },
+                              "institution": {
+                                "type": "string"
+                              },
+                              "category": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "purpose": {
+                                "type": "string"
+                              },
+                              "proofUrl": {
+                                "type": "string",
+                                "format": "uri",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "simulated": {
+                                "type": "boolean"
+                              },
+                              "active": {
+                                "type": "boolean"
+                              },
+                              "amount": {
+                                "type": "string",
+                                "pattern": "^[0-9]+[.][0-9]{2}$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "month",
+                              "institution",
+                              "category",
+                              "description",
+                              "purpose",
+                              "proofUrl",
+                              "simulated",
+                              "active",
+                              "amount"
+                            ]
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "nextCursor": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,19}$",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "limit",
+                            "nextCursor"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/admin/reports/social-initiatives": {
+      "get": {
+        "operationId": "list_admin_social_initiatives",
+        "summary": "Consultar iniciativas mensais e valores registrados",
+        "tags": [
+          "Programa social"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[1-9][0-9]{0,19}$"
+                              },
+                              "month": {
+                                "type": "string",
+                                "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"
+                              },
+                              "institution": {
+                                "type": "string"
+                              },
+                              "category": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "purpose": {
+                                "type": "string"
+                              },
+                              "proofUrl": {
+                                "type": "string",
+                                "format": "uri",
+                                "maxLength": 2048,
+                                "nullable": true
+                              },
+                              "simulated": {
+                                "type": "boolean"
+                              },
+                              "active": {
+                                "type": "boolean"
+                              },
+                              "amount": {
+                                "type": "string",
+                                "pattern": "^[0-9]+[.][0-9]{2}$"
+                              },
+                              "gross": {
+                                "type": "string",
+                                "pattern": "^[0-9]+[.][0-9]{2}$"
+                              },
+                              "adjustments": {
+                                "type": "string",
+                                "pattern": "^[0-9]+[.][0-9]{2}$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "month",
+                              "institution",
+                              "category",
+                              "description",
+                              "purpose",
+                              "proofUrl",
+                              "simulated",
+                              "active",
+                              "amount",
+                              "gross",
+                              "adjustments"
+                            ]
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "limit": {
+                              "type": "integer"
+                            },
+                            "nextCursor": {
+                              "type": "string",
+                              "pattern": "^[1-9][0-9]{0,19}$",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "limit",
+                            "nextCursor"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "pagination"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "publish_social_initiative",
+        "summary": "Publicar a iniciativa de uma competência",
+        "tags": [
+          "Programa social"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,19}$"
+                        },
+                        "month": {
+                          "type": "string",
+                          "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"
+                        },
+                        "institution": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "purpose": {
+                          "type": "string"
+                        },
+                        "proofUrl": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048,
+                          "nullable": true
+                        },
+                        "simulated": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "month",
+                        "institution",
+                        "category",
+                        "description",
+                        "purpose",
+                        "proofUrl",
+                        "simulated",
+                        "active"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "month": {
+                    "type": "string",
+                    "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"
+                  },
+                  "destinationId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,19}$"
+                  },
+                  "proofUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "month",
+                  "destinationId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/reports/social-initiatives/{id}": {
+      "patch": {
+        "operationId": "update_social_initiative_proof",
+        "summary": "Atualizar link público de comprovação",
+        "tags": [
+          "Programa social"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,19}$"
+                        },
+                        "month": {
+                          "type": "string",
+                          "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"
+                        },
+                        "institution": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "purpose": {
+                          "type": "string"
+                        },
+                        "proofUrl": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048,
+                          "nullable": true
+                        },
+                        "simulated": {
+                          "type": "boolean"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "month",
+                        "institution",
+                        "category",
+                        "description",
+                        "purpose",
+                        "proofUrl",
+                        "simulated",
+                        "active"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "proofUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "proofUrl"
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -44570,7 +47677,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "As exigências de 2FA se aplicam somente quando TWO_FACTOR_ENABLED=true. JWT HS256 curto com sub/sid/jti, issuer/audience. Sessão persistida, não revogada, usuário ativo e perfil atual. ADMIN/SUPERVISOR e usuários com fator ativo completam 2FA antes de receber acesso."
+        "description": "JWT HS256 curto com sub/sid/jti, issuer/audience. Sessão persistida, não revogada, usuário ativo e perfil atual. Quando TWO_FACTOR_ENABLED=true, ADMIN/SUPERVISOR e usuários com fator ativo completam 2FA antes de receber acesso."
       }
     },
     "headers": {
@@ -44725,6 +47832,12 @@
       "IdentityInput_register": {
         "type": "object",
         "properties": {
+          "documentsSource": {
+            "type": "string",
+            "enum": [
+              "LOCAL_TEST_PDF"
+            ]
+          },
           "name": {
             "type": "string",
             "minLength": 2,
@@ -44798,14 +47911,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 4096,
-            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
-          },
-          "documentsSource": {
-            "type": "string",
-            "enum": [
-              "LOCAL_TEST_PDF"
-            ],
-            "description": "Aceite de PDFs locais versão 2.0 para teste; exige ALLOW_LOCAL_REGISTRATION_DOCUMENTS=true e ausência de ageProof."
+            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; omitido em standby."
           }
         },
         "required": [
@@ -44843,7 +47949,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 4096,
-            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
+            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; omitido em standby."
           }
         },
         "required": [
@@ -44865,7 +47971,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 4096,
-            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
+            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; omitido em standby."
           }
         },
         "required": [
@@ -44900,7 +48006,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 4096,
-            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; pode ser omitido em standby."
+            "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; omitido em standby."
           }
         },
         "required": [
@@ -45180,8 +48286,77 @@
               "cineastra",
               "violet-bloom",
               "mocha-mousse",
-              "catppucin"
+              "catppucin",
+              "doomsday",
+              "noir",
+              "noir-grafico",
+              "homem-aranha",
+              "odisseia",
+              "mario-galaxy",
+              "toy-story-5",
+              "mandalorian-grogu",
+              "moana",
+              "devoradores-estrelas",
+              "supergirl",
+              "mestres-universo",
+              "panico-7",
+              "ultimato",
+              "castelo-infinito",
+              "era-ultron",
+              "guerra-infinita",
+              "chainsaw-reze",
+              "interestelar",
+              "retorno-rei",
+              "cavaleiro-trevas",
+              "atraves-aranhaverso",
+              "viagem-chihiro"
             ]
+          },
+          "avatar": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "projecao",
+              "claquete",
+              "ingresso",
+              "holofote",
+              "pipoca",
+              "rolo"
+            ]
+          },
+          "acessibilidade": {
+            "type": "object",
+            "properties": {
+              "contrast": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "font": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "spacing": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "motion": {
+                "type": "boolean"
+              },
+              "color": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              }
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": false,
@@ -45568,8 +48743,77 @@
               "cineastra",
               "violet-bloom",
               "mocha-mousse",
-              "catppucin"
+              "catppucin",
+              "doomsday",
+              "noir",
+              "noir-grafico",
+              "homem-aranha",
+              "odisseia",
+              "mario-galaxy",
+              "toy-story-5",
+              "mandalorian-grogu",
+              "moana",
+              "devoradores-estrelas",
+              "supergirl",
+              "mestres-universo",
+              "panico-7",
+              "ultimato",
+              "castelo-infinito",
+              "era-ultron",
+              "guerra-infinita",
+              "chainsaw-reze",
+              "interestelar",
+              "retorno-rei",
+              "cavaleiro-trevas",
+              "atraves-aranhaverso",
+              "viagem-chihiro"
             ]
+          },
+          "avatar": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "projecao",
+              "claquete",
+              "ingresso",
+              "holofote",
+              "pipoca",
+              "rolo"
+            ]
+          },
+          "acessibilidade": {
+            "type": "object",
+            "properties": {
+              "contrast": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "font": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "spacing": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "motion": {
+                "type": "boolean"
+              },
+              "color": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              }
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": false,
@@ -45579,7 +48823,9 @@
           "alto_contraste",
           "modo_acessibilidade",
           "idioma",
-          "aparencia"
+          "aparencia",
+          "acessibilidade",
+          "avatar"
         ]
       },
       "IdentityDeletion": {
@@ -45605,7 +48851,7 @@
           "accountStatus": {
             "type": "string",
             "enum": [
-              "INATIVO"
+              "ATIVO"
             ]
           },
           "message": {
@@ -45708,6 +48954,12 @@
           "encerrada_em": {
             "type": "string",
             "nullable": true
+          },
+          "pending": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -46763,6 +50015,13 @@
               null
             ],
             "nullable": true
+          },
+          "imagem_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "pattern": "^https://",
+            "nullable": true
           }
         },
         "required": [
@@ -46866,6 +50125,13 @@
               null
             ],
             "nullable": true
+          },
+          "imagem_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "pattern": "^https://",
+            "nullable": true
           }
         },
         "example": {
@@ -46965,6 +50231,13 @@
               "LIVRE",
               null
             ],
+            "nullable": true
+          },
+          "imagem_url": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048,
+            "pattern": "^https://",
             "nullable": true
           }
         },
@@ -47342,10 +50615,24 @@
               "CANCELADA"
             ]
           },
+          "titulo_filme": {
+            "type": "string",
+            "nullable": true
+          },
+          "imagem_filme": {
+            "type": "string",
+            "nullable": true,
+            "description": "Capa do filme na listagem pública filtrada por localId e date."
+          },
+          "classificacao_filme": {
+            "type": "string",
+            "nullable": true,
+            "description": "Classificação do filme na listagem pública filtrada por localId e date."
+          },
           "activeSeats": {
             "type": "integer",
             "minimum": 0,
-            "description": "Assentos ativos. Presente na listagem pública com filmId."
+            "description": "Assentos ativos. Presente com filmId ou localId e date na consulta pública, e com roomId na consulta administrativa."
           },
           "availableSeats": {
             "type": "integer",
@@ -47517,6 +50804,21 @@
               "FINALIZADA",
               "CANCELADA"
             ]
+          },
+          "sessionStatus": {
+            "type": "string",
+            "enum": [
+              "AGENDADA",
+              "EM_CARTAZ",
+              "ENCERRADA",
+              "CANCELADA",
+              null
+            ],
+            "nullable": true
+          },
+          "myFunction": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -47524,7 +50826,8 @@
           "id_supervisor",
           "id_sessao",
           "nome",
-          "status"
+          "status",
+          "sessionStatus"
         ]
       },
       "TeamMember": {
@@ -48108,6 +51411,9 @@
           },
           "criado_em": {
             "type": "string"
+          },
+          "nome_local": {
+            "type": "string"
           }
         },
         "required": [
@@ -48649,6 +51955,25 @@
           "nome_transporte": {
             "type": "string",
             "nullable": true
+          },
+          "id_rota_referencia": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$",
+            "nullable": true,
+            "description": "Rota ativa usada no envio, quando disponível."
+          },
+          "distancia_rota_km": {
+            "type": "string",
+            "pattern": "^[0-9]{1,6}(?:\\.[0-9]{1,2})?$",
+            "nullable": true,
+            "description": "Distância de referência no envio."
+          },
+          "tempo_rota_min": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10080,
+            "nullable": true,
+            "description": "Tempo de referência no envio."
           }
         },
         "required": [
@@ -48671,7 +51996,10 @@
           "observacao",
           "devolucao_disponivel",
           "id_transporte",
-          "nome_transporte"
+          "nome_transporte",
+          "id_rota_referencia",
+          "distancia_rota_km",
+          "tempo_rota_min"
         ]
       },
       "LocalStock": {
@@ -49425,7 +52753,8 @@
               "ENVIADA",
               "CONFIRMADA",
               "NEGADA",
-              "FALHOU"
+              "FALHOU",
+              "CANCELADA"
             ]
           },
           "requestedAmount": {
@@ -49847,6 +53176,38 @@
               "offer",
               "offerHash"
             ]
+          },
+          "socialDestination": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "initiativeId": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]{0,19}$"
+              },
+              "institution": {
+                "type": "string"
+              },
+              "month": {
+                "type": "string",
+                "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"
+              },
+              "amount": {
+                "type": "string",
+                "pattern": "^[0-9]+[.][0-9]{2}$"
+              },
+              "simulated": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "initiativeId",
+              "institution",
+              "month",
+              "amount",
+              "simulated"
+            ],
+            "nullable": true
           }
         },
         "required": [
@@ -50274,6 +53635,38 @@
                 "status"
               ]
             }
+          },
+          "socialDestination": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "initiativeId": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]{0,19}$"
+              },
+              "institution": {
+                "type": "string"
+              },
+              "month": {
+                "type": "string",
+                "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"
+              },
+              "amount": {
+                "type": "string",
+                "pattern": "^[0-9]+[.][0-9]{2}$"
+              },
+              "simulated": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "initiativeId",
+              "institution",
+              "month",
+              "amount",
+              "simulated"
+            ],
+            "nullable": true
           }
         },
         "required": [
@@ -50683,7 +54076,7 @@
             "nullable": true
           },
           "contract": {
-            "$ref": "#/components/schemas/PlanLegalContract",
+            "$ref": "#/components/schemas/Plan",
             "nullable": true
           },
           "chargeId": {
@@ -50704,6 +54097,68 @@
           },
           "administrativeDraft": {
             "type": "boolean"
+          },
+          "planName": {
+            "type": "string",
+            "nullable": true
+          },
+          "suspended": {
+            "type": "boolean"
+          },
+          "chargeDue": {
+            "type": "string",
+            "format": "date"
+          },
+          "chargeAmount": {
+            "type": "string",
+            "pattern": "^[0-9]{1,8}\\.[0-9]{2}$",
+            "nullable": true
+          },
+          "paymentId": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,19}$",
+            "nullable": true
+          },
+          "paymentStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "scheduledChange": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "planId": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]{0,19}$"
+              },
+              "planName": {
+                "type": "string"
+              },
+              "period": {
+                "type": "string",
+                "enum": [
+                  "MENSAL",
+                  "ANUAL"
+                ]
+              },
+              "price": {
+                "type": "string",
+                "pattern": "^[0-9]{1,8}\\.[0-9]{2}$",
+                "nullable": true
+              },
+              "effectiveOn": {
+                "type": "string",
+                "format": "date"
+              }
+            },
+            "required": [
+              "planId",
+              "planName",
+              "period",
+              "price",
+              "effectiveOn"
+            ],
+            "nullable": true
           }
         },
         "required": [
@@ -52792,17 +56247,17 @@
       },
       "IdentityInput_supervisorLocation": {
         "type": "object",
-        "additionalProperties": false,
+        "properties": {
+          "localId": {
+            "nullable": true,
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,9}$"
+          }
+        },
         "required": [
           "localId"
         ],
-        "properties": {
-          "localId": {
-            "type": "string",
-            "pattern": "^[1-9][0-9]{0,9}$",
-            "nullable": true
-          }
-        }
+        "additionalProperties": false
       },
       "SupervisorLocation": {
         "type": "object",
@@ -52869,6 +56324,20 @@
           "em_uso": {
             "type": "boolean"
           },
+          "id_entrega_ativa": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,19}$",
+            "nullable": true
+          },
+          "status_entrega_ativa": {
+            "type": "string",
+            "enum": [
+              "ENVIADO",
+              "EM_TRANSITO",
+              null
+            ],
+            "nullable": true
+          },
           "criado_em": {
             "type": "string"
           },
@@ -52885,6 +56354,8 @@
           "observacao",
           "status",
           "em_uso",
+          "id_entrega_ativa",
+          "status_entrega_ativa",
           "criado_em",
           "atualizado_em"
         ]
@@ -53556,6 +57027,43 @@
         "required": [
           "lines"
         ]
+      },
+      "AdminSalesCancellation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000
+          }
+        }
+      },
+      "IdentityInput_privacyDecision": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "EM_ANALISE",
+              "CONCLUIDA",
+              "RECUSADA"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "status",
+          "reason"
+        ],
+        "additionalProperties": false
       }
     },
     "responses": {

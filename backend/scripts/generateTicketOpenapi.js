@@ -2,7 +2,6 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {ticketOperations} from '../src/routes/ticketRoutes.js';
 
 const file=new URL('../src/docs/openapi.json',import.meta.url),spec=JSON.parse(await readFile(file,'utf8'));
-spec.info.version='1.23.0';
 spec.info.description=spec.info.description.replace('tickets seguem na tarefa35.','tickets por unidade emitidos na aprovação e consumidos por equipe vinculada.');
 spec.tags=[...spec.tags.filter(x=>x.name!=='Tickets'),{name:'Tickets',description:'Tickets por unidade, consulta e consumo por equipe vinculada.'}];
 const id={type:'string',pattern:'^[1-9][0-9]{0,19}$'};
@@ -32,13 +31,19 @@ const json=(description,schema,example)=>({description,content:{'application/jso
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for(const route of ticketOperations){
     const owner=route.operationId==='list_order_tickets',session=route.operationId==='list_session_tickets',attendance=route.operationId==='list_session_attendance',validate=route.operationId==='validate_ticket',exit=route.operationId==='exit_ticket',entry=route.operationId==='reenter_ticket';
-    const list=owner||session||attendance;
+    const pending=route.operationId==='list_session_pending_orders';
+    const list=owner||session||attendance||pending;
     const op={operationId:route.operationId,tags:['Tickets'],summary:({list_order_tickets:'Listar tickets do próprio pedido',list_session_tickets:'Ver tickets da sessão vinculada',list_session_attendance:'Histórico de entradas e saídas da sessão',validate_ticket:'Validar ticket sem consumir',consume_ticket:'Consumir ticket uma vez',exit_ticket:'Registrar saída do ingresso',reenter_ticket:'Registrar reentrada do ingresso'})[route.operationId],
         description:owner?'Somente CLIENTE dono do pedido recebe o código opaco. Ticket é emitido apenas após aprovação autenticada. Cada unidade comprada tem ticket próprio.':session?'ADMIN, supervisor do cinema ou colaborador membro ativo da equipe da sessão consultam tickets sem ver códigos.':attendance?'ADMIN, supervisor do cinema ou colaborador membro ativo da equipe da sessão consultam passagens, sem códigos ou documentos.':validate?'ADMIN, supervisor do cinema ou colaborador membro ativo da equipe consultam validade sem mudar estado.':exit?'ADMIN, supervisor do cinema ou colaborador membro ativo da equipe registram saída somente após entrada ativa; a passagem é append-only.':entry?'ADMIN, supervisor do cinema ou colaborador membro ativo da equipe registram reentrada somente após saída, antes do vencimento, com nova conferência de meia; UTILIZADO permanece.':'ADMIN, supervisor do cinema ou colaborador membro ativo da equipe consomem ticket uma vez. Ingresso cria a primeira entrada no histórico; retirada de insumo não cria presença. Meia exige conferência presencial mínima. Ticket expirado ou repetido retorna 409.',
         security:[{bearerAuth:[]}],parameters:list?[{name:owner?'orderId':'sessionId',in:'path',required:true,schema:id},{name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:50}},{name:'cursor',in:'query',schema:{type:'string',pattern:'^(0|[1-9][0-9]{0,19})$'}}]:[],responses:{}};
-    if(list)op.responses['200']=json(attendance?'Histórico e resumo de presença':'Página de tickets',attendance?attendancePage:page(ref(owner?'OwnerTicket':'Ticket')),{...(attendance?{summary:{total:1,entered:1,inside:0,exited:1,late:0}}:{}),items:[],pagination:{limit:50,nextCursor:null}});
+    if(pending){
+        op.summary='Listar pedidos da sessão aguardando pagamento';
+        op.description='ADMIN, supervisor do cinema ou colaborador membro ativo da sessão consultam pedidos com reserva vigente, sem dados de clientes.';
+        op.responses['200']=json('Página de pedidos pendentes',page(obj({orderId:id,expiresAt:{type:'string',format:'date-time'}})),{items:[],pagination:{limit:50,nextCursor:null}});
+    }
+    else if(list)op.responses['200']=json(attendance?'Histórico e resumo de presença':'Página de tickets',attendance?attendancePage:page(ref(owner?'OwnerTicket':'Ticket')),{...(attendance?{summary:{total:1,entered:1,inside:0,exited:1,late:0}}:{}),items:[],pagination:{limit:50,nextCursor:null}});
     else{
-        op.requestBody={required:true,content:{'application/json':{schema:obj({code,...(validate||exit?{}:{halfEvidenceType:{type:'string',enum:['CIE','PCD','ID_JOVEM','IDOSO']}})},['code']),example:{code:'mJQnV2DaK6x7B5tR8uYwQ9cE0fGhI1jKlMnOpQrStUv',...(validate||exit?{}:{halfEvidenceType:'CIE'})}}}};
+        op.requestBody={required:true,content:{'application/json':{schema:obj({code,sessionId:{...id,description:'Quando informado, exige ingresso da sessão indicada.'},...(validate||exit?{}:{halfEvidenceType:{type:'string',enum:['CIE','PCD','ID_JOVEM','IDOSO']}})},['code']),example:{code:'mJQnV2DaK6x7B5tR8uYwQ9cE0fGhI1jKlMnOpQrStUv',sessionId:'5',...(validate||exit?{}:{halfEvidenceType:'CIE'})}}}};
         op.responses['200']=json(validate?'Validade sem consumo':exit?'Saída registrada':entry?'Reentrada registrada':'Ticket consumido',ref(validate?'TicketValidation':exit?'Ticket':entry?'TicketReentry':'TicketConsumption'),{id:'123',itemId:'456',type:'INGRESSO_SESSAO',unit:1,status:validate?'GERADO':'UTILIZADO',presence:validate?null:exit?'FORA':'DENTRO',expiresAt:'2026-10-10T22:00:00.000Z',usedAt:validate?null:'2026-10-10T20:00:00.000Z',exitedAt:exit||entry?'2026-10-10T20:30:00.000Z':null,...(validate?{valid:true,reentryAllowed:false,halfEvidenceRequired:false}:exit?{}:{halfEvidenceChecked:false})});
     }
     for(const [status,name] of Object.entries(errors))op.responses[status]={$ref:`#/components/responses/${name}`};

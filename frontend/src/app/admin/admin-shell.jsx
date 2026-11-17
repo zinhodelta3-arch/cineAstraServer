@@ -56,6 +56,7 @@ const items = [
   ] },
   { label: "Marketing", href: "/admin/marketing", icon: Megaphone, children: [
     { label: "Experiências", href: "/admin/marketing/experiencias" },
+    { label: "Solicitações de experiências", href: "/admin/marketing/solicitacoes-experiencias" },
     { label: "Parceiros", href: "/admin/marketing/parceiros" },
     { label: "Categorias", href: "/admin/marketing/categorias" },
     { label: "Campanhas", href: "/admin/marketing/campanhas" },

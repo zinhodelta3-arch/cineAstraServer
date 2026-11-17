@@ -14,8 +14,11 @@ function fixture(){
  const rows=[{...base,id_reembolso:'9007199254740995'},{...base,id_reembolso:'9007199254740993',status:'CONFIRMADA',compensacao_status:'PENDENTE',valor_solicitado:'24.50',valor_confirmado:'24.50'}];
  const model={adminList:async(c,q)=>{reads++;return rows.filter(r=>(!q.cursor||BigInt(r.id_reembolso)<BigInt(q.cursor))&&Object.entries({status:'status',reason:'motivo',compensation:'compensacao_status',userId:'id_usuario',paymentId:'id_pagamento',orderId:'id_pedido',chargeId:'id_cobranca'}).every(([key,col])=>!q[key]||q[key]===r[col])).slice(0,q.limit+1);},adminGet:async(c,id)=>{reads++;return rows.find(r=>r.id_reembolso===id);}};
  const identity={transaction:async fn=>fn({}),activeActor:async(c,ctx)=>({tipo_usuario:ctx.actor.tipo})};
+ model.selectedHistory=async()=>[];
+ model.confirmed=async()=>({total:'0.00'});
+ model.orderItems=async()=>[{id_item:'42',nome:'Ingresso',quantidade:1,subtotal:'24.50'}];
  const provider={refund:async()=>{gateway++;throw new Error('must not dispatch');},consultRefund:async()=>{gateway++;throw new Error('must not reconcile');}};
- const service=createRefundService({model,identity,provider}),app=express();
+ const service=createRefundService({model,identity,provider,termsVersion:'v1'}),app=express();
  const auth=(req,res,next)=>{if(!req.get('x-role'))throw ApiError.naoAutorizado();req.usuario={id:'1',tipo:req.get('x-role')};next();};
  app.use(refundRoutes(createRefundController(service),{auth,limits:{checkout:[]}}));app.use(errorMiddleware);
  return {app,service,reads:()=>reads,gateway:()=>gateway,api:path=>request(app).get('/api/admin/refunds'+path).set('x-role','ADMIN')};
@@ -27,6 +30,7 @@ test('fila paginada, filtros combinados, valores monetários e detalhe sem segre
  const filtered=await f.api('?status=EM_ANALISE&reason=OUTRO&userId=9&paymentId=7&orderId=11&compensation=NAO_APLICAVEL').expect(200);assert.equal(filtered.body.data.items.length,1);
  assert.deepEqual((await f.api('?chargeId=1')).body.data,{items:[],pagination:{limit:20,nextCursor:null}});
  const detail=await f.api('/9007199254740995').expect(200);assert.equal(detail.body.data.details,'Pedido do cliente');assert.equal(detail.body.data.termsVersion,'v1');assert.equal(detail.body.data.decisionBasis,null);
+ assert.deepEqual(detail.body.data.eligibleItems,[{id:'42',name:'Ingresso',quantity:1,remainingAmount:'24.50'}]);
  for(const field of ['provider_ref','chave_idempotencia','transacao_id','detalhes','details','termsVersion','decisionBasis'])assert.equal(first.body.data.items[0][field],undefined);
  for(const field of ['provider_ref','chave_idempotencia','transacao_id'])assert.equal(detail.body.data[field],undefined);
  assert.equal(f.gateway(),0);await f.api('/999').expect(404);

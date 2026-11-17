@@ -1,6 +1,9 @@
 import { success } from '../utils/dto.js';
 const context=req=>({actor:req.usuario,signal:req.signal,requestId:req.res.locals.requestId});
-export function createOrderController(service,checkout,contracts){return {
+export function createOrderController(service,checkout,contracts,counter){return {
+    counterCatalog:async(req,res)=>success(res,await counter.catalog(req.params.sessionId,context(req))),
+    counterQuote:async(req,res)=>success(res,await counter.quote(req.params.sessionId,req.input,context(req))),
+    counterSale:async(req,res)=>success(res,await counter.sell(req.params.sessionId,req.input,req.paymentKey,context(req)),201),
     list:async(req,res)=>success(res,await service.list(req.orderPage,context(req))),
     draft:async(req,res)=>success(res,await service.draft(req.params.orderId,context(req))),
     status:async(req,res)=>success(res,await service.status(req.params.orderId,context(req))),

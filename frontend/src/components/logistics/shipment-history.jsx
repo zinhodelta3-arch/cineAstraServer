@@ -15,11 +15,12 @@ function eventDate(value) {
 
 export default function ShipmentHistory({ path, request }) {
   const history = usePaginatedList(path, request);
-  if (history.loading) return <p className={styles.state} role="status">Carregando histórico…</p>;
-  if (history.error) return <div className={styles.state} role="alert"><p>{history.error}</p><button type="button" className={styles.secondary} onClick={history.reload}>Tentar novamente</button></div>;
-  if (!history.items.length) return <p className={styles.state}>Nenhum evento registrado para esta entrega.</p>;
   return <section aria-label="Histórico da entrega">
-    <div className={styles.tableWrap} role="region" aria-label="Eventos da entrega" tabIndex={0}>
+    {history.loading && <p className={styles.state} role="status">Carregando histórico…</p>}
+    {history.error && <div className={styles.state} role="alert"><p>{history.error}</p><button type="button" className={styles.secondary} onClick={history.reload}>Tentar novamente</button></div>}
+    {!history.loading && !history.error && !history.items.length &&
+      <p className={styles.state}>{history.page === 1 ? 'Nenhum evento registrado para esta entrega.' : 'Nenhum evento nesta página.'}</p>}
+    {history.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Eventos da entrega" tabIndex={0}>
       <table className={styles.table}>
         <thead><tr><th scope="col">Evento</th><th scope="col">Estado</th><th scope="col">Data</th><th scope="col">Responsável</th></tr></thead>
         <tbody>{history.items.map(event => <tr key={event.id_evento}>
@@ -29,7 +30,7 @@ export default function ShipmentHistory({ path, request }) {
           <td>#{event.id_usuario}</td>
         </tr>)}</tbody>
       </table>
-    </div>
+    </div>}
     <TablePagination list={history} noun="eventos" />
   </section>;
 }

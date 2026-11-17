@@ -57,7 +57,7 @@
 .seat.accessible { background: var(--card); color: var(--primary); border: 1px dashed var(--primary); border-bottom-width: 3px; }
 .seat.selected, .seat.selected:hover { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
 .accessRow { padding-top: 10px; padding-bottom: 10px; }
-.screen { margin: 28px 38px 0; height: 48px; border-top: 3px solid var(--primary); border-radius: 50% 50% 0 0; text-align: center; color: var(--muted-foreground); padding-top: 14px; font-size: 10px; text-transform: uppercase; letter-spacing: .2em; }
+.screen { margin: 0 38px 18px; height: 48px; border-top: 3px solid var(--primary); border-radius: 50% 50% 0 0; text-align: center; color: var(--muted-foreground); padding-top: 14px; font-size: 10px; text-transform: uppercase; letter-spacing: .2em; }
 .legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px 22px; list-style: none; border-top: 1px dashed var(--border); padding: 18px 0; }
 .legend li { display: flex; align-items: center; gap: 7px; font-size: 10px; color: var(--muted-foreground); }
 .legend li > span { width: 17px; height: 17px; border-radius: 4px 4px 2px 2px; display: grid; place-items: center; }

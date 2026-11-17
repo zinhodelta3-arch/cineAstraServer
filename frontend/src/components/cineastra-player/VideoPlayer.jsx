@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useId } from "react";
-import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Maximize, Minimize, X, Subtitles, Settings2, ListVideo, SkipForward, PictureInPicture2, ArrowUpRight, Film } from "lucide-react";
+import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Maximize, Minimize, X, Subtitles, Settings2, ListVideo, SkipForward, PictureInPicture2, PanelBottom, ArrowUpRight, Film } from "lucide-react";
 
 import useVideoPlayer from "@/hooks/streaming/player/use-video-player";
 import YouTubeVideo from "./YouTubeVideo";
@@ -28,23 +28,26 @@ function IconButton({ label, icon: Icon, active, seconds, text, emphasis, ...pro
 }
 
 export default function VideoPlayer(props) {
-  const { dialog,mode,full,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,startProgressGesture,endProgressGesture,leaveProgress,progressPointer,duration,current,seek,paused,ended } = useVideoPlayer(props);
+  const { dialog,mode,full,pip,pipSupported,controlError,togglePip,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,startProgressGesture,endProgressGesture,leaveProgress,progressPointer,duration,current,seek,paused,ended } = useVideoPlayer(props);
   const options = props.options ?? {};
-  return <dialog ref={dialog} className={`cineastra-player ca-dialog ca-${mode} ${full || mode === "expanded" ? "ca-full" : ""}`} role={mode === "page" ? "region" : undefined} aria-label={`${options.isTrailer ? "Trailer" : "Player"}: ${media.title}`}
-    onKeyDown={keyDown} onCancel={(e) => { e.preventDefault(); if (panel) setPanel(null); else close(); }}
+  return <dialog ref={dialog} className={`cineastra-player ca-dialog ca-${mode} ${pip ? "ca-pip" : ""} ${full || mode === "expanded" ? "ca-full" : ""}`} role={mode === "page" ? "region" : undefined} aria-label={`${options.isTrailer ? "Trailer" : "Player"}: ${media.title}`}
+    onKeyDown={keyDown} onCancel={(e) => { e.preventDefault(); if (panel) setPanel(null); else if (full || mode === "expanded") fullscreen(); else if (mode !== "mini" || dialog.current?.contains(document.activeElement)) close(); }}
     onClick={(e) => { if (e.target === dialog.current && mode === "modal") close(); }}>
     <div className="ca-shell" ref={shell} onMouseMove={showControls} onMouseLeave={showControls}>
       <header className="ca-header">
         <div className="ca-player-heading"><strong>{media.title}</strong>{options.isTrailer && <span>Trailer oficial</span>}{episode && <span>T{episode.season} · E{episode.number} — {episode.title}</span>}</div>
         <div className="ca-header-actions">
           {embed && media.type === "series" && mode !== "mini" && <IconButton label="Temporadas e episódios" text="Episódios" icon={ListVideo} onClick={() => setPanel(panel === "episodes" ? null : "episodes")} />}
-          {embed && mode !== "mini" && <IconButton label={full || mode === "expanded" ? "Sair da tela cheia" : "Tela cheia"} icon={full || mode === "expanded" ? Minimize : Maximize} onClick={fullscreen} />}
-          {media.type !== "trailer" && mode !== "mini" && <IconButton label="Minimizar player" text="Minimizar" icon={PictureInPicture2} onClick={() => changeMode("mini")} />}
-          {mode === "mini" && <IconButton label="Restaurar player" icon={ArrowUpRight} onClick={onRestore} />}
+          {embed && mode !== "mini" && <IconButton label={full || mode === "expanded" ? "Sair da tela cheia do player" : "Tela cheia do player"} icon={full || mode === "expanded" ? Minimize : Maximize} onClick={fullscreen} />}
+          {media.type !== "trailer" && mode !== "mini" && <IconButton label="Miniplayer do site" text="Miniplayer" icon={PanelBottom} onClick={() => changeMode("mini")} />}
+          {!embed && pipSupported && <IconButton label={pip ? "Fechar Picture-in-Picture" : "Picture-in-Picture do navegador"} icon={PictureInPicture2} active={pip} onClick={togglePip} />}
+          {mode === "mini" && <IconButton label="Restaurar player" icon={ArrowUpRight} onClick={async () => { if (pip) await togglePip(); onRestore(); }} />}
           <IconButton label="Fechar player" icon={X} onClick={close} />
         </div>
       </header>
-      <div className="ca-film-frame">
+      {pip && <p className="ca-control-error" role="status">Reproduzindo no Picture-in-Picture do navegador.</p>}
+      {controlError && <p className="ca-control-error" role="status">{controlError}</p>}
+      <div className="ca-film-frame" inert={pip && mode === "mini" ? true : undefined}>
         <div className="ca-perf-v" aria-hidden="true" />
         <div className={`ca-screen ${visible ? "ca-controls-shown" : ""}`} ref={surface} tabIndex={0} aria-label={embed ? "Trailer oficial no YouTube" : "Área do vídeo. Espaço: pausar. Setas: avançar ou voltar 15 segundos."} onPointerMove={showControls}>
           {embed ? <YouTubeVideo key={embed} src={embed} title={media.title} options={options} /> : content.src ?
@@ -56,6 +59,7 @@ export default function VideoPlayer(props) {
               {(content.captions ?? []).map((track) => <track key={track.src} kind="subtitles" srcLang={track.lang} label={track.label} src={track.src} />)}
             </video> : <div className="ca-empty"><Film size={38} /><h2>Esta sessão ainda não está disponível.</h2><p>O vídeo de “{media.title}” ainda precisa ser cadastrado.</p></div>}
 
+          {embed && full && <div className="ca-embed-fullscreen"><IconButton label="Sair da tela cheia do player" icon={Minimize} onClick={fullscreen} /></div>}
           {!embed && content.src && !started && !error && <div className="ca-intro">
             <div className="ca-intro-copy">
               {media.logo ? <img className="ca-title-logo" src={media.logo} alt={media.title} /> : <h2>{media.title}</h2>}
@@ -89,7 +93,7 @@ export default function VideoPlayer(props) {
                 {media.type === "series" && <IconButton label="Temporadas e episódios" text="Episódios" icon={ListVideo} active={panel === "episodes"} aria-expanded={panel === "episodes"} onClick={() => setPanel(panel === "episodes" ? null : "episodes")} />}
                 {media.type === "series" && <IconButton label="Próximo episódio" icon={SkipForward} disabled={!next} onClick={() => next && selectEpisode(next)} />}
                 <IconButton label="Configurações" icon={Settings2} active={panel === "settings"} aria-expanded={panel === "settings"} onClick={() => setPanel(panel === "settings" ? null : "settings")} />
-                <IconButton label={full || mode === "expanded" ? "Sair da tela cheia" : "Tela cheia"} icon={full || mode === "expanded" ? Minimize : Maximize} onClick={fullscreen} />
+                <IconButton label={full || mode === "expanded" ? "Sair da tela cheia do player" : "Tela cheia do player"} icon={full || mode === "expanded" ? Minimize : Maximize} onClick={fullscreen} />
               </div>
             </div>
           </div>}

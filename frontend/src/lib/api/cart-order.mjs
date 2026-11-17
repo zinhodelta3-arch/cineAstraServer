@@ -14,7 +14,7 @@ export function cartOrder(items,coupon=''){
   if(quantity>100)throw new Error('O limite por produto é de 100 unidades.');
   if(item.purchaseKind==='COMBO'&&item.eventSessionId&&!sessions.has(item.eventSessionId))throw new Error('Inclua um ingresso da sessão vinculada para comprar o combo temático.');
   const pickupSession=item.eventSessionId||sessionId;
-  lines.set(key,{kind:item.purchaseKind,id:item.sourceId,quantity,...(item.purchaseKind==='SESSION'?{seatId:item.seatId}:item.purchaseKind==='COMBO'&&pickupSession?{sessionId:pickupSession}:{})});
+  lines.set(key,{kind:item.purchaseKind,id:item.sourceId,quantity,...(item.purchaseKind==='SESSION'?{seatId:item.seatId,...(item.halfDeclaration ? {halfDeclaration:item.halfDeclaration} : {})}:item.purchaseKind==='COMBO'&&pickupSession?{sessionId:pickupSession}:{})});
  }
  const couponCode=coupon.trim().toUpperCase();
  if(couponCode&&!/^[A-Z0-9_-]{1,50}$/.test(couponCode))throw new Error('Cupom inválido. Use até 50 letras, números, hífen ou sublinhado.');
@@ -26,7 +26,8 @@ export function validCartOrder(body){
  if(!body||typeof body!=='object'||Object.keys(body).some(k=>!['localId','lines','couponCode'].includes(k))||!id(body.localId)||!Array.isArray(body.lines)||!body.lines.length||body.lines.length>50)return false;
  const seen=new Set();
  for(const line of body.lines){
-  if(!line||Object.keys(line).some(k=>!['kind','id','quantity','seatId','sessionId'].includes(k))||!id(line.id)||!['INPUT','COMBO','SESSION'].includes(line.kind)||!Number.isInteger(line.quantity)||line.quantity<1||line.quantity>100||line.kind==='SESSION'&&(!id(line.seatId)||line.quantity!==1)||line.kind!=='SESSION'&&line.seatId!==undefined||line.kind==='COMBO'&&line.sessionId!==undefined&&!id(line.sessionId)||line.kind!=='COMBO'&&line.sessionId!==undefined)return false;
+  if(!line||Object.keys(line).some(k=>!['kind','id','quantity','seatId','sessionId','halfDeclaration'].includes(k))||!id(line.id)||!['INPUT','COMBO','SESSION'].includes(line.kind)||!Number.isInteger(line.quantity)||line.quantity<1||line.quantity>100||line.kind==='SESSION'&&(!id(line.seatId)||line.quantity!==1)||line.kind!=='SESSION'&&line.seatId!==undefined||line.kind==='COMBO'&&line.sessionId!==undefined&&!id(line.sessionId)||line.kind!=='COMBO'&&line.sessionId!==undefined)return false;
+  if(line.halfDeclaration!==undefined&&(line.kind!=='SESSION'||!['MEIA','NUBANK_SIMULADA'].includes(line.halfDeclaration)))return false;
   const key=line.kind+':'+line.id+(line.seatId?':'+line.seatId:'');if(seen.has(key))return false;seen.add(key);
  }
  return body.couponCode===undefined||typeof body.couponCode==='string'&&/^[A-Z0-9_-]{1,50}$/.test(body.couponCode);

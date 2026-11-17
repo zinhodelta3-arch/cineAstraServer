@@ -19,6 +19,7 @@ export default function AttendanceAdmin() {
   const selection = useSessionSelection();
   const session = selection.selected;
   const attendance = useAdminSchedule(session ? `sessions/${session.id_sessao}/attendance?limit=20` : null);
+  const pending = useAdminSchedule(session ? `sessions/${session.id_sessao}/pending-orders?limit=20` : null);
   return <ScheduleLayout title="Presença" description="Acompanhe entradas e saídas registradas em cada sessão.">
     <SessionPicker selection={selection} />
     {session && attendance.summary && <section className={styles.summaryGrid} aria-label="Resumo de presença">{metrics.map((metric) => <div key={metric.key}><span>{metric.label}</span><strong>{attendance.summary[metric.key] ?? 0}</strong></div>)}</section>}
@@ -28,5 +29,19 @@ export default function AttendanceAdmin() {
         {attendance.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de presença; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Registros de presença da sessão {session.id_sessao}</caption><thead><tr><th scope="col">Registro</th><th scope="col">Ingresso</th><th scope="col">Movimentação</th><th scope="col">Horário</th><th scope="col">Responsável</th></tr></thead><tbody>{attendance.items.map((entry) => <tr key={entry.id}><th scope="row">#{entry.id}</th><td>#{entry.ticketId}</td><td><span className={`${styles.badge} ${entry.type === "SAIDA" ? styles.inactive : ""}`}>{entry.type === "ENTRADA" ? "Entrada" : entry.type === "SAIDA" ? "Saída" : entry.type}</span></td><td>{dateTime(entry.at)}</td><td className={styles.muted}>{entry.staffId ? `Equipe #${entry.staffId}` : "—"}</td></tr>)}</tbody></table></div>}
         <TablePagination list={attendance} /></>}
     </section>
+    {session && <section className={styles.panel} aria-labelledby="pending-orders-title">
+      <header className={styles.panelHeader}>
+        <h2 id="pending-orders-title">Pedidos aguardando pagamento</h2>
+        <button className={styles.secondary} type="button" onClick={pending.reload} disabled={pending.loading}>Atualizar pedidos</button>
+      </header>
+      <ScheduleState list={pending} empty="Nenhum pedido com pagamento pendente nesta sessão." noun="pedidos" />
+      {pending.items.length > 0 && <div className={styles.tableWrap}><table className={styles.table}>
+        <thead><tr><th scope="col">Pedido</th><th scope="col">Reserva até</th></tr></thead>
+        <tbody>{pending.items.map(item => <tr key={item.orderId}>
+          <th scope="row">#{item.orderId}</th><td>{dateTime(item.expiresAt)}</td>
+        </tr>)}</tbody>
+      </table></div>}
+      <TablePagination list={pending} noun="pedidos" />
+    </section>}
   </ScheduleLayout>;
 }

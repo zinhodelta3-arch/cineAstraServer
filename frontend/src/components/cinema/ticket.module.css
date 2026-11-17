@@ -1,0 +1,66 @@
+.ticket {
+  --ticket-notch: 9px;
+  --ticket-rule: color-mix(in oklab, var(--primary) 34%, var(--border));
+  position: relative;
+  min-inline-size: 0;
+  border: 1px solid var(--ticket-rule);
+  border-radius: var(--cinema-ticket-radius, 4px);
+  background-color: var(--card);
+  background-image: repeating-linear-gradient(
+    90deg, color-mix(in oklab, var(--primary) 65%, transparent) 0 12px, transparent 12px 26px
+  );
+  background-position: top 6px left 12px;
+  background-repeat: no-repeat;
+  background-size: calc(100% - 24px) 4px;
+  padding-block-start: 16px;
+}
+
+.tear {
+  position: relative;
+  flex: none;
+  border-block-start: 2px dashed var(--ticket-rule);
+}
+
+.tear::before,
+.tear::after {
+  position: absolute;
+  inset-block-start: -1px;
+  inline-size: calc(2 * var(--ticket-notch));
+  aspect-ratio: 1;
+  border: 1px solid var(--ticket-rule);
+  border-radius: 50%;
+  background: var(--background);
+  content: "";
+  pointer-events: none;
+}
+
+.tear::before {
+  inset-inline-start: -1px;
+  transform: translate(-50%, -50%);
+}
+
+.tear::after {
+  inset-inline-end: -1px;
+  transform: translate(50%, -50%);
+}
+
+.title {
+  font-family: var(--theme-font-display, "CineAstra Display", "Arial Narrow", Impact, sans-serif);
+  overflow-wrap: anywhere;
+}
+
+.stub {
+  background-color: color-mix(in oklab, var(--primary) 6%, var(--card));
+}
+
+.ticket:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+@font-face {
+  font-family: "CineAstra Display";
+  src: url("/fonts/cinema/display.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}

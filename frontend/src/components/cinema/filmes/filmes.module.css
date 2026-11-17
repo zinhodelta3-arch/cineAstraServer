@@ -119,7 +119,7 @@
 .tab[data-active]::after,
 .tab[data-state="active"]::after,
 .tab[aria-selected="true"]::after { background: var(--primary); }
-.tab[aria-selected="true"] { color: var(--primary); }
+.tab[aria-selected="true"] { color: var(--foreground); }
 
 /* Classificação indicativa independente da paleta da interface. */
 .ageRating {

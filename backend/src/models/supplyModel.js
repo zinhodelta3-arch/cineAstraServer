@@ -51,6 +51,7 @@ export function createSupplyModel(database) {
         logisticsRoutes: (q,c) => rows(c,`${routeProjection} WHERE rota.id_rota > ? ORDER BY rota.id_rota LIMIT ?`,
             [q.cursor ?? '0', q.limit + 1]),
         logisticsRoute: (id,c) => one(c,`${routeProjection} WHERE rota.id_rota=?`,[id]),
+        lockLogisticsRoute: (c,id) => one(c,'SELECT status FROM rotas_logistica WHERE id_rota=? FOR UPDATE',[id]),
         async createLogisticsRoute(c,input) {
             const [result] = await c.execute(`INSERT INTO rotas_logistica
                 (id_local_origem,id_local_destino,distancia_km,tempo_estimado_min) VALUES (?,?,?,?)`,
@@ -161,8 +162,10 @@ export function createSupplyModel(database) {
             if(status==='ENVIADO')return c.execute(`UPDATE logistica l
                 LEFT JOIN rotas_logistica rota ON rota.id_local_origem=l.id_local_origem
                     AND rota.id_local_destino=l.id_local_destino AND rota.status='ATIVO'
-                SET l.status='ENVIADO',l.id_transporte=?,l.data_envio=NOW(),
-                    l.data_prevista=COALESCE(TIMESTAMPADD(MINUTE,rota.tempo_estimado_min,NOW()),l.data_prevista)
+                SET l.status='ENVIADO',l.id_transporte=?,l.data_envio=UTC_TIMESTAMP(),
+                    l.id_rota_referencia=rota.id_rota,l.distancia_rota_km=rota.distancia_km,
+                    l.tempo_rota_min=rota.tempo_estimado_min,
+                    l.data_prevista=COALESCE(TIMESTAMPADD(MINUTE,rota.tempo_estimado_min,UTC_TIMESTAMP()),l.data_prevista)
                 WHERE l.id_logistica=?`,[transportId,id]);
             if(status==='RECEBIDO')return c.execute(
                 'UPDATE logistica SET status=?,data_recebimento=NOW(),id_usuario_recebimento=? WHERE id_logistica=?',

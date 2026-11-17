@@ -28,10 +28,6 @@ const CinemaStyles = () => (
     .tear { border-top: 2px dashed var(--border); }
     .tear-v { border-left: 2px dashed var(--border); }
 
-    .top-num {
-      font-family: 'Big Shoulders Display', Impact, sans-serif; font-weight: 900; line-height: .8;
-      -webkit-text-stroke: 4px color-mix(in oklab, var(--foreground) 22%, transparent); color: transparent;
-    }
   `}</style>
 );
 

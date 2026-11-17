@@ -1,0 +1,126 @@
+-- CineAstra | banners horizontais do catálogo original de 100 filmes.
+-- Execute após 01_inserts.sql. Preserva os banners já cadastrados.
+-- Relação filme/imagem: Cinemeta (Stremio), imagens MetaHub. URLs verificadas.
+-- Fonte: https://github.com/Stremio/stremio-official-addons
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO filmes_imagens (id_filme, tipo, url, texto_alternativo, ordem, principal)
+SELECT f.id_filme, 'BANNER', seed.banner, CONCAT('Banner de ', f.titulo), 0, TRUE
+FROM JSON_TABLE(
+'[
+  {"title":"Batman: O Cavaleiro das Trevas","poster":"https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg","banner":"https://images.metahub.space/background/medium/tt0468569/img"},
+  {"title":"Clube da Luta","poster":"https://image.tmdb.org/t/p/w500/jSziioSwPVrOy9Yow3XhWIBDjq1.jpg","banner":"https://images.metahub.space/background/medium/tt0137523/img"},
+  {"title":"Pulp Fiction: Tempo de Violência","poster":"https://image.tmdb.org/t/p/w500/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg","banner":"https://images.metahub.space/background/medium/tt0110912/img"},
+  {"title":"Forrest Gump: O Contador de Histórias","poster":"https://image.tmdb.org/t/p/w500/Cw4hIUIAmSYfK9QfaUW5igp9La.jpg","banner":"https://images.metahub.space/background/medium/tt0109830/img"},
+  {"title":"Harry Potter e a Pedra Filosofal","poster":"https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg","banner":"https://images.metahub.space/background/medium/tt0241527/img"},
+  {"title":"Homem de Ferro","poster":"https://image.tmdb.org/t/p/w500/78lPtwv72eTNqFW9COBYI0dWDJa.jpg","banner":"https://images.metahub.space/background/medium/tt0371746/img"},
+  {"title":"Matrix","poster":"https://image.tmdb.org/t/p/w500/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg","banner":"https://images.metahub.space/background/medium/tt0133093/img"},
+  {"title":"O Senhor dos Anéis: A Sociedade do Anel","poster":"https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg","banner":"https://images.metahub.space/background/medium/tt0120737/img"},
+  {"title":"Titanic","poster":"https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg","banner":"https://images.metahub.space/background/medium/tt0120338/img"},
+  {"title":"O Senhor dos Anéis: O Retorno do Rei","poster":"https://image.tmdb.org/t/p/w500/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg","banner":"https://images.metahub.space/background/medium/tt0167260/img"},
+  {"title":"O Senhor dos Anéis: As Duas Torres","poster":"https://image.tmdb.org/t/p/w500/5VTN0pR8gcqV3EPUHHfMGnJYN9L.jpg","banner":"https://images.metahub.space/background/medium/tt0167261/img"},
+  {"title":"Harry Potter e a Câmara Secreta","poster":"https://image.tmdb.org/t/p/w500/sdEOH0992YZ0QSxgXNIGLq1ToUi.jpg","banner":"https://images.metahub.space/background/medium/tt0295297/img"},
+  {"title":"Harry Potter e o Prisioneiro de Azkaban","poster":"https://image.tmdb.org/t/p/w500/aWxwnYoe8p2d2fcxOqtvAtJ72Rw.jpg","banner":"https://images.metahub.space/background/medium/tt0304141/img"},
+  {"title":"Seven: Os Sete Crimes Capitais","poster":"https://image.tmdb.org/t/p/w500/191nKfP0ehp3uIvWqgPbFmI4lv9.jpg","banner":"https://images.metahub.space/background/medium/tt0114369/img"},
+  {"title":"O Poderoso Chefão","poster":"https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg","banner":"https://images.metahub.space/background/medium/tt0068646/img"},
+  {"title":"Capitão América: O Primeiro Vingador","poster":"https://image.tmdb.org/t/p/w500/vSNxAJTlD0r02V9sPYpOjqDZXUK.jpg","banner":"https://images.metahub.space/background/medium/tt0458339/img"},
+  {"title":"Star Wars: Uma Nova Esperança","poster":"https://image.tmdb.org/t/p/w500/6FfCtAuVAW8XJjZ7eWeLibRLWTw.jpg","banner":"https://images.metahub.space/background/medium/tt0076759/img"},
+  {"title":"Piratas do Caribe: A Maldição do Pérola Negra","poster":"https://image.tmdb.org/t/p/w500/poHwCZeWzJCShH7tOjg8RIoyjcw.jpg","banner":"https://images.metahub.space/background/medium/tt0325980/img"},
+  {"title":"Harry Potter e o Cálice de Fogo","poster":"https://image.tmdb.org/t/p/w500/fECBtHlr0RB3foNHDiCBXeg9Bv9.jpg","banner":"https://images.metahub.space/background/medium/tt0330373/img"},
+  {"title":"De Volta para o Futuro","poster":"https://image.tmdb.org/t/p/w500/vN5B5WgYscRGcQpVhHl6p9DDTP0.jpg","banner":"https://images.metahub.space/background/medium/tt0088763/img"},
+  {"title":"Gladiador","poster":"https://image.tmdb.org/t/p/w500/wN2xWp1eIwCKOD0BHTcErTBv1Uq.jpg","banner":"https://images.metahub.space/background/medium/tt0172495/img"},
+  {"title":"Harry Potter e a Ordem da Fênix","poster":"https://image.tmdb.org/t/p/w500/5aOyriWkPec0zUDxmHFP9qMmBaj.jpg","banner":"https://images.metahub.space/background/medium/tt0373889/img"},
+  {"title":"Harry Potter e o Enigma do Príncipe","poster":"https://image.tmdb.org/t/p/w500/z7uo9zmQdQwU5ZJHFpv2Upl30i1.jpg","banner":"https://images.metahub.space/background/medium/tt0417741/img"},
+  {"title":"Homem-Aranha","poster":"https://image.tmdb.org/t/p/w500/nXdAh5vUwERL4WGVMaee8RoDEAS.jpg","banner":"https://images.metahub.space/background/medium/tt0145487/img"},
+  {"title":"Procurando Nemo","poster":"https://image.tmdb.org/t/p/w500/5lc6nQc0VhWFYFbNv016xze8Jvy.jpg","banner":"https://images.metahub.space/background/medium/tt0266543/img"},
+  {"title":"Toy Story","poster":"https://image.tmdb.org/t/p/w500/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg","banner":"https://images.metahub.space/background/medium/tt0114709/img"},
+  {"title":"Monstros S.A.","poster":"https://image.tmdb.org/t/p/w500/wFSpyMsp7H0ttERbxY7Trlv8xry.jpg","banner":"https://images.metahub.space/background/medium/tt0198781/img"},
+  {"title":"À Espera de um Milagre","poster":"https://image.tmdb.org/t/p/w500/8VG8fDNiy50H4FedGwdSVUPoaJe.jpg","banner":"https://images.metahub.space/background/medium/tt0120689/img"},
+  {"title":"Kill Bill: Volume 1","poster":"https://image.tmdb.org/t/p/w500/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg","banner":"https://images.metahub.space/background/medium/tt0266697/img"},
+  {"title":"O Iluminado","poster":"https://image.tmdb.org/t/p/w500/uAR0AWqhQL1hQa69UDEbb2rE5Wx.jpg","banner":"https://images.metahub.space/background/medium/tt0081505/img"},
+  {"title":"Shrek","poster":"https://image.tmdb.org/t/p/w500/iB64vpL3dIObOtMZgX3RqdVdQDc.jpg","banner":"https://images.metahub.space/background/medium/tt0126029/img"},
+  {"title":"A Viagem de Chihiro","poster":"https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg","banner":"https://images.metahub.space/background/medium/tt0245429/img"},
+  {"title":"Jurassic Park: O Parque dos Dinossauros","poster":"https://image.tmdb.org/t/p/w500/b1xCNnyrPebIc7EWNZIa6jhb1Ww.jpg","banner":"https://images.metahub.space/background/medium/tt0107290/img"},
+  {"title":"O Grande Truque","poster":"https://image.tmdb.org/t/p/w500/Ag2B2KHKQPukjH7WutmgnnSNurZ.jpg","banner":"https://images.metahub.space/background/medium/tt0482571/img"},
+  {"title":"A Lista de Schindler","poster":"https://image.tmdb.org/t/p/w500/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg","banner":"https://images.metahub.space/background/medium/tt0108052/img"},
+  {"title":"O Resgate do Soldado Ryan","poster":"https://image.tmdb.org/t/p/w500/uqx37cS8cpHg8U35f9U5IBlrCV3.jpg","banner":"https://images.metahub.space/background/medium/tt0120815/img"},
+  {"title":"Piratas do Caribe: O Baú da Morte","poster":"https://image.tmdb.org/t/p/w500/uXEqmloGyP7UXAiphJUu2v2pcuE.jpg","banner":"https://images.metahub.space/background/medium/tt0383574/img"},
+  {"title":"Prenda-me Se For Capaz","poster":"https://image.tmdb.org/t/p/w500/ctjEj2xM32OvBXCq8zAdK3ZrsAj.jpg","banner":"https://images.metahub.space/background/medium/tt0264464/img"},
+  {"title":"Alien: O Oitavo Passageiro","poster":"https://image.tmdb.org/t/p/w500/vfrQk5IPloGg1v9Rzbh2Eg3VGyM.jpg","banner":"https://images.metahub.space/background/medium/tt0078748/img"},
+  {"title":"Homem-Aranha 2","poster":"https://image.tmdb.org/t/p/w500/aGuvNAaaZuWXYQQ6N2v7DeuP6mB.jpg","banner":"https://images.metahub.space/background/medium/tt0316654/img"},
+  {"title":"Brilho Eterno de uma Mente sem Lembranças","poster":"https://image.tmdb.org/t/p/w500/5MwkWH9tYHv3mV9OdYTMR5qreIz.jpg","banner":"https://images.metahub.space/background/medium/tt0338013/img"},
+  {"title":"Amnésia","poster":"https://image.tmdb.org/t/p/w500/nzlv62aC0octS5AklAiWpXLX9Z0.jpg","banner":"https://images.metahub.space/background/medium/tt0209144/img"},
+  {"title":"Os Infiltrados","poster":"https://image.tmdb.org/t/p/w500/nT97ifVT2J1yMQmeq20Qblg61T.jpg","banner":"https://images.metahub.space/background/medium/tt0407887/img"},
+  {"title":"O Profissional","poster":"https://image.tmdb.org/t/p/w500/bxB2q91nKYp8JNzqE7t7TWBVupB.jpg","banner":"https://images.metahub.space/background/medium/tt0110413/img"},
+  {"title":"A Fantástica Fábrica de Chocolate","poster":"https://image.tmdb.org/t/p/w500/iKP6wg3c6COUe8gYutoGG7qcPnO.jpg","banner":"https://images.metahub.space/background/medium/tt0367594/img"},
+  {"title":"V de Vingança","poster":"https://image.tmdb.org/t/p/w500/1avD1JeaRiJX5M4ahPdZPypGoGN.jpg","banner":"https://images.metahub.space/background/medium/tt0434409/img"},
+  {"title":"Cães de Aluguel","poster":"https://image.tmdb.org/t/p/w500/xi8Iu6qyTfyZVDVy60raIOYJJmk.jpg","banner":"https://images.metahub.space/background/medium/tt0105236/img"},
+  {"title":"Homem-Aranha 3","poster":"https://image.tmdb.org/t/p/w500/qFmwhVUoUSXjkKRmca5yGDEXBIj.jpg","banner":"https://images.metahub.space/background/medium/tt0413300/img"},
+  {"title":"Carros","poster":"https://image.tmdb.org/t/p/w500/2Touk3m5gzsqr1VsvxypdyHY5ci.jpg","banner":"https://images.metahub.space/background/medium/tt0317219/img"},
+  {"title":"Kill Bill: Volume 2","poster":"https://image.tmdb.org/t/p/w500/2yhg0mZQMhDyvUQ4rG1IZ4oIA8L.jpg","banner":"https://images.metahub.space/background/medium/tt0378194/img"},
+  {"title":"Blade Runner: O Caçador de Androides","poster":"https://image.tmdb.org/t/p/w500/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg","banner":"https://images.metahub.space/background/medium/tt0083658/img"},
+  {"title":"Toy Story 2","poster":"https://image.tmdb.org/t/p/w500/4rbcp3ng8n1MKHjpeqW0L7Fnpzz.jpg","banner":"https://images.metahub.space/background/medium/tt0120363/img"},
+  {"title":"MIB: Homens de Preto","poster":"https://image.tmdb.org/t/p/w500/uLOmOF5IzWoyrgIF5MfUnh5pa1X.jpg","banner":"https://images.metahub.space/background/medium/tt0119654/img"},
+  {"title":"300","poster":"https://image.tmdb.org/t/p/w500/h7Lcio0c9ohxPhSZg42eTlKIVVY.jpg","banner":"https://images.metahub.space/background/medium/tt0416449/img"},
+  {"title":"O Exterminador do Futuro","poster":"https://image.tmdb.org/t/p/w500/qvktm0BHcnmDpul4Hz01GIazWPr.jpg","banner":"https://images.metahub.space/background/medium/tt0088247/img"},
+  {"title":"Os Bons Companheiros","poster":"https://image.tmdb.org/t/p/w500/9OkCLM73MIU2CrKZbqiT8Ln1wY2.jpg","banner":"https://images.metahub.space/background/medium/tt0099685/img"},
+  {"title":"A Era do Gelo","poster":"https://image.tmdb.org/t/p/w500/gLhHHZUzeseRXShoDyC4VqLgsNv.jpg","banner":"https://images.metahub.space/background/medium/tt0268380/img"},
+  {"title":"A Vida É Bela","poster":"https://image.tmdb.org/t/p/w500/74hLDKjD5aGYOotO6esUVaeISa2.jpg","banner":"https://images.metahub.space/background/medium/tt0118799/img"},
+  {"title":"O Poderoso Chefão: Parte II","poster":"https://image.tmdb.org/t/p/w500/hek3koDUyRQk7FIhPXsa6mT2Zc3.jpg","banner":"https://images.metahub.space/background/medium/tt0071562/img"},
+  {"title":"De Volta para o Futuro II","poster":"https://image.tmdb.org/t/p/w500/hQq8xZe5uLjFzSBt4LanNP7SQjl.jpg","banner":"https://images.metahub.space/background/medium/tt0096874/img"},
+  {"title":"Gênio Indomável","poster":"https://image.tmdb.org/t/p/w500/z2FnLKpFi1HPO7BEJxdkv6hpJSU.jpg","banner":"https://images.metahub.space/background/medium/tt0119217/img"},
+  {"title":"O Diabo Veste Prada","poster":"https://image.tmdb.org/t/p/w500/8912AsVuS7Sj915apArUFbv6F9L.jpg","banner":"https://images.metahub.space/background/medium/tt0458352/img"},
+  {"title":"Laranja Mecânica","poster":"https://image.tmdb.org/t/p/w500/4sHeTAp65WrSSuc05nRBKddhBxO.jpg","banner":"https://images.metahub.space/background/medium/tt0066921/img"},
+  {"title":"Edward Mãos de Tesoura","poster":"https://image.tmdb.org/t/p/w500/e0FqKFvGPdQNWG8tF9cZBtev9Em.jpg","banner":"https://images.metahub.space/background/medium/tt0099487/img"},
+  {"title":"Indiana Jones e os Caçadores da Arca Perdida","poster":"https://image.tmdb.org/t/p/w500/ceG9VzoRAVGwivFU403Wc3AHRys.jpg","banner":"https://images.metahub.space/background/medium/tt0082971/img"},
+  {"title":"Shrek 2","poster":"https://image.tmdb.org/t/p/w500/2yYP0PQjG8zVqturh1BAqu2Tixl.jpg","banner":"https://images.metahub.space/background/medium/tt0298148/img"},
+  {"title":"Taxi Driver","poster":"https://image.tmdb.org/t/p/w500/ekstpH614fwDX8DUln1a2Opz0N8.jpg","banner":"https://images.metahub.space/background/medium/tt0075314/img"},
+  {"title":"Donnie Darko","poster":"https://image.tmdb.org/t/p/w500/j2AtZFsflxiluaNtajMTI0Avm8C.jpg","banner":"https://images.metahub.space/background/medium/tt0246578/img"},
+  {"title":"Scarface","poster":"https://image.tmdb.org/t/p/w500/iQ5ztdjvteGeboxtmRdXEChJOHh.jpg","banner":"https://images.metahub.space/background/medium/tt0086250/img"},
+  {"title":"Beleza Americana","poster":"https://image.tmdb.org/t/p/w500/wby9315QzVKdW9BonAefg8jGTTb.jpg","banner":"https://images.metahub.space/background/medium/tt0169547/img"},
+  {"title":"O Sexto Sentido","poster":"https://image.tmdb.org/t/p/w500/vOyfUXNFSnaTk7Vk5AjpsKTUWsu.jpg","banner":"https://images.metahub.space/background/medium/tt0167404/img"},
+  {"title":"O Incrível Hulk","poster":"https://image.tmdb.org/t/p/w500/gKzYx79y0AQTL4UAk1cBQJ3nvrm.jpg","banner":"https://images.metahub.space/background/medium/tt0800080/img"},
+  {"title":"Sociedade dos Poetas Mortos","poster":"https://image.tmdb.org/t/p/w500/tNvKkSnnn4Z6RCBThyK1gfCSSvv.jpg","banner":"https://images.metahub.space/background/medium/tt0097165/img"},
+  {"title":"2001: Uma Odisseia no Espaço","poster":"https://image.tmdb.org/t/p/w500/ve72VxNqjGM69Uky4WTo2bK6rfq.jpg","banner":"https://images.metahub.space/background/medium/tt0062622/img"},
+  {"title":"A Outra História Americana","poster":"https://image.tmdb.org/t/p/w500/x2drgoXYZ8484lqyDj7L1CEVR4T.jpg","banner":"https://images.metahub.space/background/medium/tt0120586/img"},
+  {"title":"Onze Homens e um Segredo","poster":"https://image.tmdb.org/t/p/w500/hQQCdZrsHtZyR6NbKH2YyCqd2fR.jpg","banner":"https://images.metahub.space/background/medium/tt0240772/img"},
+  {"title":"Esqueceram de Mim","poster":"https://image.tmdb.org/t/p/w500/onTSipZ8R3bliBdKfPtsDuHTdlL.jpg","banner":"https://images.metahub.space/background/medium/tt0099785/img"},
+  {"title":"O Fabuloso Destino de Amélie Poulain","poster":"https://image.tmdb.org/t/p/w500/nSxDa3M9aMvGVLoItzWTepQ5h5d.jpg","banner":"https://images.metahub.space/background/medium/tt0211915/img"},
+  {"title":"Psicopata Americano","poster":"https://image.tmdb.org/t/p/w500/9uGHEgsiUXjCNq8wdq4r49YL8A1.jpg","banner":"https://images.metahub.space/background/medium/tt0144084/img"},
+  {"title":"Duro de Matar","poster":"https://image.tmdb.org/t/p/w500/7Bjd8kfmDSOzpmhySpEhkUyK2oH.jpg","banner":"https://images.metahub.space/background/medium/tt0095016/img"},
+  {"title":"O Grande Lebowski","poster":"https://image.tmdb.org/t/p/w500/3bv6WAp6BSxxYvB5ozKFUYuRA8C.jpg","banner":"https://images.metahub.space/background/medium/tt0118715/img"},
+  {"title":"Aladdin","poster":"https://image.tmdb.org/t/p/w500/eLFfl7vS8dkeG1hKp5mwbm37V83.jpg","banner":"https://images.metahub.space/background/medium/tt0103639/img"},
+  {"title":"E.T.: O Extraterrestre","poster":"https://image.tmdb.org/t/p/w500/an0nD6uq6byfxXCfk6lQBzdL2J1.jpg","banner":"https://images.metahub.space/background/medium/tt0083866/img"},
+  {"title":"Matrix Reloaded","poster":"https://image.tmdb.org/t/p/w500/aA5qHS0FbSXO8PxcxUIHbDrJyuh.jpg","banner":"https://images.metahub.space/background/medium/tt0234215/img"},
+  {"title":"O Quinto Elemento","poster":"https://image.tmdb.org/t/p/w500/fPtlCO1yQtnoLHOwKtWz7db6RGU.jpg","banner":"https://images.metahub.space/background/medium/tt0119116/img"},
+  {"title":"Madagascar","poster":"https://image.tmdb.org/t/p/w500/zMpJY5CJKUufG9OTw0In4eAFqPX.jpg","banner":"https://images.metahub.space/background/medium/tt0351283/img"},
+  {"title":"Tubarão","poster":"https://image.tmdb.org/t/p/w500/lxM6kqilAdpdhqUl2biYp5frUxE.jpg","banner":"https://images.metahub.space/background/medium/tt0073195/img"},
+  {"title":"De Volta para o Futuro III","poster":"https://image.tmdb.org/t/p/w500/crzoVQnMzIrRfHtQw0tLBirNfVg.jpg","banner":"https://images.metahub.space/background/medium/tt0099088/img"},
+  {"title":"As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa","poster":"https://image.tmdb.org/t/p/w500/iREd0rNCjYdf5Ar0vfaW32yrkm.jpg","banner":"https://images.metahub.space/background/medium/tt0363771/img"},
+  {"title":"Todo Poderoso","poster":"https://image.tmdb.org/t/p/w500/wqkWrOFtYnZSvIMu8Lsmz7WIvKC.jpg","banner":"https://images.metahub.space/background/medium/tt0315327/img"},
+  {"title":"Nascido para Matar","poster":"https://image.tmdb.org/t/p/w500/kMKyx1k8hWWscYFnPbnxxN4Eqo4.jpg","banner":"https://images.metahub.space/background/medium/tt0093058/img"},
+  {"title":"O Labirinto do Fauno","poster":"https://image.tmdb.org/t/p/w500/z7xXihu5wHuSMWymq5VAulPVuvg.jpg","banner":"https://images.metahub.space/background/medium/tt0457430/img"},
+  {"title":"Um Estranho no Ninho","poster":"https://image.tmdb.org/t/p/w500/kjWsMh72V6d8KRLV4EOoSJLT1H7.jpg","banner":"https://images.metahub.space/background/medium/tt0073486/img"},
+  {"title":"Os Suspeitos","poster":"https://image.tmdb.org/t/p/w500/99X2SgyFunJFXGAYnDv3sb9pnUD.jpg","banner":"https://images.metahub.space/background/medium/tt0114814/img"},
+  {"title":"O Máskara","poster":"https://image.tmdb.org/t/p/w500/jPC2eYub74zwf2tPGVtzSlBW6Oy.jpg","banner":"https://images.metahub.space/background/medium/tt0110475/img"},
+  {"title":"Sr. e Sra. Smith","poster":"https://image.tmdb.org/t/p/w500/kjD700RtyhveN3ZbOnSvUSne0Qj.jpg","banner":"https://images.metahub.space/background/medium/tt0356910/img"},
+  {"title":"Coração Valente","poster":"https://image.tmdb.org/t/p/w500/or1gBugydmjToAEq7OZY0owwFk.jpg","banner":"https://images.metahub.space/background/medium/tt0112573/img"},
+  {"title":"Troia","poster":"https://image.tmdb.org/t/p/w500/a07wLy4ONfpsjnBqMwhlWTJTcm.jpg","banner":"https://images.metahub.space/background/medium/tt0332452/img"},
+  {"title":"Uma Mente Brilhante","poster":"https://image.tmdb.org/t/p/w500/rEIg5yJdNOt9fmX4P8gU9LeNoTQ.jpg","banner":"https://images.metahub.space/background/medium/tt0268978/img"},
+  {"title":"Indiana Jones e a Última Cruzada","poster":"https://image.tmdb.org/t/p/w500/sizg1AU8f8JDZX4QIgE4pjUMBvx.jpg","banner":"https://images.metahub.space/background/medium/tt0097576/img"}
+]',
+'$[*]' COLUMNS (
+    title VARCHAR(200) PATH '$.title',
+    poster VARCHAR(255) PATH '$.poster',
+    banner VARCHAR(2048) PATH '$.banner'
+)) seed
+JOIN filmes f ON f.titulo COLLATE utf8mb4_unicode_ci = seed.title COLLATE utf8mb4_unicode_ci
+  OR f.imagem COLLATE utf8mb4_bin = seed.poster COLLATE utf8mb4_bin
+WHERE NOT EXISTS (
+    SELECT 1 FROM filmes_imagens i
+    WHERE i.id_filme = f.id_filme AND i.tipo = 'BANNER'
+      AND i.contexto_banner = 'GERAL' AND i.dispositivo_banner = 'PADRAO'
+);
+
+COMMIT;

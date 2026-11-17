@@ -12,13 +12,13 @@ function target(method, parts, search) {
   if (method === 'POST' && parts.length === 1 && parts[0] === 'orders') return '/admin/sales/orders';
   if (method === 'PATCH' && parts.length === 2 && parts[0] === 'orders' && id(parts[1])) return `/admin/sales/orders/${parts[1]}`;
   if (parts.length === 3 && id(parts[1])) {
-    if (parts[0] === 'orders' && parts[2] === 'cancel' && method === 'POST') return `/admin/sales/orders/${parts[1]}/cancel`;
+    if (parts[0] === 'orders' && ['cancel','refunds'].includes(parts[2]) && method === 'POST') return `/admin/sales/orders/${parts[1]}/${parts[2]}`;
     if (parts[0] === 'payments' && (parts[2] === 'notes' && ['GET','POST'].includes(method) || parts[2] === 'reconcile' && method === 'POST')) return `/admin/sales/payments/${parts[1]}/${parts[2]}`;
   }
   if (parts[0] !== 'refunds') return null;
   if (method === 'GET' && parts.length === 1) return `/admin/refunds${search}`;
   if (method === 'GET' && parts.length === 2 && id(parts[1])) return `/admin/refunds/${parts[1]}`;
-  if (method === 'POST' && parts.length === 3 && id(parts[1]) && parts[2] === 'decision') return `/admin/refunds/${parts[1]}/decision`;
+  if (method === 'POST' && parts.length === 3 && id(parts[1]) && ['decision','reconcile'].includes(parts[2])) return `/admin/refunds/${parts[1]}/${parts[2]}`;
   return null;
 }
 
@@ -39,7 +39,9 @@ async function handle(request, { params }) {
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
     }
     const createsRecord = method === 'POST' && (path === '/admin/sales/orders' || path.endsWith('/notes'));
-    return json(await backendAuth(path, { token, method, body }), createsRecord ? 201 : 200);
+    const refundCreation=method==='POST'&&path.endsWith('/refunds');
+    const idempotencyKey=refundCreation?request.headers.get('Idempotency-Key')??undefined:undefined;
+    return json(await backendAuth(path, { token, method, body, idempotencyKey }), refundCreation ? 202 : createsRecord ? 201 : 200);
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: 'Sua sessão expirou. Entre novamente.', 403: 'Acesso negado.', 404: 'Registro não encontrado.', 409: error instanceof AuthError ? error.message : 'O estado da venda mudou. Atualize os dados.', 422: 'Confira os dados informados.' };

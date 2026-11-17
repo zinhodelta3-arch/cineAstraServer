@@ -31,7 +31,7 @@ export default function PosterCard({ movie, onSelectMovie, soon = false }) {
       className="ticket ticket-v group h-full bg-card border border-border cursor-pointer transition-transform duration-300 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus:outline-none flex flex-col"
     >
       <div className="perf !rounded-none" aria-hidden="true" />
-      <div className="relative aspect-[2/3] overflow-hidden bg-muted">
+      <div data-slot="cinema-poster-image" className="relative aspect-[2/3] overflow-hidden bg-muted">
         <SmartImg src={movie.poster} alt={`Pôster de ${movie.title}`} title={movie.title} icon={Film} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <div className="absolute inset-0 poster-scrim" aria-hidden="true" />
         {soon ? (

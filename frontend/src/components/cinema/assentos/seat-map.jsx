@@ -12,7 +12,7 @@ export default function SeatMap({ selection, seats }) {
   return (
     <section className={styles.mapSection} aria-label="Mapa de assentos">
       <div className={styles.mapToolbar}>
-        <span>Fundo da sala</span>
+        <span>Mapa da sala</span>
         <div className={styles.zoom}>
           <button type="button" aria-label="Diminuir mapa" disabled={selection.zoom <= 80} onClick={selection.zoomOut}><Minus size={16} /></button>
           <label><span className="sr-only">Zoom do mapa</span><input type="range" min="80" max="150" step="10" value={selection.zoom} onChange={selection.changeZoom} /></label>
@@ -23,6 +23,7 @@ export default function SeatMap({ selection, seats }) {
       <p id="seat-instructions" className={styles.mapHint}>Escolha no mapa. Use as setas do teclado para navegar e Espaço para selecionar. Em telas pequenas, deslize para os lados.</p>
       <div className={styles.mapScroll}>
         <div className={styles.map} style={{ "--columns": columns, "--seat-size": `${30 * selection.zoom / 100}px`, "--seat-gap": `${6 * selection.zoom / 100}px` }}>
+          <div className={styles.screen} aria-label="Tela da sala"><span>Tela</span></div>
           <div className={styles.numbers} aria-hidden="true"><span />{Array.from({ length: columns }, (_, i) => <span key={i}>{i + 1}</span>)}<span /></div>
           {rows.map((row) => (
             <div className={`${styles.seatRow} ${row === "G" ? styles.accessRow : ""}`} key={row} role="group" aria-label={`Fileira ${row}`}>
@@ -49,7 +50,6 @@ export default function SeatMap({ selection, seats }) {
               <span className={styles.rowLabel} aria-hidden="true">{row}</span>
             </div>
           ))}
-          <div className={styles.screen} aria-label="Tela da sala"><span>Tela</span></div>
         </div>
       </div>
       <ul className={styles.legend} aria-label="Legenda do mapa">

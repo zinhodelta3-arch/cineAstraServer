@@ -9,7 +9,7 @@ import useStreamingPlayback from "@/hooks/streaming/player/use-streaming-playbac
 
 const VideoPlayer = dynamic(() => import("@/components/cineastra-player/VideoPlayer"), {
   ssr: false,
-  loading: () => <p role="status" className="fixed inset-0 z-[1000] grid place-items-center bg-background/90 text-foreground">Carregando player…</p>,
+  loading: () => <p role="status" className="grid min-h-40 place-items-center text-foreground">Carregando player…</p>,
 });
 
 export default function PlayerModal(props) {
@@ -17,14 +17,16 @@ export default function PlayerModal(props) {
   return <PlaybackSession key={JSON.stringify([profileId, movie.id, access?.id])} {...props} />;
 }
 
-function PlaybackSession({ movie, profileId, access, onProgress, onClose, initialMode = "modal" }) {
-  const [mode, setMode] = useState(initialMode);
+function PlaybackSession({ movie, profileId, access, onProgress, onClose, onRestore, initialMode = "modal", mode: controlledMode, onModeChange }) {
+  const [localMode, setLocalMode] = useState(initialMode);
+  const mode = controlledMode ?? localMode;
+  const setMode = onModeChange ?? setLocalMode;
   const { playback, loading, error, errorCode, saveError, savePosition } = useStreamingPlayback({ movie, profileId, access, onProgress });
 
   if (!playback && initialMode === "page") return <div className="grid min-h-64 place-content-center gap-4 rounded-md border border-border bg-card p-6 text-center" role={error ? "alert" : "status"}>
     <p>{loading ? "Preparando reprodução…" : error || "Não foi possível iniciar a reprodução."}</p>
     {errorCode === "STREAMING_ACCESS_REQUIRED" && <Link href="/cinema/planos" className="text-primary underline">Conhecer os planos</Link>}
-    {error && <button type="button" className="min-h-11 underline" onClick={onClose}>Voltar ao catálogo</button>}
+    {error && <button type="button" className="min-h-11 underline" onClick={onClose}>Fechar player</button>}
   </div>;
 
   if (!playback) return (
@@ -48,7 +50,7 @@ function PlaybackSession({ movie, profileId, access, onProgress, onClose, initia
       }}
       mode={mode}
       onModeChange={setMode}
-      onRestore={() => setMode(initialMode)}
+      onRestore={onRestore ?? (() => setMode(initialMode))}
       onClose={onClose}
     />
     {saveError && <p role="status" className="fixed bottom-4 left-4 z-[10001] max-w-sm rounded-md border border-border bg-card p-3 text-sm text-destructive">{saveError}</p>}

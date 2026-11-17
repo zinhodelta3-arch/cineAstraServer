@@ -9,18 +9,18 @@ export async function sessionFetch(input, options) {
 }
 
 export async function readSessionResponse(response) {
- let data;
+ let data = null;
  try {
   data = await response.json();
  } catch (error) {
-  if (error.name === 'AbortError') throw error;
-  throw responseError(response, { code: 'INVALID_RESPONSE', message: `O servidor retornou uma resposta inválida (HTTP ${response.status}).` });
+  if (['AbortError', 'TimeoutError'].includes(error.name)) throw error;
  }
- if (!data || typeof data !== 'object' || Array.isArray(data)) {
-  throw responseError(response, { code: 'INVALID_RESPONSE', message: `O servidor retornou uma resposta inválida (HTTP ${response.status}).` });
- }
+ const valid = data !== null && typeof data === 'object' && !Array.isArray(data);
  if (!response.ok) {
-  throw responseError(response, data);
+  throw responseError(response, valid ? data : null);
+ }
+ if (!valid) {
+  throw responseError(response, { code: 'INVALID_RESPONSE' });
  }
  return data;
 }

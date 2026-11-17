@@ -29,7 +29,7 @@ export function useFloatingAssistant(signedIn) {
         role: "assistant",
         text: answer.message,
         sessions: answer.sessions,
-        showSupport: !answer.available,
+        showSupport: !answer.available && Boolean(answer.handoffPath),
       }]);
     } catch (requestError) {
       setQuestion(message);

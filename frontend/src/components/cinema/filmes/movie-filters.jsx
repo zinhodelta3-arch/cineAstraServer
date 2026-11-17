@@ -1,31 +1,36 @@
 "use client";
 
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function MovieFilters({ catalog, item }) {
   const { genres, genre, setGenre, suggestionsId, query, setQuery, suggestions } = catalog;
+  const searchId = `${suggestionsId}-${item.value}`;
+
   return (
-              <div className="flex flex-col justify-between gap-6 pb-6 pt-7 lg:flex-row lg:items-start">
-                <div className="flex max-w-full flex-wrap gap-x-1 gap-y-2 lg:max-w-[65%]" role="group" aria-label="Filtrar por gênero">
-                  {genres.map(({value, label}) => (
-                    <Button key={value} type="button" variant="ghost" size="sm" aria-pressed={genre === value} onClick={() => setGenre(value)}
-                      className={`h-8 rounded-full border px-3.5 text-xs font-semibold shadow-none ${genre === value ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : "border-transparent text-muted-foreground hover:border-border hover:bg-transparent hover:text-foreground"}`}>
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-                <div className="relative w-full lg:w-[290px] lg:shrink-0">
-                  <label htmlFor={`${suggestionsId}-${item.value}`} className="sr-only">Pesquisar filmes em {item.label.toLowerCase()}</label>
-                  <Search className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground" aria-hidden="true" />
-                  <Input id={`${suggestionsId}-${item.value}`} type="search" maxLength={200} value={query} onChange={(event) => setQuery(event.target.value)}
-                    list={`${suggestionsId}-options-${item.value}`} autoComplete="off" placeholder="Qual filme você procura?"
-                    className="h-10 rounded-full border-border bg-background/50 pl-9 pr-3 text-xs shadow-none" />
-                  <datalist id={`${suggestionsId}-options-${item.value}`}>
-                    {suggestions.map((movie) => <option key={movie.id} value={movie.title} />)}
-                  </datalist>
-                </div>
-              </div>
+    <div className="grid gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)]">
+      <div className="min-w-0">
+        <label htmlFor={searchId} className="mb-1.5 block text-sm font-semibold">Pesquisar filmes</label>
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-3.5 left-3 size-4 text-muted-foreground" aria-hidden="true" />
+          <Input id={searchId} type="search" maxLength={200} value={query} onChange={(event) => setQuery(event.target.value)}
+            list={`${searchId}-options`} autoComplete="off" placeholder="Qual filme você procura?"
+            className="h-11 w-full rounded-md border-border bg-card pl-9 text-base shadow-none sm:text-sm" />
+          <datalist id={`${searchId}-options`}>
+            {suggestions.map((movie) => <option key={movie.id} value={movie.title} />)}
+          </datalist>
+        </div>
+      </div>
+      <div className="min-w-0">
+        <label htmlFor={`${searchId}-genre`} className="mb-1.5 block text-sm font-semibold">Gênero</label>
+        <div className="relative">
+          <select id={`${searchId}-genre`} value={genre} onChange={(event) => setGenre(event.target.value)}
+            className="h-11 w-full appearance-none rounded-md border border-border bg-card px-3 pr-9 text-base text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:text-sm">
+            {genres.map(({ value, label }) => <option key={value} value={value}>{value === "Todos" ? "Todos os gêneros" : label}</option>)}
+          </select>
+          <ChevronDown className="pointer-events-none absolute top-3.5 right-3 size-4 text-muted-foreground" aria-hidden="true" />
+        </div>
+      </div>
+    </div>
   );
 }

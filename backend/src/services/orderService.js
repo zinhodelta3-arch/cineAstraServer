@@ -9,9 +9,9 @@ const found=row=>{if(!row)throw ApiError.naoEncontrado();return row;};
 const conflict=message=>new ApiError(message,409,null,'ORDER_CONFLICT');
 const ageLimit={L:0,'10':10,'12':12,'14':14,'16':16,'18':18};
 const category=line=>line.kind==='STREAMING'?(line.mode==='COMPRA'?'PURCHASE':'RENTAL'):line.kind;
-export const pricingInput=input=>({couponCode:input.couponCode,lines:input.lines.map(line=>({category:category(line),id:line.id,quantity:line.quantity,...(line.halfPreview?{halfPreview:true}:{})}))});
+export const pricingInput=input=>({couponCode:input.couponCode,lines:input.lines.map(line=>({category:category(line),id:line.id,quantity:line.quantity,...(line.halfPreview||line.halfDeclaration?{halfPreview:true}:{}),...(line.halfDeclaration?{halfDeclaration:line.halfDeclaration}:{})}))});
 
-export function createOrderService({model,identity,pricing,selfDeclaredAge=false,agePolicy=createAgePolicy({allowSelfDeclaredAge:selfDeclaredAge})}){
+export function createOrderService({model,identity,pricing,socialProgram,selfDeclaredAge=false,agePolicy=createAgePolicy({allowSelfDeclaredAge:selfDeclaredAge})}){
     async function validateEventCombo(c,row,line,input,userId,lock=false){
         if(row.id_sessao_evento==null)return;
         if(!row.event_active||!row.event_future||String(row.id_local)!==String(row.id_local_evento)
@@ -26,10 +26,10 @@ export function createOrderService({model,identity,pricing,selfDeclaredAge=false
         if(total+line.quantity>row.limite_evento)throw new ApiError('O lote do combo temático não tem a quantidade solicitada.',409,null,'EVENT_COMBO_SOLD_OUT');
         if(customer+line.quantity>row.limite_cliente_evento)throw new ApiError('Limite deste combo temático por cliente atingido.',409,null,'EVENT_COMBO_CUSTOMER_LIMIT');
     }
-    async function quoteOnConnection(c,input,context){
+    async function quoteOnConnection(c,input,context,{counter=false,ageConfirmed=false}={}){
         const user=await identity.activeActor(c,context);
-        if(user.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
-        const proof=agePolicy.resolve(user,await model.age(c,user.id_usuario));
+        if(user.tipo_usuario!==(counter?'COLABORADOR':'CLIENTE'))throw ApiError.acessoNegado();
+        const proof=counter?null:agePolicy.resolve(user,await model.age(c,user.id_usuario));
         const seen=new Set(),stock=new Map();
         const addStock=(id,count)=>stock.set(id,(stock.get(id)??0n)+BigInt(count));
         for(const line of input.lines){
@@ -39,9 +39,12 @@ export function createOrderService({model,identity,pricing,selfDeclaredAge=false
             if(line.kind==='SESSION'){
                 const session=found(await model.session(c,line.id)),seat=found(await model.seat(c,line.seatId));
                 if(!['AGENDADA','EM_CARTAZ'].includes(session.status)||session.sala_status!=='ATIVA'||session.local_status!=='ATIVO'||session.filme_status!=='ATIVO'||!session.disponivel_cinema||idString(session.id_sala)!==idString(seat.id_sala)||seat.status!=='ATIVA')throw conflict('Sessão ou assento indisponível');
+                if(!counter&&interval(session).start<=Date.now())throw conflict('A venda online desta sessão encerrou');
                 if(await model.occupiedSeat(c,line.id,line.seatId))throw conflict('Assento ocupado');
                 if(input.localId&&idString(session.id_local)!==input.localId)throw conflict('Sessão de outro local');
-                if(ageOn(user.data_nascimento,session.data)<ageLimit[session.classificacao])throw new ApiError('Idade abaixo da classificação da sessão',403,null,'AGE_RESTRICTION');
+                if(counter ? Number(ageLimit[session.classificacao] ?? 18)>0 && !ageConfirmed : ageOn(user.data_nascimento,session.data)<ageLimit[session.classificacao]){
+                    throw new ApiError(counter?'Confirme a classificação indicativa antes de vender o ingresso':'Idade abaixo da classificação da sessão',403,null,'AGE_RESTRICTION');
+                }
             }else if(line.kind==='INPUT'){
                 const row=found(await model.input(c,line.id));
                 if(!row.venda_avulsa||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO')throw conflict('Insumo indisponível no local');
@@ -64,8 +67,10 @@ export function createOrderService({model,identity,pricing,selfDeclaredAge=false
             }
         }
         for(const [id,count] of stock){const row=found(await model.stock(c,id));if(count>2147483647n||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO')throw conflict('Insumo indisponível no local');if(BigInt(row.quantidade)-BigInt(row.quantidade_reservada)<count)throw new ApiError('Estoque insuficiente no local',409,null,'INSUFFICIENT_STOCK');}
-        const quote=await pricing.quoteOnConnection(c,pricingInput(input),context);
-        return {...quote,fees:'0.00',guardianAuthorizationRequired:proof.faixa_etaria==='ATE_16',finalizable:quote.finalizable&&proof.faixa_etaria!=='ATE_16'};
+        const quote=await pricing.quoteOnConnection(c,pricingInput(input),context,{allowDeclaredHalf:true});
+        const guardianAuthorizationRequired=proof?.faixa_etaria==='ATE_16';
+        return {...quote,lines:quote.lines.map((line,index)=>input.lines[index].halfDeclaration?{...line,halfDeclaration:input.lines[index].halfDeclaration}:line),fees:'0.00',guardianAuthorizationRequired,finalizable:quote.finalizable&&!guardianAuthorizationRequired,
+            ...(socialProgram && {socialDestination:await socialProgram.preview(c,quote.total)})};
     }
     async function status(id,context){return identity.transaction(async c=>{
         const actor=await identity.activeActor(c,context);
@@ -73,7 +78,7 @@ export function createOrderService({model,identity,pricing,selfDeclaredAge=false
         const order=found(await model.ownStatus(c,id,actor.id_usuario));
         const financialStatus=order.status;
         const state=['PAGO','FINALIZADO'].includes(financialStatus)?operationalOrder(await model.operationalRows(c,id)):{operationalStatus:null,items:[]};
-        return {orderId:idString(order.id_pedido),financialStatus,...state};
+        return {orderId:idString(order.id_pedido),financialStatus,...state,...(socialProgram && {socialDestination:await socialProgram.byOrder(c,id)})};
     },context);}
     async function list({limit=20,cursor},context){return identity.transaction(async c=>{
         const actor=await identity.activeActor(c,context);

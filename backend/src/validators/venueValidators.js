@@ -9,7 +9,13 @@ const seatStatus = z.enum(['ATIVA', 'INATIVA']);
 const roomType = z.enum(['2D', '3D', '4DX', 'VIP', 'IMAX']);
 const seatType = z.enum(['COMUM', 'PCD', 'OBESO', 'IDOSO', 'CASAL']);
 const venueType = z.enum(['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO']);
+const imageUrl = z.string().trim().max(2048).url().refine(value => {
+    if (!value.startsWith('https://') || /[\u0000-\u0020\\]/.test(value)) return false;
+    const url = URL.parse(value);
+    return url?.protocol === 'https:' && !url.username && !url.password;
+});
 const localFields = {
+    imagem_url: imageUrl.nullable().optional(),
     tipo_local: venueType.optional(), lotacao_eventos: z.number().int().min(1).max(100000).nullable().optional(),
     acesso_eventos: z.enum(['NUMERADO','LIVRE']).nullable().optional(),
     nome: limited(150), cidade: limited(100), estado: z.string().regex(/^[A-Z]{2}$/),

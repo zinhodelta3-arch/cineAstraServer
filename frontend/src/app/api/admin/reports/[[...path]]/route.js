@@ -5,10 +5,15 @@ import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 
 const json = (data, status = 200) => NextResponse.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const destinations = '/admin/reports/social-destinations';
-const targets = { finance: '/admin/reports/finance', social: '/admin/reports/social-allocation', audit: '/admin/audit-logs', http: '/admin/http-logs', destinations };
+const initiatives = '/admin/reports/social-initiatives';
+const targets = { finance: '/admin/reports/finance', social: '/admin/reports/social-allocation', audit: '/admin/audit-logs', http: '/admin/http-logs', destinations, initiatives };
 
 function target(method, [section, id, detail, ...rest]) {
   if (!id && method === 'GET' && Object.hasOwn(targets, section)) return targets[section];
+  if (section === 'initiatives' && !detail && !rest.length) {
+    if (method === 'POST' && !id) return initiatives;
+    if (method === 'PATCH' && /^[1-9]\d{0,19}$/.test(id ?? '')) return `${initiatives}/${id}`;
+  }
   if (section !== 'destinations' || rest.length) return null;
   if (method === 'POST' && !id) return destinations;
   if (!/^[1-9]\d{0,19}$/.test(id ?? '')) return null;
@@ -35,7 +40,7 @@ async function handle(request, { params }) {
     return json(await backendAuth(path, { token, method, body }), method === 'POST' ? 201 : 200);
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;
-    const messages = { 401: 'Sua sessão expirou. Entre novamente.', 403: 'Acesso negado.', 404: 'Destinação não encontrada.', 409: 'A destinação mudou. Atualize a lista e reabra o cadastro.', 422: method === 'GET' ? 'Confira período e filtros informados.' : 'Confira os dados da destinação.' };
+    const messages = { 401: 'Sua sessão expirou. Entre novamente.', 403: 'Acesso negado.', 404: 'Destinação não encontrada.', 409: error?.code === 'SOCIAL_MONTH_OCCUPIED' ? 'Este mês já tem uma iniciativa publicada.' : 'A destinação mudou. Atualize a lista e reabra o cadastro.', 422: method === 'GET' ? 'Confira período e filtros informados.' : 'Confira os dados da destinação.' };
     return json(authErrorPayload(error, { message: messages[status] ?? 'Não foi possível concluir a operação.' }), status);
   }
 }

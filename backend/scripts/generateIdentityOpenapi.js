@@ -31,11 +31,12 @@ spec.components.schemas.IdentityUser = obj({ id: ref('Id'), name: str, email: { 
 spec.components.schemas.IdentityUser.properties.ageVerified = { type: 'boolean', description: 'Retornado em cadastro e GET users/me. Indica existência de prova válida, não apenas data declarada.' };
 spec.components.schemas.IdentityAccess = obj({ accessToken: { type: 'string', description: 'JWT emitido em runtime, nunca valor fixo de exemplo' }, tokenType: { type: 'string', enum: ['Bearer'] }, expiresIn: { type: 'integer', maximum: 900 }, user: ref('IdentityUser') });
 spec.components.schemas.IdentityChallenge = obj({ challengeToken: { type: 'string', pattern: '^[a-f0-9]{64}$', description: 'Token opaco restrito; não é bearer de acesso. Nunca enviar em URL.' }, expiresIn: { type: 'integer', enum: [300] }, next: { type: 'string', enum: ['VERIFY_2FA', 'ENROLL_2FA'] }, method: { type: 'string', nullable: true, enum: ['APP', 'SMS', 'EMAIL', null] }, provisioningUri: { type: 'string', description: 'Segredo TOTP somente na inscrição/rotação autorizada; usar em aplicativo autenticador, não registrar.' } }, ['challengeToken', 'expiresIn', 'next', 'method']);
-spec.components.schemas.IdentityPreferences = { ...spec.components.schemas.IdentityInput_preferences, required: ['tema', 'tamanho_fonte', 'alto_contraste', 'modo_acessibilidade', 'idioma', 'aparencia'] };
-spec.components.schemas.IdentityDeletion = obj({ id: ref('Id'), status: { type: 'string', enum: ['RECEBIDA', 'EM_ANALISE'] }, accountStatus: { type: 'string', enum: ['INATIVO'] }, message: str });
+spec.components.schemas.IdentityPreferences = { ...spec.components.schemas.IdentityInput_preferences, required: ['tema', 'tamanho_fonte', 'alto_contraste', 'modo_acessibilidade', 'idioma', 'aparencia', 'acessibilidade', 'avatar'] };
+spec.components.schemas.IdentityDeletion = obj({ id: ref('Id'), status: { type: 'string', enum: ['RECEBIDA', 'EM_ANALISE'] }, accountStatus: { type: 'string', enum: ['ATIVO'] }, message: str });
 spec.components.schemas.IdentityControls = obj({ compras_permitidas: bool, assinaturas_permitidas: bool, limite_minutos_diarios: { type: 'integer', minimum: 1, maximum: 1440 } });
 spec.components.schemas.IdentityAuthorization = obj({ id: ref('Id'), purpose: { type: 'string', enum: ['COMPRA', 'ASSINATURA'] }, operationReference: str, expiresAt: { type: 'string', format: 'date-time' } });
 spec.components.schemas.IdentityPrivacyStatus = obj({ id_solicitacao: ref('Id'), id_usuario: ref('Id'), tipo: { type: 'string', enum: ['EXCLUSAO'] }, status: { type: 'string', enum: ['RECEBIDA', 'EM_ANALISE', 'CONCLUIDA', 'RECUSADA'] }, motivo_decisao: { type: 'string', nullable: true }, criada_em: str, encerrada_em: { type: 'string', nullable: true } });
+spec.components.schemas.IdentityPrivacyStatus.properties.pending = { type: 'array', items: str };
 spec.components.schemas.SupervisorLocation = obj({ supervisorId: ref('Id'), localId: { type: 'string', pattern: '^[1-9][0-9]{0,9}$', nullable: true }, localName: { type: 'string', nullable: true } });
 for (const [kind, pk, schema] of [['addresses', 'id_endereco', 'address'], ['contacts', 'id_contato', 'contact']]) {
     const fields = structuredClone(spec.components.schemas[`IdentityInput_${schema}`].properties);
@@ -56,7 +57,8 @@ const descriptions = {
     reset: 'Token de uso único. Invalida todos os resets/desafios e revoga todas as sessões. 2FA permanece ativo; reset de senha não recupera fator perdido.',
     disableFactor: 'Reautenticação com senha e TOTP atual. ADMIN/SUPERVISOR não podem desativar 2FA obrigatório. Revoga sessões e desafios.',
     patch: 'Campos permitidos apenas. E-mail exige currentPassword, code se 2FA ativo e emailProof verificada pelo provider. Senha exige confirmação, currentPassword e code se aplicável. Alterações sensíveis revogam todas as sessões. CPF, idade, role e status não são autoatribuíveis.',
-    deleteAccount: 'Desativa conta e revoga autenticação; registra solicitação durável. 202 confirma recebimento, NÃO exclusão/anonimização concluída. Retenção financeira e política de anonimização exigem decisão de privacidade. Location aponta consulta administrativa; guardar id para atendimento. Último ADMIN ativo não é desativado.',
+    deleteAccount: 'Registra solicitação do CLIENTE após reautenticação. A conta permanece ativa enquanto o ADMIN analisa.',
+    privacyDecision: 'Somente ADMIN. Pendências comerciais impedem concluir a exclusão; aprovação anonimiza o cadastro e revoga as sessões.',
     export: 'Portabilidade paginada do módulo identidade, própria conta, senha e fator se ativo. Seções explícitas; sem hash, segredo, token ou referência interna de prova. CPF só aparece nesta exportação privada. Outros módulos devem acrescentar seus exports. Novo TOTP necessário em cada página sensível.',
     adminCreate: 'Cria contas de clientes e contas internas com CPF e e-mail únicos. O cadastro administrativo não registra aceite dos termos nem verificação de idade em nome do cliente. Novo ADMIN/SUPERVISOR passa por enrollment obrigatório. Primeiro ADMIN via CLI seguro bootstrap:admin.',
     adminPatch: 'Atualiza nome ou telefone da conta. Alterações de perfil de acesso e status usam a rota /access.',
@@ -75,7 +77,8 @@ for (const r of identityOperations) {
         : r.operationId === 'deleteAccount' ? ref('IdentityDeletion')
         : r.operationId === 'forgot' ? obj({ message: str })
         : r.operationId === 'list_own_children' ? obj({items:{type:'array',items:obj({id:{type:'string',pattern:'^[1-9][0-9]{0,9}$'},name:str,status:{type:'string',enum:['ATIVO','INATIVO','BLOQUEADO','PENDENTE_VERIFICACAO']},parentalControlsAvailable:bool})},pagination:obj({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{type:'string',pattern:'^[1-9][0-9]{0,9}$',nullable:true}})})
-        : r.operationId === 'privacyStatus' ? ref('IdentityPrivacyStatus')
+        : r.operationId === 'ownPrivacyStatus' ? obj({ request: { type: 'object', nullable: true } })
+        : ['privacyStatus','privacyDecision'].includes(r.operationId) ? ref('IdentityPrivacyStatus')
         : ['authorizeMinor', 'authorization'].includes(r.operationId) ? ref('IdentityAuthorization')
         : r.operationId === 'renewAge' ? obj({ ageBand: { type: 'string', enum: ['ATE_16', 'MAIOR_16'] }, expiresAt: { type: 'string', format: 'date-time' } })
         : r.action === 'preferences' ? ref('IdentityPreferences')

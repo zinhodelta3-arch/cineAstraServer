@@ -17,11 +17,12 @@ export async function POST(request,{params}){
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({message:'Entre para acessar suas compras.'},401);
  const parts=(await params).path||[],key=request.headers.get('Idempotency-Key');
- if(parts.length!==2||!validOrderId(parts[0])||parts[1]!=='cancel'||!/^[A-Za-z0-9._:-]{8,120}$/.test(key||''))return json({message:'Solicitação inválida.'},422);
+ if(parts.length!==2||!validOrderId(parts[0])||!['cancel','refunds'].includes(parts[1])||!/^[A-Za-z0-9._:-]{8,120}$/.test(key||''))return json({message:'Solicitação inválida.'},422);
+ const refund=parts[1]==='refunds';
  try{
-  const raw=await request.text();if(raw.length>20)return json({message:'Dados inválidos.'},422);
+  const raw=await request.text();if(raw.length>(refund?7000:20))return json({message:'Dados inválidos.'},422);
   let body;try{body=JSON.parse(raw);}catch{return json({message:'Dados inválidos.'},400);}
-  if(!body||Array.isArray(body)||typeof body!=='object'||Object.keys(body).length)return json({message:'Dados inválidos.'},422);
-  return json(await backendAuth('/orders/'+parts[0]+'/cancel',{token,method:'POST',body:{},idempotencyKey:key}));
+  if(!body||Array.isArray(body)||typeof body!=='object'||!refund&&Object.keys(body).length)return json({message:'Dados inválidos.'},422);
+  return json(await backendAuth('/orders/'+parts[0]+'/'+parts[1],{token,method:'POST',body,idempotencyKey:key}),refund?202:200);
  }catch(e){return failure(e);}
 }

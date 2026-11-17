@@ -1,20 +1,17 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useHomeHero } from "@/hooks/cinema/home/use-home-hero";
 
 export default function useStreamHero(myList, heroes) {
-  const [cur, setCur] = useState(0);
+  const [autoplay, setAutoplay] = useState(false);
+  const { cur, setCur, movie } = useHomeHero(heroes, !autoplay, 9000);
   const total = heroes.length;
-  const go = (d) => setCur((p) => total ? (p + d + total) % total : 0);
+  const select = index => {
+    setAutoplay(false);
+    setCur(index);
+  };
+  const go = direction => select(index => total ? (index + direction + total) % total : 0);
 
-  useEffect(() => {
-    if (!total) return;
-    const t = setTimeout(() => setCur((p) => (p + 1) % total), 9000);
-    return () => clearTimeout(t);
-  }, [cur, total]);
-
-  const movie = heroes[cur % total];
-  if (!movie) return { cur: 0, setCur, go, movie: null, inList: false };
-  const inList = myList.some((i) => i.id === movie.id);
-
-  return { cur, setCur, go, movie, inList };
+  const inList = Boolean(movie && myList.some(i => i.id === movie.id));
+  return { cur, select, go, movie, inList, autoplay, toggleAutoplay: () => setAutoplay(value => !value) };
 }

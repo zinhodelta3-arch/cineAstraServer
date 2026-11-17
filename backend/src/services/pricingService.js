@@ -41,7 +41,7 @@ export function createPricingService({model,identity,simulated=false}){
     async function admin(c,context){const a=await identity.activeActor(c,context);if(a.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();return a;}
     const tx=(context,fn)=>identity.transaction(c=>fn(c),context);
     const publicQuote=publicPricingQuote;
-    async function quoteWithConnection(c,input,context,{trustedHalf=false,lockCoupon=false}={}){
+    async function quoteWithConnection(c,input,context,{trustedHalf=false,allowDeclaredHalf=false,lockCoupon=false}={}){
         const actor=await identity.activeActor(c,context);
         const plan=await model.activePlan(actor.id_usuario,c);
         let coupon=null,couponBps=0;
@@ -81,7 +81,7 @@ export function createPricingService({model,identity,simulated=false}){
                 ...(publicBps+privatePromoBps>0?['PROMOTION']:[]),...(planBps>0?['SUBSCRIPTION']:[]),
                 ...(couponBps>0?['COUPON']:[]),...(comboBps>0?['COMBO']:[])
             ]:[];
-            lines.push({...suggestion,category:line.category,id:idString(line.id),quantity:line.quantity,period:line.category==='PLAN'?line.period??'MONTHLY':null,cost:money(cost),base:money(base),publishedPrice:published??null,catalogOutOfSync:!publishedSessionFallback&&published!=null&&published!==money(base),publicPrice:line.category==='SESSION'?money(quoted.publicPrice):null,halfPrice:line.category==='SESSION'?money(quoted.halfPrice):null,benefit:line.category==='SESSION'?quoted.benefit:quoted.discountBps?'DESCONTO':'INTEIRA',unitPrice:money(quoted.price),subtotal:money(subtotal),discountBps:quoted.discountBps,discountCapped:quoted.discountCapped,belowCost:line.category==='SESSION'?quoted.belowCost:false,belowMargin:quoted.belowMargin,projectedBelowMargin:line.category==='SESSION'?quoted.projectedBelowMargin:false,referenceOccupancy:line.category==='SESSION'?Math.min(p.ocupacao_referencia,row.capacidade):null,halfEligibilityUnverified:line.category==='SESSION'&&Boolean(line.halfPreview)&&!trustedHalf,promotionIds:promotions.map(x=>idString(x.id_promocao)),planId:plan?idString(plan.id_plano):null,parameters:paramDto(p)});
+            lines.push({...suggestion,category:line.category,id:idString(line.id),quantity:line.quantity,period:line.category==='PLAN'?line.period??'MONTHLY':null,cost:money(cost),base:money(base),publishedPrice:published??null,catalogOutOfSync:!publishedSessionFallback&&published!=null&&published!==money(base),publicPrice:line.category==='SESSION'?money(quoted.publicPrice):null,halfPrice:line.category==='SESSION'?money(quoted.halfPrice):null,benefit:line.category==='SESSION'?quoted.benefit:quoted.discountBps?'DESCONTO':'INTEIRA',unitPrice:money(quoted.price),subtotal:money(subtotal),discountBps:quoted.discountBps,discountCapped:quoted.discountCapped,belowCost:line.category==='SESSION'?quoted.belowCost:false,belowMargin:quoted.belowMargin,projectedBelowMargin:line.category==='SESSION'?quoted.projectedBelowMargin:false,referenceOccupancy:line.category==='SESSION'?Math.min(p.ocupacao_referencia,row.capacidade):null,halfEligibilityUnverified:line.category==='SESSION'&&Boolean(line.halfPreview)&&!trustedHalf&&!(allowDeclaredHalf&&line.halfDeclaration),promotionIds:promotions.map(x=>idString(x.id_promocao)),planId:plan?idString(plan.id_plano):null,parameters:paramDto(p)});
         }
         return {lines,total:money(total),couponId:coupon?idString(coupon.id_cupom):null,couponCode:coupon?.codigo??null,couponDiscountBps:couponBps,finalizable:!lines.some(x=>x.halfEligibilityUnverified||x.catalogOutOfSync),quotedAt:new Date().toISOString()};
     }
@@ -95,18 +95,18 @@ export function createPricingService({model,identity,simulated=false}){
             try { return money(price); }
             catch(error) { if(error instanceof RangeError)throw conflict('O preço calculado excede o limite permitido. Revise os custos e o markup.'); throw error; }
         },
-        async quoteOnConnection(c,input,context){if(!c?.execute)throw new TypeError('Conexão transacional obrigatória');return publicQuote(await quoteWithConnection(c,input,context));},
+        async quoteOnConnection(c,input,context,options){if(!c?.execute)throw new TypeError('Conexão transacional obrigatória');return publicQuote(await quoteWithConnection(c,input,context,options));},
         async quote(input,context){return tx(context,async c=>publicQuote(await quoteWithConnection(c,input,context)));},
         async adminQuote(input,context){return tx(context,async c=>{await admin(c,context);return quoteWithConnection(c,input,context);});},
         // Checkout consumer must create the order and call this on its SAME connection.
-        async commit(c,{orderId,input,context,verifiedHalf=false}){
+        async commit(c,{orderId,input,context,verifiedHalf=false,allowDeclaredHalf=false}){
             if(!c?.execute)throw new TypeError('Conexão transacional obrigatória');
             const order=found(await model.order(orderId,c,true));
             if(idString(order.id_usuario)!==idString(context.actor.id)||!['EM_ANDAMENTO','AGUARDANDO_PAGAMENTO'].includes(order.status))throw ApiError.acessoNegado();
             const previous=await model.snapshot(orderId,c);
             if(previous)return typeof previous.snapshot==='string'?JSON.parse(previous.snapshot):previous.snapshot;
-            if(input.lines.some(x=>x.halfPreview)&&!verifiedHalf)throw ApiError.acessoNegado();
-            const quote=await quoteWithConnection(c,input,context,{trustedHalf:verifiedHalf,lockCoupon:true});
+            if(!verifiedHalf&&input.lines.some(x=>x.halfPreview&&!(allowDeclaredHalf&&x.halfDeclaration)))throw ApiError.acessoNegado();
+            const quote=await quoteWithConnection(c,input,context,{trustedHalf:verifiedHalf,allowDeclaredHalf,lockCoupon:true});
             if(!quote.finalizable)throw conflict('Catálogo ou elegibilidade requer confirmação');
             if(quote.couponId)await model.recordCoupon(c,orderId,quote.couponId,quote.couponDiscountBps);
             await model.insertSnapshot(c,orderId,quote);

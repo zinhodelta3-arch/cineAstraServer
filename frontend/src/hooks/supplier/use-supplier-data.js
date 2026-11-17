@@ -1,7 +1,7 @@
 'use client';
 
 import { usePaginatedList } from '@/hooks/use-paginated-list';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { sessionFetch, readSessionResponse } from '@/lib/auth/session-response.mjs';
 
 export async function supplierRequest(path, { method = 'GET', body, signal } = {}) {
@@ -19,19 +19,8 @@ export function useSupplierList(path) {
 
 export function useSupplierLocations() {
   const grants = useSupplierList('locations?limit=100&status=ATIVO');
-  const [names, setNames] = useState({});
-  const ids = grants.items.map(row => row.id_local).join(',');
-  useEffect(() => {
-    if (!ids) return;
-    const abort = new AbortController();
-    const locationIds = ids.split(',');
-    Promise.allSettled(locationIds.map(id => supplierRequest(`locations/${id}`, { signal: abort.signal }))).then(results => {
-      if (abort.signal.aborted) return;
-      setNames(Object.fromEntries(results.flatMap((result, index) => result.status === 'fulfilled' ? [[locationIds[index], result.value.nome]] : [])));
-    });
-    return () => abort.abort();
-  }, [ids]);
-  return { ...grants, name: id => id ? names[id] ?? `Cinema #${id}` : '—' };
+  const names = new Map(grants.items.map(row => [String(row.id_local), row.nome_local]));
+  return { ...grants, name: id => id ? names.get(String(id)) ?? `Cinema #${id}` : '—' };
 }
 
 export function useSupplierAction(reload) {

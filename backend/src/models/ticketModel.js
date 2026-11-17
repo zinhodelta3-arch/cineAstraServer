@@ -50,5 +50,15 @@ export function createTicketModel(database){return {
         JOIN sessoes s ON s.id_sessao=x.id_sessao`,[sessionId]),
     attendance:(c,sessionId,limit,cursor)=>rows(c,`SELECT tp.id_passagem,tp.id_ticket,tp.tipo,tp.ocorrido_em,tp.id_usuario_staff
         FROM ticket_passagens tp JOIN tickets t ON t.id_ticket=tp.id_ticket JOIN itens_pedido ip ON ip.id_item=t.id_item
-        WHERE ip.id_sessao=? AND tp.id_passagem>? ORDER BY tp.id_passagem LIMIT ?`,[sessionId,cursor,limit+1])
+        WHERE ip.id_sessao=? AND tp.id_passagem>? ORDER BY tp.id_passagem LIMIT ?`,[sessionId,cursor,limit+1]),
+    pendingSessionOrders:(c,sessionId,limit,cursor)=>rows(c,`
+        SELECT p.id_pedido,p.checkout_expira_em
+        FROM pedidos p
+        WHERE p.id_pedido>? AND p.status='AGUARDANDO_PAGAMENTO'
+            AND p.checkout_expira_em>UTC_TIMESTAMP(3)
+            AND (EXISTS (
+                SELECT 1 FROM itens_pedido ip WHERE ip.id_pedido=p.id_pedido
+                    AND (ip.id_sessao=? OR ip.id_sessao_retirada=?)
+            ) OR EXISTS (SELECT 1 FROM pedidos_presenciais pp WHERE pp.id_pedido=p.id_pedido AND pp.id_sessao=?))
+        ORDER BY p.id_pedido LIMIT ?`,[cursor,sessionId,sessionId,sessionId,limit+1])
 };}

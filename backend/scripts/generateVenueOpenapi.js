@@ -22,7 +22,8 @@ const examples = {
 Object.assign(properties.local, {
     tipo_local: { type:'string', enum:['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO'], default:'CINEMA' },
     lotacao_eventos: { type:'integer', minimum:1, maximum:100000, nullable:true },
-    acesso_eventos: { type:'string', enum:['NUMERADO','LIVRE',null], nullable:true }
+    acesso_eventos: { type:'string', enum:['NUMERADO','LIVRE',null], nullable:true },
+    imagem_url: { type:'string', format:'uri', maxLength:2048, pattern:'^https://', nullable:true }
 });
 Object.assign(examples.local, { tipo_local:'CINEMA', lotacao_eventos:null, acesso_eventos:null });
 const object = (props, required = Object.keys(props)) => ({ type: 'object', additionalProperties: false, properties: props, required });

@@ -29,6 +29,7 @@ function target(method, parts, search) {
   if (group === 'logistics') {
     if (parts.length === 1 && method === 'GET') return `/logistics${search}`;
     if (parts.length === 2 && id(second) && method === 'GET') return `/logistics/${second}`;
+    if (parts.length === 3 && id(second) && third === 'history' && method === 'GET') return `/logistics/${second}/history${search}`;
     if (parts.length === 3 && id(second) && ['send', 'transit', 'receive', 'return', 'cancel'].includes(third) && method === 'POST') return `/logistics/${second}/${third}`;
   }
   if (group === 'input-links') {

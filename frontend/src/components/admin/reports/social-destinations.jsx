@@ -104,7 +104,7 @@ function DestinationHistory({ row, onClose }) {
           <div><dt>Referência contábil</dt><dd>{details.accountingReference ?? '—'}</dd></div>
         </dl>
       </details>)}
-      {list.data && <TablePagination list={list} noun="versões" />}
+      <TablePagination list={list} noun="versões" />
     </DialogContent>
   </Dialog>;
 }
@@ -136,7 +136,7 @@ export default function SocialDestinations() {
         </tr>)}</tbody>
       </table>
     </div>}
-    {list.data && <TablePagination list={list} noun="destinações" />}
+    <TablePagination list={list} noun="destinações" />
     {dialog?.type === 'form' && <DestinationForm row={dialog.row} onClose={close} onSaved={() => {
       setMessage(dialog.row ? 'Destinação atualizada.' : 'Destinação cadastrada.');
       close();

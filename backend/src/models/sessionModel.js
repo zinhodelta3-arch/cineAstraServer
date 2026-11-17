@@ -39,7 +39,7 @@ export function createSessionModel(database) {
                 ORDER BY s.data, s.horario_inicio, s.id_sessao LIMIT 7`, args);
         },
         // One statement keeps session visibility, seat map and occupancy in the same read snapshot.
-        seatAvailability: id => rows(database, `SELECT s.id_sessao,s.id_sala,sa.id_local,
+        seatAvailability: (id, c = database, { futureOnly = false } = {}) => rows(c, `SELECT s.id_sessao,s.id_sala,sa.id_local,
             a.id_assento,a.fileira,a.numero,a.tipo,
             CASE WHEN a.status IS NULL OR a.status<>'ATIVA' THEN 'INDISPONIVEL'
                  WHEN o.estado='CONFIRMADA' THEN 'VENDIDO'
@@ -50,6 +50,7 @@ export function createSessionModel(database) {
             LEFT JOIN assento_ocupacoes o ON o.id_sessao=s.id_sessao AND o.id_assento=a.id_assento
             WHERE s.id_sessao=? AND s.status IN ('AGENDADA','EM_CARTAZ')
                 AND sa.status='ATIVA' AND l.status='ATIVO' AND f.status='ATIVO' AND f.disponivel_cinema=TRUE
+                ${futureOnly ? `AND ${future}` : ''}
             ORDER BY a.fileira,a.numero,a.id_assento`, [id]),
         session: (id, c = database) => one(c, `SELECT ${projection}${joins} WHERE s.id_sessao = ?`, [id]),
         sessionForUpdate: (id, c) => one(c, 'SELECT id_sessao,id_filme,id_sala,data,horario_inicio,horario_fim,idioma,preco_inteira,status FROM sessoes WHERE id_sessao = ? FOR UPDATE', [id]),
@@ -59,7 +60,7 @@ export function createSessionModel(database) {
         local: (id, c, lock = true) => one(c, `SELECT id_local,status FROM locais WHERE id_local = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
         film: (id, c, lock = true) => one(c, `SELECT id_filme,status,disponivel_cinema,duracao FROM filmes WHERE id_filme = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
         activeSeats: (roomId, c) => one(c, "SELECT COUNT(*) AS total FROM assentos WHERE id_sala = ? AND status = 'ATIVA'", [roomId]),
-        hasItems: (id, c) => one(c, 'SELECT id_item FROM itens_pedido WHERE id_sessao = ? LIMIT 1', [id]),
+        hasItems: (id, c) => one(c, 'SELECT id_item FROM itens_pedido WHERE id_sessao = ? OR id_sessao_retirada = ? LIMIT 1', [id, id]),
         overlapCandidates(localId, startDate, endDate, excludeId, c) {
             return rows(c, `SELECT s.id_sessao,s.data,s.horario_inicio,s.horario_fim FROM sessoes s JOIN salas sa ON sa.id_sala = s.id_sala WHERE sa.id_local = ? AND s.data BETWEEN ? AND ? AND s.status <> 'CANCELADA'${excludeId ? ' AND s.id_sessao <> ?' : ''} ORDER BY s.data,s.horario_inicio,s.id_sessao`, [localId, startDate, endDate, ...(excludeId ? [excludeId] : [])]);
         },
@@ -67,14 +68,16 @@ export function createSessionModel(database) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
             const where = ['s.id_sessao > ?'], args = [q.cursor ?? '0'];
             if (q.localId) { where.push('sa.id_local = ?'); args.push(q.localId); }
+            if (admin && q.roomId) { where.push('s.id_sala = ?'); args.push(q.roomId); }
             if (!admin && q.filmId) { where.push('s.id_filme = ?',future); args.push(q.filmId); }
             if (q.date) { where.push('s.data = ?'); args.push(q.date); }
             if (q.startFrom) { where.push('s.horario_inicio >= ?'); args.push(q.startFrom); }
             if (q.startUntil) { where.push('s.horario_inicio <= ?'); args.push(q.startUntil); }
             if (admin) { if (q.status) { where.push('s.status = ?'); args.push(q.status); } }
             else where.push(publicConditions);
-            const extra = !admin && q.filmId ? `,${availability}` : '';
-            return rows(c, `SELECT ${projection}${extra}${joins} WHERE ${where.join(' AND ')} ORDER BY s.id_sessao LIMIT ${q.limit + 1}`, args);
+            const filmDetails = !admin && q.localId && q.date ? ',f.imagem AS imagem_filme,f.classificacao AS classificacao_filme' : '';
+            const seatAvailability = (!admin && (q.filmId || q.date && q.localId) || admin && q.roomId) ? `,${availability}` : '';
+            return rows(c, `SELECT ${projection}${filmDetails}${seatAvailability}${joins} WHERE ${where.join(' AND ')} ORDER BY s.id_sessao LIMIT ${q.limit + 1}`, args);
         },
         publicSession: id => one(database, `SELECT ${projection}${joins} WHERE s.id_sessao = ? AND s.status IN ('AGENDADA','EM_CARTAZ') AND sa.status = 'ATIVA' AND l.status = 'ATIVO' AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE`, [id]),
         async insert(c, data) {

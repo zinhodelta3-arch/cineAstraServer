@@ -2,7 +2,11 @@ import { ApiError } from '../utils/ApiError.js';
 import { idString } from '../utils/dto.js';
 
 const found=row=>{if(!row)throw ApiError.naoEncontrado();return row;};
-const dto=row=>({...row,id_transporte:idString(row.id_transporte),id_fornecedor:idString(row.id_fornecedor),em_uso:Boolean(row.em_uso)});
+const dto=row=>({
+    ...row,id_transporte:idString(row.id_transporte),id_fornecedor:idString(row.id_fornecedor),
+    id_entrega_ativa:row.id_entrega_ativa==null?null:idString(row.id_entrega_ativa),
+    em_uso:row.id_entrega_ativa!=null,
+});
 export function createSupplierTransportService({model,identity}) {
     async function transaction(context,write,work) {
         return identity.transaction(async c=>{

@@ -3,14 +3,23 @@ import {ApiError} from '../utils/ApiError.js';
 import {createAgePolicy} from './agePolicyService.js';
 import {idString} from '../utils/dto.js';
 import {cents} from './pricingMath.js';
-import {cycleEnd} from './subscriptionBillingMath.js';
+import {chargeTotal,cycleEnd,dueAfterCycle} from './subscriptionBillingMath.js';
 
 const conflict=message=>new ApiError(message,409,null,'PLAN_CONFLICT');
 const found=row=>{if(!row)throw ApiError.naoEncontrado();return row;};
 const snapshot=value=>typeof value==='string'?JSON.parse(value):value;
+const scheduledView=row=>{
+    const next=snapshot(row.alteracao_programada);
+    return next?{planId:next.planId,planName:next.contract.name,period:next.period,price:next.price,effectiveOn:next.effectiveOn}:null;
+};
+const subscriptionStatus=row=>{
+    if(row.status==='ATIVA'&&row.fim&&!row.renovacao_automatica&&!row.alteracao_programada&&
+        Date.parse(`${row.fim}T00:00:00Z`)<Date.parse(`${new Date().toISOString().slice(0,10)}T00:00:00Z`)-7*86400000)return 'EXPIRADA';
+    return row.status;
+};
 const isDraft=row=>row?.status==='PENDENTE'&&snapshot(row.contrato_snapshot)?.administrativeDraft===true;
 const planDto=(row,benefits,admin=false)=>({id:idString(row.id_plano),name:row.nome,description:row.descricao??null,monthlyPrice:row.valor_mensal??null,annualPrice:row.valor_anual??null,maxMembers:row.limite_membros,catalogAccess:Boolean(row.acesso_catalogo),freeComboId:row.id_combo_medio?idString(row.id_combo_medio):null,freeCombosPerMonth:row.combo_gratis_mes,discounts:Object.fromEntries(benefits.map(x=>[x.categoria,x.desconto_bps])),active:Boolean(row.ativo),...(admin?{monthlyBenefitCost:row.custo_beneficios_mensal,annualBenefitCost:row.custo_beneficios_anual}:{})});
-const subscriptionDto=(row,charge=null)=>({id:idString(row.id_assinatura),planId:idString(row.id_plano),period:row.periodicidade,divisionMode:row.tipo_divisao??'TITULAR_PAGA',status:row.status,autoRenew:Boolean(row.renovacao_automatica),startsOn:isDraft(row)?null:row.inicio,endsOn:row.fim,contractPrice:row.preco_contratado,contract:isDraft(row)?null:snapshot(row.contrato_snapshot),...(isDraft(row)?{administrativeDraft:true}:{}),...(charge?{chargeId:idString(charge.id_cobranca),chargeStatus:charge.status,paymentPath:'/api/payments'}:{})});
+const subscriptionDto=(row,charge=null)=>({id:idString(row.id_assinatura),planId:idString(row.id_plano),period:row.periodicidade,divisionMode:row.tipo_divisao??'TITULAR_PAGA',status:subscriptionStatus(row),autoRenew:Boolean(row.renovacao_automatica),startsOn:isDraft(row)?null:row.inicio,endsOn:row.fim,contractPrice:row.preco_contratado,contract:isDraft(row)?null:snapshot(row.contrato_snapshot),planName:snapshot(row.contrato_snapshot)?.name??row.nome_plano??null,suspended:Boolean(row.suspenso_por_cobranca),...(isDraft(row)?{administrativeDraft:true}:{}),...(charge?{chargeId:idString(charge.id_cobranca),chargeStatus:charge.status,paymentPath:'/api/payments',...(charge.data_vencimento?{chargeDue:charge.data_vencimento,chargeAmount:charge.status==='ISENTO'?'0.00':chargeTotal(charge),paymentId:charge.id_pagamento?idString(charge.id_pagamento):null,paymentStatus:charge.pagamento_status??null}:{})}:{})});
 const page=(rows,limit,key,map)=>({items:rows.slice(0,limit).map(map),pagination:{limit,nextCursor:rows.length>limit?idString(rows[limit-1][key]):null}});
 const positivePrice=(price,cost)=>price!=null&&cost!=null&&cents(price)>0n&&cents(price)*8000n>=cents(cost)*10000n;
 export function createPlanService({model,identity,billing,contracts,agePolicy=createAgePolicy()}){
@@ -122,18 +131,48 @@ export function createPlanService({model,identity,billing,contracts,agePolicy=cr
     },context);}
     async function mySubscriptions({limit=50,cursor='0'},context){return identity.transaction(async c=>{
         const user=await client(c,context),rows=await model.userSubscriptions(c,user.id_usuario,limit,cursor);
-        return page(rows,limit,'id_assinatura',row=>subscriptionDto(row));
+        return page(rows,limit,'id_assinatura',row=>({...subscriptionDto(row),scheduledChange:scheduledView(row)}));
     },context);}
     async function ownSubscription(id,context){return identity.transaction(async c=>{
         const user=await client(c,context),row=found(await model.subscription(c,id));
         if(idString(row.id_usuario)!==idString(user.id_usuario))throw ApiError.naoEncontrado();
-        return subscriptionDto(row,await model.firstCharge(c,id));
+        return {...subscriptionDto(row,await model.latestCharge(c,id,user.id_usuario)),scheduledChange:scheduledView(row)};
+    },context);}
+    async function current(context){return identity.transaction(async c=>{
+        const user=await client(c,context),row=await model.currentForUser(c,user.id_usuario);
+        return {subscription:row?{planName:snapshot(row.contrato_snapshot)?.name??row.nome_plano,period:row.periodicidade,
+            status:row.suspenso_por_cobranca||row.membro_suspenso?'SUSPENSA':row.status,endsOn:row.fim}:null};
+    },context);}
+    async function schedule(id,input,context){return identity.transaction(async c=>{
+        const user=await client(c,context),row=found(await model.subscription(c,id,true));
+        if(idString(row.id_usuario)!==idString(user.id_usuario))throw ApiError.naoEncontrado();
+        if(row.status!=='ATIVA'||!row.fim||row.fim<new Date().toISOString().slice(0,10))throw conflict('A mudança precisa ser agendada antes do fim do ciclo.');
+        if(idString(row.id_plano)===input.planId&&row.periodicidade===input.period)throw conflict('Escolha outro plano ou período.');
+        if((row.tipo_divisao??'TITULAR_PAGA')!==input.divisionMode)throw conflict('Mantenha a regra de pagamento da assinatura atual.');
+        const plan=await availablePlan(c,input.planId);
+        if(Number((await model.memberCounts(c,id)).total)>plan.limite_membros)throw conflict('O novo plano não comporta os membros e convites atuais.');
+        const contract=await view(c,plan);
+        const price=input.period==='ANUAL'?plan.valor_anual:plan.valor_mensal;
+        const legal=await contracts.planContract(c,input,contract,price);
+        if(!input.acceptance?.accepted||input.acceptance.offerHash!==legal.offerHash)throw conflict('Aceite a oferta atual antes de agendar.');
+        const next={effectiveOn:dueAfterCycle(row.fim),planId:input.planId,period:input.period,price,maxMembers:plan.limite_membros,autoRenew:input.autoRenew,contract:{...contract,legal}};
+        await model.scheduleChange(c,id,next);
+        await identity.audit(c,'SUBSCRIPTION.CHANGE_SCHEDULED',id,context);
+        return {...subscriptionDto(row),scheduledChange:scheduledView({alteracao_programada:next})};
     },context);}
     async function canSettle(c,chargeId){const row=await model.settlement(c,chargeId);return Boolean(row&&(['PENDENTE','ATIVA'].includes(row.assinatura_status)||row.assinatura_status==='CANCELADA'&&row.renovacao_emitida&&row.cobranca_status==='ATRASADO')&&['PENDENTE','ATRASADO'].includes(row.cobranca_status));}
     async function activate(c,chargeId,confirmedAt){const row=found(await model.settlement(c,chargeId));
         if(row.cobranca_status!=='PAGO'||!['PENDENTE','ATIVA'].includes(row.assinatura_status)&&!(row.assinatura_status==='CANCELADA'&&row.renovacao_emitida))throw conflict('Cobrança sem direito');
         if(row.assinatura_status==='PENDENTE')await model.activate(c,row.id_assinatura,confirmedAt,row.periodicidade);
-        else if(row.assinatura_status==='ATIVA'&&row.data_vencimento)await model.extend(c,row.id_assinatura,row.data_vencimento,cycleEnd(row.data_vencimento,row.periodicidade));
+        else if(row.assinatura_status==='ATIVA'&&row.data_vencimento){
+            const change=snapshot(row.alteracao_programada);
+            if(change?.effectiveOn===row.data_vencimento){
+                if(Number(row.outros_pendentes)===0){
+                    await model.applyScheduledChange(c,row.id_assinatura,change,cycleEnd(row.data_vencimento,change.period));
+                    await identity.audit(c,'SUBSCRIPTION.CHANGE_APPLIED',row.id_assinatura,{});
+                }
+            }else await model.extend(c,row.id_assinatura,row.data_vencimento,cycleEnd(row.data_vencimento,row.periodicidade));
+        }
         if(billing)await billing.onPaid(c,row);
     }
     async function redeem(id,context){return identity.transaction(async c=>{
@@ -148,5 +187,5 @@ export function createPlanService({model,identity,billing,contracts,agePolicy=cr
         await identity.audit(c,'SUBSCRIPTION.COMBO_REQUESTED',redemptionId,context);
         return {id:redemptionId,subscriptionId:idString(id),comboId:contract.freeComboId,competence,status:'SOLICITADO'};
     },context);}
-    return {plans,get,create,patch,archive,adminCreateSubscription,adminEditSubscription,summary,subscribe,mySubscriptions,ownSubscription,canSettle,activate,redeem};
+    return {plans,get,create,patch,archive,adminCreateSubscription,adminEditSubscription,summary,subscribe,mySubscriptions,ownSubscription,current,schedule,canSettle,activate,redeem};
 }

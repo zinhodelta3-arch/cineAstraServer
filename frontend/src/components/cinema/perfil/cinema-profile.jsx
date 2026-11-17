@@ -8,6 +8,7 @@ import ProfileOverview from './profile-overview';
 import ProfileRecords from './profile-records';
 import PasswordModal from './password-modal';
 import Modal from './modal';
+import AccountDeletion from './account-deletion';
 import './cinema-profile.css';
 function ProfileContent({session}){
  const {resource,saveProfile,notice}=useCinemaProfile(),profile=resource.data;
@@ -29,7 +30,8 @@ function ProfileContent({session}){
       <Button onClick={session.logout} disabled={session.pending}>Confirmar saída</Button>
       {session.message&&<p role="alert" className="text-sm">{session.message}</p>}
      </Modal>
-    </div>{session.message&&<p role="alert" className="text-sm">{session.message}</p>}</section>
+    </div>{session.message&&<p role="alert" className="text-sm">{session.message}</p>}
+    {session.user.role==='CLIENTE'&&<AccountDeletion />}</section>
    </aside>
   </div>
  </>;

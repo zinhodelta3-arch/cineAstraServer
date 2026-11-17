@@ -17,11 +17,12 @@ export default function useCinemaPlans(){
  const [offer,setOffer]=useState(null),[accepted,setAccepted]=useState(false),[error,setError]=useState(''),[pending,setPending]=useState(false),[result,setResult]=useState(null);
  const [mine,setMine]=useState({items:[],loading:false,error:null,cursor:null}),[revision,setRevision]=useState(0);
  const [cancelNotice,setCancelNotice]=useState(null);
+ const [change,setChange]=useState(null);
  const lock=useRef(false),generation=useRef(0),keys=useRef(new Map()),listLock=useRef(false);
  const identity=useRef(userId);identity.current=userId;
  const client=session.user?.role==='CLIENTE';
  useEffect(()=>{
-  generation.current++;setOffer(null);setAccepted(false);setResult(null);setError('');setCancelNotice(null);
+  generation.current++;setOffer(null);setAccepted(false);setResult(null);setError('');setCancelNotice(null);setChange(null);
  },[userId]);
  useEffect(()=>{
   if(!client)return;
@@ -47,9 +48,10 @@ export default function useCinemaPlans(){
  const changeBilling=value=>{if(lock.current)return;setBilling(value);reset();};
  const choose=id=>{if(lock.current)return;setSelected(id);reset();document.getElementById('assinar')?.scrollIntoView({behavior:'smooth',block:'start'});};
  const chooseDraft=draft=>{if(lock.current)return;setBilling(draft.period==='ANUAL'?'annual':'monthly');setAutoRenew(false);choose(draft.planId);};
+ const startChange=item=>{if(lock.current)return;setChange(item);setBilling(item.period==='ANUAL'?'annual':'monthly');setAutoRenew(item.autoRenew);choose(item.planId);};
  const selectedPlan=list.items.find(plan=>plan.id===selected);
  const selectedPrice=selectedPlan?.[billing==='monthly'?'monthlyPrice':'annualPrice'];
- const input={planId:selected,period:billing==='monthly'?'MENSAL':'ANUAL',autoRenew,divisionMode:'TITULAR_PAGA'};
+ const input={planId:selected,period:billing==='monthly'?'MENSAL':'ANUAL',autoRenew,divisionMode:change?.divisionMode??'TITULAR_PAGA'};
  const review=async()=>{
   if(lock.current||!(Number(selectedPrice)>0)||!client)return;
   lock.current=true;setPending(true);reset();const version=generation.current;
@@ -67,6 +69,14 @@ export default function useCinemaPlans(){
   // Reuse the same key for retries, including after a reload in this tab.
   const storageKey='cineastra-plan:'+userId+':'+offer.offerHash;
   try{
+   if(change){
+    const data=await request('change',{...body,subscriptionId:change.id});
+    if(version===generation.current){
+     setChange(null);reset();setRevision(v=>v+1);
+     setCancelNotice(`Mudança programada para ${data.scheduledChange.effectiveOn.split('-').reverse().join('/')}. O novo plano entra em vigor após o pagamento do próximo ciclo.`);
+    }
+    return;
+   }
    let key=keys.current.get(storageKey);
    if(!key){try{key=sessionStorage.getItem(storageKey);}catch{/* Memory fallback. */}}
    if(!key)key=operationKey();
@@ -80,7 +90,8 @@ export default function useCinemaPlans(){
  };
  const plans=list.items.map(plan=>{
   const price=billing==='monthly'?plan.monthlyPrice:plan.annualPrice;
-  return {...plan,icon:Ticket,badge:'Publicado',tagline:plan.description,benefits:planBenefits(plan),available:Number(price)>0,priceLabel:planMoney(Number(price)>0?price:null)};
+  const badge=plan.maxMembers===1?'Individual':plan.maxMembers===2?'Duo':'Família';
+  return {...plan,icon:Ticket,badge,tagline:plan.description,benefits:planBenefits(plan),available:Number(price)>0,priceLabel:planMoney(Number(price)>0?price:null)};
  });
  const cancel=async subscriptionId=>{
   if(lock.current||!client)return false;
@@ -93,6 +104,7 @@ export default function useCinemaPlans(){
    setCancelNotice(data.refundRequestRequired?'Assinatura cancelada. A solicitação de reembolso ainda precisa ser registrada.':data.refund?'Assinatura cancelada. A solicitação de reembolso foi registrada.':'Assinatura cancelada.');
    setRevision(v=>v+1);
    window.dispatchEvent(new Event(STREAMING_ACCESS_CHANGE_EVENT));
+   window.dispatchEvent(new Event('cineastra:subscription-change'));
    return true;
   }catch(e){if(identity.current===userId)setError(e.message);return false;}
   finally{lock.current=false;setPending(false);}
@@ -101,6 +113,6 @@ export default function useCinemaPlans(){
   hero:{showPlans:()=>document.getElementById('planos')?.scrollIntoView({behavior:'smooth'})},
   catalog:{list,plans,billing,setBilling:changeBilling,periodFor:billing==='monthly'?'/mês':'/ano',startSubscription:choose,pending},
   subscription:{selectedPlanAvailable:Number(selectedPrice)>0,selectedPlanName:selectedPlan?.name,planNames:Object.fromEntries(plans.map(plan=>[plan.id,plan.name])),selected,billing,autoRenew,changeAutoRenew:value=>{if(!lock.current){setAutoRenew(value);reset();}},offer,accepted,setAccepted,error,pending,result,review,subscribe,session,chooseDraft,
-   cancel,cancelNotice,mine:client?{...mine,loadMore,retry:()=>setRevision(v=>v+1)}:null}
+   cancel,cancelNotice,change,startChange,resetChange:()=>{setChange(null);reset();},mine:client?{...mine,loadMore,retry:()=>setRevision(v=>v+1)}:null}
  };
 }

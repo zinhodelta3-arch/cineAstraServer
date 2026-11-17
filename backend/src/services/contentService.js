@@ -27,6 +27,7 @@ export function createContentService({model,identity,simulated=false}){
         get:slug=>identity.transaction(c=>get(c,slug)),
         async publish(input,context){return identity.transaction(async c=>{const actor=await identity.activeActor(c,context);if(actor.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();let id;try{id=await model.publish(c,input,actor.id_usuario);}catch(error){if(error.code==='ER_DUP_ENTRY')throw new ApiError('Versão já publicada',409,null,'CONTENT_VERSION_EXISTS');throw error;}await identity.audit(c,'CONTENT.PUBLISHED',id,context);return {id,slug:input.slug,version:input.version};},context);},
         preview:(input,quote)=>identity.transaction(c=>contract(c,input,quote)),
+        simulatedTermsVersion:simulated?simulatedDocuments.terms.version:null,
         contract,
         planContract,
         save:(c,orderId,offerHash,snapshot)=>model.saveContract(c,orderId,offerHash,snapshot),

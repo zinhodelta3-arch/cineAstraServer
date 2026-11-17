@@ -13,7 +13,7 @@ import { DEFAULT_APPEARANCE } from "@/lib/themes";
 import { CartProvider } from "@/components/cart/cart-provider";
 
 
-import { AccessibilityMenu } from "@/components/accessibility-menu"
+import { GlobalAccessibilityMenu } from "@/components/accessibility-menu"
 
 
 const geistSans = Geist({
@@ -64,7 +64,7 @@ export default function RootLayout({ children }) {
         <AppearanceInitializer />
         <ThemeProvider>
           <CartProvider>
-            <AccessibilityMenu />
+            <GlobalAccessibilityMenu />
             {children}
           </CartProvider>
         </ThemeProvider>

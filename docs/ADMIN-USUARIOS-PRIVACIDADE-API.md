@@ -53,9 +53,10 @@ Erros: 401 para sessão ausente/inválida, 403 para papel não ADMIN, 422 para f
 - `GET /api/admin/users/{id}`: detalhe do usuário.
 - `POST /api/admin/users`: criação administrativa de contas conforme regras existentes.
 - `PATCH /api/admin/users/{id}/access`: alteração de acesso; preserva proteção do último administrador e restrições de reativação.
-- `GET /api/admin/privacy-requests/{id}`: detalhe/status da solicitação.
+- `GET /api/admin/privacy-requests/{id}` retorna o detalhe e as pendências comerciais de uma solicitação aberta.
+- `PATCH /api/admin/privacy-requests/{id}` permite ao ADMIN registrar análise, recusa ou conclusão com justificativa. A conclusão exige que a conta esteja sem pendências comerciais.
 
-Não foi criado endpoint de aprovação/exclusão definitiva de dados. A fila permite encontrar as solicitações; uma futura decisão automatizada depende de regras de retenção e execução próprias. CAPTCHA e 2FA permanecem com as flags atuais.
+O cliente confirma a solicitação com a senha da conta e acompanha o protocolo pelo próprio perfil. A conta fica ativa durante a análise. A aprovação anonimiza os dados de cadastro, remove dados de perfil e revoga a autenticação. Os registros comerciais são preservados, sem descarte automático.
 
 ## Arquivos e validação
 

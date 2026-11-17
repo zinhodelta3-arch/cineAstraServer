@@ -1,14 +1,15 @@
 import useStreamHero from "@/hooks/streaming/home/use-stream-hero";
 import Image from "next/image";
-import { Play, Plus, BookmarkCheck, Info } from "lucide-react";
+import { Play, Pause, Plus, BookmarkCheck, Info } from "lucide-react";
 import { ACCENT } from "./data";
 import ResponsiveFilmBanner from "@/components/cinema/filmes/responsive-film-banner";
 import Button from "./button";
 import HeroArrow from "./hero-arrow";
 
 export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggleList }) {
-  const { cur, setCur, go, movie, inList } = useStreamHero(myList, heroes);
+  const { cur, select, go, movie, inList, autoplay, toggleAutoplay } = useStreamHero(myList, heroes);
   if (!movie) return null;
+  const rotationLabel = autoplay ? "Pausar rotação dos destaques" : "Iniciar rotação dos destaques";
 
   return (
     <section id="hero" aria-roledescription="carrossel" className="grain relative min-h-[90vh] bg-background flex items-center pt-28 pb-40 overflow-hidden">
@@ -36,7 +37,7 @@ export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggle
       <HeroArrow dir="next" onClick={() => go(1)} />
 
       <div className="relative z-20 max-w-[1800px] mx-auto px-5 md:px-12 w-full">
-        <div className="max-w-2xl" aria-live="polite">
+        <div className="max-w-2xl" aria-live={autoplay ? "off" : "polite"}>
           <div className="f-display text-xl tracking-[0.2em] text-foreground/90 mb-1">
             <span className={`${ACCENT} font-black`}>CINEASTRA</span> STREAMING
           </div>
@@ -57,6 +58,10 @@ export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggle
               {inList ? "Na minha lista" : "Minha lista"}
             </Button>
             <Button size="lg" variant="ghost" onClick={() => onSelect(movie)}><Info className="size-5 mr-2" aria-hidden="true" /> Mais informações</Button>
+            {heroes.length > 1 && <Button size="icon" className="min-h-11 min-w-11" variant="outline" onClick={toggleAutoplay}
+              aria-label={rotationLabel} title={rotationLabel}>
+              {autoplay ? <Pause size={19} aria-hidden="true" /> : <Play size={19} aria-hidden="true" />}
+            </Button>}
           </div>
         </div>
       </div>
@@ -64,7 +69,7 @@ export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggle
       <div className="absolute z-20 bottom-40 right-0 flex items-center gap-4">
         <div className="flex gap-2">
           {heroes.map((m, i) => (
-            <button key={m.id} type="button" aria-label={`Ir para ${m.title}`} aria-current={i === cur} onClick={() => setCur(i)} className={`h-1.5 rounded-full transition-all outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${i === cur ? "w-8 bg-primary" : "w-4 bg-foreground/30 hover:bg-foreground/60"}`} />
+            <button key={m.id} type="button" aria-label={`Ir para ${m.title}`} aria-current={i === cur} onClick={() => select(i)} className={`h-1.5 rounded-full transition-all outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${i === cur ? "w-8 bg-primary" : "w-4 bg-foreground/30 hover:bg-foreground/60"}`} />
           ))}
         </div>
         <div className="bg-background/60 border-l-4 border-foreground/70 pl-3 pr-8 py-1.5 text-sm font-bold text-foreground">

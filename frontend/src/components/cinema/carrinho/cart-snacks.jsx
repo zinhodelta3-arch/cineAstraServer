@@ -1,12 +1,18 @@
 import Link from 'next/link';
+import { useState } from 'react';
 import { Plus, Popcorn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartSnacks } from '@/hooks/cinema/carrinho/use-cart-snacks';
 import ProductPrice from '../astrasnack/product-price';
+import ProductImage from '../astrasnack/product-image';
+import ListStatus from '../home/list-status';
 
 export default function CartSnacks({ session, coupon, enabled }) {
-  const { localId, products, add, snacks, combos, themed, tickets, selectedSession, setSelectedSession, pending, error, notice } = useCartSnacks(session, coupon, enabled);
+  const { localId, products, catalog, add, snacks, combos, themed, tickets, selectedSession, setSelectedSession, pending, error, notice } = useCartSnacks(session, coupon, enabled);
+  const [view,setView]=useState('suggestions');
   if (!localId) return null;
+  const shown = view==='suggestions' ? products : catalog[view];
+  const page = {inputs:snacks,combos,themed}[view];
   const loading = snacks.loading || combos.loading || themed.loading;
   const failed = snacks.error || combos.error || themed.error;
 
@@ -19,19 +25,25 @@ export default function CartSnacks({ session, coupon, enabled }) {
         {tickets.map(ticket=><option key={ticket.sourceId} value={ticket.sourceId}>{ticket.description || ticket.name} · sessão #{ticket.sourceId}</option>)}
       </select>
     </label>}
-    {loading && <p className="mt-3 text-sm" role="status">Consultando o catálogo da unidade…</p>}
-    {failed && <div className="mt-3">
+    <label className="mt-3 grid gap-1 text-sm">Exibir no carrinho
+      <select className="rounded-md border border-border bg-background px-3 py-2" value={view} onChange={event=>setView(event.target.value)}>
+        <option value="suggestions">Sugestões</option><option value="inputs">Todos os produtos avulsos</option>
+        <option value="combos">Todos os combos</option><option value="themed">Combos temáticos da sessão</option>
+      </select>
+    </label>
+    {view==='suggestions' && loading && <p className="mt-3 text-sm" role="status">Consultando o catálogo da unidade…</p>}
+    {view==='suggestions' && failed && <div className="mt-3">
       <p className="text-sm text-destructive" role="alert">Parte do catálogo está indisponível.</p>
       <Button type="button" size="sm" variant="outline" onClick={() => { for(const list of [snacks,combos,themed])if(list.error)list.retry(); }}>Tentar novamente</Button>
     </div>}
-    {!loading && !failed && !products.length && <p className="mt-3 text-sm text-muted-foreground">Nenhum complemento disponível nesta unidade agora.</p>}
-    {products.length > 0 && !session.loading && !session.user && <Link href="/auth/login" className="mt-3 inline-block text-sm font-semibold text-primary underline">Entrar para adicionar</Link>}
+    {view==='suggestions' && !loading && !failed && !shown.length && <p className="mt-3 text-sm text-muted-foreground">Nenhum complemento disponível nesta unidade agora.</p>}
+    {shown.length > 0 && !session.loading && !session.user && <Link href="/auth/login" className="mt-3 inline-block text-sm font-semibold text-primary underline">Entrar para adicionar</Link>}
     {error && <p className="mt-3 text-sm text-destructive" role="alert">{error}</p>}
     {notice && <p className="mt-3 text-sm font-semibold text-primary" role="status">{notice}</p>}
-    {products.length > 0 && <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-      {products.map(product => <li className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-background p-3" key={product.id}>
+    {shown.length > 0 && <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+      {shown.map(product => <li className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-background p-3" key={product.id}>
         <div className="flex min-w-0 items-start gap-3">
-          {product.image && <img src={product.image} alt="" loading="lazy" className="size-12 shrink-0 rounded-md object-cover" />}
+          <ProductImage src={product.image} className="size-12 shrink-0 rounded-md" />
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">{product.category}</p>
             <h3 className="break-words text-sm font-semibold">{product.name}</h3>
@@ -46,5 +58,6 @@ export default function CartSnacks({ session, coupon, enabled }) {
         </div>
       </li>)}
     </ul>}
+    {page && <ListStatus list={page} empty="Nenhum item disponível nesta categoria." more="Carregar mais itens" />}
   </section>;
 }

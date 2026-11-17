@@ -1,26 +1,28 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import useStreamingHome from "@/hooks/streaming/home/use-streaming-home";
 import useAstraSpin from "@/hooks/streaming/astra-spin/use-astra-spin";
 import { buildCatalog } from "@/hooks/streaming/astra-spin/astra-spin-engine";
 import Button from "./button";
 import SectionTitle from "./section-title";
-import PlayerModal from "./player-modal";
-import DetailsModal from "./details-modal";
 import ListDrawer from "./list-drawer";
 import CinemaStyles from "./cinema-styles";
 import AstraSpinStyles from "./astra-spin-styles";
 import AstraSpinReel from "./astra-spin-reel";
 import AstraSpinTicket from "./astra-spin-ticket";
 import AstraSpinControls from "./astra-spin-controls";
+import { useStreamingDetails } from "./streaming-details-provider";
 
 export default function AstraSpinStream() {
+  const router = useRouter();
+  const openDetails = useStreamingDetails();
+  const openFilm = (movie) => router.push("/streaming/assistir/filme/" + encodeURIComponent(movie.id) + "?reproduzir=1");
   const {
-    ready, error, retry, actionError, profile, history, catalog: films, popular, recent, premieres, explore, genres: availableGenres, favoriteIds, accessByFilm, updateProgress,
-    playing, setPlaying, details, setDetails, myList, isListOpen, toggleList,
-    closePlayer, closeDetails, openList, closeList,
+    ready, error, retry, actionError, history, popular, recent, premieres, explore, genres: availableGenres, favoriteIds,
+    myList, isListOpen, toggleList, openList, closeList,
   } = useStreamingHome();
 
   const catalog = useMemo(() => buildCatalog(popular, recent, explore, premieres), [popular, recent, explore, premieres]);
@@ -84,8 +86,8 @@ export default function AstraSpinStream() {
                 <AstraSpinTicket
                   result={result}
                   inList={favoriteIds.has(result.entry.movie.id)}
-                  onPlay={setPlaying}
-                  onDetails={setDetails}
+                  onPlay={openFilm}
+                  onDetails={(movie) => openDetails(movie, { inList: favoriteIds.has(movie.id), onToggleList: toggleList })}
                   onToggleList={toggleList}
                   onRespin={spin}
                 />
@@ -99,19 +101,6 @@ export default function AstraSpinStream() {
       </section>
 
       {/* MODAIS & LISTA */}
-      {playing && profile && <PlayerModal movie={playing} profileId={profile.id} access={accessByFilm[playing.id]} onProgress={updateProgress} onClose={closePlayer} />}
-      {details && (
-        <DetailsModal
-          key={details.id}
-          movie={details}
-          onClose={closeDetails}
-          onPlay={setPlaying}
-          inList={favoriteIds.has(details.id)}
-          onToggleList={toggleList}
-          catalog={films}
-        />
-      )}
-
       {myList.length > 0 && !isListOpen && (
         <div className="fixed bottom-6 right-6 z-40">
           <Button size="lg" onClick={openList} className="shadow-2xl gap-2">
@@ -121,7 +110,7 @@ export default function AstraSpinStream() {
         </div>
       )}
 
-      {isListOpen && <ListDrawer items={myList} onRemove={toggleList} onPlay={setPlaying} onClose={closeList} />}
+      {isListOpen && <ListDrawer items={myList} onRemove={toggleList} onPlay={openFilm} onClose={closeList} />}
     </div>
   );
 }

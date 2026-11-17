@@ -17,7 +17,10 @@ const example = { id_sessao: '1', id_filme: '1', id_sala: '2', id_local: '1', da
 spec.components.schemas.Session = { ...object({ id_sessao: id, ...fields, id_local: id, data_fim: date, status }), example };
 const seatCount = { type: 'integer', minimum: 0 };
 Object.assign(spec.components.schemas.Session.properties, {
-    activeSeats: { ...seatCount, description: 'Assentos ativos. Presente na listagem pública com filmId.' },
+    titulo_filme: { type: 'string', nullable: true },
+    imagem_filme: { type: 'string', nullable: true, description: 'Capa do filme na listagem pública filtrada por localId e date.' },
+    classificacao_filme: { type: 'string', nullable: true, description: 'Classificação do filme na listagem pública filtrada por localId e date.' },
+    activeSeats: { ...seatCount, description: 'Assentos ativos. Presente com filmId ou localId e date na consulta pública, e com roomId na consulta administrativa.' },
     availableSeats: { ...seatCount, description: 'Assentos ativos sem venda confirmada ou reserva vigente no instante da consulta.' }
 });
 spec.components.schemas.SessionCreate = { ...object(fields, ['id_filme','id_sala','data','horario_inicio','horario_fim','preco_inteira']), example: Object.fromEntries(Object.entries(example).filter(([key]) => key in fields)) };
@@ -37,7 +40,7 @@ for (const r of sessionOperations) {
         op.parameters.push({ name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
             { name: 'cursor', in: 'query', schema: id }, { name: 'localId', in: 'query', schema: id }, { name: 'date', in: 'query', schema: date },
             { name: 'startFrom', in: 'query', schema: time }, { name: 'startUntil', in: 'query', schema: time });
-        if (r.admin) op.parameters.push({ name: 'status', in: 'query', schema: status });
+        if (r.admin) op.parameters.push({ name: 'status', in: 'query', schema: status }, { name: 'roomId', in: 'query', schema: id });
         else {
             op.parameters.push({ name: 'filmId', in: 'query', schema: id });
             op.description += ' Com filmId, lista sessões futuras do filme e informa a disponibilidade no instante da consulta. O checkout revalida a disponibilidade.';

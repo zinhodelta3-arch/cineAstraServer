@@ -4,7 +4,7 @@ import { idString } from '../utils/dto.js';
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'TEAM_CONFLICT');
 const activeSession = row => ['AGENDADA','EM_CARTAZ'].includes(row?.status ?? row?.sessao_status);
-export const teamDto = row => ({ id_equipe: idString(row.id_equipe), id_supervisor: idString(row.id_supervisor), id_sessao: idString(row.id_sessao), nome: row.nome, status: row.status, ...(Object.hasOwn(row, 'minha_funcao') ? { myFunction: row.minha_funcao ?? null } : {}) });
+export const teamDto = row => ({ id_equipe: idString(row.id_equipe), id_supervisor: idString(row.id_supervisor), id_sessao: idString(row.id_sessao), nome: row.nome, status: row.status, sessionStatus: row.sessao_status ?? null, ...(Object.hasOwn(row, 'minha_funcao') ? { myFunction: row.minha_funcao ?? null } : {}) });
 export const memberDto = row => ({ id_equipe_membro: idString(row.id_equipe_membro), id_equipe: idString(row.id_equipe), id_usuario: idString(row.id_usuario), funcao: row.funcao ?? null, data_entrada: row.data_entrada, status: row.status });
 export const entryDto = row => ({ id_entrada: idString(row.id_entrada), id_equipe: idString(row.id_equipe), id_usuario: idString(row.id_usuario), id_emissor: idString(row.id_emissor), tipo: row.tipo, funcao_proposta: row.funcao_proposta ?? null, status: row.status, criado_em: row.criado_em, decidido_em: row.decidido_em ?? null });
 export function createTeamService({ model, identity, notifications }) {
@@ -81,6 +81,7 @@ export function createTeamService({ model, identity, notifications }) {
                 const member = await model.memberByUser(id, u.id);
                 const invitation = u.tipo === 'COLABORADOR' && await model.pendingEntry(id, u.id);
                 if (!(u.tipo === 'COLABORADOR' && (member?.status === 'ATIVO' || invitation?.tipo === 'CONVITE'))) throw ApiError.acessoNegado();
+                return teamDto({ ...team, minha_funcao: member?.status === 'ATIVO' ? member.funcao : null });
             }
             return teamDto(team);
         },
@@ -203,7 +204,9 @@ export function createTeamService({ model, identity, notifications }) {
                 const entry = found(await model.entry(id, entryId, c, true));
                 if (entry.status !== 'PENDENTE') throw conflict('Entrada já decidida');
                 const request = entry.tipo === 'SOLICITACAO';
-                if (request ? !await manager(u, team, c) : u.id !== idString(entry.id_usuario) || u.tipo !== 'COLABORADOR') throw ApiError.acessoNegado();
+                if (request) {
+                    if (!await manager(u, team, c) || u.tipo !== 'ADMIN' && u.id !== idString(team.id_supervisor)) throw ApiError.acessoNegado();
+                } else if (u.id !== idString(entry.id_usuario) || u.tipo !== 'COLABORADOR') throw ApiError.acessoNegado();
                 if (request && input.decision === 'ACEITAR' && !input.funcao || input.funcao && !(request && input.decision === 'ACEITAR')) throw ApiError.validacao('Função inválida para esta decisão');
                 if (input.decision === 'ACEITAR') {
                     await eligibleUser(c, entry.id_usuario, 'COLABORADOR', true);
@@ -212,6 +215,13 @@ export function createTeamService({ model, identity, notifications }) {
                     await model.activateMember(c, id, entry.id_usuario, request ? input.funcao : entry.funcao_proposta, previous);
                 }
                 await model.decideEntry(c, id, entryId, input.decision === 'ACEITAR' ? 'ACEITA' : 'RECUSADA');
+                if (request) {
+                    const accepted = input.decision === 'ACEITAR';
+                    await notifications.emit(c, { recipientId: idString(entry.id_usuario),
+                        title: accepted ? 'Solicitação de ingresso aprovada' : 'Solicitação de ingresso recusada',
+                        message: `Sua solicitação para a equipe ${team.nome} foi ${accepted ? 'aprovada' : 'recusada'}.`,
+                        type: 'TEAM_JOIN_DECISION', dedupeKey: `team-join-decision:${entryId}` });
+                }
                 await identity.audit(c, 'TEAM.ENTRY_DECIDED', entryId, context);
                 return entryDto(found(await model.entry(id, entryId, c)));
             }, context);

@@ -9,18 +9,20 @@ import HeroSection from "./hero-section";
 import Thumb from "./thumb";
 import Top10Card from "./top10-card";
 import { useRouter } from "next/navigation";
-import DetailsModal from "./details-modal";
 import ListDrawer from "./list-drawer";
 import CinemaStyles from "./cinema-styles";
+import { useStreamingDetails } from "./streaming-details-provider";
 
 export default function CineAstraStream() {
-  const { ready, error, actionError, setActionError, retry, catalog, genreRows, popular, heroes, recent, continuing, premieres, soon, progress, myList, favoriteIds, toggleList, details, setDetails, isListOpen, closeDetails, openList, closeList } = useStreamingHome();
+  const { ready, error, actionError, setActionError, retry, genreRows, popular, heroes, recent, continuing, premieres, soon, progress, myList, favoriteIds, toggleList, isListOpen, openList, closeList } = useStreamingHome();
 
   const router = useRouter();
-  const setPlaying = (movie) => router.push(`/streaming/assistir/filme/${encodeURIComponent(movie.id)}`);
+  const openDetails = useStreamingDetails();
+  const selectMovie = (movie) => openDetails(movie, { inList: favoriteIds.has(movie.id), onToggleList: toggleList, progress: progress[movie.id] });
+  const setPlaying = (movie) => router.push(`/streaming/assistir/filme/${encodeURIComponent(movie.id)}?reproduzir=1`);
 
   const thumb = (m) => (
-    <Thumb key={m.id} movie={m} onSelect={setDetails} onPlay={setPlaying} inList={favoriteIds.has(m.id)} onToggleList={toggleList} progress={progress[m.id]} />
+    <Thumb key={m.id} movie={m} onSelect={selectMovie} onPlay={setPlaying} inList={favoriteIds.has(m.id)} onToggleList={toggleList} progress={progress[m.id]} />
   );
 
   return (
@@ -35,7 +37,7 @@ export default function CineAstraStream() {
     <HeroSection
       heroes={heroes}
       onPlay={setPlaying}
-      onSelect={setDetails}
+      onSelect={selectMovie}
       myList={myList}
       onToggleList={toggleList}
       />
@@ -45,7 +47,7 @@ export default function CineAstraStream() {
         <Row title="Populares na CineAstra" emptyMessage={!popular.length ? "Os destaques de popularidade aparecerão aqui quando houver dados disponíveis." : undefined}>{popular.map((m) => thumb(m))}</Row>
         <Row title="Assistidos recentemente" emptyMessage={!recent.length ? "Seu histórico de filmes aparecerá aqui." : undefined}>{recent.map((m) => thumb(m))}</Row>
         <Row title="Mais assistidos na CineAstra" emptyMessage={!popular.length ? "O ranking aparecerá aqui conforme os dados de popularidade estiverem disponíveis." : undefined}>
-          {popular.slice(0, 10).map((m, i) => <Top10Card key={m.id} movie={m} rank={i + 1} onSelect={setDetails} />)}
+          {popular.slice(0, 10).map((m, i) => <Top10Card key={m.id} movie={m} rank={i + 1} onSelect={selectMovie} />)}
         </Row>
         <Row title="Lançamentos" emptyMessage={!premieres.length ? "Novos títulos aparecerão aqui em breve." : undefined}>{premieres.map((m) => thumb(m))}</Row>
         <Row title="Valem a espera" emptyMessage={!soon.length ? "Aguarde as próximas novidades do catálogo." : undefined}>{soon.map((m) => thumb(m))}</Row>
@@ -59,19 +61,6 @@ export default function CineAstraStream() {
       </div>
 
       {/* MODAIS & LISTA */}
-      {details && (
-        <DetailsModal
-          key={details.id}
-          movie={details}
-          onClose={closeDetails}
-          onPlay={setPlaying}
-          inList={favoriteIds.has(details.id)}
-          onToggleList={toggleList}
-          catalog={catalog}
-          progress={progress}
-        />
-      )}
-
       {myList.length > 0 && !isListOpen && (
         <div className="fixed bottom-6 right-6 z-40">
           <Button size="lg" onClick={openList} className="shadow-2xl gap-2">

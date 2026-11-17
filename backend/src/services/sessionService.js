@@ -22,6 +22,7 @@ export function sessionDto(row) {
         titulo_filme: row.titulo_filme ?? null, nome_sala: row.nome_sala ?? null, nome_local: row.nome_local ?? null,
         data: row.data, data_fim: day(end), horario_inicio: row.horario_inicio, horario_fim: row.horario_fim,
         idioma: row.idioma, preco_inteira: moneyString(row.preco_inteira), status: row.status,
+        ...(Object.hasOwn(row, 'imagem_filme') && { imagem_filme: row.imagem_filme, classificacao_filme: row.classificacao_filme }),
         ...(row.assentos_ativos!=null && { activeSeats:Number(row.assentos_ativos), availableSeats:Number(row.assentos_disponiveis) }) };
 }
 export function createSessionService({ model, identity }) {
@@ -106,7 +107,7 @@ export function createSessionService({ model, identity }) {
             }, context);
         },
         async seats(id) {
-            const rows=await model.seatAvailability(id),session=found(rows[0]);
+            const rows=await model.seatAvailability(id,undefined,{futureOnly:true}),session=found(rows[0]);
             return {sessionId:idString(session.id_sessao),roomId:idString(session.id_sala),locationId:idString(session.id_local),
                 seats:rows.filter(row=>row.id_assento!=null).map(row=>({seatId:idString(row.id_assento),row:row.fileira,
                     number:row.numero,type:row.tipo,availability:row.disponibilidade}))};

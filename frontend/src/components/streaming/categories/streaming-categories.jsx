@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useRef } from "react";
 import { ArrowLeft, ArrowUpRight, Film } from "lucide-react";
 import useStreamingCategories from "@/hooks/streaming/categories/use-streaming-categories";
+import { useLocalPagination } from "@/hooks/use-paginated-list";
 import PosterTile from "@/components/streaming/home/poster-tile";
-import DetailsModal from "@/components/streaming/home/details-modal";
+import { useStreamingDetails } from "@/components/streaming/home/streaming-details-provider";
+import TablePagination from "@/components/ui/table-pagination";
 import CinemaStyles from "@/components/streaming/home/cinema-styles";
 import Button from "@/components/streaming/home/button";
 import styles from "./streaming-categories.module.css";
 
 export default function StreamingCategories() {
-  const { ready, error, retry, categories, category, genreId, invalidCategory, films, catalog,
-    details, setDetails, closeDetails, favoriteIds, toggleList, progress, playFilm, actionError } = useStreamingCategories();
+  const { ready, error, retry, catalogSize, categories, category, genreId, invalidCategory, films,
+    favoriteIds, toggleList, progress, actionError } = useStreamingCategories();
 
   return <main className={styles.page}>
     <CinemaStyles />
@@ -27,28 +30,52 @@ export default function StreamingCategories() {
     {ready && <>
       <nav aria-label="Categorias de filmes" className={styles.categories}>
         <Link href="/streaming/categorias" className={styles.category} aria-current={!genreId ? "page" : undefined}>
-          <Film size={20} aria-hidden="true" /><strong>Todos os filmes</strong><span>{catalog.length} títulos</span><ArrowUpRight size={16} aria-hidden="true" />
+          <Film size={20} aria-hidden="true" /><strong>Todos os filmes</strong><span>{catalogSize} {catalogSize === 1 ? "título" : "títulos"}</span><ArrowUpRight size={16} aria-hidden="true" />
         </Link>
         {categories.map((item) => <Link key={item.id} href={`/streaming/categorias?genero=${encodeURIComponent(item.id)}`} scroll={false}
           className={styles.category} aria-current={genreId === item.id ? "page" : undefined}>
           <Film size={20} aria-hidden="true" /><strong>{item.name}</strong><span>{item.count} {item.count === 1 ? "filme" : "filmes"}</span><ArrowUpRight size={16} aria-hidden="true" />
         </Link>)}
       </nav>
-      <section aria-labelledby="category-results" className={styles.results}>
-        <div className={styles.resultsHeading}>
-          <h2 id="category-results" className="f-display">{invalidCategory ? "Categoria não encontrada" : category?.nome || "Todos os filmes"}</h2>
-          <p role="status" aria-live="polite">{films.length} {films.length === 1 ? "filme disponível" : "filmes disponíveis"}</p>
-        </div>
-        {actionError && <p role="alert" className="mb-6 text-destructive">{actionError}</p>}
-        {films.length ? <div className={styles.films}>
-          {films.map((movie) => <PosterTile key={movie.id} movie={movie} onSelect={setDetails} inList={favoriteIds.has(movie.id)} />)}
-        </div> : <div className={styles.message}>
-          <p>{invalidCategory ? "Escolha uma das categorias acima para continuar." : "Nenhum filme nesta categoria no momento."}</p>
-          <Link href="/streaming/categorias" className="text-primary underline">Ver todos os filmes</Link>
-        </div>}
-      </section>
-      {details && <DetailsModal key={details.id} movie={details} onClose={closeDetails} onPlay={playFilm}
-        inList={favoriteIds.has(details.id)} onToggleList={toggleList} catalog={catalog} progress={progress} />}
+      <CategoryResults key={genreId} {...{ category, genreId, invalidCategory, films, favoriteIds, toggleList, progress, actionError }} />
     </>}
   </main>;
+}
+
+function CategoryResults({ category, genreId, invalidCategory, films, favoriteIds, toggleList, progress, actionError }) {
+  const openDetails = useStreamingDetails();
+  const list = useLocalPagination(films);
+  const heading = useRef(null);
+  const navigate = (change) => (...args) => {
+    change(...args);
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: "start" });
+  };
+  const pagination = {
+    ...list,
+    previousPage: navigate(list.previousPage),
+    nextPage: navigate(list.nextPage),
+    goToPage: navigate(list.goToPage),
+    setPageSize: navigate(list.setPageSize),
+  };
+
+  return <section aria-labelledby="category-results" className={styles.results}>
+    <div className={styles.resultsHeading}>
+      <h2 ref={heading} tabIndex={-1} id="category-results" className={`f-display ${styles.resultsTitle}`}>
+        {invalidCategory ? "Categoria não encontrada" : category?.nome || "Todos os filmes"}
+      </h2>
+      <p role="status">{films.length} {films.length === 1 ? "filme disponível" : "filmes disponíveis"}</p>
+    </div>
+    {actionError && <p role="alert" className="mb-6 text-destructive">{actionError}</p>}
+    {films.length ? <>
+      <div className={styles.films}>
+        {list.items.map((movie) => <PosterTile key={movie.id} movie={movie} inList={favoriteIds.has(movie.id)}
+          onSelect={() => openDetails(movie, { inList: favoriteIds.has(movie.id), onToggleList: toggleList, progress: progress[movie.id] })} />)}
+      </div>
+      {films.length > 20 && <TablePagination list={pagination} noun="filmes" pageSizes={[20, 50]} />}
+    </> : <div className={styles.message}>
+      <p>{invalidCategory ? "Escolha uma das categorias acima para continuar." : genreId ? "Nenhum filme nesta categoria no momento." : "Nenhum filme disponível no catálogo no momento."}</p>
+      {genreId && <Link href="/streaming/categorias" className="text-primary underline">Ver todos os filmes</Link>}
+    </div>}
+  </section>;
 }

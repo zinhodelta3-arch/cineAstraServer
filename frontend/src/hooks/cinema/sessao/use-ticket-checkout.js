@@ -22,15 +22,19 @@ export default function useTicketCheckout() {
       throw new Error("Não foi possível guardar sua seleção neste navegador. Tente novamente.");
     }
     for (const item of items.filter(item => item.purchaseKind === "SESSION" && item.sourceId === order.session.id)) removeItem(item.id, item.type, item.details);
-    for (const { label: seat, seatId } of selectedSeats) {
+    const ticketsBySeat = order.tickets.flatMap(ticket => Array.from({ length: ticket.quantity }, () => ticket));
+    for (const [index, { label: seat, seatId }] of selectedSeats.entries()) {
+      const ticket = ticketsBySeat[index];
+      const halfDeclaration = { meia: "MEIA", nubank: "NUBANK_SIMULADA" }[ticket.id];
       addItem({
         id: `ticket-${order.session.id}-${seatId}`,
         type: "ticket",
-        name: "Ingresso inteira",
+        name: ticket.name,
+        halfDeclaration,
         category: "Ingresso de cinema",
         description: `${order.session.movie.title} • ${order.session.cinema.name}`,
         details: `${order.session.dateLabel} às ${order.session.time} • Assento: ${seat}`,
-        price: order.tickets[0].unitPriceCents / 100,
+        price: ticket.unitPriceCents / 100,
         image: order.session.movie.poster || "",
         purchaseKind: "SESSION", sourceId: order.session.id,
         seatId, localId: order.session.localId,

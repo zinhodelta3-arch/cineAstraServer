@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { randomUUID } from 'node:crypto';
 import { idString, pagination } from '../utils/dto.js';
 import { passwordPolicy, hashPassword } from '../utils/identityCrypto.js';
 import { resources } from '../models/identityModel.js';
@@ -75,7 +76,13 @@ export function createProfileService({ identity, config, providers }) {
             return transaction(async c => {
                 await activeActor(c, context);
                 if (input) { await model.updatePreferences(c, context.actor.id, input); await audit(c, 'IDENTITY.PREFERENCES_CHANGED', context.actor.id, context); }
-                return normalize(await model.preferences(context.actor.id, c) ?? { tema: 'SISTEMA', tamanho_fonte: 'MEDIO', alto_contraste: false, modo_acessibilidade: false, idioma: 'pt-BR', aparencia: 'cineastra' });
+                const row = await model.preferences(context.actor.id, c) ?? { tema: 'SISTEMA', tamanho_fonte: 'MEDIO', alto_contraste: false, modo_acessibilidade: false, idioma: 'pt-BR', aparencia: 'cineastra', avatar: null };
+                const accessibility = typeof row.acessibilidade === 'string' ? JSON.parse(row.acessibilidade) : row.acessibilidade;
+                return {
+                    ...normalize(row),
+                    acessibilidade: { contrast: Number(Boolean(row.alto_contraste)), font: { GRANDE: 2, MUITO_GRANDE: 4 }[row.tamanho_fonte] ?? 0,
+                        line: 0, spacing: 0, motion: false, color: 0, ...accessibility }
+                };
             }, context);
         },
         async export(input, query, context) {
@@ -98,16 +105,19 @@ export function createProfileService({ identity, config, providers }) {
         async deleteAccount(input, context) {
             const snapshot = await passwordSnapshot(context.actor.id, input.password);
             return transaction(async c => {
-                await model.adminGuard(c);
                 const user = await reauthenticate(c, context, input, snapshot);
-                if (user.tipo_usuario === 'ADMIN' && Number((await model.adminCount(c)).total) <= 1) throw new ApiError('Último administrador ativo', 409, null, 'LAST_ADMIN');
+                if (user.tipo_usuario !== 'CLIENTE') throw ApiError.acessoNegado();
                 const request = await model.privacyRequest(c, user.id_usuario);
-                await model.updateUser(c, user.id_usuario, { status: 'INATIVO' });
-                await model.revoke(c, user.id_usuario);
-                await model.invalidateChallenges(c, user.id_usuario);
-                await model.invalidateRecovery(c, user.id_usuario);
                 await audit(c, 'IDENTITY.DELETION_REQUESTED', user.id_usuario, context);
-                return { id: idString(request.id_solicitacao), status: request.status, accountStatus: 'INATIVO', message: 'Conta desativada. Exclusão e retenção aguardam análise de privacidade.' };
+                return { id: idString(request.id_solicitacao), status: request.status, accountStatus: 'ATIVO', message: 'Solicitação recebida. Sua conta segue ativa durante a análise.' };
+            }, context);
+        },
+        async ownPrivacyStatus(context) {
+            return transaction(async c => {
+                const user = await activeActor(c, context);
+                if (user.tipo_usuario !== 'CLIENTE') throw ApiError.acessoNegado();
+                const row = await model.ownPrivacyStatus(c, user.id_usuario);
+                return { request: row ? normalize(row) : null };
             }, context);
         },
         async adminCreate(input, context) {
@@ -192,7 +202,40 @@ export function createProfileService({ identity, config, providers }) {
             }, context);
         },
         async privacyStatus(id, context) {
-            return transaction(async c => { if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); const r = await model.privacyStatus(c, id); if (!r) throw ApiError.naoEncontrado(); return normalize(r); }, context);
+            return transaction(async c => {
+                if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
+                const row = await model.privacyStatus(c, id);
+                if (!row) throw ApiError.naoEncontrado();
+                const open = ['RECEBIDA', 'EM_ANALISE'].includes(row.status);
+                const obligations = open ? await model.privacyObligations(c, row.id_usuario) : {};
+                return { ...normalize(row), pending: Object.keys(obligations).filter(key => Number(obligations[key]) === 1) };
+            }, context);
+        },
+        async privacyDecision(id, input, context) {
+            const replacement = input.status === 'CONCLUIDA' ? {
+                email: `excluida-${randomUUID()}@contas.cineastra.invalid`,
+                hash: await hashPassword(randomUUID(), config.identity.bcryptCost)
+            } : null;
+            return transaction(async c => {
+                if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
+                const existing = await model.privacyStatus(c, id);
+                if (!existing) throw ApiError.naoEncontrado();
+                const customer = await model.user(existing.id_usuario, c, true);
+                if (customer?.tipo_usuario !== 'CLIENTE') throw ApiError.acessoNegado();
+                const row = await model.privacyStatus(c, id, true);
+                if (['CONCLUIDA', 'RECUSADA'].includes(row.status)) throw new ApiError('Solicitação encerrada.', 409, null, 'PRIVACY_CLOSED');
+                if (replacement) {
+                    const pending = await model.privacyObligations(c, customer.id_usuario, true);
+                    if (Object.values(pending).some(value => Number(value) === 1)) throw new ApiError('A conta ainda tem pendências comerciais.', 409, null, 'PRIVACY_PENDING_OBLIGATIONS');
+                    await model.anonymizeCustomer(c, customer.id_usuario, { ...replacement, cpf: 'EXC-' + customer.id_usuario });
+                    await model.revoke(c, customer.id_usuario);
+                    await model.invalidateChallenges(c, customer.id_usuario);
+                    await model.invalidateRecovery(c, customer.id_usuario);
+                }
+                await model.resolvePrivacy(c, id, input.status, input.reason);
+                await audit(c, 'IDENTITY.PRIVACY_DECIDED', id, context);
+                return normalize(await model.privacyStatus(c, id));
+            }, context);
         },
         async children(q,context) {
             return transaction(async c=>{

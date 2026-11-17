@@ -5,6 +5,7 @@ import { ticketTypes, emptySelection, quantityOf, totalOf, updateQuantity, creat
 
 export default function useTicketSelection(session, onContinue) {
   const [selection, setSelection] = useState(() => ({ ...emptySelection(), inteira: session.priceCents != null ? session.seats.length : 0 }));
+  const [halfDeclared, setHalfDeclared] = useState(false);
   const [info, setInfo] = useState(null);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -16,6 +17,7 @@ export default function useTicketSelection(session, onContinue) {
   const remaining = seatCount - count;
   const complete = remaining === 0;
   const selected = types.filter(({ id }) => selection[id] > 0);
+  const needsDeclaration = selected.some(type => type.category === "half");
 
   function change(id, delta) {
     setMessage("");
@@ -23,7 +25,7 @@ export default function useTicketSelection(session, onContinue) {
   }
 
   async function continueOrder() {
-    if (!complete || submitting) return;
+    if (!complete || submitting || (needsDeclaration && !halfDeclared)) return;
     setSubmitting(true);
     setMessage("");
     try {
@@ -38,5 +40,5 @@ export default function useTicketSelection(session, onContinue) {
   const failImage = () => setImageFailed(true);
   const closeInfo = () => setInfo(null);
   const changeInfoOpen = (open) => { if (!open) setInfo(null); };
-  return { types, selection, info, message, submitting, imageFailed, count, total, seatCount, remaining, complete, selected, change, setInfo, continueOrder, failImage, closeInfo, changeInfoOpen };
+  return { halfDeclared, setHalfDeclared, needsDeclaration, types, selection, info, message, submitting, imageFailed, count, total, seatCount, remaining, complete, selected, change, setInfo, continueOrder, failImage, closeInfo, changeInfoOpen };
 }

@@ -68,8 +68,14 @@ export function createPaymentMethodService({model,identity,provider}) {
         }
         const ref=orderId?await model.order(orderId,c):await model.charge(chargeId,c);
         if(!ref||idString(ref.id_usuario)!==idString(a.id_usuario))throw ApiError.naoEncontrado();
+        if(ref.subscription_status&&!['PENDENTE','ATIVA'].includes(ref.subscription_status)&&
+            !(ref.subscription_status==='CANCELADA'&&Number(ref.renewal)===1&&ref.status==='ATRASADO'))throw conflict();
         const method=await own(c,methodId,a.id_usuario,true);
         if(!method.provider||!method.provider_token)throw conflict();
+        if(chargeId&&model.activeChargeIntention){
+            const active=await model.activeChargeIntention(c,chargeId,a.id_usuario);
+            if(active)return {id:idString(active.id_intencao),state:active.estado,amount:String(active.valor)};
+        }
         const amount=orderId?ref.valor_total:chargeTotal(ref);
         if(cents(amount)<=0n||!['AGUARDANDO_PAGAMENTO','PENDENTE','ATRASADO'].includes(ref.status)||(orderId&&ref.checkout_expira_em&&Date.parse(`${String(ref.checkout_expira_em).replace(' ','T')}Z`)<=Date.now()))throw conflict();
         const inserted=await model.insertIntention(c,{owner:a.id_usuario,key,orderId,chargeId,methodId,amount});

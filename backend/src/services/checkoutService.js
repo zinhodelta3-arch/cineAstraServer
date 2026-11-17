@@ -10,10 +10,25 @@ const idSort=(a,b)=>BigInt(a)<BigInt(b)?-1:BigInt(a)>BigInt(b)?1:0;
 const dto=row=>({orderId:idString(row.id_pedido),status:row.status,total:String(row.valor_total),currency:'BRL',expiresAt:new Date(`${String(row.checkout_expira_em).replace(' ','T')}Z`).toISOString(),paymentPath:`/api/payments`});
 
 export function createCheckoutService({model,orders,identity,pricing,inventory,seats,tickets,streaming,contracts}){
+    async function reserveCheckout(c,{input,key,hash,context,actorId,quote,contract,draftOrderId}){
+        const orderId=draftOrderId??await model.createCheckout(c,actorId,key,hash);
+        if(draftOrderId)await model.claimDraft(c,orderId,key,hash);
+        const snapshot=await pricing.commit(c,{orderId,input:pricingInput(input),context,allowDeclaredHalf:true});
+        if(snapshot.total!==quote.total||snapshot.lines.length!==input.lines.length)throw conflict('Cotação mudou; tente novamente');
+        const seatsToReserve=input.lines.filter(x=>x.kind==='SESSION').sort((a,b)=>idSort(a.id,b.id)||idSort(a.seatId,b.seatId));
+        for(const line of seatsToReserve)await seats.reserve(c,{orderId,sessionId:line.id,seatId:line.seatId});
+        const stockLines=input.lines.filter(x=>x.kind==='INPUT'||x.kind==='COMBO').map(x=>({...(x.kind==='INPUT'?{inputId:x.id}:{comboId:x.id}),quantidade:x.quantity}));
+        if(stockLines.length)await inventory.reserve(c,{orderId,localId:input.localId,lines:stockLines});
+        await orders.confirmEventLimits(c,input,actorId);
+        for(let i=0;i<input.lines.length;i++)await model.insertCheckoutItem(c,orderId,input.lines[i],snapshot.lines[i]);
+        await model.finalizeCheckout(c,orderId,snapshot.total,snapshot.couponId);
+        if(contract)await contracts.save(c,orderId,contract.offerHash,contract);
+        await identity.audit(c,'ORDER.CHECKOUT_CREATED',orderId,context);
+        return dto(await model.checkoutOrder(c,orderId));
+    }
     async function checkout(input,key,context){
         if(typeof key!=='string'||!/^[A-Za-z0-9._:-]{8,120}$/.test(key))throw ApiError.validacao('Chave de idempotência inválida');
         const hash=createHash('sha256').update(JSON.stringify(input)).digest('hex');
-        if(input.lines.some(line=>line.kind==='COMBO'&&!line.sessionId))throw ApiError.validacao('Combo exige sessão de retirada no checkout');
         if(input.lines.reduce((n,line)=>n+line.quantity,0)>500)throw ApiError.validacao('Quantidade total excede o limite do checkout');
         return identity.transaction(async c=>{
             const actor=await identity.activeActor(c,context);
@@ -35,20 +50,7 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
             const contract=contracts?await contracts.contract(c,input,quote):null;
             if(contracts&&(!acceptance?.accepted||acceptance.offerHash!==contract.offerHash))throw conflict('Aceite da oferta atual necessário');
             if(streaming)await streaming.ensureSellable(c,input.lines);
-            const orderId=draftOrderId??await model.createCheckout(c,actor.id_usuario,key,hash);
-            if(draftOrderId)await model.claimDraft(c,orderId,key,hash);
-            const snapshot=await pricing.commit(c,{orderId,input:pricingInput(input),context});
-            if(snapshot.total!==quote.total||snapshot.lines.length!==input.lines.length)throw conflict('Cotação mudou; tente novamente');
-            const seatsToReserve=input.lines.filter(x=>x.kind==='SESSION').sort((a,b)=>idSort(a.id,b.id)||idSort(a.seatId,b.seatId));
-            for(const line of seatsToReserve)await seats.reserve(c,{orderId,sessionId:line.id,seatId:line.seatId});
-            const stockLines=input.lines.filter(x=>x.kind==='INPUT'||x.kind==='COMBO').map(x=>({...(x.kind==='INPUT'?{inputId:x.id}:{comboId:x.id}),quantidade:x.quantity}));
-            if(stockLines.length)await inventory.reserve(c,{orderId,localId:input.localId,lines:stockLines});
-            await orders.confirmEventLimits(c,input,actor.id_usuario);
-            for(let i=0;i<input.lines.length;i++)await model.insertCheckoutItem(c,orderId,input.lines[i],snapshot.lines[i]);
-            await model.finalizeCheckout(c,orderId,snapshot.total,snapshot.couponId);
-            if(contract)await contracts.save(c,orderId,contract.offerHash,contract);
-            await identity.audit(c,'ORDER.CHECKOUT_CREATED',orderId,context);
-            return dto(await model.checkoutOrder(c,orderId));
+            return reserveCheckout(c,{input,key,hash,context,actorId:actor.id_usuario,quote,contract,draftOrderId});
         },context);
     }
     async function ready(c,orderId,order){
@@ -87,7 +89,7 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
         }
         return {cancelled};
     }
-    async function cancel(orderId,key,context,administrative=false){
+    async function cancel(orderId,key,context,administrative=false,reason=null){
         const conflict=()=>new ApiError('Pedido não pode ser cancelado nesta etapa',409,null,'ORDER_CANCEL_CONFLICT');
         const record=async(c,owner)=>{try{await model.recordCancelKey(c,owner,orderId,key);}catch(error){if(error.code==='ER_DUP_ENTRY')throw conflict();throw error;}};
         return identity.transaction(async c=>{
@@ -111,9 +113,10 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
             await seats.releaseCancelled(c,{orderId});
             await pricing.settleCoupon(c,{orderId,action:'LIBERAR'});
             if(!administrative)await record(c,actor.id_usuario);
+            else await model.recordAdminCancellation(c,orderId,actor.id_usuario,reason);
             await identity.audit(c,administrative?'ORDER.CANCELLED_BY_ADMIN':'ORDER.CANCELLED_BY_OWNER',orderId,context);
             return result;
         },context);
     }
-    return {checkout,ready,confirm,expireBatch,cancel,cancelByAdmin:(id,context)=>cancel(id,null,context,true)};
+    return {checkout,reserveCheckout,ready,confirm,expireBatch,cancel,cancelByAdmin:(id,context,reason)=>cancel(id,null,context,true,reason)};
 }

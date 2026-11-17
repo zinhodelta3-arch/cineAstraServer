@@ -1,11 +1,11 @@
 'use client';
 
 import TablePagination from '@/components/ui/table-pagination';
-import { Pencil, Plus } from 'lucide-react';
+import { Archive, Pencil, Plus, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useAdminVenues } from '@/hooks/admin/use-admin-venues';
 import { supplyRequest, useAdminSupply, useSupplyActions } from '@/hooks/admin/use-admin-supply';
-import SupplyLayout, { SupplyState, statusName } from './supply-layout';
+import SupplyLayout, { SupplyState } from './supply-layout';
 import styles from '../catalog/catalog.module.css';
 
 const km = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
@@ -15,6 +15,8 @@ export default function LogisticsRoutesAdmin() {
   const locations = useAdminVenues('locations?limit=100');
   const actions = useSupplyActions(list);
   const item = actions.dialog?.item;
+  const changingStatus = actions.dialog?.type === 'status';
+  const archiving = item?.status === 'ATIVO';
   const available = locations.items.filter(location => location.status === 'ATIVO');
 
   function save(event) {
@@ -28,9 +30,7 @@ export default function LogisticsRoutesAdmin() {
       return;
     }
     const body = { distancia_km: distance, tempo_estimado_min: minutes };
-    if (item) {
-      body.status = form.get('status');
-    } else {
+    if (!item) {
       body.originId = form.get('origin');
       body.destinationId = form.get('destination');
       if (!body.originId || !body.destinationId || body.originId === body.destinationId) {
@@ -44,6 +44,12 @@ export default function LogisticsRoutesAdmin() {
       }),
       item ? 'Rota atualizada.' : 'Rota cadastrada.'
     );
+  }
+
+  function changeStatus() {
+    actions.run(() => supplyRequest(`logistics-routes/${item.id_rota}`, {
+      method: 'PATCH', body: { status: archiving ? 'INATIVO' : 'ATIVO' },
+    }), archiving ? 'Rota arquivada.' : 'Rota reativada.');
   }
 
   return <SupplyLayout title="Rotas de entrega" description="Cadastre a distância e o tempo médio de viagem entre os locais."
@@ -64,23 +70,36 @@ export default function LogisticsRoutesAdmin() {
           <tbody>{list.items.map(route => <tr key={route.id_rota}>
             <th scope="row">{route.nome_origem}</th><td>{route.nome_destino}</td>
             <td>{km.format(Number(route.distancia_km))} km</td><td>{route.tempo_estimado_min} min</td>
-            <td><span className={`${styles.badge} ${route.status === 'INATIVO' ? styles.inactive : ''}`}>{statusName(route.status)}</span></td>
-            <td><button type="button" className={styles.iconButton} title="Editar rota"
+            <td><span className={`${styles.badge} ${route.status === 'INATIVO' ? styles.inactive : ''}`}>{route.status === 'ATIVO' ? 'Ativa' : 'Arquivada'}</span></td>
+            <td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar rota"
               aria-label={`Editar rota de ${route.nome_origem} para ${route.nome_destino}`}
-              onClick={() => actions.open('form', route)}><Pencil size={16} aria-hidden="true" /></button></td>
+              onClick={() => actions.open('form', route)}><Pencil size={16} aria-hidden="true" /></button>
+              <button type="button" className={styles.iconButton} title={route.status === 'ATIVO' ? 'Arquivar rota' : 'Reativar rota'}
+                aria-label={`${route.status === 'ATIVO' ? 'Arquivar' : 'Reativar'} rota de ${route.nome_origem} para ${route.nome_destino}`}
+                onClick={() => actions.open('status', route)}>{route.status === 'ATIVO' ? <Archive size={16} aria-hidden="true" /> : <RotateCcw size={16} aria-hidden="true" />}</button>
+            </div></td>
           </tr>)}</tbody>
         </table>
       </div>}
-      {list.nextCursor && <TablePagination list={list} />}
+      <TablePagination list={list} noun="rotas" />
     </section>
 
     <Dialog open={Boolean(actions.dialog)} onOpenChange={open => { if (!open) actions.close(); }}>
       <DialogContent className={styles.dialog}>
-        <DialogTitle className={styles.dialogTitle}>{item ? 'Editar rota' : 'Nova rota'}</DialogTitle>
+        <DialogTitle className={styles.dialogTitle}>{changingStatus ? (archiving ? 'Arquivar rota' : 'Reativar rota') : item ? 'Editar rota' : 'Nova rota'}</DialogTitle>
         <DialogDescription className={styles.dialogDescription}>
           {item ? `De ${item.nome_origem} para ${item.nome_destino}.` : 'Selecione os locais na ordem do envio.'}
         </DialogDescription>
-        <form key={item?.id_rota ?? 'new'} onSubmit={save}>
+        {changingStatus ? <>
+          <p>{archiving ? 'A rota deixa de gerar previsões para novos envios. O histórico de entregas é preservado.' : 'A rota volta a gerar previsões para novos envios.'}</p>
+          {actions.error && <p className={styles.error} role="alert">{actions.error}</p>}
+          <div className={styles.dialogActions}>
+            <button type="button" className={styles.secondary} onClick={actions.close} disabled={actions.pending}>Cancelar</button>
+            <button type="button" className={styles.primary} onClick={changeStatus} disabled={actions.pending}>
+              {actions.pending ? 'Salvando…' : archiving ? 'Arquivar' : 'Reativar'}
+            </button>
+          </div>
+        </> : <form key={item?.id_rota ?? 'new'} onSubmit={save}>
           <div className={styles.form}>
             {item ? null : <>
               <label>Origem<select name="origin" required defaultValue="" disabled={actions.pending}>
@@ -96,9 +115,6 @@ export default function LogisticsRoutesAdmin() {
               defaultValue={item?.distancia_km?.replace('.', ',') ?? ''} disabled={actions.pending} /></label>
             <label>Tempo médio em minutos<input name="minutes" type="number" required min={1} max={10080}
               defaultValue={item?.tempo_estimado_min ?? ''} disabled={actions.pending} /></label>
-            {item && <label>Status<select name="status" defaultValue={item.status} disabled={actions.pending}>
-              <option value="ATIVO">Ativa</option><option value="INATIVO">Inativa</option>
-            </select></label>}
           </div>
           {!item && <SupplyState list={locations} noun="locais" empty="Nenhum local encontrado." />}
           {!item && locations.nextCursor && <button type="button" className={styles.secondary}
@@ -110,7 +126,7 @@ export default function LogisticsRoutesAdmin() {
               {actions.pending ? 'Salvando…' : 'Salvar rota'}
             </button>
           </div>
-        </form>
+        </form>}
       </DialogContent>
     </Dialog>
   </SupplyLayout>;

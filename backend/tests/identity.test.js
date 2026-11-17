@@ -165,11 +165,18 @@ test('perfil/preferências: campos permitidos, troca de senha revoga sessão, ex
     await request(f.app).get('/api/users/me').set('Authorization', bearer(token)).expect(401);
 });
 
-test('exclusão é solicitação rastreável + desativação; preserva usuário, histórico e nega acesso', async t => {
+test('exclusão mantém acesso durante análise; aprovação administrativa anonimiza e revoga a sessão', async t => {
     const f = await identityFixture(); t.after(() => f.close()); const u = await f.addUser(); const { accessToken } = await f.login(u);
     const res = await request(f.app).delete('/api/users/me').set('Authorization', bearer(accessToken)).send({ password: PASSWORD }).expect(202);
     assert.equal(res.body.data.status, 'RECEBIDA'); assert.match(res.headers.location, /^\/api\/admin\/privacy-requests\//);
-    assert.equal(f.state.users.length, 1); assert.equal(f.state.users[0].status, 'INATIVO');
+    assert.equal(res.body.data.accountStatus, 'ATIVO');
+    const own = await request(f.app).get('/api/users/me/privacy-request').set('Authorization', bearer(accessToken)).expect(200);
+    assert.equal(own.body.data.request.id_solicitacao, res.body.data.id);
+    await request(f.app).patch(res.headers.location).set('Authorization', bearer(accessToken)).send({ status:'CONCLUIDA', reason:'Sem pendências' }).expect(403);
+    const admin = await f.addUser('ADMIN'), { accessToken: adminToken } = await enrollment(f, admin);
+    await request(f.app).patch(res.headers.location).set('Authorization', bearer(adminToken)).send({ status:'CONCLUIDA', reason:'Sem pendências' }).expect(200);
+    assert.equal(u.status, 'INATIVO');
+    assert.equal(u.nome, 'Conta excluída');
     await request(f.app).get('/api/users/me').set('Authorization', bearer(accessToken)).expect(401);
 });
 

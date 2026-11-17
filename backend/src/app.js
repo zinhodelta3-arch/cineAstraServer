@@ -10,6 +10,8 @@ import {createPromotionalModel} from './models/promotionalModel.js';
 import {createPromotionalService} from './services/promotionalService.js';
 import {createPromotionalController} from './controllers/promotionalController.js';
 import {promotionalRoutes} from './routes/promotionalRoutes.js';
+import {experienceRequestRoutes} from './routes/experienceRequestRoutes.js';
+import {createExperienceRequestService} from './services/experienceRequestService.js';
 import express from 'express';
 import {createSnackCatalogModel} from './models/snackCatalogModel.js';
 import {createSnackCatalogService} from './services/snackCatalogService.js';
@@ -138,6 +140,7 @@ import {createOrderService} from './services/orderService.js';
 import {createOrderController} from './controllers/orderController.js';
 import {orderRoutes} from './routes/orderRoutes.js';
 import {createCheckoutService} from './services/checkoutService.js';
+import {createCounterOrderService} from './services/counterOrderService.js';
 import {createSeatOccupancyService} from './services/seatOccupancyService.js';
 import {createTicketModel} from './models/ticketModel.js';
 import {createTicketService} from './services/ticketService.js';
@@ -186,6 +189,8 @@ import {createOpenAiAssistantProvider} from './providers/assistantProvider.js';
 import {createAssistantShowtimes} from './services/assistantShowtimes.js';
 import {createReportModel} from './models/reportModel.js';
 import {createReportService} from './services/reportService.js';
+import {createSocialProgramService} from './services/socialProgramService.js';
+import {socialProgramRoutes} from './routes/socialProgramRoutes.js';
 import {createReportController} from './controllers/reportController.js';
 import {reportRoutes} from './routes/reportRoutes.js';
 import {createSalesModel} from './models/salesModel.js';
@@ -225,8 +230,10 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     const pricing=createPricingService({ model: createPricingModel(database), identity, simulated: paymentProvider.name==='simulado' });
     const orderModel=createOrderModel();
     const agePolicy=createAgePolicy({allowSelfDeclaredAge:config.identity.allowSelfDeclaredAge});
-    const orders=createOrderService({model:orderModel,identity,pricing,agePolicy});
-    const tickets=createTicketService({model:createTicketModel(database),identity});
+    const socialProgram=createSocialProgramService({database,identity,simulated:paymentProvider.name==='simulado'});
+    const orders=createOrderService({model:orderModel,identity,pricing,agePolicy,socialProgram});
+    const ticketModel=createTicketModel(database);
+    const tickets=createTicketService({model:ticketModel,identity});
     const streaming=createStreamingService({model:createStreamingModel(),identity,provider:streamingProvider,agePolicy});
     const notifications = createNotificationService({ model: createNotificationModel(database), identity });
     const billing=createSubscriptionBillingService({model:createSubscriptionBillingModel(database),identity,notifications,ipca:ipcaProvider});
@@ -237,8 +244,10 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     const checkout=createCheckoutService({model:orderModel,orders,identity,pricing,inventory,seats:createSeatOccupancyService(),tickets,streaming,contracts:content});
     app.locals.checkout=checkout;
     const paymentMethods=createPaymentMethodService({ model: createPaymentMethodModel(database), identity, provider: paymentProvider });
-    const paymentService=createPaymentService({ model: createPaymentModel(database), methods:paymentMethods, identity, provider:paymentProvider,checkout,subscriptions:plans });
+    const paymentService=createPaymentService({ model: createPaymentModel(database), methods:paymentMethods, identity, provider:paymentProvider,checkout,subscriptions:plans,socialProgram });
     const payments=createPaymentController(paymentService);
+    const sessionModel=createSessionModel(database);
+    const counter=createCounterOrderService({identity,ticketModel,orderModel,sessionModel,salesModel:createSalesModel(),orders,checkout,payment:paymentService});
     app.use('/api/payments/webhooks',express.raw({type:'application/json',limit:'64kb',inflate:false}),paymentWebhookRoutes(payments));
     const newsletterDelivery=createNewsletterDeliveryService({database,model:createNewsletterDeliveryModel(),provider:newsletterEmailProvider});
     app.locals.newsletterDelivery=newsletterDelivery;
@@ -257,7 +266,9 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
             swaggerUi.setup(spec, { swaggerOptions: { persistAuthorization: false, validatorUrl: null }, customSiteTitle: 'CineAstra API' }));
     }
     app.use(dashboardRoutes(createDashboardController(createDashboardService({model:createDashboardModel(),identity})),dependencies));
-    app.use(promotionalRoutes(createPromotionalController(createPromotionalService({model:createPromotionalModel(database),identity})),dependencies));
+    const promotional = createPromotionalModel(database);
+    app.use(promotionalRoutes(createPromotionalController(createPromotionalService({model:promotional,identity})),dependencies));
+    app.use(experienceRequestRoutes(createExperienceRequestService({identity,promotional}),dependencies));
     app.use(adminDirectoryRoutes(createAdminDirectoryController(createAdminDirectoryService({model:createAdminDirectoryModel(),identity})),dependencies));
     app.use(snackCatalogRoutes(createSnackCatalogController(createSnackCatalogService({model:createSnackCatalogModel(database)}))));
     app.use(identityRoutes(createIdentityController(identity, profile), dependencies));
@@ -272,7 +283,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(supportRoutes(createSupportController(support),dependencies));
     const catalog = createCatalogService({ model: createCatalogModel(database), identity, mediaHosts: config.catalog?.mediaHosts ?? [] });
     const venues = createVenueService({ model: createVenueModel(database), identity });
-    const sessions = createSessionService({ model: createSessionModel(database), identity });
+    const sessions = createSessionService({ model: sessionModel, identity });
     const assistant = assistantProvider ?? createOpenAiAssistantProvider({
         ...config.assistant,
         timeoutMs: Math.max(1, Math.min(6500, Math.floor(config.httpTimeout * 0.65))),
@@ -315,14 +326,15 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(inventoryRoutes(createInventoryController(inventory), dependencies));
     app.use(supplyRoutes(createSupplyController(createSupplyService({ model: createSupplyModel(database), identity, notifications })), dependencies));
     app.use(pricingRoutes(createPricingController(pricing), dependencies));
-    app.use(orderRoutes(createOrderController(orders,checkout,content),dependencies));
+    app.use(orderRoutes(createOrderController(orders,checkout,content,counter),dependencies));
     app.use(ticketRoutes(createTicketController(tickets),dependencies));
     app.use(streamingRoutes(createStreamingController(streaming),dependencies));
     app.use(planRoutes(createPlanController(plans),dependencies));
     app.use(participationRoutes(createParticipationController(participation),dependencies));
     app.use(paymentMethodRoutes(createPaymentMethodController(paymentMethods), dependencies));
     app.use(paymentRoutes(payments,dependencies));
-    app.use(refundRoutes(createRefundController(createRefundService({model:createRefundModel(database),identity,provider:paymentProvider,termsVersion:config.identity?.termsVersion})),dependencies));
+    app.use(refundRoutes(createRefundController(createRefundService({model:createRefundModel(database),identity,provider:paymentProvider,termsVersion:config.identity?.termsVersion??content.simulatedTermsVersion,socialProgram})),dependencies));
+    app.use(socialProgramRoutes(socialProgram,dependencies));
     // Ponto de composição para módulos futuros e fixtures explícitas de testes.
     registerRoutes?.(app, dependencies);
     app.use((req, res, next) => next(ApiError.naoEncontrado()));

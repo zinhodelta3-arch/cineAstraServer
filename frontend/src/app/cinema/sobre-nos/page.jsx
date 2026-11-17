@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Info, Leaf, Heart, Film, Users, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import styles from "@/components/cinema/ticket.module.css";
 
 /* ============ DADOS DO CONTEÚDO ============ */
 const PAGINAS = [
@@ -26,7 +28,7 @@ const PAGINAS = [
           <li>Filmes para alugar ou comprar, para assistir no seu ritmo.</li>
           <li>Combos e insumos, para completar a experiência.</li>
           <li>Planos de assinatura, que podem ser compartilhados.</li>
-          <li>Campanhas beneficentes e projetos sustentáveis, que dão sentido a cada sessão.</li>
+          <li>Uma área de destinação social para consultar as iniciativas publicadas.</li>
         </ul>
         <h3 className="text-lg font-bold text-foreground">Nossos valores</h3>
         <ul className="list-disc pl-5 space-y-1">
@@ -99,25 +101,13 @@ const PAGINAS = [
   },
   {
     id: "beneficentes",
-    titulo: "Campanhas Beneficentes",
-    subtitulo: "Cada ingresso tem um segundo final feliz",
+    titulo: "Destinação social",
+    subtitulo: "Iniciativas publicadas pelo CineAstra",
     icon: Heart,
     conteudo: (
       <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
-        <p><strong>Quando você assiste a um filme na CineAstra, a história não termina na tela.</strong></p>
-        <h3 className="text-lg font-bold text-foreground">O cinema que emociona e transforma</h3>
-        <p>Parte do valor de cada compra é direcionada a campanhas beneficentes. Ao escolher um filme, você ajuda a levar cuidado, dignidade e oportunidade a quem mais precisa.</p>
-        <h3 className="text-lg font-bold text-foreground">Como funciona</h3>
-        <p>É simples e não exige nenhum passo extra. Uma parcela do preço pago em ingressos é destinada a campanhas sociais. As campanhas variam para alcançar diversas causas.</p>
-        <h3 className="text-lg font-bold text-foreground">Causas que apoiamos</h3>
-        <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Cuidado médico de crianças:</strong> Acompanhamento e tratamento.</li>
-          <li><strong>Pessoas com deficiência:</strong> Ações de autonomia, acessibilidade e dignidade.</li>
-          <li><strong>Pessoas em estado crítico:</strong> Suporte para situações delicadas de saúde.</li>
-          <li><strong>Educação em artes no Brasil:</strong> Projetos que levam cultura a escolas e comunidades.</li>
-        </ul>
-        <h3 className="text-lg font-bold text-foreground">Por que fazemos isso</h3>
-        <p>Acreditamos que uma empresa de cultura deve devolver cultura e cuidado à sociedade. Nada mais justo do que usar o que construímos juntos para ajudar a escrever finais melhores. Assista. Emocione-se. Transforme vidas.</p>
+        <p>Consulte as iniciativas, os beneficiários e as informações de acompanhamento disponíveis.</p>
+        <Link href="/cinema/destinacao-social" className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-4">Consultar destinação social</Link>
       </div>
     )
   },
@@ -165,80 +155,67 @@ const PAGINAS = [
   }
 ];
 
-/* ============ ESTILOS DE BACKGROUND ============ */
-function BackgroundStyles() {
-  return (
-    <style>{`
-      .house-bg {
-        background: radial-gradient(circle at center, color-mix(in oklab, var(--primary) 10%, transparent) 0%, transparent 70%),
-                    repeating-linear-gradient(45deg, var(--muted) 0, var(--muted) 2px, transparent 2px, transparent 8px);
-      }
-    `}</style>
-  );
-}
-
 export default function SobreNosPagina() {
   const [abaAtiva, setAbaAtiva] = useState(PAGINAS[0].id);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center pt-24 pb-20 px-4 overflow-hidden relative">
-      <BackgroundStyles />
+    <main className="min-h-screen bg-background px-5 pt-6 pb-16 text-foreground md:pt-10">
+      <div className={`${styles.ticket} mx-auto max-w-6xl overflow-hidden`}>
+        <header className="px-5 py-7 sm:px-8 md:px-10">
+          <h1 className={`${styles.title} mb-3 text-5xl font-black tracking-tight uppercase md:text-7xl`}>
+            Sobre <span className="text-primary">Nós</span>
+          </h1>
+          <p className="max-w-xl text-muted-foreground">
+            Conheça a história, os valores e o universo da CineAstra.
+          </p>
+        </header>
+        <div className={styles.tear} aria-hidden="true" />
 
-      {/* Título Principal */}
-      <div className="text-center mb-10 z-10">
-        <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tight mb-4">
-          Sobre <span className="text-primary">Nós</span>
-        </h1>
-        <p className="text-muted-foreground max-w-xl mx-auto">
-          Conheça a história, os valores e o universo da CineAstra.
-        </p>
-      </div>
-
-      {/* CONTAINER PRINCIPAL (A "Casa" aberta) */}
-      <div className="relative w-full max-w-6xl z-20 flex flex-col md:flex-row min-h-[700px] rounded-3xl border-4 border-border shadow-2xl overflow-hidden bg-card house-bg">
-        
-        {/* Menu Lateral (Abas) */}
-        <aside className="w-full md:w-72 border-b md:border-b-0 md:border-r border-border/50 bg-background/80 backdrop-blur-sm p-4 overflow-y-auto flex-shrink-0 flex flex-col gap-2">
-          {PAGINAS.map((pagina) => (
-            <button
-              key={pagina.id}
-              onClick={() => setAbaAtiva(pagina.id)}
-              className={cn(
-                "flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl transition-all font-semibold text-sm",
-                abaAtiva === pagina.id 
-                  ? "bg-primary text-primary-foreground shadow-md" 
-                  : "hover:bg-muted text-muted-foreground"
-              )}
-            >
-              <pagina.icon className="w-5 h-5 shrink-0" />
-              {pagina.titulo}
-            </button>
-          ))}
-        </aside>
-
-        {/* Conteúdo Principal (Área de Leitura) */}
-        <main className="flex-1 p-6 md:p-12 overflow-y-auto bg-card/95 backdrop-blur-md">
-          {PAGINAS.map((pagina) => (
-            <div 
-              key={pagina.id} 
-              className={cn("max-w-3xl", abaAtiva === pagina.id ? "block animate-in fade-in slide-in-from-bottom-4 duration-500" : "hidden")}
-            >
-              <span className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 text-primary mb-6">
-                <pagina.icon className="w-8 h-8" />
-              </span>
-              <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-foreground mb-2">
+        <div className="grid md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+          <nav aria-label="Sobre a CineAstra" className={`${styles.stub} grid content-start gap-1 border-b border-dashed border-border p-4 sm:grid-cols-2 md:grid-cols-1 md:border-e md:border-b-0`}>
+            {PAGINAS.map((pagina) => (
+              <button
+                key={pagina.id}
+                type="button"
+                onClick={() => setAbaAtiva(pagina.id)}
+                aria-pressed={abaAtiva === pagina.id}
+                className={cn(
+                  "flex min-h-11 items-center gap-3 text-left px-3 py-2 rounded-sm font-semibold text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                  abaAtiva === pagina.id
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "hover:bg-muted text-muted-foreground"
+                )}
+              >
+                <pagina.icon className="size-5 shrink-0" aria-hidden="true" />
                 {pagina.titulo}
-              </h2>
-              <p className="text-lg font-medium text-primary mb-8 border-b border-border/50 pb-4">
-                {pagina.subtitulo}
-              </p>
-              
-              {/* Corpo do Texto */}
-              {pagina.conteudo}
-            </div>
-          ))}
-        </main>
+              </button>
+            ))}
+          </nav>
+
+          <div className="min-w-0 p-5 sm:p-8 md:p-10">
+            {PAGINAS.map((pagina) => (
+              <div
+                key={pagina.id}
+                hidden={abaAtiva !== pagina.id}
+                className="max-w-3xl wrap-break-word"
+              >
+                <span className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 text-primary mb-6">
+                  <pagina.icon className="w-8 h-8" />
+                </span>
+                <h2 className={`${styles.title} mb-2 text-4xl font-black tracking-tight text-foreground uppercase md:text-5xl`}>
+                  {pagina.titulo}
+                </h2>
+                <p className="mb-6 border-b border-dashed border-border pb-4 text-lg font-medium text-primary">
+                  {pagina.subtitulo}
+                </p>
+
+                {/* Corpo do Texto */}
+                {pagina.conteudo}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

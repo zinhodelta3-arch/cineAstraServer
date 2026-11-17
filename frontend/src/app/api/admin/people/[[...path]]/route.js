@@ -18,7 +18,7 @@ function target(method, parts, search) {
   }
   if (group === 'privacy') {
     if (parts.length === 1 && method === 'GET') return `/admin/privacy-requests${search}`;
-    if (parts.length === 2 && requestId(second) && method === 'GET') return `/admin/privacy-requests/${second}`;
+    if (parts.length === 2 && requestId(second) && ['GET', 'PATCH'].includes(method)) return `/admin/privacy-requests/${second}`;
   }
   return null;
 }

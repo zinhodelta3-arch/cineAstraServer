@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useAccountPreferences } from "@/components/providers/account-preferences-provider"
 import {
   ACCESSIBILITY_OPTIONS,
   ACCESSIBILITY_STORAGE_KEY,
@@ -10,8 +11,10 @@ import {
 } from "@/lib/accessibility"
 
 export function useAccessibility() {
+  const account = useAccountPreferences()
   // O primeiro render é idêntico no servidor e no navegador.
-  const [settings, setSettings] = useState({ ...DEFAULT_ACCESSIBILITY })
+  const [localSettings, setSettings] = useState({ ...DEFAULT_ACCESSIBILITY })
+  const settings = account?.data?.acessibilidade ?? localSettings
   const [ready, setReady] = useState(false)
   const [storageAvailable, setStorageAvailable] = useState(true)
   const [systemReducedMotion, setSystemReducedMotion] = useState(false)
@@ -42,7 +45,7 @@ export function useAccessibility() {
   }, [])
 
   useEffect(() => {
-    if (!ready) return
+    if (!ready || account) return
     applyAccessibility(settings)
     try {
       localStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(settings))
@@ -54,24 +57,30 @@ export function useAccessibility() {
     window.dispatchEvent(new CustomEvent("cineastra:accessibility", {
       detail: { ...settings, reducedMotion: settings.motion || systemReducedMotion },
     }))
-  }, [ready, settings, systemReducedMotion])
+  }, [ready, settings, systemReducedMotion, account])
 
   const cycle = (key) => {
     if (!ACCESSIBILITY_OPTIONS[key]) return
+    if (account) {
+      void account.save({ acessibilidade: { [key]: (settings[key] + 1) % ACCESSIBILITY_OPTIONS[key].length } })
+      return
+    }
     setSettings((current) => ({
       ...current,
       [key]: (current[key] + 1) % ACCESSIBILITY_OPTIONS[key].length,
     }))
   }
 
-  const toggleMotion = () => setSettings((current) => ({ ...current, motion: !current.motion }))
-  const reset = () => setSettings({ ...DEFAULT_ACCESSIBILITY })
+  const toggleMotion = () => account ? account.save({ acessibilidade: { motion: !settings.motion } }) : setSettings((current) => ({ ...current, motion: !current.motion }))
+  const reset = () => account ? account.save({ acessibilidade: DEFAULT_ACCESSIBILITY }) : setSettings({ ...DEFAULT_ACCESSIBILITY })
   const activeCount = Object.keys(DEFAULT_ACCESSIBILITY).filter(
     (key) => settings[key] !== DEFAULT_ACCESSIBILITY[key]
   ).length
 
   return {
-    settings, ready, storageAvailable, systemReducedMotion,
+    settings, ready: account ? Boolean(account.data) && !account.saving : ready, storageAvailable, systemReducedMotion,
+    accountError: account?.error, retryAccount: account?.retry,
+    accountSaving: account?.saving, synced: Boolean(account),
     activeCount, cycle, toggleMotion, reset,
   }
 }

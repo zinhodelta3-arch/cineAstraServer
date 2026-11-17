@@ -10,7 +10,7 @@ const definitions = {
   list_admin_sales_payments: ['Listar pagamentos', 200, null, ['limit', 'cursor', 'userId', 'status', 'orderId']],
   create_admin_order_draft: ['Criar proposta de pedido', 201, 'AdminSalesDraftCreate'],
   update_admin_order_draft: ['Editar proposta pendente', 200, 'AdminSalesDraft'],
-  cancel_admin_order: ['Cancelar pedido pendente', 200],
+  cancel_admin_order: ['Cancelar pedido pendente', 200, 'AdminSalesCancellation'],
   reconcile_admin_payment: ['Consultar e conciliar pagamento pelo provedor', 200],
   list_admin_payment_notes: ['Consultar notas administrativas do pagamento', 200],
   add_admin_payment_note: ['Adicionar nota ao pagamento', 201, 'AdminSalesPaymentNote'],
@@ -29,6 +29,10 @@ export function documentAdminSales(spec) {
   schemas.AdminSalesPaymentNote = {
     type: 'object', additionalProperties: false, required: ['note'],
     properties: { note: { type: 'string', minLength: 1, maxLength: 1000 } }
+  };
+  schemas.AdminSalesCancellation = {
+    type:'object',additionalProperties:false,required:['reason'],
+    properties:{reason:{type:'string',minLength:3,maxLength:1000}}
   };
   schemas.OrderCheckoutInput = structuredClone(schemas.OrderCartInput);
   schemas.OrderCheckoutInput.properties.draftOrderId = { ...id, description: 'Proposta pendente do cliente, com os mesmos itens.' };

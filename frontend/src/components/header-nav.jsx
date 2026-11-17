@@ -23,6 +23,7 @@ const navigation = [
   { label: "Experiências", href: "/cinema/experiencias", icon: Sparkles },
   { label: "Planos", href: "/cinema/planos", icon: Crown },
   { label: "Streaming", href: "/streaming", icon: TvMinimalPlay, mobileOnly: true },
+  { label: "Sobre nós", href: "/cinema/sobre-nos", icon: CircleHelp },
   { label: "Suporte", href: "/cinema/suporte", icon: CircleHelp },
 ]
 
@@ -59,7 +60,7 @@ function NavigationItems({ mobile = false, onNavigate, canAccessStreaming = fals
         return (
           <li key={label} className="min-w-0">
             {href ? (
-              <Link
+              <Link prefetch={false}
                 href={href}
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}

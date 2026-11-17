@@ -19,7 +19,7 @@ export const sessionSchemas = {
     query: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),
         cursor: catalogId.optional(), localId: catalogId.optional(), filmId: catalogId.optional(), date: date.optional(), startFrom: time.optional(), startUntil: time.optional() }).strict(),
     adminQuery: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),
-        cursor: catalogId.optional(), localId: catalogId.optional(), date: date.optional(), startFrom: time.optional(), startUntil: time.optional(), status: state.optional() }).strict()
+        cursor: catalogId.optional(), localId: catalogId.optional(), roomId: catalogId.optional(), date: date.optional(), startFrom: time.optional(), startUntil: time.optional(), status: state.optional() }).strict()
 };
 export function sessionQuery(schema) { return (req, res, next) => {
     const parsed = schema.safeParse(req.query);

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { allowRoles } from '../middlewares/authMiddleware.js';
-import { salesPage,salesId,salesDraft,salesDraftCreate,salesPaymentNote } from '../validators/salesValidators.js';
+import { salesPage,salesId,salesDraft,salesDraftCreate,salesPaymentNote,salesCancellation } from '../validators/salesValidators.js';
 import { validateBody } from '../validators/identityValidators.js';
 
 export const salesOperations = [
@@ -21,7 +21,7 @@ export function salesRoutes(controller, { auth, limits }) {
   for (const kind of ['orders', 'payments']) router.get(`/api/admin/sales/${kind}`,...admin,salesPage(kind),controller.list(kind));
   router.post('/api/admin/sales/orders',...writes,validateBody(salesDraftCreate),controller.createDraft);
   router.patch('/api/admin/sales/orders/:id',...writes,salesId,validateBody(salesDraft),controller.updateDraft);
-  router.post('/api/admin/sales/orders/:id/cancel',...writes,salesId,controller.cancel);
+  router.post('/api/admin/sales/orders/:id/cancel',...writes,salesId,validateBody(salesCancellation),controller.cancel);
   router.post('/api/admin/sales/payments/:id/reconcile',...writes,salesId,controller.reconcile);
   router.get('/api/admin/sales/payments/:id/notes',...admin,salesId,controller.paymentNotes);
   router.post('/api/admin/sales/payments/:id/notes',...writes,salesId,validateBody(salesPaymentNote),controller.addPaymentNote);

@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function SuportePage() {
-  return <SupportCenter />;
+  return <SupportCenter cinema />;
 }

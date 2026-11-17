@@ -5,6 +5,16 @@ export function profileTarget(parts=[],method='GET',body={},cursor=null){
  if(!body||typeof body!=='object'||Array.isArray(body))return null;
  const only=keys=>Object.keys(body).every(k=>keys.includes(k));
  const base='/users/me';
+ if(parts.length===1&&parts[0]==='preferences'){
+  if(method==='GET')return {path:base+'/preferences'};
+  if(method==='PATCH'&&Object.keys(body).length)return {path:base+'/preferences',body};
+  return null;
+ }
+ if(parts.length===1&&parts[0]==='privacy'){
+  if(method==='GET')return {path:base+'/privacy-request'};
+  if(method==='DELETE'&&only(['password','code'])&&typeof body.password==='string'&&body.password.length>0&&new TextEncoder().encode(body.password).length<=72&&(body.code===undefined||/^\d{6}$/.test(body.code)))return {path:base,body,privacy:true};
+  return null;
+ }
  if(!parts.length){
   if(method==='GET')return {path:base};
   if(method==='PATCH'&&only(['name','phone'])&&text(body.name,2,100)&&(body.phone===null||phone(body.phone)))return {path:base,body:{name:body.name.trim(),phone:body.phone}};

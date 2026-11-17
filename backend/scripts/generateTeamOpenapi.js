@@ -32,6 +32,11 @@ spec.paths[collaborator.path] = { get: {
     }
 } };
 spec.components.schemas.Team = obj({ id_equipe: id, id_supervisor: id, id_sessao: id, nome: str, status: { type: 'string', enum: ['ATIVA','FINALIZADA','CANCELADA'] } });
+Object.assign(spec.components.schemas.Team.properties, {
+    sessionStatus: { type: 'string', enum: ['AGENDADA','EM_CARTAZ','ENCERRADA','CANCELADA',null], nullable: true },
+    myFunction: { type: 'string', nullable: true }
+});
+spec.components.schemas.Team.required.push('sessionStatus');
 spec.components.schemas.TeamMember = obj({ id_equipe_membro: id, id_equipe: id, id_usuario: id, funcao: nullable(str), data_entrada: { type: 'string', format: 'date' }, status: { type: 'string', enum: ['ATIVO','INATIVO'] } });
 spec.components.schemas.TeamEntry = obj({ id_entrada: entryId, id_equipe: id, id_usuario: id, id_emissor: id, tipo: { type: 'string', enum: ['SOLICITACAO','CONVITE'] }, funcao_proposta: nullable(str), status: { type: 'string', enum: ['PENDENTE','ACEITA','RECUSADA','CANCELADA'] }, criado_em: { type: 'string' }, decidido_em: nullable({ type: 'string' }) });
 const joinLists = [
@@ -80,7 +85,7 @@ const descriptions = {
     entries: 'ADMIN e supervisor vinculado ao cinema veem todas as entradas; COLABORADOR vê somente as próprias quando membro ativo ou convidado.',
     request: 'COLABORADOR sem equipe ativa pode solicitar seu primeiro ingresso. Com equipe ativa, a solicitação fica restrita ao cinema em que atua. O supervisor recebe a solicitação e avalia o ingresso.',
     invitation: 'ADMIN ou supervisor vinculado ao cinema convida COLABORADOR ativo e define função. Membro só entra após aceitar.',
-    decision: 'Solicitação: ADMIN ou supervisor vinculado ao cinema aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.',
+    decision: 'Solicitação: ADMIN ou supervisor responsável aceita com função, ou recusa. Convite: só destinatário COLABORADOR aceita ou recusa; não redefine função.',
     cancelEntry: 'ADMIN, supervisor próprio ou emissor cancela entrada pendente.'
 };
 for (const r of teamOperations) {

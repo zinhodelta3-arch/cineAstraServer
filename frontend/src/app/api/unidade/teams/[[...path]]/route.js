@@ -33,6 +33,7 @@ function target(method, parts, search) {
     if (parts.length === 2 && ['GET', 'POST'].includes(method)) return `${base}/chamados${method === 'GET' ? search : ''}`;
     if (!id(recordId)) return null;
     if (parts.length === 3 && ['GET', 'PATCH', 'DELETE'].includes(method)) return `${base}/chamados/${recordId}`;
+    if (parts.length === 4 && action === 'history' && method === 'GET') return `${base}/chamados/${recordId}/history${search}`;
     if (parts.length === 4 && ['accept', 'resolve', 'close', 'assign'].includes(action) && method === 'POST') return `${base}/chamados/${recordId}/${action}`;
   }
   return null;
@@ -53,7 +54,11 @@ async function handle(request, { params }) {
     let body;
     if (['POST', 'PATCH'].includes(method) && !/\/(?:accept|resolve|close)$/.test(path)) {
       const raw = await request.text();
-      if (raw.length > 12000) return json({ message: 'Dados muito longos.' }, 413);
+      // A descrição aceita 10 mil caracteres, que podem ocupar até seis vezes
+      // esse espaço quando escapados no JSON. A API valida o conteúdo decodificado.
+      const taskForm = method === 'POST' && /^\/teams\/\d+\/chamados$/.test(path)
+        || method === 'PATCH' && /^\/teams\/\d+\/chamados\/\d+$/.test(path);
+      if (raw.length > (taskForm ? 62000 : 12000)) return json({ message: 'Dados muito longos.' }, 413);
       try { body = JSON.parse(raw); } catch { return json({ message: 'Dados inválidos.' }, 400); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
     }

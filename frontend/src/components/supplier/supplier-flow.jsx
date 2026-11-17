@@ -5,6 +5,7 @@ import { Check, Eye, RotateCcw, Send, TriangleAlert, Truck, X, XCircle } from 'l
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { supplierRequest, useSupplierAction, useSupplierList, useSupplierLocations } from '@/hooks/supplier/use-supplier-data';
 import ShipmentHistory from '@/components/logistics/shipment-history';
+import ShipmentEstimate from '@/components/logistics/shipment-estimate';
 import SupplierLayout, { dateTime, More, SupplierState, statusName } from './supplier-layout';
 import styles from '@/components/admin/catalog/catalog.module.css';
 
@@ -82,7 +83,7 @@ export default function SupplierFlow({ kind }) {
         {!requests && <>
           <div><dt>Solicitação</dt><dd>{item.id_solicitacao ? `#${item.id_solicitacao}` : '—'}</dd></div>
         <div><dt>Transporte</dt><dd>{item.nome_transporte ?? 'Sem transporte vinculado'}</dd></div>
-        <div><dt>Chegada estimada pela rota</dt><dd>{item.data_prevista ? dateTime(item.data_prevista) : 'Sem estimativa'}</dd></div>
+        <ShipmentEstimate shipment={item} />
           <div><dt>Recebido em</dt><dd>{dateTime(item.data_recebimento)}</dd></div>
           {item.data_devolucao && <div><dt>Devolvido em</dt><dd>{dateTime(item.data_devolucao)}</dd></div>}
         </>}

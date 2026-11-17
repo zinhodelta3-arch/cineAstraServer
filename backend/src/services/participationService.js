@@ -44,7 +44,8 @@ export function createParticipationService({model,identity,notifications,agePoli
     if(target.tipo_usuario!=='CLIENTE'||target.status!=='ATIVO')throw ApiError.acessoNegado();
     agePolicy.requireIndependent(target,target.faixa_etaria?{faixa_etaria:target.faixa_etaria}:null);
     const count=Number((await model.activeCount(c,id)).total)+Number((await model.pendingCount(c,id)).total)+1;
-    if(count>=Number(s.limite_membros_contratado))throw conflict('Limite do plano atingido');
+    const scheduled=typeof s.alteracao_programada==='string'?JSON.parse(s.alteracao_programada):s.alteracao_programada;
+    if(count>=Math.min(Number(s.limite_membros_contratado),scheduled?.maxMembers??Infinity))throw conflict('Limite do plano atual ou programado atingido');
     const member=await model.participant(c,id,userId);
     if(member?.status!=='SAIU'&&member)throw conflict('Participante já vinculado');
     const previous=await model.invitationForUser(c,id,userId);
@@ -64,7 +65,8 @@ export function createParticipationService({model,identity,notifications,agePoli
     if(accept){
       if(await model.pendingProposal(c,s.id_assinatura))throw conflict('Mudança de rateio em votação');
       const count=Number((await model.activeCount(c,s.id_assinatura)).total)+1;
-      if(count>=Number(s.limite_membros_contratado))throw conflict('Limite do plano atingido');
+      const scheduled=typeof s.alteracao_programada==='string'?JSON.parse(s.alteracao_programada):s.alteracao_programada;
+      if(count>=Math.min(Number(s.limite_membros_contratado),scheduled?.maxMembers??Infinity))throw conflict('Limite do plano atual ou programado atingido');
       const target=found(await model.user(c,a.id_usuario));
       if(target.status!=='ATIVO')throw ApiError.acessoNegado();
       agePolicy.requireIndependent(target,target.faixa_etaria?{faixa_etaria:target.faixa_etaria}:null);

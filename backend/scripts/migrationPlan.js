@@ -34,6 +34,9 @@ export async function migrationPlan() {
         '20261025_33_streaming_progress.sql',
         '20261026_35_promotional_content.sql',
         '20261026_36_streaming_profile_photos.sql',
+        '20261031_37_supervisor_locations.sql',
+        '20261105_38_supplier_transports.sql',
+        '20261108_39_logistics_routes.sql',
         '20261108_40_stock_replenishment_links.sql',
         '20261111_41_stock_supervisor_review.sql',
         '20261111_42_logistics_transport.sql',
@@ -41,7 +44,15 @@ export async function migrationPlan() {
         '20261111_44_social_destinations.sql',
         '20261111_45_venue_types.sql',
         '20261111_46_event_combos.sql',
-        '20261111_47_responsive_film_banners.sql'
+        '20261111_47_responsive_film_banners.sql',
+        '20261115_48_logistics_route_snapshot.sql',
+        '20261115_49_counter_orders.sql',
+        '20261115_50_venue_image.sql',
+        '20261115_51_admin_commerce_actions.sql',
+        '20261115_52_subscription_changes.sql',
+        '20261115_53_experience_requests.sql',
+        '20261115_54_account_preferences.sql',
+        '20261115_55_monthly_social_program.sql'
     ]);
     const sources = [
         ['20261001_02_create_tables.sql', sql => /^(CREATE TABLE|CREATE INDEX)\b/i.test(sql)],
@@ -95,7 +106,15 @@ export async function migrationPlan() {
         ['20261111_44_social_destinations.sql', () => true],
         ['20261111_45_venue_types.sql', () => true],
         ['20261111_46_event_combos.sql', () => true],
-        ['20261111_47_responsive_film_banners.sql', () => true]
+        ['20261111_47_responsive_film_banners.sql', () => true],
+        ['20261115_48_logistics_route_snapshot.sql', () => true],
+        ['20261115_49_counter_orders.sql', () => true],
+        ['20261115_50_venue_image.sql', () => true],
+        ['20261115_51_admin_commerce_actions.sql', () => true],
+        ['20261115_52_subscription_changes.sql', () => true],
+        ['20261115_53_experience_requests.sql', () => true],
+        ['20261115_54_account_preferences.sql', () => true],
+        ['20261115_55_monthly_social_program.sql', () => true]
     ];
     const plan = [];
     for (const [file, filter] of sources) {

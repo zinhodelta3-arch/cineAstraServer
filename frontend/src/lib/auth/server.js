@@ -24,10 +24,20 @@ export function authErrorPayload(error, fallback) {
 export async function backendAuth(path, { token, body, idempotencyKey, method = 'GET' } = {}) {
  const base = resolveApiBase(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL);
  if (!base || !/^https?:\/\//.test(base)) throw new AuthError(503, 'Serviço temporariamente indisponível.');
- let response;
- try { response = await fetch(`${base.replace(/\/$/,'')}${path}`, { method, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json', ...(idempotencyKey ? {'Idempotency-Key':idempotencyKey} : {}), ...(body ? {'Content-Type':'application/json'} : {}), ...(token ? {Authorization:`Bearer ${token}`} : {}) }, ...(body ? {body:JSON.stringify(body)} : {}) }); }
- catch (error) { throw new AuthError(503, 'Não foi possível conectar ao serviço.', error?.name === 'TimeoutError' ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR'); }
- const payload = response.status === 204 ? null : await response.json().catch(() => null);
+ const signal = AbortSignal.timeout(15000);
+ let response, payload;
+ try {
+  response = await fetch(`${base.replace(/\/$/,'')}${path}`, { method, cache: 'no-store', redirect: 'error', signal, headers: { Accept: 'application/json', ...(idempotencyKey ? {'Idempotency-Key':idempotencyKey} : {}), ...(body ? {'Content-Type':'application/json'} : {}), ...(token ? {Authorization:`Bearer ${token}`} : {}) }, ...(body ? {body:JSON.stringify(body)} : {}) });
+  payload = response.status === 204 ? null : await response.json().catch(error => {
+   if (signal.aborted) throw error;
+   return null;
+  });
+ } catch {
+  if (signal.aborted) {
+   throw new AuthError(503, 'O serviço demorou para responder.', 'REQUEST_TIMEOUT', { requestId: response?.headers.get('X-Request-Id') });
+  }
+  throw new AuthError(503, 'Não foi possível conectar ao serviço.', 'NETWORK_ERROR');
+ }
  if (!response.ok) {
   const metadata = errorMetadata({ ...payload, requestId: payload?.requestId ?? response.headers.get('X-Request-Id'), retryAfter: response.headers.get('Retry-After') }, response.status);
   const failure = (status, message, code) => new AuthError(status, message, code, metadata);
@@ -37,6 +47,11 @@ export async function backendAuth(path, { token, body, idempotencyKey, method = 
   if (response.status === 404 && path.startsWith('/teams/collaborator?')) throw failure(404, 'Colaborador ativo não encontrado com este e-mail.');
   if (response.status === 409 && ['/orders/quote', '/orders/checkout'].includes(path) && ['ORDER_CONFLICT', 'PRICING_CONFLICT', 'CHECKOUT_CONFLICT'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && /^\/admin\/users(?:\/\d+\/(?:access|location))?$/.test(path) && ['IDENTITY_CONFLICT', 'LAST_ADMIN', 'REACTIVATION_REQUIRES_REVIEW'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
+  if (response.status === 409 && /^\/admin\/privacy-requests\/\d+$/.test(path)) {
+   if (payload?.code === 'PRIVACY_PENDING_OBLIGATIONS') throw failure(409, 'A conta ainda tem pendências comerciais.', payload.code);
+   if (payload?.code === 'PRIVACY_CLOSED') throw failure(409, 'Solicitação encerrada.', payload.code);
+  }
+  if (response.status === 409 && path === '/admin/reports/social-initiatives' && payload?.code === 'SOCIAL_MONTH_OCCUPIED') throw failure(409, 'Este mês já tem uma iniciativa publicada.', payload.code);
   if (response.status === 409 && /^\/teams(?:\/\d+(?:\/.*)?)?$/.test(path) && ['TEAM_CONFLICT', 'TASK_CONFLICT'].includes(payload?.code) && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && /^\/admin\/streaming\/subscriptions(?:\/\d+)?$/.test(path) && payload?.code === 'PLAN_CONFLICT' && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);
   if (response.status === 409 && path.startsWith('/admin/sales/') && payload?.code === 'ADMIN_SALES_CONFLICT' && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);

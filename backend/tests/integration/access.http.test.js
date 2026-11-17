@@ -5,6 +5,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const enabled = process.env.RUN_ACCESS_HTTP_TESTS === 'true';
 const roles = ['ADMIN', 'FORNECEDOR', 'SUPERVISOR', 'COLABORADOR', 'CLIENTE'];
+const loginFixtures = new URL('../../../database/logins.txt', import.meta.url);
+const isolatedSchema = /^[a-zA-Z0-9_]+(?:_test|_qa_\d{8})$/;
 
 function credentials(text) {
     const accounts = Object.fromEntries(roles.map(role => [role, []]));
@@ -27,10 +29,10 @@ test('HTTP real: perfis, titulares, fornecedores, equipes e unidades permanecem 
     timeout: 300000,
 }, async t => {
     assert.equal(process.env.ACCESS_HTTP_CONFIRMED_NON_PRODUCTION, 'true');
-    assert.match(process.env.ACCESS_HTTP_DATABASE ?? '', /^[a-zA-Z0-9_]+_test$/);
+    assert.match(process.env.ACCESS_HTTP_DATABASE ?? '', isolatedSchema);
     const base = new URL(process.env.ACCESS_HTTP_API_URL ?? 'http://127.0.0.1:8080/api');
     assert.ok(['127.0.0.1', 'localhost'].includes(base.hostname), 'Somente API local autorizada');
-    const accounts = credentials(await readFile(new URL('../../../logins.txt', import.meta.url), 'utf8'));
+    const accounts = credentials(await readFile(loginFixtures, 'utf8'));
     const sessions = [], cache = new Map();
     let checks = 0;
     async function call(session, path, expected, { method = 'GET', body } = {}) {
@@ -183,10 +185,10 @@ test('Front-end real: páginas e proxies restringem cada área ao perfil autoriz
     timeout: 120000,
 }, async t => {
     assert.equal(process.env.ACCESS_HTTP_CONFIRMED_NON_PRODUCTION, 'true');
-    assert.match(process.env.ACCESS_HTTP_DATABASE ?? '', /^[a-zA-Z0-9_]+_test$/);
+    assert.match(process.env.ACCESS_HTTP_DATABASE ?? '', isolatedSchema);
     const origin = new URL(process.env.ACCESS_HTTP_WEB_URL ?? 'http://127.0.0.1:3000');
     assert.ok(['127.0.0.1', 'localhost'].includes(origin.hostname));
-    const accounts = credentials(await readFile(new URL('../../../logins.txt', import.meta.url), 'utf8'));
+    const accounts = credentials(await readFile(loginFixtures, 'utf8'));
     const destinations = { ADMIN: '/admin/dashboard', FORNECEDOR: '/fornecedor', SUPERVISOR: '/unidade', COLABORADOR: '/unidade', CLIENTE: '/cinema/home' };
     const areas = [['/admin/dashboard', ['ADMIN']], ['/fornecedor/estoque', ['FORNECEDOR']], ['/unidade', ['SUPERVISOR', 'COLABORADOR']]];
     const proxies = [
@@ -198,12 +200,22 @@ test('Front-end real: páginas e proxies restringem cada área ao perfil autoriz
     let checks = 0;
     async function web(path, cookie, { method = 'GET', body } = {}) {
         await delay(650);
-        checks++;
-        return fetch(new URL(path, origin), {
-            method, redirect: 'manual', signal: AbortSignal.timeout(15000),
-            headers: { Origin: origin.origin, ...(cookie ? { Cookie: cookie } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
-            ...(body ? { body: JSON.stringify(body) } : {}),
-        });
+        const send = () => {
+            checks++;
+            return fetch(new URL(path, origin), {
+                method, redirect: 'manual', signal: AbortSignal.timeout(15000),
+                headers: { Origin: origin.origin, ...(cookie ? { Cookie: cookie } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
+                ...(body ? { body: JSON.stringify(body) } : {}),
+            });
+        };
+        const response = await send();
+        if (response.status !== 429) return response;
+        const payload = await response.json();
+        const seconds = Number(response.headers.get('Retry-After') ?? payload.retryAfter);
+        assert.ok(Number.isFinite(seconds) && seconds > 0 && seconds <= 60, 'O proxy deve informar um intervalo de espera limitado');
+        t.diagnostic(`Limite no frontend respeitado: aguardando ${seconds}s.`);
+        await delay(seconds * 1000);
+        return send();
     }
     for (const [path] of areas) {
         const response = await web(path);

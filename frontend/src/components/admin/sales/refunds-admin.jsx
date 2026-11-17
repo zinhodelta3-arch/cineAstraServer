@@ -8,7 +8,7 @@ import { salesRequest, useAdminSales } from '@/hooks/admin/use-admin-sales';
 import SalesLayout, { SalesState, dateTime, money, statusName } from './sales-layout';
 import styles from '../catalog/catalog.module.css';
 
-const statuses = ['RECEBIDA', 'EM_ANALISE', 'ENVIADA', 'CONFIRMADA', 'NEGADA', 'FALHOU'];
+const statuses = ['RECEBIDA', 'EM_ANALISE', 'ENVIADA', 'CONFIRMADA', 'NEGADA', 'FALHOU', 'CANCELADA'];
 const reasons = ['ARREPENDIMENTO', 'DEFEITO', 'OUTRO', 'CANCELAMENTO_PLANO'];
 
 export default function RefundsAdmin() {
@@ -21,6 +21,7 @@ export default function RefundsAdmin() {
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState(false);
   const [decision, setDecision] = useState('APPROVE');
+  const [amount,setAmount]=useState('');
   const lock = useRef(false);
   const params = new URLSearchParams({ limit: '20' });
   if (status) params.set('status', status);
@@ -31,7 +32,9 @@ export default function RefundsAdmin() {
     if (!selected) return;
     let active = true;
     setDetail(null); setDetailLoading(true); setError('');
-    salesRequest(`refunds/${selected.id}`).then(value => { if (active) setDetail(value); })
+    salesRequest(`refunds/${selected.id}`).then(value => {
+      if (active) { setDetail(value); setAmount(value.remainingAmount??''); }
+    })
       .catch(cause => { if (active) setError(cause.message); })
       .finally(() => { if (active) setDetailLoading(false); });
     return () => { active = false; };
@@ -39,6 +42,17 @@ export default function RefundsAdmin() {
 
   function open(row) { setNotice(''); setDecision('APPROVE'); setSelected(row); }
   function close() { if (!lock.current) setSelected(null); }
+  const partial=Boolean(detail?.orderId)&&decision==='APPROVE'&&Number(amount.replace(',','.'))<Number(detail.remainingAmount);
+  async function reconcile(){
+    if(lock.current||!detail)return;
+    lock.current=true;setPending(true);setError('');
+    try{
+      await salesRequest(`refunds/${detail.id}/reconcile`,{method:'POST',body:{}});
+      setDetail(await salesRequest(`refunds/${detail.id}`));
+      list.reload();
+    }catch(cause){setError(cause.message);}
+    finally{lock.current=false;setPending(false);}
+  }
   async function decide(event) {
     event.preventDefault();
     if (!detail || detail.status !== 'EM_ANALISE' || lock.current) return;
@@ -46,11 +60,13 @@ export default function RefundsAdmin() {
     const amount = String(form.get('amount') ?? '').trim().replace(',', '.');
     const termsVersion = String(form.get('termsVersion') ?? '').trim();
     const basis = String(form.get('basis') ?? '').trim();
+    const itemIds=form.getAll('refundItem');
     if (basis.length < 10 || basis.length > 1000 || !termsVersion || termsVersion.length > 50) { setError('Informe a versão dos termos e uma justificativa de 10 a 1000 caracteres.'); return; }
     if (decision === 'APPROVE' && (!/^(0|[1-9]\d{0,7})\.\d{2}$/.test(amount) || amount === '0.00')) { setError('Informe o valor aprovado com duas casas decimais.'); return; }
+    if(partial&&!itemIds.length){setError('Selecione os itens incluídos no reembolso parcial.');return;}
     lock.current = true; setPending(true); setError('');
     try {
-      await salesRequest(`refunds/${detail.id}/decision`, { method: 'POST', body: { decision, ...(decision === 'APPROVE' ? { amount } : {}), termsVersion, basis } });
+      await salesRequest(`refunds/${detail.id}/decision`, { method: 'POST', body: { decision, ...(decision === 'APPROVE' ? { amount } : {}), ...(partial&&{itemIds}), termsVersion, basis } });
       setSelected(null); setNotice('Decisão registrada.'); list.reload();
     } catch (cause) { setError(cause.message); }
     finally { lock.current = false; setPending(false); }
@@ -67,7 +83,9 @@ export default function RefundsAdmin() {
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>Reembolso #{selected?.id}</DialogTitle><DialogDescription className={styles.dialogDescription}>Confira a solicitação e o estado antes de registrar uma decisão.</DialogDescription>
       {detailLoading && <p role="status">Carregando solicitação…</p>}
       {detail && <><dl className={styles.detailGrid}><div><dt>Cliente</dt><dd>#{detail.userId}</dd></div><div><dt>Pagamento</dt><dd>#{detail.paymentId}</dd></div><div><dt>Pedido</dt><dd>{detail.orderId ? `#${detail.orderId}` : '—'}</dd></div><div><dt>Status</dt><dd>{statusName(detail.status)}</dd></div><div><dt>Motivo</dt><dd>{statusName(detail.reason)}</dd></div><div><dt>Valor solicitado</dt><dd>{money(detail.requestedAmount)}</dd></div><div><dt>Prazo de resposta</dt><dd>{dateTime(detail.responseDueAt)}</dd></div><div><dt>Compensação</dt><dd>{statusName(detail.compensation)}</dd></div></dl>{detail.details && <p className={styles.hint}>Detalhes: {detail.details}</p>}{detail.decisionBasis && <p className={styles.hint}>Justificativa registrada: {detail.decisionBasis}</p>}</>}
-      {detail?.status === 'EM_ANALISE' && <form className={styles.form} onSubmit={decide}><label>Decisão<select value={decision} onChange={event => setDecision(event.target.value)}><option value="APPROVE">Aprovar</option><option value="DENY">Negar</option></select></label>{decision === 'APPROVE' && <label>Valor aprovado (R$)<input name="amount" inputMode="decimal" defaultValue={detail.requestedAmount ?? detail.paymentAmount} required /></label>}<label>Versão dos termos<input name="termsVersion" defaultValue={detail.termsVersion ?? ''} maxLength={50} required /></label><label className={styles.wide}>Justificativa<textarea name="basis" minLength={10} maxLength={1000} required /></label><div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Registrando…' : 'Registrar decisão'}</button></div></form>}
+      {detail?.selectedItems?.length>0&&<ul>{detail.selectedItems.map(item=><li key={item.itemId}>Item #{item.itemId} · {money(item.amount)}</li>)}</ul>}
+      {detail?.status === 'EM_ANALISE' && <form className={styles.form} onSubmit={decide}><label>Decisão<select value={decision} onChange={event => setDecision(event.target.value)}><option value="APPROVE">Aprovar</option><option value="DENY">Negar</option><option value="CANCEL">Cancelar solicitação</option></select></label>{decision === 'APPROVE' && <label>Valor aprovado (R$)<input name="amount" inputMode="decimal" value={amount} onChange={event=>setAmount(event.target.value)} required /></label>}{partial&&<fieldset className={styles.wide}><legend>Itens reembolsados</legend>{detail.eligibleItems.map(item=><label key={item.id} className="flex items-center gap-2"><input name="refundItem" type="checkbox" value={item.id} />{item.name} · {item.quantity} un. · saldo {money(item.remainingAmount)}</label>)}</fieldset>}<label>Versão dos termos<input name="termsVersion" defaultValue={detail.termsVersion ?? ''} maxLength={50} required /></label><label className={styles.wide}>Justificativa<textarea name="basis" minLength={10} maxLength={1000} required /></label><div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Registrando…' : 'Registrar decisão'}</button></div></form>}
+      {['RECEBIDA','ENVIADA'].includes(detail?.status)&&<button type="button" className={styles.secondary} disabled={pending} onClick={reconcile}>{pending?'Consultando…':'Consultar provedor'}</button>}
       {error && <p className={styles.error} role="alert">{error}</p>}
     </DialogContent></Dialog>
   </SalesLayout>;

@@ -20,7 +20,7 @@ export const catalogOperations = [
 ].map(([method, path, operationId, admin, schema, query, action, status = 200]) => ({ method, path, operationId, admin, schema, query, action, status }));
 export function catalogRoutes(controller, { auth }) {
     const router = Router();
-    router.get('/api/films/popular', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, controller.popularFilms);
+    router.get('/api/films/popular', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, catalogQuery(catalogSchemas.popularQuery), controller.popularFilms);
     for (const r of catalogOperations) {
         const middlewares = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }];
         if (r.admin) middlewares.push(auth, allowRoles('ADMIN'));

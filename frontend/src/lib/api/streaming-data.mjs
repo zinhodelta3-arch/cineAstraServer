@@ -23,7 +23,7 @@ async function allPages(path, { privateRoute = false, signal } = {}) {
   return items;
 }
 
-export async function loadStreamingFilms(signal, genreId) {
+async function fetchStreamingFilms(signal, genreId) {
   const films = await allPages(`/films?streaming=true${genreId ? `&genreId=${encodeURIComponent(genreId)}` : ""}`, { signal });
   if (films.every((film) => Array.isArray(film.generos))) return films;
   return Promise.all(films.map(async (film) => {
@@ -31,6 +31,21 @@ export async function loadStreamingFilms(signal, genreId) {
     const genres = await allPages(`/films/${film.id_filme}/genres`, { signal });
     return { ...film, generos: genres.map((item) => ({ id: item.id_genero, nome: item.nome })) };
   }));
+}
+let cachedFilms=null;
+let pendingFilms=null;
+export async function loadStreamingFilms(signal,genreId){
+  if(genreId||typeof window==='undefined')return fetchStreamingFilms(signal,genreId);
+  signal?.throwIfAborted();
+  if(!cachedFilms||cachedFilms.expires<=Date.now()){
+    pendingFilms??=fetchStreamingFilms().then(items=>{
+      cachedFilms={items,expires:Date.now()+30000};
+      return items;
+    }).finally(()=>{pendingFilms=null;});
+    await pendingFilms;
+  }
+  signal?.throwIfAborted();
+  return cachedFilms.items;
 }
 export const loadStreamingGenres = (signal) => allPages("/genres", { signal });
 export const loadProfileItems = (profileId, kind, signal) => allPages(`/profiles/${profileId}/${kind}`, { privateRoute: true, signal });
@@ -51,7 +66,7 @@ export function streamingMovie(film) {
     age: film.classificacao === "L" ? "Livre" : film.classificacao,
     genres: Array.isArray(film.generos) ? film.generos : [],
     hasArtwork: Boolean(film.banner),
-    director: film.diretor || null, soon: Boolean(date && date > today),
+    director: film.diretor || null, cast: film.elenco || null, soon: Boolean(date && date > today),
     pal: Number(film.id_filme) % 12, motif: "reel", releaseDate: date,
   };
 }

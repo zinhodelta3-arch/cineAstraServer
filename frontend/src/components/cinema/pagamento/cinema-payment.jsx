@@ -38,7 +38,7 @@ function PixPanel({ payment }) {
     {payment.error && payment.remaining === 0 && !payment.result?.paymentId && <button type="button" className={styles.retryButton} onClick={payment.retryPix} disabled={payment.pending}>Tentar novamente</button>}
     {payment.result && <div role="status" className={styles.paymentResult}>
       <strong>Pedido #{payment.result.orderId}</strong><span>Pagamento: {payment.result.status}</span><span>Pedido: {payment.result.orderStatus}</span>
-      {["PAGO", "FINALIZADO"].includes(payment.result.orderStatus) ? <Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link> :
+      {["PAGO", "FINALIZADO"].includes(payment.result.orderStatus) ? <><Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link><Link href="/cinema/astrasnack">Começar outro pedido AstraSnack <ArrowRight size={15} /></Link></> :
         payment.result.paymentId && <button type="button" className={styles.retryButton} disabled={payment.pending || payment.checkingPayment} onClick={() => payment.refreshPayment(payment.result.paymentId)}>Atualizar status</button>}
       {payment.pollingPaused && <p>As consultas automáticas foram pausadas. Use Atualizar status para consultar o pedido.</p>}
     </div>}

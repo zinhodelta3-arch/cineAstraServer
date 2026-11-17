@@ -17,7 +17,7 @@ export default function ReportsLayout({ title, description, children }) {
   const pathname = usePathname();
   return <main id="admin-content" tabIndex={-1} className={page.page}>
     <header className={page.heading}><div><h1>{title}</h1><p>{description}</p></div></header>
-    <nav className={styles.tabs} aria-label="Seções de Relatórios e auditoria">{sections.map(section => <Link key={section.href} href={section.href} aria-current={pathname === section.href ? 'page' : undefined}>{section.label}</Link>)}</nav>
+    <nav className={styles.tabs} aria-label="Seções de Relatórios e auditoria">{sections.map(section => <Link prefetch={false} key={section.href} href={section.href} aria-current={pathname === section.href ? 'page' : undefined}>{section.label}</Link>)}</nav>
     <div className={reports.stack}>{children}</div>
   </main>;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, CheckCheck, CircleCheck, ListChecks, Pencil, Plus, UserRoundCheck, X, XCircle } from 'lucide-react';
+import { Check, CheckCheck, CircleCheck, History, ListChecks, Pencil, Plus, UserRoundCheck, X, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useSession } from '@/hooks/auth/use-session';
 import { useUnitAction, useUnitContext, useUnitList, useUnitTeam } from '@/hooks/unit/use-unit-data';
@@ -23,10 +23,14 @@ export default function UnitTasks() {
   const [assigning, setAssigning] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
-  const list = useUnitList(teamId ? `/${teamId}/chamados?limit=20${assignedOnly ? '&assigned=me' : ''}${status ? `&status=${status}` : ''}` : null);
-  const members = useUnitList(supervisor && teamId ? `/${teamId}/members?limit=100` : null);
+  const [historyItem, setHistoryItem] = useState(null);
+  const canRead = Boolean(team && (supervisor || team.myFunction?.trim()));
+  const list = useUnitList(canRead ? `/${teamId}/chamados?limit=20${assignedOnly ? '&assigned=me' : ''}${status ? `&status=${status}` : ''}` : null);
+  const members = useUnitList(assigning ? `/${teamId}/members?limit=100` : null);
+  const history = useUnitList(historyItem ? `/${historyItem.id_equipe}/chamados/${historyItem.id_chamado}/history?limit=10` : null);
   const actions = useUnitAction(list.reload);
-  const canWrite = Boolean(teamId && team?.status === 'ATIVA' && !list.loading && !list.error);
+  const active = canRead && team.status === 'ATIVA' && ['AGENDADA', 'EM_CARTAZ'].includes(team.sessionStatus);
+  const canWrite = active && !list.loading && !list.error;
 
   async function save(event) {
     event.preventDefault();
@@ -44,7 +48,7 @@ export default function UnitTasks() {
     }
   }
 
-  function openForm(item = null) { setEditing(item); setFormOpen(true); }
+  function openForm(item = null) { actions.setError(''); setEditing(item); setFormOpen(true); }
   async function assign(event) {
     event.preventDefault();
     const userId = String(new FormData(event.currentTarget).get('userId') ?? '');
@@ -70,20 +74,34 @@ export default function UnitTasks() {
   }
 
   return <UnitLayout title="Chamados" description="Registre e acompanhe o trabalho operacional da sua equipe." location={context.locations.map(row => row.nome).join(' · ')}>
-    <UnitFeedback error={(!confirmation && actions.error) || context.error} notice={actions.notice} />
+    <UnitFeedback error={(!confirmation && !formOpen && !assigning && actions.error) || context.error} notice={actions.notice} />
     <section className={styles.panel} aria-labelledby="tasks-title"><div className={styles.panelHeader}><div><h2 id="tasks-title">Chamados da equipe</h2><p>Os colaboradores editam seus próprios chamados e acompanham a resolução.</p></div><button type="button" className={styles.button} onClick={() => openForm()} disabled={!canWrite || actions.pending}><Plus size={16} />Novo chamado</button></div><div className={styles.body}>
-      <div className={styles.toolbar}><label className={`${styles.field} ${styles.selector}`}>Equipe<select className={styles.select} value={teamId} onChange={event => { setTeamId(event.target.value); setEditing(null); setAssigning(null); setFormOpen(false); }} disabled={!teams.items.length && !team}>{team && !teams.items.some(row => row.id_equipe === teamId) && <option value={teamId}>{team.nome} · sessão #{team.id_sessao}</option>}{teams.items.map(row => <option key={row.id_equipe} value={row.id_equipe}>{row.nome} · sessão #{row.id_sessao}</option>)}</select></label><label className={styles.field}><span><input type="checkbox" checked={assignedOnly} onChange={event => setAssignedOnly(event.target.checked)} /> Atribuídos a mim</span></label><label className={styles.field}>Status<select className={styles.select} value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos</option>{statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label></div>
+      <div className={styles.toolbar}><label className={`${styles.field} ${styles.selector}`}>Equipe<select className={styles.select} value={teamId} onChange={event => { setTeamId(event.target.value); setEditing(null); setAssigning(null); setFormOpen(false); actions.setError(''); }} disabled={actions.pending || !teams.items.length && !team}>{team && !teams.items.some(row => row.id_equipe === teamId) && <option value={teamId}>{team.nome} · sessão #{team.id_sessao}</option>}{teams.items.map(row => <option key={row.id_equipe} value={row.id_equipe}>{row.nome} · sessão #{row.id_sessao}</option>)}</select></label><label className={styles.field}><span><input type="checkbox" checked={assignedOnly} onChange={event => setAssignedOnly(event.target.checked)} /> Atribuídos a mim</span></label><label className={styles.field}>Status<select className={styles.select} value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos</option>{statuses.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label></div>
       <UnitListState list={teams} empty="Você ainda não tem equipes vinculadas. Solicite ingresso ou aceite um convite na página Equipes." />
-      {teamId && <><UnitListState list={list} empty="Nenhum chamado encontrado nesta equipe." />{list.items.length > 0 && <ul className={styles.list}>{list.items.map(row => <li key={row.id_chamado}><div><strong>{row.titulo}</strong><small>#{row.id_chamado} · {label(row.prioridade)} · aberto em {dateTime(row.data_abertura)}</small>{row.descricao && <p className={styles.muted}>{row.descricao}</p>}</div><div className={styles.row}><span className={styles.badge}>{label(row.status)}</span>{team?.status === 'ATIVA' && <div className={styles.actionRow}>
+      {teams.hasNext && <button type="button" className={styles.secondary} disabled={teams.loadingMore} onClick={teams.loadMore}>Mais equipes</button>}
+      {team && !canRead && <p className={styles.empty}>Chamados exigem um vínculo ativo com função na equipe. Confira seus convites na página Equipes.</p>}
+      {canRead && !active && <p className={styles.empty}>Esta equipe está disponível apenas para consulta de chamados.</p>}
+      {canRead && <><UnitListState list={list} empty="Nenhum chamado encontrado nesta equipe." />{list.items.length > 0 && <ul className={styles.list}>{list.items.map(row => <li key={row.id_chamado}><div><strong>{row.titulo}</strong><small>#{row.id_chamado} · {label(row.prioridade)} · aberto em {dateTime(row.data_abertura)}</small>{row.descricao && <p className={styles.muted}>{row.descricao}</p>}</div><div className={styles.row}><span className={styles.badge}>{label(row.status)}</span><button type="button" className={styles.iconButton} title="Histórico do chamado" aria-label={`Histórico de ${row.titulo}`} onClick={() => setHistoryItem(row)}><History size={16} aria-hidden="true" /></button>{active && <div className={styles.actionRow}>
         {canEdit(row) && <button type="button" className={styles.iconButton} title="Editar chamado" aria-label={`Editar chamado ${row.titulo}`} onClick={() => openForm(row)}><Pencil size={16} /></button>}
-        {supervisor && row.status === 'ABERTO' && <button type="button" className={styles.iconButton} title="Atribuir responsável" aria-label={`Atribuir chamado ${row.titulo}`} onClick={() => setAssigning(row)}><UserRoundCheck size={16} /></button>}
+        {supervisor && row.status === 'ABERTO' && <button type="button" className={styles.iconButton} title="Atribuir responsável" aria-label={`Atribuir chamado ${row.titulo}`} onClick={() => { actions.setError(''); setAssigning(row); }}><UserRoundCheck size={16} /></button>}
         {!supervisor && row.status === 'ABERTO' && (!row.id_responsavel || row.id_responsavel === user?.id) && <button type="button" className={styles.iconButton} title="Aceitar chamado" aria-label={`Aceitar chamado ${row.titulo}`} disabled={actions.pending} onClick={() => actions.run(`/${teamId}/chamados/${row.id_chamado}/accept`, { method: 'POST' }, 'Chamado aceito.')}><Check size={16} /></button>}
         {!supervisor && row.status === 'EM_ANDAMENTO' && row.id_responsavel === user?.id && <button type="button" className={styles.iconButton} title="Marcar como resolvido" aria-label={`Resolver chamado ${row.titulo}`} disabled={actions.pending} onClick={() => actions.run(`/${teamId}/chamados/${row.id_chamado}/resolve`, { method: 'POST' }, 'Chamado resolvido.')}><CircleCheck size={16} /></button>}
         {canClose(row) && <button type="button" className={styles.iconButton} title="Fechar chamado" aria-label={`Fechar chamado ${row.titulo}`} disabled={actions.pending} onClick={() => confirmAction('close', row)}><CheckCheck size={16} /></button>}
         {canCancel(row) && <button type="button" className={styles.iconButton} title="Cancelar chamado" aria-label={`Cancelar chamado ${row.titulo}`} disabled={actions.pending} onClick={() => confirmAction('cancel', row)}><XCircle size={16} /></button>}
-      </div>}</div></li>)}</ul>}<UnitMore list={list} /></>}
-      <UnitMore list={teams} />
+      </div>}</div></li>)}</ul>}<UnitMore list={list} noun="chamados" /></>}
     </div></section>
+    <Dialog open={Boolean(historyItem)} onOpenChange={open => { if (!open) setHistoryItem(null); }}>
+      <DialogContent className={styles.dialog}>
+        <DialogTitle>Histórico do chamado #{historyItem?.id_chamado}</DialogTitle>
+        <DialogDescription>{historyItem?.titulo}</DialogDescription>
+        <UnitListState list={history} empty="Nenhum evento registrado." />
+        {history.items.length > 0 && <ul className={styles.list}>{history.items.map(row => <li key={row.id_evento}>
+          <div><strong>{label(row.acao)}</strong><small>{dateTime(row.criado_em)} · Operador #{row.id_ator}</small></div>
+          <span className={styles.badge}>{label(row.status_novo)}</span>
+        </li>)}</ul>}
+        {historyItem && <UnitMore list={history} noun="eventos" />}
+      </DialogContent>
+    </Dialog>
     <Dialog open={Boolean(confirmation)} onOpenChange={open => { if (!open && !actions.pending) { actions.setError(''); setConfirmation(null); } }}>
       <DialogContent className={styles.dialog}>
         <DialogTitle>{confirmation?.type === 'cancel' ? 'Cancelar chamado' : 'Fechar chamado'} #{confirmation?.row.id_chamado}</DialogTitle>
@@ -95,7 +113,7 @@ export default function UnitTasks() {
         </div>
       </DialogContent>
     </Dialog>
-    {assigning && supervisor && <section className={`${styles.panel} ${styles.ticket}`} aria-labelledby="assign-title"><div className={styles.panelHeader}><h2 id="assign-title">Atribuir chamado #{assigning.id_chamado}</h2><button type="button" className={styles.iconButton} aria-label="Fechar atribuição" onClick={() => setAssigning(null)}><X size={17} /></button></div><div className={styles.body}><form className={styles.form} onSubmit={assign}><label>Colaborador ativo<select name="userId" required defaultValue={assigning.id_responsavel ?? ''}><option value="">Selecione</option>{members.items.filter(row => row.status === 'ATIVO' && row.funcao?.trim()).map(row => <option key={row.id_equipe_membro} value={row.id_usuario}>Colaborador #{row.id_usuario} · {row.funcao}</option>)}</select></label><button type="submit" className={styles.button} disabled={actions.pending || !members.items.length}>Atribuir</button></form><UnitListState list={members} empty="Nenhum colaborador ativo com função nesta equipe." /><UnitMore list={members} /></div></section>}
-    {formOpen && <section className={`${styles.panel} ${styles.ticket}`} aria-labelledby="task-form-title"><div className={styles.panelHeader}><h2 id="task-form-title">{editing ? 'Editar chamado' : 'Novo chamado'}</h2><button type="button" className={styles.iconButton} aria-label="Fechar formulário" onClick={() => { setFormOpen(false); setEditing(null); }}><X size={17} /></button></div><div className={styles.body}><form key={editing?.id_chamado ?? 'new'} className={styles.form} onSubmit={save}><label className={styles.full}>Título<input name="titulo" maxLength={200} defaultValue={editing?.titulo ?? ''} required /></label><label className={styles.full}>Descrição<textarea name="descricao" maxLength={10000} defaultValue={editing?.descricao ?? ''} /></label><label>Prioridade<select name="prioridade" defaultValue={editing?.prioridade ?? 'MEDIA'}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label><button type="submit" className={styles.button} disabled={actions.pending || !canWrite}><ListChecks size={16} />{actions.pending ? 'Salvando…' : 'Salvar chamado'}</button></form></div></section>}
+    {assigning && supervisor && <section className={`${styles.panel} ${styles.ticket}`} aria-labelledby="assign-title"><div className={styles.panelHeader}><h2 id="assign-title">Atribuir chamado #{assigning.id_chamado}</h2><button type="button" className={styles.iconButton} aria-label="Fechar atribuição" onClick={() => setAssigning(null)}><X size={17} /></button></div><div className={styles.body}><UnitFeedback error={actions.error} /><form className={styles.form} onSubmit={assign}><label>Colaborador ativo<select name="userId" required defaultValue={assigning.id_responsavel ?? ''}><option value="">Selecione</option>{members.items.filter(row => row.status === 'ATIVO' && row.funcao?.trim()).map(row => <option key={row.id_equipe_membro} value={row.id_usuario}>Colaborador #{row.id_usuario} · {row.funcao}</option>)}</select></label><button type="submit" className={styles.button} disabled={actions.pending || !members.items.length}>Atribuir</button></form><UnitListState list={members} empty="Nenhum colaborador ativo com função nesta equipe." />{members.hasNext && <button type="button" className={styles.secondary} disabled={members.loadingMore} onClick={members.loadMore}>Mais colaboradores</button>}</div></section>}
+    {formOpen && <section className={`${styles.panel} ${styles.ticket}`} aria-labelledby="task-form-title"><div className={styles.panelHeader}><h2 id="task-form-title">{editing ? 'Editar chamado' : 'Novo chamado'}</h2><button type="button" className={styles.iconButton} aria-label="Fechar formulário" onClick={() => { setFormOpen(false); setEditing(null); }}><X size={17} /></button></div><div className={styles.body}><UnitFeedback error={actions.error} /><form key={editing?.id_chamado ?? 'new'} className={styles.form} onSubmit={save}><label className={styles.full}>Título<input name="titulo" maxLength={200} defaultValue={editing?.titulo ?? ''} required /></label><label className={styles.full}>Descrição<textarea name="descricao" maxLength={10000} defaultValue={editing?.descricao ?? ''} /></label><label>Prioridade<select name="prioridade" defaultValue={editing?.prioridade ?? 'MEDIA'}>{priorities.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label><button type="submit" className={styles.button} disabled={actions.pending || !canWrite}><ListChecks size={16} />{actions.pending ? 'Salvando…' : 'Salvar chamado'}</button></form></div></section>}
   </UnitLayout>;
 }

@@ -18,10 +18,14 @@ export function safeLink(value) {
 }
 export async function publicGet(path, { signal } = {}) {
   const timeout = new AbortController();
-  const timer = setTimeout(() => timeout.abort(), 15000);
+  const timer = setTimeout(() => timeout.abort(new DOMException('Tempo de resposta excedido', 'TimeoutError')), 15000);
   try {
     const response = await fetch(apiUrl(path), { signal: signal ? AbortSignal.any([signal, timeout.signal]) : timeout.signal, cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json' } });
-    const body = await response.json().catch(() => null);
+    const body = await response.json().catch(error => {
+      if (timeout.signal.aborted) throw timeout.signal.reason;
+      if (signal?.aborted) throw error;
+      return null;
+    });
     if (!response.ok) throw responseError(response, body);
     if (body?.success !== true || body.data == null) throw responseError(response, { code: 'INVALID_RESPONSE' });
     return body.data;

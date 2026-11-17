@@ -50,7 +50,7 @@ function NavigationItem({ item, pathname, collapsed, searching }) {
   if (!hasChildren && !item.href) return null;
 
   if (!hasChildren) return <li>
-    <Link href={item.href} className={itemClass} aria-current={selected ? "page" : undefined} aria-label={collapsed ? item.label : undefined} title={collapsed ? item.label : undefined}>
+    <Link prefetch={false} href={item.href} className={itemClass} aria-current={selected ? "page" : undefined} aria-label={collapsed ? item.label : undefined} title={collapsed ? item.label : undefined}>
       {Icon && <Icon size={18} strokeWidth={1.8} aria-hidden="true" />}
       {!collapsed && <span>{item.label}</span>}
     </Link>
@@ -63,22 +63,22 @@ function NavigationItem({ item, pathname, collapsed, searching }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start" className={styles.flyout} aria-label={item.label}>
         <p className={styles.flyoutTitle}>{item.label}</p>
-        <DropdownMenuItem render={<Link href={item.href} />} className={styles.flyoutLink} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</DropdownMenuItem>
-        {children.map((child) => <DropdownMenuItem key={child.href} render={<Link href={child.href} />} className={styles.flyoutLink} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</DropdownMenuItem>)}
+        <DropdownMenuItem render={<Link prefetch={false} href={item.href} />} className={styles.flyoutLink} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</DropdownMenuItem>
+        {children.map((child) => <DropdownMenuItem key={child.href} render={<Link prefetch={false} href={child.href} />} className={styles.flyoutLink} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</DropdownMenuItem>)}
       </DropdownMenuContent>
     </DropdownMenu>
   </li>;
 
   return <li>
     <div className={styles.navGroup}>
-      <Link href={item.href} className={itemClass} aria-current={pathname === item.href ? "page" : undefined}>
+      <Link prefetch={false} href={item.href} className={itemClass} aria-current={pathname === item.href ? "page" : undefined}>
         {Icon && <Icon size={18} strokeWidth={1.8} aria-hidden="true" />}
         <span>{item.label}</span>
       </Link>
       <button type="button" className={styles.groupToggle} onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={`${open ? "Recolher" : "Expandir"} subcategorias de ${item.label}`}><ChevronDown className={styles.groupChevron} size={15} aria-hidden="true" /></button>
     </div>
     {open && <ul className={styles.subnav}>{children.map((child) => <li key={child.href}>
-        <Link href={child.href} className={`${styles.subnavLink} ${isCurrent(pathname, child.href) ? styles.subnavActive : ""}`} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</Link>
+        <Link prefetch={false} href={child.href} className={`${styles.subnavLink} ${isCurrent(pathname, child.href) ? styles.subnavActive : ""}`} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</Link>
       </li>)}</ul>}
   </li>;
 }
@@ -116,7 +116,7 @@ export function AppSidebar({ items = [], user, onLogout, loggingOut = false, col
 
   return <aside aria-label={`Menu lateral de ${areaLabel}`} className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""} ${mobile ? styles.mobile : ""} ${className}`} onClick={(event) => { if (event.target.closest("a")) onNavigate?.(); }}>
     <div className={styles.brand}>
-      <Link href={homeHref} className={styles.brandLink} aria-label="CineAstra — Início" title={collapsed ? "CineAstra" : undefined}>
+      <Link prefetch={false} href={homeHref} className={styles.brandLink} aria-label="CineAstra — Início" title={collapsed ? "CineAstra" : undefined}>
         <img src={logo} alt="" width={38} height={38} className={styles.logo} />
         {!collapsed && <span className={styles.wordmark}>cine<span>astra.</span></span>}
       </Link>

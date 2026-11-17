@@ -2,12 +2,14 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ResumoCompra from "@/components/cinema/card/resumocompra";
+import SocialImpact from "./social-impact";
 import styles from "./payment.module.css";
 
 export default function PaymentSummary({ payment, method, draftId }) {
   const { items, itemCount, total, issue, offer, offerLoading, offerError, accepted, setAccepted, pending, error, result, refreshPayment, session, checkingPayment, pollingPaused } = payment;
   const isCard = method === "credito" || method === "debito";
   const canPay = Boolean(isCard && payment.ready && !pending && !result?.paymentId);
+  const paid = ["PAGO", "FINALIZADO"].includes(result?.orderStatus);
   return <ResumoCompra
     items={items}
     itemCount={itemCount}
@@ -21,6 +23,7 @@ export default function PaymentSummary({ payment, method, draftId }) {
     {issue && !["PAGO", "FINALIZADO"].includes(result?.orderStatus) && <p role="alert" className={styles.error}>{issue}</p>}
     {offerLoading && <p role="status" className={styles.summaryHint}>Consultando preço e disponibilidade…</p>}
     {offerError && <p role="alert" className={styles.error}>{offerError}</p>}
+    {(offer?.finalizable || paid) && <SocialImpact destination={paid ? result.socialDestination : offer?.socialDestination} confirmed={paid} showEmpty />}
     {!session.loading && !session.user && <p className={styles.summaryHint}><Link href="/auth/login" className={styles.inlineLink}>Entre na sua conta</Link> para finalizar.</p>}
     {offer && !offer.finalizable && <p role="alert" className={styles.error}>{offer.guardianAuthorizationRequired ? "Esta compra exige autorização do responsável." : offer.lines?.some(line => line.catalogOutOfSync) ? "O cinema precisa atualizar o preço de um dos itens." : "A oferta não pode ser finalizada. Revise o carrinho."}</p>}
     {!method && offer?.contract && <div id="payment-consent" className={styles.consent}>
@@ -30,6 +33,6 @@ export default function PaymentSummary({ payment, method, draftId }) {
     </div>}
     {method && !accepted && offer && <p className={styles.error}>Aceite a oferta na <Link href={draftId ? `/cinema/pagamento?draft=${draftId}` : "/cinema/pagamento"} className={styles.inlineLink}>seleção de pagamento</Link> para continuar.</p>}
     {isCard && error && <p role="alert" className={styles.error}>{error}</p>}
-    {isCard && result && <div role="status" className={styles.paymentResult}><strong>Pedido #{result.orderId}</strong><span>Pagamento: {result.status}</span><span>Pedido: {result.orderStatus}</span>{["PAGO", "FINALIZADO"].includes(result.orderStatus) ? <Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link> : result.paymentId && <Button type="button" variant="outline" disabled={pending || checkingPayment} onClick={() => refreshPayment(result.paymentId)}>Atualizar status</Button>}{pollingPaused && <p>As consultas automáticas foram pausadas. Use Atualizar status para consultar o pedido.</p>}</div>}
+    {isCard && result && <div role="status" className={styles.paymentResult}><strong>Pedido #{result.orderId}</strong><span>Pagamento: {result.status}</span><span>Pedido: {result.orderStatus}</span>{["PAGO", "FINALIZADO"].includes(result.orderStatus) ? <><Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link><Link href="/cinema/astrasnack">Começar outro pedido AstraSnack <ArrowRight size={15} /></Link></> : result.paymentId && <Button type="button" variant="outline" disabled={pending || checkingPayment} onClick={() => refreshPayment(result.paymentId)}>Atualizar status</Button>}{pollingPaused && <p>As consultas automáticas foram pausadas. Use Atualizar status para consultar o pedido.</p>}</div>}
   </ResumoCompra>;
 }

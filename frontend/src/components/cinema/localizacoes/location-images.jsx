@@ -7,7 +7,7 @@ import { useLocationImage } from "@/hooks/cinema/localizacoes/use-location-image
 export function VenueImg({ src, kind, alt = "", className = "" }) {
   const { failed, onError } = useLocationImage(src);
   if (failed || !src) return <VenueArt kind={kind} className={`w-full h-full ${className}`} />;
-  return <img src={src} alt={alt} loading="lazy" decoding="async" onError={onError} className={`w-full h-full object-cover ${className}`} />;
+  return <img src={src} alt={alt} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={onError} className={`w-full h-full object-cover ${className}`} />;
 }
 
 export function PosterImg({ src, title }) {

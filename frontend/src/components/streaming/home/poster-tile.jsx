@@ -1,10 +1,11 @@
 import { Check } from "lucide-react";
 import { ACCENT } from "./data";
 import Art from "./art";
+import ticket from "./film-ticket.module.css";
 
 export default function PosterTile({ movie, onSelect, inList }) {
   return (
-    <button type="button" onClick={() => onSelect(movie)} aria-label={movie.title} className="group relative aspect-[2/3] overflow-hidden rounded-md border border-border bg-card transition-all duration-300 hover:scale-[1.05] hover:z-10 hover:border-primary hover:shadow-xl hover:shadow-black/60 outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+    <button type="button" onClick={() => onSelect(movie)} aria-label={movie.title} className={`${ticket.notches} group relative aspect-[2/3] overflow-hidden rounded-md border border-border bg-card motion-safe:transition-transform motion-safe:hover:scale-[1.03] hover:z-10 hover:border-primary outline-hidden focus-visible:ring-2 focus-visible:ring-primary`}>
       <Art movie={movie} variant="poster" className="absolute inset-0 size-full object-cover" />
       <span className="absolute top-1.5 left-1.5 f-display text-[11px] font-black tracking-[0.18em] text-primary bg-black/60 px-1 rounded-xs leading-tight">CINEASTRA</span>
       {inList && <span className="absolute top-1.5 right-1.5 size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center"><Check className="size-3" /></span>}

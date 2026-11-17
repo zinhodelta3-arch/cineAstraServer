@@ -27,7 +27,8 @@ test('aluguel de streaming usa custo e prazo próprios; novas compras são bloqu
 
 test('cotação valida sala, cadeira e idade; preço vem do motor 28',async()=>{
     const calls=[],user={id_usuario:'1',tipo_usuario:'CLIENTE',data_nascimento:'1990-01-01'};let occupied=false;
-    const model={age:async()=>({faixa_etaria:'MAIOR_16'}),session:async()=>({id_sala:'5',id_local:'7',status:'AGENDADA',sala_status:'ATIVA',local_status:'ATIVO',filme_status:'ATIVO',disponivel_cinema:1,classificacao:'12',data:'2026-12-01'}),seat:async()=>({id_sala:'5',status:'ATIVA'}),occupiedSeat:async()=>occupied?{id_ocupacao:'9'}:null,
+    let sessionDate=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
+    const model={age:async()=>({faixa_etaria:'MAIOR_16'}),session:async()=>({id_sala:'5',id_local:'7',status:'AGENDADA',sala_status:'ATIVA',local_status:'ATIVO',filme_status:'ATIVO',disponivel_cinema:1,classificacao:'12',data:sessionDate,horario_inicio:'10:00:00',horario_fim:'12:00:00'}),seat:async()=>({id_sala:'5',status:'ATIVA'}),occupiedSeat:async()=>occupied?{id_ocupacao:'9'}:null,
         };
     const identity={transaction:async fn=>fn({execute:async()=>[]}),activeActor:async()=>user};
     const pricing={quoteOnConnection:async(_,input)=>{calls.push(input);return {lines:[{category:'SESSION',id:'3',quantity:1,unitPrice:'20.00',subtotal:'20.00'}],total:'20.00',finalizable:true};}};
@@ -38,8 +39,10 @@ test('cotação valida sala, cadeira e idade; preço vem do motor 28',async()=>{
     await assert.rejects(service.quote({localId:'7',lines:[{kind:'SESSION',id:'3',seatId:'4',quantity:1}]},{actor:{id:'1'}}),{code:'ORDER_CONFLICT'});
     occupied=false;
     await assert.rejects(service.quote({localId:'8',lines:[{kind:'SESSION',id:'3',seatId:'4',quantity:1}]},{actor:{id:'1'}}),{code:'ORDER_CONFLICT'});
-    user.data_nascimento='2020-01-01';
+    user.data_nascimento=new Date(Date.now()-365*86400000).toISOString().slice(0,10);
     await assert.rejects(service.quote({localId:'7',lines:[{kind:'SESSION',id:'3',seatId:'4',quantity:1}]},{actor:{id:'1'}}),{statusCode:403});
+    sessionDate='2000-01-01';
+    await assert.rejects(service.quote({localId:'7',lines:[{kind:'SESSION',id:'3',seatId:'4',quantity:1}]},{actor:{id:'1'}}),{code:'ORDER_CONFLICT'});
 });
 
 test('insumo e combo somam demanda do mesmo estoque; menor não recebe cotação finalizável',async()=>{

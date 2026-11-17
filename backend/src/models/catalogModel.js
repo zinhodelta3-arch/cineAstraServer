@@ -14,12 +14,12 @@ export function createCatalogModel(database) {
     function pageLimit(limit = 20) { if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new TypeError('Limite inválido'); return limit + 1; }
     function fields(input, allowed) { const keys = Object.keys(input); if (!keys.length || keys.some(k => !allowed.includes(k))) throw new TypeError('Campos inválidos'); return keys; }
     return {
-        popularFilms: () => rows(database, `SELECT ${selection(false)}, COUNT(t.id_ticket) AS views
+        popularFilms: (limit = 4) => rows(database, `SELECT ${selection(false)}, COUNT(t.id_ticket) AS views
             FROM filmes f JOIN sessoes s ON s.id_filme = f.id_filme
             JOIN itens_pedido ip ON ip.id_sessao = s.id_sessao
             JOIN tickets t ON t.id_item = ip.id_item
             WHERE f.status = 'ATIVO' AND f.disponivel_cinema = 1 AND t.tipo = 'INGRESSO_SESSAO' AND t.status = 'UTILIZADO'
-            GROUP BY f.id_filme ORDER BY views DESC, f.id_filme LIMIT 4`, []),
+            GROUP BY f.id_filme ORDER BY views DESC, f.id_filme LIMIT ?`, [limit]),
         film: (id, admin = false, c = database, lock = false) => one(c, `SELECT ${selection(admin)} FROM filmes f WHERE f.id_filme = ?${admin ? '' : " AND f.status = 'ATIVO'"}${lock ? ' FOR UPDATE' : ''}`, [id]),
         genre: (id, admin = false, c = database, lock = false) => one(c, `SELECT id_genero,nome,status FROM generos WHERE id_genero = ?${admin ? '' : " AND status = 'ATIVO'"}${lock ? ' FOR UPDATE' : ''}`, [id]),
         listFilms(q, admin = false) {

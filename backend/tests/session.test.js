@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
-import { createSessionService, interval } from '../src/services/sessionService.js';
+import { createSessionService, interval, sessionDto } from '../src/services/sessionService.js';
 import { createSessionController } from '../src/controllers/sessionController.js';
 import { sessionRoutes } from '../src/routes/sessionRoutes.js';
 import { sessionSchemas } from '../src/validators/sessionValidators.js';
@@ -41,6 +41,26 @@ function fixture() {
     return { app, api, service, get state() { return state; }, addItem(id) { state.items.push(id); } };
 }
 const body = (data = '2026-10-10', start = '10:00', end = '12:00', room = '1') => ({ id_filme: '1', id_sala: room, data, horario_inicio: start, horario_fim: end, preco_inteira: '20.00' });
+
+test('programação por cinema e data inclui capa e classificação na mesma consulta', async () => {
+    const queries = [];
+    const database = { async execute(sql, args) { queries.push({ sql, args }); return [[]]; } };
+    const model = createSessionModel(database);
+    const timetable = { localId: '1', date: '2026-10-10', limit: 20 };
+    await model.list(timetable);
+    await model.list(timetable, true);
+    await model.list({ limit: 20 });
+    assert.match(queries[0].sql, /f\.imagem AS imagem_filme,f\.classificacao AS classificacao_filme/);
+    assert.deepEqual(queries[0].args, ['0', '1', '2026-10-10']);
+    assert.doesNotMatch(queries[1].sql + queries[2].sql, /imagem_filme|classificacao_filme/);
+
+    const session = { ...body('2026-10-10', '10:00:00', '12:00:00'), id_sessao: '1', id_local: '1', titulo_filme: 'Filme' };
+    const dto = sessionDto({ ...session, imagem_filme: null, classificacao_filme: '12' });
+    assert.equal(dto.titulo_filme, 'Filme');
+    assert.equal(dto.imagem_filme, null);
+    assert.equal(dto.classificacao_filme, '12');
+    assert.equal(Object.hasOwn(sessionDto(session), 'imagem_filme'), false);
+});
 
 test('RN19: intervalo de uma hora no mesmo local, inclusive salas distintas e limite exato', async () => {
     const f = fixture();

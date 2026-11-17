@@ -6,13 +6,18 @@ import styles from './unit.module.css';
 
 const statuses = { PENDENTE: 'Pendente', ACEITA: 'Aprovada', RECUSADA: 'Rejeitada', CANCELADA: 'Cancelada' };
 
-export default function UnitJoinRequests() {
+export default function UnitJoinRequests({ onRefresh }) {
   const available = useUnitList('/available?limit=10');
   const history = useUnitList('/my-requests?limit=10');
 
   function refresh() {
     available.reload();
     history.reload();
+  }
+
+  function refreshMembership() {
+    refresh();
+    onRefresh?.();
   }
 
   const action = useUnitAction(refresh);
@@ -38,7 +43,7 @@ export default function UnitJoinRequests() {
     <section className={styles.panel} aria-labelledby="join-history-title">
       <header className={styles.panelHeader}>
         <h2 id="join-history-title">Minhas solicitações</h2>
-        <button type="button" className={styles.secondary} disabled={action.pending || history.loading} onClick={refresh}>Atualizar</button>
+        <button type="button" className={styles.secondary} disabled={action.pending || history.loading} onClick={refreshMembership}>Atualizar</button>
       </header>
       <div className={styles.body}>
         <UnitListState list={history} empty="Você ainda não enviou solicitações de ingresso." />

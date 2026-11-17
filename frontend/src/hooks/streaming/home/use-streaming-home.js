@@ -75,14 +75,14 @@ export default function useStreamingHome() {
   const filtered = genre === "Todos" ? catalog : catalog.filter((movie) => movie.genreIds.includes(genre));
   const accessByFilm = Object.fromEntries(accesses.filter((item) => item.available).map((item) => [item.filmId, item]));
 
-  const toggleList = async (movie) => {
-    if (!profile) return;
-    const adding = !favorites.has(movie.id);
+  const toggleList = async (movie, adding = !favorites.has(movie.id)) => {
+    if (!profile) return false;
     setActionError("");
     try {
       await streamingRequest(`/profiles/${profile.id}/favorites/${movie.id}`, { method: adding ? "PUT" : "DELETE", body: adding ? {} : undefined });
-      setFavoriteIds((current) => adding ? [...current, movie.id] : current.filter((id) => id !== movie.id));
-    } catch (cause) { setActionError(cause.message || "Não foi possível atualizar sua lista."); }
+      setFavoriteIds((current) => adding ? [...new Set([...current, movie.id])] : current.filter((id) => id !== movie.id));
+      return true;
+    } catch (cause) { setActionError(cause.message || "Não foi possível atualizar sua lista."); return false; }
   };
   const updateProgress = (item) => setHistory((current) => [item, ...current.filter((entry) => entry.filmId !== item.filmId)]);
   return {

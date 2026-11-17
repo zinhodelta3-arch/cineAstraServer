@@ -27,8 +27,11 @@ Object.assign(stockRequest.properties, {
 stockRequest.required.push('status_supervisao','id_supervisor_decisao','data_decisao_supervisao');
 spec.components.schemas.Logistics=object({id_logistica:id,id_fornecedor:id,id_local_origem:nullableId,id_local_destino:id,id_solicitacao:nullableId,id_insumo_origem:nullableId,id_equipamento_origem:nullableId,id_insumo_destino:nullableId,quantidade:{type:'integer',nullable:true},status:statusShip,data_envio:{type:'string',nullable:true},data_prevista:{type:'string',nullable:true},data_recebimento:{type:'string',nullable:true},data_devolucao:{type:'string',nullable:true},id_usuario_recebimento:nullableId,id_usuario_devolucao:nullableId,observacao:{type:'string',nullable:true},devolucao_disponivel:{type:'boolean'}});
 const logistics = spec.components.schemas.Logistics;
-Object.assign(logistics.properties,{id_transporte:nullableId,nome_transporte:{type:'string',nullable:true}});
-logistics.required.push('id_transporte','nome_transporte');
+Object.assign(logistics.properties,{id_transporte:nullableId,nome_transporte:{type:'string',nullable:true},
+    id_rota_referencia:{...nullableId,description:'Rota ativa usada no envio, quando disponível.'},
+    distancia_rota_km:{...distance,nullable:true,description:'Distância de referência no envio.'},
+    tempo_rota_min:{...duration,nullable:true,description:'Tempo de referência no envio.'}});
+logistics.required.push('id_transporte','nome_transporte','id_rota_referencia','distancia_rota_km','tempo_rota_min');
 const incidentTypes = ['ACIDENTE','EXTRAVIO','PERDA'];
 const eventId = {type:'string',pattern:'^[1-9][0-9]{0,19}$'};
 spec.components.schemas.LogisticsEvent=object({id_evento:eventId,id_usuario:id,tipo:{type:'string',enum:['STATUS',...incidentTypes]},status:statusShip,descricao:{type:'string',nullable:true},criado_em:{type:'string'}});
@@ -46,7 +49,7 @@ for(const r of supplyOperations){
         : r.action==='sources'
         ? 'Origens disponíveis para reposição no cinema do supervisor ou da equipe do colaborador.'
         : r.path.startsWith('/api/admin/')
-        ? 'Exclusivo para ADMIN. Cada direção possui uma rota que pode ser editada ou inativada.'
+        ? 'Exclusivo para ADMIN. Cada direção possui uma rota de referência que pode ser editada, arquivada ou reativada.'
         : 'Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.';
     const op={operationId:r.operationId,tags:['Suprimentos'],summary:r.operationId.replaceAll('_',' '),description,security:[{bearerAuth:[]}],parameters:[],responses:{}};
     if(r.path.includes('{id}'))op.parameters.push({name:'id',in:'path',required:true,schema:id});
@@ -91,7 +94,7 @@ for(const r of supplyOperations){
         op.requestBody={required:true,content:{'application/json':{schema:object({decision:{type:'string',enum:['APROVADA','RECUSADA']}})}}};
         op.responses['200']=response(ref('StockRequest'));
     }else if(r.action==='send'){
-        op.description+=' Exige transporte ativo, próprio do fornecedor e sem entrega em andamento.';
+        op.description+=' Exige transporte ativo, próprio do fornecedor e sem entrega em andamento. Se houver rota ativa, registra seus dados de referência no envio.';
         op.requestBody={required:true,content:{'application/json':{schema:object({transportId:id})}}};
         op.responses['200']=response(ref('Logistics'));
     }else if(r.action==='history'){

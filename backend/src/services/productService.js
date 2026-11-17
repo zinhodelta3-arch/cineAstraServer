@@ -6,7 +6,8 @@ const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'PRODUCT_CONFLICT');
 const key = type => type === 'inputs' ? 'id_insumo' : 'id_equipamento';
 const productDto = (type, row, role) => ({ [key(type)]: idString(row[key(type)]), id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, categoria: row.categoria ?? null, ...(type === 'inputs' ? { quantidade_minima: row.quantidade_minima, venda_avulsa: Boolean(row.venda_avulsa), preco: moneyString(row.preco), ...(role === 'ADMIN' ? { custo_receita: row.custo_receita ?? null, custo_parceria: row.custo_parceria ?? null } : {}) } : { numero_patrimonio: row.numero_patrimonio ?? null }), quantidade: row.quantidade, status: row.status, data_cadastro: row.data_cadastro });
-const grantDto = row => ({ id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), status: row.status, criado_em: row.criado_em });
+const grantDto = row => ({ id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), status: row.status, criado_em: row.criado_em,
+    ...(row.nome_local != null && { nome_local: row.nome_local }) });
 const page = (rows, q, dto, id) => { const items = rows.slice(0, q.limit); return { items: items.map(dto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1)[id]) : null } }; };
 export function createProductService({ model, identity, pricing }) {
     function checkCostsPermission(input, user) {

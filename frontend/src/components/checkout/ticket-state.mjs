@@ -1,14 +1,14 @@
 export const TICKET_TYPES = [
   { id: "inteira", name: "Inteira", label: "O cinema é para todo mundo.", price: 4000, code: "INT", category: "regular", description: "Entrada pelo valor integral, sem necessidade de comprovar um benefício." },
-  { id: "meia", name: "Meia entrada", label: "Seu direito, sua próxima sessão.", price: 2000, code: "MEI", category: "half", description: "Selecione esta opção se você tem direito à meia entrada. Leve um documento válido que comprove seu benefício e consulte as condições do cinema." },
-  { id: "nubank", name: "Meia Nubank", label: "Uma parceria que dá cena.", price: 1800, code: "NUB", category: "half", partner: true, description: "Benefício de parceiro apresentado no modelo desta página. Confirme elegibilidade, formas de pagamento aceitas e condições da oferta com o cinema antes de comprar." },
+  { id: "meia", name: "Meia-entrada", label: "Seu direito, sua próxima sessão.", price: 2000, code: "MEI", category: "half", description: "Selecione esta opção se você tem direito à meia entrada. Leve um documento válido que comprove seu benefício e consulte as condições do cinema." },
+  { id: "nubank", name: "Meia Nubank (simulada)", label: "Benefício de demonstração.", price: 1800, code: "NUB", category: "half", partner: true, description: "Benefício simulado com o mesmo valor da meia-entrada. Aplicam-se a declaração e a conferência do comprovante na entrada." },
 ];
 
 export const brl = (cents) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 export const emptySelection = () => Object.fromEntries(TICKET_TYPES.map(({ id }) => [id, 0]));
 export const quantityOf = (selection) => TICKET_TYPES.reduce((total, { id }) => total + (selection[id] || 0), 0);
 export const ticketTypes = (session) => session?.priceCents != null
-  ? [{ ...TICKET_TYPES[0], price: session.priceCents }] : TICKET_TYPES;
+  ? TICKET_TYPES.map(type => ({ ...type, price: type.category === "half" ? Math.round(session.priceCents / 2) : session.priceCents })) : TICKET_TYPES;
 export const totalOf = (selection, types = TICKET_TYPES) => types.reduce((total, { id, price }) => total + (selection[id] || 0) * price, 0);
 
 export function updateQuantity(selection, id, delta, seatCount) {
@@ -24,7 +24,6 @@ export function validSession(value) {
 
 export function createOrder(session, selection) {
   if (!validSession(session) || quantityOf(selection) !== session.seats.length || TICKET_TYPES.some(({ id }) => !Number.isInteger(selection[id]) || selection[id] < 0)) throw new Error("Selecione um ingresso para cada assento.");
-  if (session.priceCents != null && (selection.meia || selection.nubank)) throw new Error("Esta sessão só oferece ingresso inteiro no momento.");
   const types = ticketTypes(session);
   return { session, tickets: types.filter(({ id }) => selection[id] > 0).map(({ id, name, price }) => ({ id, name, quantity: selection[id], unitPriceCents: price, subtotalCents: selection[id] * price })), ticketCount: quantityOf(selection), totalCents: totalOf(selection, types), currency: "BRL" };
 }

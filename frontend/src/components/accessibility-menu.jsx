@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useId, useState } from "react"
+import { usePathname } from "next/navigation"
 import {
   Accessibility, Contrast, Type, MoveVertical, MoveHorizontal,
   Pause, Eye, RotateCcw, X, Check,
@@ -47,6 +48,7 @@ export function AccessibilityMenu() {
   const {
     settings, ready, storageAvailable, systemReducedMotion,
     activeCount, cycle, toggleMotion, reset,
+    accountError, retryAccount, accountSaving, synced,
   } = useAccessibility()
 
   useEffect(() => {
@@ -174,10 +176,11 @@ export function AccessibilityMenu() {
               Restaurar padrão
             </Button>
             <p className="ca-a11y-save">
-              {!ready ? "Carregando preferências…" : storageAvailable
+              {accountError ? accountError : accountSaving ? "Salvando preferências…" : !ready ? "Carregando preferências…" : synced ? "Preferências vinculadas à sua conta." : storageAvailable
                 ? "Preferências salvas neste navegador."
                 : "Ajustes ativos nesta sessão. O navegador bloqueou o salvamento."}
             </p>
+            {accountError && <Button variant="outline" onClick={retryAccount}>Tentar novamente</Button>}
           </footer>
         </div>
         <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
@@ -189,3 +192,9 @@ export function AccessibilityMenu() {
 }
 
 export default AccessibilityMenu
+
+export function GlobalAccessibilityMenu() {
+  const pathname = usePathname();
+  const accountArea = /^\/(cinema|streaming)(\/|$)/.test(pathname ?? '');
+  return accountArea ? null : <AccessibilityMenu />;
+}

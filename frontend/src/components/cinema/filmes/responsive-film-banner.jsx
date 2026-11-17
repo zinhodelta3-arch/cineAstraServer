@@ -30,7 +30,7 @@ export default function ResponsiveFilmBanner({ filmId, context, legacyBanner, co
   const available = src => src && !failed.includes(src);
   const sources = mediaByDevice.map(([device, media, fit]) => [publicAsset(data?.variants?.[device]), media, fit])
     .filter(([src]) => available(src));
-  const fallback = [data ? publicAsset(data.defaultBanner) : legacyBanner, publicAsset(data?.cover), cover].find(available);
+  const fallback = [publicAsset(data?.defaultBanner), legacyBanner, publicAsset(data?.cover), cover].find(available);
   const base = fallback || '/Logominimalista.png';
 
   function handleError(event) {

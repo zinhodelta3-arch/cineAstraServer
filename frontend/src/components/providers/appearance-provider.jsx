@@ -50,13 +50,13 @@ export function AppearanceProvider({ children }) {
     () => DEFAULT_APPEARANCE
   )
 
-  const setAppearance = useCallback((nextAppearance) => {
+  const setAppearance = useCallback((nextAppearance, persist = true) => {
     if (!isAppearance(nextAppearance)) return
 
     document.documentElement.dataset.theme = nextAppearance
 
     try {
-      window.localStorage.setItem(APPEARANCE_STORAGE_KEY, nextAppearance)
+      if (persist) window.localStorage.setItem(APPEARANCE_STORAGE_KEY, nextAppearance)
     } catch {
       // A troca continua funcionando quando o navegador bloqueia o armazenamento.
     }

@@ -11,11 +11,11 @@ async function handle(request,{params}){
  if(!token)return json({message:'Entre na sua conta para acessar seu perfil.'},401);
  try{
   let body={};
-  if(['POST','PATCH'].includes(request.method)){
+  const parts=(await params).path;
+  if(['POST','PATCH'].includes(request.method)||(request.method==='DELETE'&&parts?.[0]==='privacy')){
    const text=await request.text();if(text.length>8000)return json({message:'Dados excessivos.'},413);
    try{body=JSON.parse(text);}catch{return json({message:'Dados inválidos.'},400);}
   }
-  const parts=(await params).path;
   const target=profileTarget(parts,request.method,body,new URL(request.url).searchParams.get('cursor'));
   if(!target)return json({message:parts?.[0]==='password'?'A senha nova exige 12 caracteres, maiúscula, minúscula, número e símbolo, com confirmação igual (até 72 bytes).':'Confira os campos informados e os limites de cada registro.'},422);
   const data=await backendAuth(target.path,{token,method:request.method,body:target.body});
@@ -24,6 +24,7 @@ async function handle(request,{params}){
    response.cookies.set(SESSION_COOKIE,'',{...sessionCookieOptions(request),maxAge:0});
    return response;
   }
+  if(target.privacy)return json(data,202);
   return json(target.list?{items:data}:data??{success:true});
  }catch(e){
   const messages={401:'Sessão expirada ou senha atual/código de autenticação inválido.',404:'Registro não encontrado ou indisponível para sua conta.',409:'Não foi possível alterar este registro no estado atual. Atualize os dados.',422:'Confira os campos e, na troca de senha, a confirmação e os requisitos informados.'};

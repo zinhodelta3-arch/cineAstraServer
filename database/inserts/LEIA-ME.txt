@@ -32,3 +32,23 @@ A autenticação, os serviços externos e a disponibilidade dos trailers continu
 REVISÃO
 Foram conferidos estaticamente os nomes de colunas, campos obrigatórios, enums, limites de texto, referências internas e ordem das dependências.
 A carga foi importada no banco local. Consulte IMPORTACAO.txt e 03_importacao.csv. Não reaplique neste banco.
+
+CARGA COMPLEMENTAR DE VOLUME PARA QA
+Em um schema novo e isolado, instale cineastra-install.sql e aplique 01_inserts.sql.
+Depois execute 04_catalogo_1000.sql e 05_operacao_1000.sql, nessa ordem, com o mesmo comando mysql acima e o respectivo caminho de entrada.
+Execute 07_experiencias.sql para incluir Bunker Privativo e Sala Playground. Esse arquivo também pode ser aplicado a uma base já instalada.
+Execute 08_banners_catalogo_original.sql para completar os banners dos 100 filmes do pacote original. O arquivo preserva as imagens já cadastradas.
+Execute sem --force, com modo estrito e chaves estrangeiras ativos. Reserve a faixa de IDs a partir de 20.000.000 para a carga operacional. Execute 05_operacao_1000.sql apenas uma vez.
+
+04_catalogo_1000.sql adiciona 1.000 filmes ao pacote original. Cada registro tem cartaz, banner e trailer externo, além de gêneros.
+Os metadados vêm do catálogo Cinemeta, do Stremio (https://github.com/Stremio/stremio-official-addons). As imagens ficam no MetaHub e os trailers seguem no YouTube. As URLs foram verificadas durante a seleção. Os provedores podem alterar a disponibilidade.
+Os títulos e as sinopses seguem o idioma disponibilizado pela fonte. Todos os filmes entram com classificação provisória 18 para QA até conferência da classificação indicativa brasileira.
+
+05_operacao_1000.sql simula a operação da CineAstra e cria uma sessão de cinema para cada novo filme. Unidades e salas têm nomes de cinema. Pessoas, fornecedores e endereços são dados fictícios formatados para simular cadastros reais. Os e-mails novos seguem os nomes dos usuários e usam domínios reservados .example.
+A carga demanda aproximadamente 39 MB de SQL e foi dimensionada para uma base de teste. A quantidade sobe acima de 1.000 nas tabelas de apoio quando os vínculos exigem, como nos usuários, nas salas e nos assentos.
+As novas contas estão inativas. Para entrar no ambiente de QA, use as contas do pacote original. Os registros de newsletter e outbox entram concluídos.
+
+06_volume_1000.csv registra as contagens antes e depois no MySQL isolado. Foram adicionados pelo menos 1.000 registros em 86 das 92 tabelas do pacote.
+A tabela generos contém apenas categorias do catálogo. Os filmes novos reutilizam os gêneros existentes e acrescentam os gêneros reais que faltavam.
+Os planos Básico, Família e Plus e seus benefícios vêm do pacote original. As assinaturas simuladas usam esses três planos.
+identity_admin_guard (registro único), schema_migrations (histórico do instalador) e precificacao_parametros (seis categorias fixas) foram preservadas.

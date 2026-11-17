@@ -197,7 +197,7 @@ export default function usePayment(method = null, draftId = null) {
         ? await request("order", { query: `id=${encodeURIComponent(payment.orderId)}`, signal }) : null;
       if (controller.signal.aborted) return "stop";
       setError("");
-      setResult(current => current?.paymentId === paymentId ? { ...current, status: payment.status, orderStatus: order?.financialStatus || current.orderStatus } : current);
+      setResult(current => current?.paymentId === paymentId ? { ...current, status: payment.status, orderStatus: order?.financialStatus || current.orderStatus, socialDestination: order ? order.socialDestination : current.socialDestination } : current);
       if (["PAGO", "FINALIZADO"].includes(order?.financialStatus)) {
         if (!draftId) cart.clearCart();
         clearSavedKey(checkoutKey);

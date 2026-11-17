@@ -16,7 +16,12 @@ export function createPaymentMethodModel(database) {
         setPrincipal: (c,id,principal) => c.execute('UPDATE metodos_pagamento SET principal=? WHERE id_metodo=?',[principal,id]),
         archive: (c,id) => c.execute('UPDATE metodos_pagamento SET ativo=FALSE,principal=FALSE WHERE id_metodo=?',[id]),
         order: (id,c) => one(c,'SELECT id_pedido,id_usuario,valor_total,status,checkout_expira_em FROM pedidos WHERE id_pedido=? FOR UPDATE',[id]),
-        charge: (id,c) => one(c,'SELECT id_cobranca,id_usuario,valor_devido,valor_multa_aplicada,juros_mora,correcao_ipca,status FROM assinatura_cobrancas WHERE id_cobranca=? FOR UPDATE',[id]),
+        charge: (id,c) => one(c,`SELECT ac.id_cobranca,ac.id_usuario,ac.valor_devido,ac.valor_multa_aplicada,ac.juros_mora,ac.correcao_ipca,ac.status,
+            (SELECT a.status FROM assinaturas a WHERE a.id_assinatura=ac.id_assinatura) AS subscription_status,
+            EXISTS(SELECT 1 FROM assinatura_ciclos ciclo WHERE ciclo.id_assinatura=ac.id_assinatura AND ciclo.competencia=ac.competencia) AS renewal
+            FROM assinatura_cobrancas ac WHERE ac.id_cobranca=? FOR UPDATE`,[id]),
+        activeChargeIntention:(c,id,owner)=>one(c,`SELECT id_intencao,estado,valor FROM pagamento_intencoes
+            WHERE id_cobranca=? AND id_usuario=? AND estado IN ('PREPARADA','ENVIADA') ORDER BY id_intencao DESC LIMIT 1 FOR UPDATE`,[id,owner]),
         intention: (owner,key,c) => one(c,'SELECT id_intencao,id_usuario,chave_idempotencia,id_pedido,id_cobranca,id_metodo,valor,estado FROM pagamento_intencoes WHERE id_usuario=? AND chave_idempotencia=? FOR UPDATE',[owner,key]),
         async insertIntention(c,d) {
             const [r]=await c.execute('INSERT INTO pagamento_intencoes(id_usuario,chave_idempotencia,id_pedido,id_cobranca,id_metodo,valor) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id_intencao=LAST_INSERT_ID(id_intencao)',[d.owner,d.key,d.orderId,d.chargeId,d.methodId,d.amount]);

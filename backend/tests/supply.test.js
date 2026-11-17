@@ -1,7 +1,68 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSupplyService } from '../src/services/supplyService.js';
+import { createSupplierTransportService } from '../src/services/supplierTransportService.js';
+import { createSupplyModel } from '../src/models/supplyModel.js';
 import { supplySchemas } from '../src/validators/supplyValidators.js';
+
+test('ADMIN arquiva e reativa a rota sem duplicar auditoria em repetição', async () => {
+    const route = { id_rota: '1', id_local_origem: '2', id_local_destino: '3', status: 'ATIVO' };
+    const audit = [];
+    const service = createSupplyService({
+        model: {
+            lockLogisticsRoute: async () => route,
+            logisticsRoute: async () => route,
+            updateLogisticsRoute: async (c, id, input) => Object.assign(route, input),
+        },
+        identity: {
+            transaction: work => work({}),
+            activeActor: async (c, context) => ({ id_usuario: '1', tipo_usuario: context.role }),
+            audit: async (c, event) => audit.push(event),
+        },
+    });
+    await assert.rejects(service.patchLogisticsRoute('1', { status: 'INATIVO' }, { role: 'FORNECEDOR' }), { statusCode: 403 });
+    const admin = { role: 'ADMIN' };
+    assert.equal((await service.patchLogisticsRoute('1', { status: 'INATIVO' }, admin)).status, 'INATIVO');
+    await service.patchLogisticsRoute('1', { status: 'INATIVO' }, admin);
+    assert.equal((await service.patchLogisticsRoute('1', { status: 'ATIVO' }, admin)).status, 'ATIVO');
+    assert.deepEqual(audit, ['LOGISTICS.ROUTE_ARCHIVED', 'LOGISTICS.ROUTE_RESTORED']);
+});
+
+test('grava a referência no despacho e preserva os dados nas transições seguintes', async () => {
+    const queries = [];
+    const connection = { async execute(sql, args) { queries.push({ sql, args }); } };
+    const model = createSupplyModel(connection);
+    await model.setShipment(connection, '1', 'ENVIADO', null, '2');
+    await model.setShipment(connection, '1', 'RECEBIDO', '3');
+    assert.match(queries[0].sql, /rota\.status='ATIVO'/);
+    assert.match(queries[0].sql, /l\.id_rota_referencia=rota\.id_rota,l\.distancia_rota_km=rota\.distancia_km/);
+    assert.match(queries[0].sql, /l\.tempo_rota_min=rota\.tempo_estimado_min/);
+    assert.deepEqual(queries[0].args, ['2', '1']);
+    assert.doesNotMatch(queries[1].sql, /id_rota_referencia|distancia_rota_km|tempo_rota_min|data_prevista/);
+});
+
+test('ocupação do transporte acompanha a entrega ativa independentemente do cadastro', async () => {
+    const vehicle = { id_transporte: '11', id_fornecedor: '5', status: 'INATIVO', em_uso: '0',
+        id_entrega_ativa: null, status_entrega_ativa: null };
+    const service = createSupplierTransportService({
+        identity: {
+            transaction: work => work({}),
+            activeActor: async () => ({ id_usuario: '2', tipo_usuario: 'FORNECEDOR' }),
+        },
+        model: {
+            supplier: async () => ({ id_fornecedor: '5', status: 'ATIVO' }),
+            get: async () => vehicle,
+            list: async () => [vehicle],
+        },
+    });
+    assert.equal((await service.get('11', {})).em_uso, false);
+    assert.equal((await service.list({ limit: 20 }, {})).items[0].em_uso, false);
+    Object.assign(vehicle, { id_entrega_ativa: '9007199254740993', status_entrega_ativa: 'EM_TRANSITO' });
+    const occupied = await service.get('11', {});
+    assert.equal(occupied.status, 'INATIVO');
+    assert.equal(occupied.em_uso, true);
+    assert.equal(occupied.id_entrega_ativa, '9007199254740993');
+});
 
 function fixture(){
     let failReceipt=false;

@@ -46,7 +46,8 @@ export async function POST(request, { params }) {
       return json(await backendAuth(`/payments/${body.paymentId}/reconcile`, { token, method: 'POST', body: {} }));
     }
     if (action === 'pay') {
-      if (!body || !id(body.orderId) || !smallId(body.methodId) || Object.keys(body).some(field => !['orderId', 'methodId'].includes(field))) return json({ message: 'Método ou pedido inválido.' }, 422);
+      if (!body || !smallId(body.methodId) || Object.keys(body).some(field => !['orderId', 'chargeId', 'methodId'].includes(field)) ||
+          !(id(body.orderId)&&body.chargeId===undefined||id(body.chargeId)&&body.orderId===undefined)) return json({ message: 'Método ou cobrança inválida.' }, 422);
       const idempotencyKey = request.headers.get('Idempotency-Key');
       if (!key(idempotencyKey)) return json({ message: 'Identificador do pagamento inválido.' }, 422);
       return json(await backendAuth('/payments', { token, method: 'POST', body, idempotencyKey }), 202);
@@ -64,4 +65,17 @@ export async function POST(request, { params }) {
     if (!key(idempotencyKey)) return json({ message: 'Identificador do pedido inválido.' }, 422);
     return json(await backendAuth('/orders/checkout', { token, method: 'POST', body: { ...order, acceptance, ...(draftOrderId !== undefined ? { draftOrderId } : {}) }, idempotencyKey }), 201);
   } catch (error) { return failure(error); }
+}
+
+export async function DELETE(request,{params}){
+  if(!isAllowedAuthOrigin(request))return json({message:'Origem não permitida.'},403);
+  if((await params).action!=='methods')return json({message:'Recurso não encontrado.'},404);
+  const token=(await cookies()).get(SESSION_COOKIE)?.value;
+  if(!token)return json({message:'Entre na sua conta.'},401);
+  const methodId=new URL(request.url).searchParams.get('id');
+  if(!smallId(methodId))return json({message:'Método inválido.'},422);
+  try{
+    await backendAuth(`/users/me/payment-methods/${methodId}`,{token,method:'DELETE'});
+    return json({removed:true});
+  }catch(error){return failure(error);}
 }

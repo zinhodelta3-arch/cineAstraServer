@@ -30,6 +30,6 @@ export function UnitListState({ list, empty }) {
   return null;
 }
 
-export function UnitMore({ list }) {
-  return <TablePagination list={list} />;
+export function UnitMore({ list, noun }) {
+  return <TablePagination list={list} noun={noun} />;
 }

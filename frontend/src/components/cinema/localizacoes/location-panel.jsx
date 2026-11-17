@@ -4,12 +4,14 @@ import {Button} from './location-ui';
 import Timetable from './session-timetable';
 import ListStatus from '@/components/cinema/home/list-status';
 import {useLocationPanel} from '@/hooks/cinema/localizacoes/use-location-panel';
+import {VenueImg} from './location-images';
 export default function LocationPanel({loc:initial}){
  const panel=useLocationPanel(initial),{loc,date,setDate,rooms,copied,copy,copyError,loading,error,retry}=panel;
  if(loading)return <p role="status" className="p-6">Carregando cinema…</p>;
  if(error)return <div role="alert" className="rounded-xl border border-border bg-card p-6"><p>{error}</p><Button onClick={retry}>Tentar novamente</Button></div>;
  return <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
   <div className="bulbs" aria-hidden="true"/>
+  <div className="aspect-[3/1] max-h-64 overflow-hidden"><VenueImg src={loc.image} kind="marquee" alt={`Foto de ${loc.name}`} /></div>
   <div className="p-5 md:p-8"><h2 className="f-display text-3xl md:text-5xl font-black text-foreground">{loc.name}</h2>
    <p className="mt-2 text-sm text-muted-foreground">{[loc.type,loc.eventCapacity && `Eventos para até ${loc.eventCapacity.toLocaleString('pt-BR')} pessoas`,loc.eventSeating].filter(Boolean).join(' · ')}</p>
    <div className="mt-6 grid gap-5 md:grid-cols-[1fr_auto]">

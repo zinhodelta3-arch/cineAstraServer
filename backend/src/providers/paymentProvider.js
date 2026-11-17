@@ -11,6 +11,11 @@ export function unavailablePaymentProvider() {
 }
 
 export function simulatedPaymentProvider() {
+    function refundResult({idempotencyKey,transactionId,amount,currency}) {
+        if (!/^refund:[1-9]\d*$/.test(idempotencyKey) || !/^sim-[1-9]\d*$/.test(transactionId) ||
+            !/^\d{1,8}\.\d{2}$/.test(amount) || amount === '0.00' || currency !== 'BRL') throw ApiError.validacao('Estorno simulado inválido');
+        return {refundId:`sim-${idempotencyKey}`,status:'CONFIRMED',currency,amount};
+    }
     return {
         name: 'simulado', available: true,
         async tokenize({ setupReference, type }) {
@@ -24,6 +29,8 @@ export function simulatedPaymentProvider() {
                 currency: 'BRL', amount, transactionId: transactionId || `sim-${intentionId}`,
                 occurredAt: new Date().toISOString() };
         },
+        async refund(input) { return refundResult(input); },
+        async consultRefund(input) { return refundResult(input); },
         async verifyWebhook() { return null; }
     };
 }

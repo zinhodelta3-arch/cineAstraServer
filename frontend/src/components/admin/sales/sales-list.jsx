@@ -2,7 +2,7 @@
 
 import TablePagination from '@/components/ui/table-pagination';
 import { useState } from 'react';
-import { Ban, Eye, FileText, Pencil, Plus, RefreshCw } from 'lucide-react';
+import { Ban, Eye, FileText, Pencil, Plus, RefreshCw, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import UserLookupFilter from '@/components/admin/people/user-lookup-filter';
 import { useAdminSales } from '@/hooks/admin/use-admin-sales';
@@ -54,6 +54,7 @@ export default function SalesList({ kind }) {
             {kind === 'orders' && row.draft && row.status === 'EM_ANDAMENTO' && <button type="button" className={styles.iconButton} title="Editar proposta" aria-label={`Editar pedido ${row.id}`} onClick={() => setOperation({ mode: 'edit', row })}><Pencil size={16} aria-hidden="true" /></button>}
             {kind === 'orders' && (row.status === 'AGUARDANDO_PAGAMENTO' || row.draft && row.status === 'EM_ANDAMENTO') && <button type="button" className={styles.iconButton} title="Cancelar pedido" aria-label={`Cancelar pedido ${row.id}`} onClick={() => setOperation({ mode: 'cancel', row })}><Ban size={16} aria-hidden="true" /></button>}
             {kind === 'payments' && row.reconcilable && <button type="button" className={styles.iconButton} title="Consultar provedor" aria-label={`Conciliar pagamento ${row.id}`} onClick={() => setOperation({ mode: 'reconcile', row })}><RefreshCw size={16} aria-hidden="true" /></button>}
+            {kind === 'orders' && ['PAGO','FINALIZADO'].includes(row.status) && <button type="button" className={styles.iconButton} title="Solicitar reembolso" aria-label={`Solicitar reembolso do pedido ${row.id}`} onClick={()=>setOperation({mode:'refund',row})}><RotateCcw size={16} aria-hidden="true" /></button>}
             {kind === 'payments' && <button type="button" className={styles.iconButton} title="Notas administrativas" aria-label={`Notas do pagamento ${row.id}`} onClick={() => setOperation({ mode: 'notes', row })}><FileText size={16} aria-hidden="true" /></button>}
           </div></td></tr>)}
         </tbody></table>
@@ -62,6 +63,7 @@ export default function SalesList({ kind }) {
     </section>
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{kind === 'orders' ? 'Pedido' : 'Pagamento'} #{selected?.id}</DialogTitle><DialogDescription className={styles.dialogDescription}>Registro administrativo de Vendas.</DialogDescription>
       {selected && <dl className={styles.detailGrid}><div><dt>Cliente</dt><dd>{selected.customer} · #{selected.userId}</dd></div><div><dt>Status</dt><dd>{statusName(selected.status)}</dd></div><div><dt>{kind === 'orders' ? 'Total' : 'Valor'}</dt><dd>{money(kind === 'orders' ? selected.total : selected.amount)}</dd></div><div><dt>Registrado em</dt><dd>{dateTime(selected.createdAt)}</dd></div>{kind === 'payments' && <><div><dt>Método</dt><dd>{statusName(selected.method)}</dd></div><div><dt>Pedido</dt><dd>{selected.orderId ? `#${selected.orderId}` : '—'}</dd></div><div><dt>Cobrança</dt><dd>{selected.chargeId ? `#${selected.chargeId}` : '—'}</dd></div><div><dt>Pago em</dt><dd>{dateTime(selected.paidAt)}</dd></div></>}</dl>}
+      {selected?.cancellation&&<p>Cancelado pelo admin #{selected.cancellation.adminId}. {selected.cancellation.reason}</p>}
     </DialogContent></Dialog>
     {operation && <SalesActionsDialog {...operation} onClose={() => setOperation(null)} onSaved={message => { setOperation(null); setNotice(message); list.reload(); }} />}
   </SalesLayout>;

@@ -3,10 +3,11 @@ import { useHomeSessions } from '@/hooks/cinema/home/use-home-sessions';
 import ListStatus from './list-status';
 import { X } from 'lucide-react';
 import Link from 'next/link';
-import {SessionAlternatives,sessionAvailability} from '../filmes/session-availability';
+import {SessionAlternatives,sessionAvailability,useSessionClock} from '../filmes/session-availability';
 import CinemaStyles from './cinema-styles';
 export default function SessionListModal({ movie, onClose }) {
  const { dialogRef, date, setDate, localId, setLocalId, locations, rooms, sessions, days, available, availability, refreshAvailability } = useHomeSessions(movie);
+ const now=useSessionClock();
  return <dialog ref={dialogRef} onCancel={onClose} aria-labelledby="home-session-title" className="ticket m-auto max-h-[85vh] w-[min(94vw,760px)] overflow-y-auto border border-border bg-card p-0 text-foreground shadow-2xl backdrop:bg-black/70" style={{'--n':'68%'}}>
   <CinemaStyles />
   <div className="perf !rounded-none" aria-hidden="true" />
@@ -21,11 +22,11 @@ export default function SessionListModal({ movie, onClose }) {
   {localId && date && <>
    <ListStatus list={rooms} empty="Nenhuma sala disponível." more="Carregar mais salas" />
    <p className="mb-4 text-sm text-muted-foreground">Horários em UTC. Valores de inteira cadastrados; descontos e disponibilidade são confirmados na compra.</p>
-   <ul className="grid gap-3 sm:grid-cols-2">{[...available].sort((a,b)=>a.horario_inicio.localeCompare(b.horario_inicio)).map(s => {const status=sessionAvailability(s);return <li key={s.id_sessao} className="ticket flex min-h-32 flex-col justify-between border border-border bg-background" style={{'--n':'56%'}}><div className="perf !h-1 !rounded-none" aria-hidden="true" /><div className="flex items-start justify-between gap-3 px-4 pt-3"><div><strong className="f-display text-4xl leading-none text-foreground">{s.horario_inicio.slice(0,5)}</strong><p className="mt-1 text-sm text-muted-foreground">{s.roomName} · {s.idioma}</p></div></div><div className="tear mx-4 mt-3" aria-hidden="true" /><div className="flex items-center justify-between gap-2 px-4 py-3 text-sm"><span className="text-muted-foreground">Inteira</span><strong className="text-lg text-primary">{Number(s.preco_inteira).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></div>{status.bookable?<Link href={`/cinema/sessao/assentos?sessionId=${s.id_sessao}`} className="mx-4 mb-3 rounded-md border border-primary px-3 py-2 text-center text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground">Escolher assentos · {status.label}</Link>:<p className="mx-4 mb-3 rounded-md border border-border px-3 py-2 text-center text-sm text-muted-foreground">{status.label}</p>}</li>;})}</ul>
+   <ul className="grid gap-3 sm:grid-cols-2">{[...available].sort((a,b)=>a.horario_inicio.localeCompare(b.horario_inicio)).map(s => {const status=sessionAvailability(s,now);return <li key={s.id_sessao} className="ticket flex min-h-32 flex-col justify-between border border-border bg-background" style={{'--n':'56%'}}><div className="perf !h-1 !rounded-none" aria-hidden="true" /><div className="flex items-start justify-between gap-3 px-4 pt-3"><div><strong className="f-display text-4xl leading-none text-foreground">{s.horario_inicio.slice(0,5)}</strong><p className="mt-1 text-sm text-muted-foreground">{s.roomName} · {s.idioma}</p></div></div><div className="tear mx-4 mt-3" aria-hidden="true" /><div className="flex items-center justify-between gap-2 px-4 py-3 text-sm"><span className="text-muted-foreground">Inteira</span><strong className="text-lg text-primary">{Number(s.preco_inteira).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></div>{status.bookable?<Link href={`/cinema/sessao/assentos?sessionId=${s.id_sessao}`} className="mx-4 mb-3 rounded-md border border-primary px-3 py-2 text-center text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground">Escolher assentos · {status.label}</Link>:<p className="mx-4 mb-3 rounded-md border border-border px-3 py-2 text-center text-sm text-muted-foreground">{status.label}</p>}</li>;})}</ul>
    {!sessions.loading && !sessions.error && !available.length && <p className="my-4">{sessions.cursor ? 'Nenhuma sessão deste filme nesta parte da lista. Carregue mais para continuar a consulta.' : 'Nenhuma sessão futura deste filme na data e cinema escolhidos.'}</p>}
    <ListStatus list={sessions} empty="" more="Carregar mais sessões" />
   </>}
-  {!sessions.loading&&!available.some(item=>sessionAvailability(item).bookable)&&<SessionAlternatives availability={availability} localId={localId} date={date} onSelect={setLocalId}/>}
+  {!sessions.loading&&!available.some(item=>sessionAvailability(item,now).bookable)&&<SessionAlternatives availability={availability} localId={localId} date={date} onSelect={setLocalId}/>}
   {localId&&<button type="button" className="mt-3 rounded-md border border-border px-3 py-2 text-sm hover:border-primary" disabled={sessions.loading||availability.loading} onClick={refreshAvailability}>Atualizar disponibilidade</button>}
   </div>
  </dialog>;

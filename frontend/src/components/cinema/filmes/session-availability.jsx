@@ -1,9 +1,26 @@
-export function sessionAvailability(session){
+import {useEffect,useState} from 'react';
+
+const soonMs=30*60*1000;
+export function useSessionClock(){
+ const [now,setNow]=useState(Date.now);
+ useEffect(()=>{
+  const update=()=>setNow(Date.now());
+  const clock=setInterval(update,15000);
+  document.addEventListener('visibilitychange',update);
+  return()=>{clearInterval(clock);document.removeEventListener('visibilitychange',update);};
+ },[]);
+ return now;
+}
+export function sessionAvailability(session,now=Date.now()){
+ const startsAt=Date.parse(`${session.data?.slice(0,10)}T${session.horario_inicio}Z`);
+ if(!Number.isFinite(startsAt)||startsAt<=now)return {label:'Venda encerrada',bookable:false};
  const remaining=session.availableSeats;
  if(!Number.isInteger(remaining))return {label:'Disponibilidade indisponível',bookable:false};
  if(remaining===0)return {label:session.activeSeats===0?'Sem assentos ativos':'Lotada',bookable:false};
  const low=remaining<=5||remaining<=session.activeSeats*.15;
- return {label:low?`Últimos lugares · ${remaining}`:`${remaining} ${remaining===1?'lugar disponível':'lugares disponíveis'}`,bookable:true,low};
+ const seats=low?`Últimos lugares · ${remaining}`:`${remaining} ${remaining===1?'lugar disponível':'lugares disponíveis'}`;
+ const soon=startsAt-now<=soonMs;
+ return {label:soon?`${seats} · Começa em breve`:seats,bookable:true,low,soon};
 }
 
 const shortDate=date=>date.split('-').slice(1).reverse().join('/');

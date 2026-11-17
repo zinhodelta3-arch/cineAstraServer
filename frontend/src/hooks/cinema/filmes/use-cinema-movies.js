@@ -1,14 +1,16 @@
 "use client";
 import {useEffect,useId,useState} from 'react';
 import {usePublicList} from '@/hooks/cinema/home/use-public-list';
+import {usePaginatedList} from '@/hooks/use-paginated-list';
 import {cinemaMovie,cinemaCatalogPath} from '@/lib/api/cinema-movies.mjs';
+import {publicGet} from '@/lib/api/public-api.mjs';
 import {SECTIONS} from '@/components/cinema/filmes/movie-utils';
 export function useCinemaMovies(){
  const [section,setSection]=useState('em-cartaz'),[genre,setGenre]=useState('Todos'),[query,setQuery]=useState(''),[search,setSearch]=useState('');
  const [selectedMovie,setSelectedMovie]=useState(null),[sessionMovie,setSessionMovie]=useState(null);
  const suggestionsId=useId();
  useEffect(()=>{const timer=setTimeout(()=>setSearch(query),300);return()=>clearTimeout(timer);},[query]);
- const films=usePublicList(cinemaCatalogPath(search,genre,section));
+ const films=usePaginatedList(cinemaCatalogPath(search,genre,section),publicGet);
  const genreList=usePublicList('/genres?limit=100');
  const movies=films.items.map(f=>cinemaMovie(f));
  const searching=query!==search;

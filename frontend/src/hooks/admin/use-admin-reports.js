@@ -13,7 +13,7 @@ export async function reportRequest(path, { signal, method = 'GET', body } = {})
 }
 
 export function useAdminReport(path) {
-  return usePaginatedList(path, reportRequest, { mode: /^(audit|http|destinations)([/?]|$)/.test(path ?? '') ? 'list' : 'resource' });
+  return usePaginatedList(path, reportRequest, { mode: /^(audit|http|destinations|initiatives)([/?]|$)/.test(path ?? '') ? 'list' : 'resource' });
 }
 
 export function useReportRange() {

@@ -13,6 +13,7 @@ export function useFilmPage(id){
  const localId=chosenLocalId||(!availability.loading ? firstOpen?.localId||String(locations.items[0]?.id_local||'') : '');
  const [day,setDay]=useState('');
  const [days,setDays]=useState({key:null,items:[],loading:false,error:null});
+ const [daysRevision, refreshDays]=useState(0);
 
  const [language,setLanguage]=useState('Todos');
  const rooms=usePublicList(localId?`/locations/${localId}/rooms?limit=100`:null);
@@ -24,9 +25,9 @@ export function useFilmPage(id){
    .then(data=>{if(!abort.signal.aborted)setDays({key:localId,items:data.days,loading:false,error:null});})
    .catch(error=>{if(!abort.signal.aborted)setDays({key:localId,items:[],loading:false,error:error.message});});
   return()=>abort.abort();
- },[id,localId]);
+ },[id,localId,daysRevision]);
  useEffect(()=>{if(days.key===localId&&!day&&days.items.length)setDay(firstOpen?.localId===localId && days.items.includes(firstOpen.nextDate) ? firstOpen.nextDate : days.items[0]);},[days,localId,day,firstOpen]);
  const currentDays=days.key===localId?days:{items:[],loading:Boolean(localId),error:null};
  const visibleSessions=sessions.items.filter(s=>String(s.id_filme)===String(id)&&new Date(`${s.data.slice(0,10)}T${s.horario_inicio}Z`)>new Date()&&(language==='Todos'||s.idioma===language));
- return {...details,locations,localId,day,days:currentDays,availability,rooms,sessions,visibleSessions,language,setLanguage,setDay,changeLocal:(id,date='')=>{setLocalId(id);setDay(date);setLanguage('Todos');},refreshAvailability:()=>{setLocalId(localId);availability.refresh();sessions.retry();}};
+ return {...details,locations,localId,day,days:currentDays,availability,rooms,sessions,visibleSessions,language,setLanguage,setDay,changeLocal:(id,date='')=>{setLocalId(id);setDay(date);setLanguage('Todos');},refreshAvailability:()=>{setLocalId(localId);refreshDays(value=>value+1);availability.refresh();sessions.retry();}};
 }

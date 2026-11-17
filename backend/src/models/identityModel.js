@@ -6,7 +6,7 @@ export const resources = Object.freeze({
     addresses: { table: 'enderecos', pk: 'id_endereco', fields: ['cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'principal'] },
     contacts: { table: 'contatos', pk: 'id_contato', fields: ['tipo', 'valor', 'principal'] }
 });
-const preferences = ['tema', 'tamanho_fonte', 'alto_contraste', 'modo_acessibilidade', 'idioma', 'aparencia'];
+const preferences = ['tema', 'tamanho_fonte', 'alto_contraste', 'modo_acessibilidade', 'idioma', 'aparencia', 'avatar'];
 export function createIdentityModel(database) {
     const rows = async (c, sql, values = []) => (await c.execute(sql, values))[0];
     const one = async (c, sql, values = []) => (await rows(c, sql, values))[0] ?? null;
@@ -71,10 +71,48 @@ export function createIdentityModel(database) {
         addResource(c, kind, userId, input) { const d = definition(kind); assignments(input, d.fields); const keys = Object.keys(input); return insert(c, `INSERT INTO ${d.table} (id_usuario,${keys.join(',')}) VALUES (?,${keys.map(() => '?').join(',')})`, [userId, ...keys.map(k => input[k])]); },
         async patchResource(c, kind, id, userId, input) { const d = definition(kind); const [set, values] = assignments(input, d.fields); await c.execute(`UPDATE ${d.table} SET ${set} WHERE ${d.pk} = ? AND id_usuario = ?`, [...values, id, userId]); },
         async deleteResource(c, kind, id, userId) { const d = definition(kind); await c.execute(`DELETE FROM ${d.table} WHERE ${d.pk} = ? AND id_usuario = ?`, [id, userId]); },
-        preferences: (id, c = database) => one(c, `SELECT ${preferences.join(',')} FROM preferencias_usuario WHERE id_usuario = ?`, [id]),
-        async updatePreferences(c, id, input) { await c.execute('INSERT INTO preferencias_usuario (id_usuario) VALUES (?) ON DUPLICATE KEY UPDATE id_usuario = ?', [id, id]); const [set, values] = assignments(input, preferences); await c.execute(`UPDATE preferencias_usuario SET ${set} WHERE id_usuario = ?`, [...values, id]); },
+        preferences: (id, c = database) => one(c, `SELECT ${preferences.join(',')},acessibilidade FROM preferencias_usuario WHERE id_usuario = ?`, [id]),
+        async updatePreferences(c, id, input) {
+            await c.execute('INSERT INTO preferencias_usuario (id_usuario) VALUES (?) ON DUPLICATE KEY UPDATE id_usuario = ?', [id, id]);
+            const { acessibilidade, ...fields } = input;
+            if (Object.keys(fields).length) {
+                const [set, values] = assignments(fields, preferences);
+                await c.execute(`UPDATE preferencias_usuario SET ${set} WHERE id_usuario = ?`, [...values, id]);
+            }
+            if (acessibilidade) await c.execute(
+                'UPDATE preferencias_usuario SET acessibilidade = JSON_MERGE_PATCH(COALESCE(acessibilidade, JSON_OBJECT()), ?) WHERE id_usuario = ?',
+                [JSON.stringify(acessibilidade), id]);
+        },
         async privacyRequest(c, id) { await c.execute("INSERT INTO solicitacoes_privacidade (id_usuario,tipo) VALUES (?,'EXCLUSAO') ON DUPLICATE KEY UPDATE id_usuario = ?", [id, id]); return one(c, "SELECT id_solicitacao,status FROM solicitacoes_privacidade WHERE id_usuario = ? AND slot_aberto = 1", [id]); },
-        privacyStatus: (c, id) => one(c, 'SELECT id_solicitacao,id_usuario,tipo,status,motivo_decisao,criada_em,encerrada_em FROM solicitacoes_privacidade WHERE id_solicitacao = ?', [id]),
+        privacyStatus: (c, id, lock = false) => one(c, `SELECT id_solicitacao,id_usuario,tipo,status,motivo_decisao,criada_em,encerrada_em FROM solicitacoes_privacidade WHERE id_solicitacao = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
+        ownPrivacyStatus: (c, userId) => one(c, 'SELECT id_solicitacao,tipo,status,motivo_decisao,criada_em,encerrada_em FROM solicitacoes_privacidade WHERE id_usuario=? ORDER BY id_solicitacao DESC LIMIT 1', [userId]),
+        resolvePrivacy: (c, id, status, reason) => c.execute(
+            "UPDATE solicitacoes_privacidade SET status=?,motivo_decisao=?,encerrada_em=IF(? IN ('CONCLUIDA','RECUSADA'),UTC_TIMESTAMP(3),NULL) WHERE id_solicitacao=?",
+            [status, reason, status, id]),
+        async privacyObligations(c, id, lock = false) {
+            const currentRead = lock ? ' LIMIT 1 FOR UPDATE' : '';
+            return one(c, `SELECT
+                EXISTS(SELECT 1 FROM assinaturas a WHERE a.id_usuario=? AND a.status IN ('ATIVA','PENDENTE')${currentRead}) AS subscription,
+                EXISTS(SELECT 1 FROM assinatura_participantes ap JOIN assinaturas a ON a.id_assinatura=ap.id_assinatura
+                    WHERE ap.id_usuario=? AND ap.status='ATIVO' AND a.status IN ('ATIVA','PENDENTE')${currentRead}) AS sharedSubscription,
+                EXISTS(SELECT 1 FROM pedidos WHERE id_usuario=? AND (status='AGUARDANDO_PAGAMENTO'
+                    OR (status='EM_ANDAMENTO' AND checkout_expira_em>UTC_TIMESTAMP(3)))${currentRead}) AS orderPending,
+                EXISTS(SELECT 1 FROM pedidos p JOIN itens_pedido i ON i.id_pedido=p.id_pedido JOIN tickets t ON t.id_item=i.id_item
+                    JOIN sessoes s ON s.id_sessao=i.id_sessao WHERE p.id_usuario=? AND t.status='GERADO' AND t.tipo='INGRESSO_SESSAO'
+                    AND s.status IN ('AGENDADA','EM_CARTAZ') AND TIMESTAMP(s.data,s.horario_fim)>=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 3 HOUR)${currentRead}) AS upcomingTicket,
+                EXISTS(SELECT 1 FROM reembolso_solicitacoes r LEFT JOIN pagamentos pg ON pg.id_pagamento=r.id_pagamento
+                    LEFT JOIN pedidos p ON p.id_pedido=pg.id_pedido WHERE (r.id_usuario=? OR p.id_usuario=?)
+                    AND (r.status IN ('RECEBIDA','EM_ANALISE','ENVIADA') OR r.compensacao_status='PENDENTE')${currentRead}) AS refundPending`,
+            [id, id, id, id, id, id]);
+        },
+        async anonymizeCustomer(c, id, replacement) {
+            await c.execute("UPDATE usuarios SET nome='Conta excluída',email=?,cpf=?,telefone=NULL,data_nascimento=NULL,senha=?,status='INATIVO' WHERE id_usuario=?",
+                [replacement.email, replacement.cpf, replacement.hash, id]);
+            for (const table of ['enderecos','contatos','preferencias_usuario','streaming_perfis','autenticacao_2fa','verificacoes_idade']) {
+                await c.execute(`DELETE FROM ${table} WHERE id_usuario=?`, [id]);
+            }
+            await c.execute('UPDATE metodos_pagamento SET identificacao=NULL, provider=NULL, provider_token=NULL, ativo=FALSE, principal=FALSE WHERE id_usuario=?', [id]);
+        },
         exportSection(c, id, section, limit, cursor) {
             if (section === 'guardians') return rows(c, 'SELECT id_vinculo AS id,id_menor,id_responsavel,status,criado_em,revogado_em FROM responsaveis_usuario WHERE (id_menor = ? OR id_responsavel = ?) AND id_vinculo > ? ORDER BY id_vinculo LIMIT ' + (limit + 1), [id, id, cursor ?? '0']);
             if (section === 'authorizations') return rows(c, 'SELECT a.id_autorizacao AS id,a.id_vinculo,a.finalidade,a.referencia_operacao,a.autorizada_em,a.expiracao,a.revogada_em FROM autorizacoes_responsavel a JOIN responsaveis_usuario r ON r.id_vinculo = a.id_vinculo WHERE (r.id_menor = ? OR r.id_responsavel = ?) AND a.id_autorizacao > ? ORDER BY a.id_autorizacao LIMIT ' + (limit + 1), [id, id, cursor ?? '0']);

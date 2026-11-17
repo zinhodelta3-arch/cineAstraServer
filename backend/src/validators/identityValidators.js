@@ -24,9 +24,30 @@ export const schemas = {
     factorDisable: strict({ password, code: z.string().regex(/^\d{6}$/) }),
     profile: nonEmpty(strict({ name: name.optional(), phone: z.string().regex(/^\+?[\d ()-]{8,20}$/).nullable().optional(), email: email.optional(), emailProof: z.string().min(1).max(512).optional(), code: z.string().regex(/^\d{6}$/).optional(), currentPassword: password.optional(), password: password.optional(), passwordConfirmation: password.optional() })).refine(o => Boolean(o.name || o.phone !== undefined || o.email || o.password)),
     reauthenticate: strict({ password, code: z.string().regex(/^\d{6}$/).optional() }),
+    privacyDecision: strict({ status: z.enum(['EM_ANALISE', 'CONCLUIDA', 'RECUSADA']), reason: z.string().trim().min(5).max(255) }),
     address: strict({ cep: z.string().regex(/^\d{5}-?\d{3}$/).optional(), logradouro: z.string().trim().min(1).max(150), numero: z.string().trim().min(1).max(20), complemento: z.string().trim().max(100).nullable().optional(), bairro: z.string().trim().max(100).optional(), cidade: z.string().trim().min(1).max(100), estado: z.string().regex(/^[A-Z]{2}$/), principal: z.boolean().default(false) }),
     contact: strict({ tipo: z.enum(['TELEFONE', 'WHATSAPP', 'EMAIL_SECUNDARIO']), valor: z.string().trim().min(3).max(150), principal: z.boolean().default(false) }).refine(v => v.tipo === 'EMAIL_SECUNDARIO' ? z.email().safeParse(v.valor).success : /^\+?[\d ()-]{8,20}$/.test(v.valor)),
-    preferences: nonEmpty(strict({ tema: z.enum(['CLARO', 'ESCURO', 'SISTEMA']).optional(), tamanho_fonte: z.enum(['PEQUENO', 'MEDIO', 'GRANDE', 'MUITO_GRANDE']).optional(), alto_contraste: z.boolean().optional(), modo_acessibilidade: z.boolean().optional(), idioma: z.literal('pt-BR').optional(), aparencia: z.enum(['cineastra', 'violet-bloom', 'mocha-mousse', 'catppucin']).optional() })),
+    preferences: nonEmpty(strict({
+        tema: z.enum(['CLARO', 'ESCURO', 'SISTEMA']).optional(),
+        tamanho_fonte: z.enum(['PEQUENO', 'MEDIO', 'GRANDE', 'MUITO_GRANDE']).optional(),
+        alto_contraste: z.boolean().optional(), modo_acessibilidade: z.boolean().optional(), idioma: z.literal('pt-BR').optional(),
+        aparencia: z.enum([
+            'cineastra', 'violet-bloom', 'mocha-mousse', 'catppucin', 'doomsday', 'noir', 'noir-grafico',
+            'homem-aranha', 'odisseia', 'mario-galaxy', 'toy-story-5', 'mandalorian-grogu', 'moana',
+            'devoradores-estrelas', 'supergirl', 'mestres-universo', 'panico-7', 'ultimato', 'castelo-infinito',
+            'era-ultron', 'guerra-infinita', 'chainsaw-reze', 'interestelar', 'retorno-rei', 'cavaleiro-trevas',
+            'atraves-aranhaverso', 'viagem-chihiro'
+        ]).optional(),
+        avatar: z.enum(['projecao', 'claquete', 'ingresso', 'holofote', 'pipoca', 'rolo']).nullable().optional(),
+        acessibilidade: nonEmpty(strict({
+            contrast: z.number().int().min(0).max(1).optional(),
+            font: z.number().int().min(0).max(4).optional(),
+            line: z.number().int().min(0).max(3).optional(),
+            spacing: z.number().int().min(0).max(3).optional(),
+            motion: z.boolean().optional(),
+            color: z.number().int().min(0).max(4).optional()
+        })).optional()
+    })),
     adminUser: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, role: z.enum(['CLIENTE', 'FORNECEDOR', 'SUPERVISOR', 'COLABORADOR', 'ADMIN']) }),
     adminProfile: nonEmpty(strict({ name: name.optional(), phone: z.string().regex(/^\+?[\d ()-]{8,20}$/).nullable().optional() })),
     accessChange: nonEmpty(strict({ role: z.enum(['CLIENTE', 'FORNECEDOR', 'SUPERVISOR', 'COLABORADOR', 'ADMIN']).optional(), status: z.enum(['ATIVO', 'INATIVO', 'BLOQUEADO']).optional() })),

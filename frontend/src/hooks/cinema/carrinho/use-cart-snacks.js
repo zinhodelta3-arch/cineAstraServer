@@ -15,15 +15,15 @@ export function useCartSnacks(session, coupon, enabled) {
   const tickets=Array.from(new Map(cart.items.filter(item=>item.purchaseKind==='SESSION').map(item=>[item.sourceId,item])).values());
   const ticket=tickets.find(item=>item.sourceId===selectedSession)??tickets[0];
   const localId = enabled ? ticket?.localId : null;
-  const snacks = usePublicList(localId ? `/locations/${localId}/snacks?limit=100&inStock=true` : null);
-  const combos = usePublicList(localId ? `/combos?localId=${localId}&limit=2&inStock=true` : null);
-  const themed = usePublicList(localId ? `/combos?localId=${localId}&sessionId=${ticket.sourceId}&limit=4&inStock=true` : null);
+  const snacks = usePublicList(localId ? `/locations/${localId}/snacks?limit=20&inStock=true` : null);
+  const combos = usePublicList(localId ? `/combos?localId=${localId}&limit=20&inStock=true` : null);
+  const themed = usePublicList(localId ? `/combos?localId=${localId}&sessionId=${ticket.sourceId}&limit=20&inStock=true` : null);
   const inputs = snacks.items.filter(row => row.inStock === true && String(row.localId) === localId)
     .map(row => snackProduct(row, 'INPUT', localId));
   const comboProducts = combos.items.filter(row => String(row.id_local) === localId)
     .map(row => snackProduct(row, 'COMBO', localId));
   const eventProducts=themed.items.filter(row=>String(row.id_local)===localId&&row.event?.sessionId===ticket?.sourceId).map(row=>snackProduct(row,'COMBO',localId));
-  const products = [...eventProducts,...comboProducts.slice(0, 2), ...inputs.filter(p => !isDrink(p)).slice(0, 2), ...inputs.filter(isDrink).slice(0, 2)];
+  const products = [...eventProducts.slice(0,4),...comboProducts.slice(0, 2), ...inputs.filter(p => !isDrink(p)).slice(0, 2), ...inputs.filter(isDrink).slice(0, 2)];
   const [state, setState] = useState(null);
   const operation = useRef(null);
   const contextKey = JSON.stringify([session.user?.id,localId,ticket?.sourceId,coupon,cart.items.map(item=>[item.id,item.type,item.purchaseKind,item.sourceId,item.localId,item.seatId,item.eventSessionId,item.details,item.quantity])]);
@@ -60,7 +60,7 @@ export function useCartSnacks(session, coupon, enabled) {
   }
 
   return {
-    localId, products, add, snacks, combos, themed, tickets, selectedSession:ticket?.sourceId, setSelectedSession,
+    localId, products, catalog:{ inputs, combos:comboProducts, themed:eventProducts }, add, snacks, combos, themed, tickets, selectedSession:ticket?.sourceId, setSelectedSession,
     pending: state?.contextKey === contextKey ? state.pending : null,
     error: state?.contextKey === contextKey ? state.error : null,
     notice: state?.localId === localId ? state.notice : null

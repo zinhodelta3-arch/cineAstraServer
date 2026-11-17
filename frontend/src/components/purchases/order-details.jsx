@@ -1,12 +1,12 @@
 import {useEffect,useRef,useState} from 'react';
-import Link from 'next/link';
 import {QRCodeSVG} from 'qrcode.react';
 import useOrderDetails from '@/hooks/cinema/minhascompras/use-order-details';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
 import ListStatus from '@/components/cinema/home/list-status';
-import {orderStatuses,itemTypes,ticketStatuses,purchaseMoney,purchaseDate,validOrderId} from '@/lib/api/purchases.mjs';
-const activeOrderStatuses=new Set(['AGENDADO','EM_REALIZACAO','ATRASADO','PARTICIPANDO']);
+import {orderStatuses,itemTypes,ticketStatuses,purchaseMoney,purchaseDate} from '@/lib/api/purchases.mjs';
+import OrderRefunds from './order-refunds';
+import SocialImpact from '@/components/cinema/pagamento/social-impact';
 const orderStyles = `
 .cine-order-dialog { --order-surface: color-mix(in srgb, var(--card) 70%, var(--background)); --order-line: color-mix(in srgb, var(--border) 65%, var(--order-surface)); gap: 1rem; background: var(--order-surface); color: var(--card-foreground, var(--foreground)); border-color: var(--order-line); }
 .cine-order-header { display: grid; gap: .5rem; padding: .25rem 2.4rem 1rem 0; border-bottom: 1px dashed var(--border); }
@@ -48,7 +48,7 @@ function TicketShape() {
  </svg>;
 }
 
-function OrderTicketPreview({order,detail,tickets}) {
+function OrderTicketPreview({order,tickets}) {
  const [index,setIndex]=useState(0);
  const [drag,setDrag]=useState(null);
  const [slide,setSlide]=useState(null);
@@ -133,11 +133,10 @@ function OrderTicketPreview({order,detail,tickets}) {
      <TicketShape />
      <span className="order-ticket-brand"><span aria-hidden="true">✦</span> CineAstra</span>
      <h3 className="order-ticket-title">{ticket?(itemTypes[ticket.type]||ticket.type):'QR Code do pedido'}</h3>
-     <p className="order-ticket-id">Pedido #{detail.orderId}</p>
      <div className="order-ticket-code">
-      <QRCodeSVG value={detail.orderId} size={160} marginSize={4} fgColor="#000" bgColor="#fff" title={`QR Code do pedido #${detail.orderId}`} />
+      <QRCodeSVG value={ticket.code} size={160} marginSize={4} fgColor="#000" bgColor="#fff" title="QR Code do ingresso ou retirada" />
      </div>
-     {ticket&&<p className="order-ticket-details">Item #{ticket.id} · {ticketStatuses[ticket.status]||ticket.status}</p>}
+     <p className="order-ticket-details">{ticketStatuses[ticket.status]||ticket.status}</p>
      <div className="order-ticket-summary">
       <p>{purchaseDate(order.createdAt)} (Brasília)</p>
       <p>Total do pedido <strong>{purchaseMoney(order.total)}</strong></p>
@@ -158,17 +157,13 @@ function ResourceState({resource}){
 }
 export default function OrderDetails({order,onClose,onChanged}){
  const s=useOrderDetails(order,onChanged),data=s.detail.data,receipt=s.receipt.data;
- const showOrderQr=Boolean(
-  data&&!s.detail.loading&&!s.detail.error&&
-  ['PAGO','FINALIZADO'].includes(data.financialStatus)&&
-  activeOrderStatuses.has(data.operationalStatus)&&validOrderId(data.orderId)
- );
+ const qrTickets=s.tickets.items.filter(ticket=>ticket.code&&(ticket.status==='GERADO'||ticket.presence==='FORA'&&Date.parse(ticket.expiresAt)>Date.now()));
  return <Dialog open onOpenChange={open=>{if(!open&&!s.pending)onClose();}}><DialogContent className="cine-order-dialog max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
   <style>{orderStyles}</style>
   <DialogHeader>
    <div className="cine-order-header">
     <p className="cine-order-brand text-primary"><span aria-hidden="true">✦</span> CINEASTRA</p>
-    <DialogTitle className="cine-order-title">Pedido #{order.orderId}</DialogTitle>
+    <DialogTitle className="cine-order-title">Detalhes da compra</DialogTitle>
     <DialogDescription>{purchaseDate(order.createdAt)} (Brasília) · Total do pedido: {purchaseMoney(order.total)}</DialogDescription>
    </div>
   </DialogHeader>
@@ -180,7 +175,7 @@ export default function OrderDetails({order,onClose,onChanged}){
     <span className="cine-order-pill cine-order-pill--primary">{orderStatuses[data.financialStatus]||data.financialStatus}</span>
     {data.operationalStatus&&<span className="cine-order-pill">Operação: {data.operationalStatus.replaceAll('_',' ').toLowerCase()}</span>}
    </div>
-   {showOrderQr&&<OrderTicketPreview order={order} detail={data} tickets={s.tickets.items} />}
+   {qrTickets.length>0&&['PAGO','FINALIZADO'].includes(data.financialStatus)&&<OrderTicketPreview order={order} tickets={qrTickets} />}
    <div className="cine-order-actions"><Button variant="outline" onClick={s.refresh} disabled={s.pending||s.detail.loading}>Atualizar pedido</Button><Button variant="outline" onClick={s.download} disabled={s.pending||s.detail.loading}>Baixar resumo</Button></div>
    {data.items?.length>0&&<section className="cine-order-panel"><h3 className="mb-3 text-lg font-bold">Andamento dos itens</h3><ul className="space-y-2">{data.items.map((item,index)=><li key={item.itemId+':'+index} className="rounded-lg border border-border p-3 text-sm">{itemTypes[item.type]||item.type} · item #{item.itemId}{item.status?' · '+item.status.replaceAll('_',' ').toLowerCase():''}</li>)}</ul></section>}
    {data.financialStatus==='AGUARDANDO_PAGAMENTO'&&!s.confirm&&<Button variant="outline" disabled={s.pending} onClick={()=>s.setConfirm(true)}>Cancelar pedido pendente</Button>}
@@ -205,6 +200,7 @@ export default function OrderDetails({order,onClose,onChanged}){
     {['terms','privacy'].map(key=>receipt.contract[key]&&<details key={key} className="rounded-lg border border-border p-3"><summary className="cursor-pointer font-semibold">{receipt.contract[key].title} · versão {receipt.contract[key].version}</summary><p className="mt-3 whitespace-pre-wrap break-words text-sm">{receipt.contract[key].body?.text}</p></details>)}
    </div>}
   </section>
-  <p className="text-sm text-muted-foreground">Solicitação e acompanhamento de reembolso ainda não estão disponíveis nesta página. <Link href="/cinema/suporte" className="text-primary underline">Fale com o suporte</Link> e informe o número do pedido.</p>
+  {data?.socialDestination&&<SocialImpact destination={data.socialDestination} confirmed showEmpty />}
+  {data&&<OrderRefunds orderId={order.orderId} />}
  </DialogContent></Dialog>;
 }

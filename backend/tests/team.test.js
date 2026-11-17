@@ -66,7 +66,7 @@ function fixture() {
     app.use(teamRoutes(createTeamController(service), { auth(req, res, next) { const id = req.headers['x-user-id']; if (!id) throw ApiError.naoAutorizado(); const u = state.users.find(u => u.id_usuario === id); if (!u) throw ApiError.naoAutorizado(); req.usuario = { id, tipo: u.tipo_usuario }; next(); } }));
     app.use(errorMiddleware);
     const api = (method, path, user = '1') => request(app)[method](path).set('X-User-Id', user);
-    return { app, api, service, get state() { return state; }, failNotifications(value) { notificationFailure = value; } };
+    return { app, api, service, supervisorLocations, get state() { return state; }, failNotifications(value) { notificationFailure = value; } };
 }
 
 test('equipe exige sessão ativa e supervisor autorizado; outro supervisor não administra', async () => {
@@ -92,8 +92,13 @@ test('solicitação não cria membro; apenas gestor próprio aceita e define fun
     await f.api('post', '/api/teams/1/entries/requests', '3').send({}).expect(409);
     await f.api('post', '/api/teams/1/entries/1/decision', '3').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(403);
     await f.api('post', '/api/teams/1/entries/1/decision', '2').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(403);
+    f.supervisorLocations.set('2', '10');
+    await f.api('post', '/api/teams/1/entries/1/decision', '2').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(403);
     await f.api('post', '/api/teams/1/entries/1/decision').send({ decision: 'ACEITAR' }).expect(422);
     await f.api('post', '/api/teams/1/entries/1/decision').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(200);
+    assert.deepEqual(f.state.notifications.map(event => [event.recipientId, event.type]), [
+        ['1', 'TEAM_JOIN_REQUEST'], ['3', 'TEAM_JOIN_DECISION']
+    ]);
     assert.equal(proposal.body.data.status, 'PENDENTE');
     const newMember = () => f.state.members.find(m => m.id_equipe === '1');
     assert.equal(newMember().funcao, 'Projeção');
@@ -151,6 +156,9 @@ test('SQL parametrizado, IDs BIGINT e campos de atualização restritos', async 
     await model.listEntries('7', { limit: 20, cursor: '9007199254740993' }, '3');
     assert.ok(calls[0].sql.includes('id_entrada > ?'));
     assert.deepEqual(calls[0].args, ['7', '9007199254740993', '3']);
+    await model.ownRequests('3', { limit: 10 });
+    assert.match(calls[1].sql, /en\.id_usuario = \?/);
+    assert.deepEqual(calls[1].args, ['3', '0', 11]);
     assert.throws(() => model.update(db, '1', { id_sessao: '2' }), /Campos inválidos/);
     assert.throws(() => model.updateMember(db, '1', '2', { id_usuario: '3' }), /Campos inválidos/);
 });

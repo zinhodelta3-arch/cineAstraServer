@@ -5,13 +5,20 @@ import { isAllowedAuthOrigin } from '@/lib/auth/request-origin.mjs';
 
 const json = (data, status = 200) => NextResponse.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const id = value => typeof value === 'string' && /^[1-9]\d{0,9}$/.test(value) && BigInt(value) <= 4294967295n;
+const ticketActions = ['validate', 'consume', 'entry', 'exit'];
 
 function target(parts, method, search) {
   const [section, first, second, third, fourth] = parts;
   if (section === 'sessions') {
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/unit/sessions${method === 'GET' ? search : ''}`;
     if (parts.length === 2 && id(first) && ['GET', 'PATCH', 'DELETE'].includes(method)) return `/unit/sessions/${first}`;
+    if (parts.length === 3 && id(first) && ['attendance', 'pending-orders'].includes(second) && method === 'GET') return `/sessions/${first}/${second}${search}`;
+    if (id(first) && second === 'counter') {
+      if (parts.length === 3 && method === 'GET') return `/unit/sessions/${first}/counter`;
+      if (parts.length === 4 && method === 'POST' && ['quote', 'orders'].includes(third)) return `/unit/sessions/${first}/counter/${third}`;
+    }
   }
+  if (section === 'tickets' && parts.length === 2 && method === 'POST' && ticketActions.includes(first)) return `/tickets/${first}`;
   if (section === 'combos' && method === 'GET') {
     if (parts.length === 1) return `/unit/combos${search}`;
     if (id(first) && parts.length === 2) return `/unit/combos/${first}`;
@@ -63,17 +70,25 @@ async function handle(request, { params }) {
     if (!['SUPERVISOR','COLABORADOR'].includes(role)) return json({ message: 'Acesso restrito à equipe da unidade.' }, 403);
     const path = target((await params).path ?? [], method, new URL(request.url).search);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
-    if(role==='COLABORADOR'&&method!=='GET'&&!(method==='POST'&&(['/stock/requests','/inventory/movements'].includes(path)||/^\/logistics\/\d+\/(receive|return)$/.test(path))))return json({message:'Este cadastro está disponível apenas para consulta.'},403);
+    const staffActions = ['/stock/requests', '/inventory/movements', ...ticketActions.map(action => `/tickets/${action}`)];
+    const counterPost = /^\/unit\/sessions\/\d+\/counter\/(quote|orders)$/.test(path);
+    if(role==='COLABORADOR'&&method!=='GET'&&!(method==='POST'&&(staffActions.includes(path)||counterPost||/^\/logistics\/\d+\/(receive|return)$/.test(path))))return json({message:'Este cadastro está disponível apenas para consulta.'},403);
     let body;
     if (['POST', 'PATCH', 'PUT'].includes(method) && !/^\/logistics\/\d+\/(receive|return)$/.test(path)) {
       const raw = await request.text();
       if (raw.length > 20000) return json({ message: 'Dados muito longos.' }, 413);
       try { body = JSON.parse(raw); } catch { return json({ message: 'Dados inválidos.' }, 400); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
+      if (path.startsWith('/tickets/') && !id(body.sessionId)) return json({ message: 'Selecione a sessão do ingresso.' }, 422);
     }
-    const data = await backendAuth(path, { token, method, body });
+    const counterOrder = counterPost && path.endsWith('/orders');
+    const idempotencyKey = counterOrder ? request.headers.get('Idempotency-Key') ?? undefined : undefined;
+    const data = await backendAuth(path, { token, method, body, idempotencyKey });
     if (method === 'DELETE') return new NextResponse(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
-    return json(data, method === 'POST' && ['/unit/sessions', '/stock/requests', '/inventory/movements'].includes(path) || method === 'POST' && /\/rooms(?:\/\d+\/seats)?$/.test(path) ? 201 : 200);
+    const created = counterOrder || method === 'POST' && (
+      ['/unit/sessions', '/stock/requests', '/inventory/movements'].includes(path) || /\/rooms(?:\/\d+\/seats)?$/.test(path)
+    );
+    return json(data, created ? 201 : 200);
   } catch (error) {
     return json(authErrorPayload(error, { message: error instanceof AuthError ? error.message : 'Não foi possível acessar a operação.' }), error instanceof AuthError ? error.status : 500);
   }

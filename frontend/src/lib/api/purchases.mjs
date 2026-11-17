@@ -6,6 +6,7 @@ export function purchaseTarget(parts=[],cursor=null){
  if(!validOrderId(parts[0]))return null;
  if(parts.length===1)return '/orders/'+parts[0];
  if(parts.length===2&&parts[1]==='tickets')return '/orders/'+parts[0]+'/tickets'+page;
+ if(parts.length===2&&parts[1]==='refunds')return '/orders/'+parts[0]+'/refunds'+page;
  if(parts.length===2&&parts[1]==='receipt')return '/orders/'+parts[0]+'/receipt';
  if(parts.length===2&&parts[1]==='draft')return '/orders/'+parts[0]+'/draft';
  return null;

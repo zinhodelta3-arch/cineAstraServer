@@ -3,7 +3,7 @@ import { unitReadLocation } from './unitReadScope.js';
 import { idString } from '../utils/dto.js';
 
 const fields = {
-    local: ['nome', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'telefone', 'status','tipo_local','lotacao_eventos','acesso_eventos'],
+    local: ['nome', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'telefone', 'status','tipo_local','lotacao_eventos','acesso_eventos','imagem_url'],
     room: ['id_local', 'nome', 'capacidade', 'tipo', 'status'],
     seat: ['id_sala', 'fileira', 'numero', 'tipo', 'status']
 };
@@ -79,10 +79,10 @@ export function createVenueService({ model, identity }) {
                 const previous = kind === 'local' ? place : kind === 'room' ? hall : chair;
                 const id = kind === 'local' ? ids.localId : kind === 'room' ? ids.roomId : ids.seatId;
                 if (kind === 'local') {
-                    if (id && Object.keys(input).some(k => !['telefone','tipo_local','lotacao_eventos','acesso_eventos'].includes(k)) && await model.localSessions(c, id)) throw conflict('Local com sessões vinculadas não admite alteração estrutural');
+                    if (id && Object.keys(input).some(k => !['telefone','tipo_local','lotacao_eventos','acesso_eventos','imagem_url'].includes(k)) && await model.localSessions(c, id)) throw conflict('Local com sessões vinculadas não admite alteração estrutural');
                     if (id && input.status && input.status !== 'ATIVO' && total(await model.activeRooms(c, id)) > 0) throw conflict('Desative as salas antes do local');
                 } else if (kind === 'room') {
-                    if (id) await requireMutableRoom(c, id);
+                    if (id && Object.keys(input).some(key => key !== 'nome')) await requireMutableRoom(c, id);
                     const next = { ...previous, ...input };
                     if (next.status === 'ATIVA') {
                         if (place.status !== 'ATIVO') throw conflict('Local inativo ou em manutenção');

@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { createContext, SourceTextModule, SyntheticModule } from 'node:vm';
 import { readSessionResponse } from '../src/lib/auth/session-response.mjs';
 import { networkError } from '../src/lib/api/api-errors.mjs';
+import * as sessionEvents from '../src/lib/auth/session-events.mjs';
 
 // Executa o código do workspace em isolamento, sem expor helpers no bundle real,
 // sem banco e sem substituir respostas de produção por dados de teste.
@@ -17,8 +18,7 @@ async function fixture(fetchSession) {
   const source = await readFile(new URL('../src/hooks/auth/use-session.js', import.meta.url), 'utf8');
   const module = new SourceTextModule(`${source}\nexport { readSharedSession, invalidateSession };`, { context });
   const imports = {
-    react: { useEffect() {}, useRef() {}, useState() {} },
-    'next/navigation': { usePathname() {} },
+    react: { createContext() { return {}; }, createElement() {}, useContext() {}, useEffect() {}, useRef() {}, useState() {} },
     './use-auth-form': { sessionRequest() {} },
     '@/lib/auth/session-response.mjs': {
       readSessionResponse,
@@ -28,6 +28,7 @@ async function fixture(fetchSession) {
       },
     },
     '@/lib/api/api-errors.mjs': { networkError },
+    '@/lib/auth/session-events.mjs': sessionEvents,
   };
   await module.link(specifier => {
     assert.ok(Object.hasOwn(imports, specifier), `Import não previsto: ${specifier}`);

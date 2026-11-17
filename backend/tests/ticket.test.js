@@ -60,6 +60,18 @@ test('combo cruza meia-noite, expira 30 minutos depois e impede emissão tardia'
     await assert.rejects(old.service.issue({execute(){}},{orderId:'99'}),{statusCode:409});
 });
 
+test('combo vendido sem sessão emite código de retirada na unidade',async()=>{
+    const f=fixture([{id_item:'1',id_combo:'3',quantidade:1}]);
+    await f.service.issue({execute(){}},{orderId:'99'});
+    const ticket=f.state.tickets[0];
+    assert.equal(ticket.tipo,'RETIRADA_INSUMO');
+    assert.equal(ticket.expira_em,null);
+    assert.equal(ticket.sessao_vinculada,null);
+    const result=await f.service.consume(ticket.codigo,undefined,{actor:{id:'12'}});
+    assert.equal(result.status,'UTILIZADO');
+    assert.equal(f.state.passages.length,0);
+});
+
 test('meia exige conferência presencial e registra tipo mínimo, sem aceitar campos arbitrários',async()=>{
     const f=fixture([{id_item:'1',id_sessao:'5',quantidade:1,data:'2099-01-01',horario_inicio:'12:00:00',horario_fim:'14:00:00',sessao_status:'AGENDADA'}]);
     await f.service.issue({execute(){}},{orderId:'99'});
@@ -89,8 +101,11 @@ test('saída exige ingresso já consumido e só registra uma vez',async()=>{
     const f=fixture([{id_item:'1',id_sessao:'5',quantidade:1,data:'2099-01-01',horario_inicio:'12:00:00',horario_fim:'14:00:00',sessao_status:'AGENDADA'}]);
     await f.service.issue({execute(){}},{orderId:'99'});
     const code=f.state.tickets[0].codigo,context={actor:{id:'12'}};
+    await assert.rejects(f.service.validate(code,context,'6'),{statusCode:409});
+    await assert.rejects(f.service.consume(code,undefined,context,'6'),{statusCode:409});
     await assert.rejects(f.service.exit(code,context),{statusCode:409});
-    await f.service.consume(code,undefined,context);
+    await f.service.consume(code,undefined,context,'5');
+    await assert.rejects(f.service.exit(code,context,'6'),{statusCode:409});
     assert.ok((await f.service.exit(code,context)).exitedAt);
     await assert.rejects(f.service.exit(code,context),{statusCode:409});
 });
@@ -104,6 +119,7 @@ test('reentrada mantém ticket utilizado e registra passagens, dupla entrada/sa�
     await assert.rejects(f.service.entry(code,undefined,ctx),{statusCode:409});
     await f.service.exit(code,ctx);
     assert.equal((await f.service.validate(code,ctx)).reentryAllowed,true);
+    await assert.rejects(f.service.entry(code,undefined,ctx,'6'),{statusCode:409});
     assert.equal((await f.service.entry(code,undefined,ctx)).presence,'DENTRO');
     await assert.rejects(f.service.entry(code,undefined,ctx),{statusCode:409});
     await f.service.exit(code,ctx);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Film, Ticket, Clock3, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Film, Ticket, Clock3, ChevronLeft, ChevronRight, Sparkles, Play, Pause } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { Badge, SmartImg, Button } from "./home-ui";
@@ -10,7 +10,8 @@ import ResponsiveFilmBanner from "../filmes/responsive-film-banner";
 
 export default function HeroSection({ movies, onSelectMovie }) {
   const [trailerOpen, setTrailerOpen] = useState(false);
-  const { cur, setCur, movie } = useHomeHero(movies, trailerOpen);
+  const [autoplay, setAutoplay] = useState(false);
+  const { cur, setCur, movie } = useHomeHero(movies, trailerOpen || !autoplay);
   if (!movie) return null;
 
   return (
@@ -48,7 +49,7 @@ export default function HeroSection({ movies, onSelectMovie }) {
 
             </div>
             <p className="text-primary font-semibold text-sm mb-3 max-w-lg">{movie.subtitle}</p>
-            <h1 className="f-display text-5xl sm:text-7xl lg:text-[7rem] font-black text-foreground uppercase leading-[0.85] mb-6">{movie.title}</h1>
+            <h1 className="f-display break-words text-5xl sm:text-7xl lg:text-[7rem] font-black text-foreground uppercase leading-[0.85] mb-6">{movie.title}</h1>
             <p className="text-sm md:text-base text-muted-foreground max-w-xl mb-6 line-clamp-3 leading-relaxed">{movie.synopsis}</p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-8 flex-wrap">
 
@@ -58,7 +59,7 @@ export default function HeroSection({ movies, onSelectMovie }) {
             </div>
             <div className="flex items-center gap-4 flex-wrap">
               <Button size="lg" onClick={() => onSelectMovie(movie)}><Ticket className="w-5 h-5 mr-2" aria-hidden="true" /> Consultar sessões</Button>
-              <TrailerButton key={movie.id} url={movie.trailerUrl} title={movie.title} onOpenChange={setTrailerOpen}
+              <TrailerButton key={movie.id} url={movie.trailerUrl} title={movie.title} onOpenChange={setTrailerOpen} ticketStyle
                 className="rounded-full border border-border px-8 py-4 font-bold focus-visible:ring-2 focus-visible:ring-primary" />
             </div>
           </div>
@@ -67,11 +68,12 @@ export default function HeroSection({ movies, onSelectMovie }) {
             <div className="flex items-center gap-3 mb-5">
               <Button size="icon" variant="outline" aria-label="Anterior" onClick={() => setCur((p) => (p === 0 ? movies.length - 1 : p - 1))}><ChevronLeft className="w-6 h-6" /></Button>
               <Button size="icon" variant="outline" aria-label="Próximo" onClick={() => setCur((p) => (p + 1) % movies.length)}><ChevronRight className="w-6 h-6" /></Button>
+              {movies.length > 1 && <Button size="icon" variant="outline" aria-label={autoplay ? "Pausar rotação dos destaques" : "Iniciar rotação dos destaques"} onClick={() => setAutoplay(value => !value)}>{autoplay ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</Button>}
             </div>
-            <div className="flex gap-2 bg-card/80 backdrop-blur-md border border-border p-2 rounded-md">
+            <div className="flex w-fit max-w-full flex-wrap gap-2 bg-card/80 backdrop-blur-md border border-border p-2 rounded-md">
               {movies.map((m, i) => (
-                <button key={m.id} type="button" onClick={() => setCur(i)} aria-label={m.title}
-                  className={`w-20 h-28 overflow-hidden rounded-sm border-2 transition-all ${i === cur ? "border-primary shadow-lg shadow-primary/30" : "border-transparent opacity-50 hover:opacity-100"}`}>
+                <button key={m.id} type="button" onClick={() => setCur(i)} aria-label={m.title} aria-pressed={i === cur}
+                  className={`h-20 w-14 overflow-hidden rounded-sm border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:transition-all sm:h-28 sm:w-20 ${i === cur ? "border-primary shadow-lg shadow-primary/30" : "border-transparent opacity-50 hover:opacity-100"}`}>
                   <SmartImg src={m.poster} title={m.title} icon={Film} />
                 </button>
               ))}

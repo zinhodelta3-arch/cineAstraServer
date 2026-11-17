@@ -28,6 +28,7 @@ const inputProduct = { id_insumo: id, ...base, quantidade_minima: count, preco: 
 spec.components.schemas.InputProduct = obj({ ...inputProduct, custo_receita: nullable(cost), custo_parceria: nullable(cost) }, Object.keys(inputProduct));
 spec.components.schemas.EquipmentProduct = obj({ id_equipamento: id, ...base, numero_patrimonio: patrimony, status: equipmentStatus });
 spec.components.schemas.SupplierLocationGrant = obj({ id_fornecedor: id, id_local: id, status: grantStatus, criado_em: { type: 'string' } });
+spec.components.schemas.SupplierLocationGrant.properties.nome_local = { type: 'string' };
 const inputFields = { ...common, supplierId: id, localId: id, quantidade_minima: count, ...costs, venda_avulsa: {type:'boolean',default:false} };
 const inputCreate = { oneOf: [
     obj({ ...inputFields, preco: money }, ['nome','localId','preco']),

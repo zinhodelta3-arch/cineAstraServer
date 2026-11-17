@@ -41,7 +41,7 @@ export default function SubscriptionAdminDialog({ mode, row, plans, onClose, onS
       <DialogTitle className={styles.dialogTitle}>{stopping ? 'Desativar renovação' : creating ? 'Nova proposta de assinatura' : 'Editar proposta'}</DialogTitle>
       <DialogDescription className={styles.dialogDescription}>{stopping ? 'O período contratado e as cobranças já emitidas permanecem válidos.' : 'O cliente confere a oferta e aceita os termos na página de Planos antes da emissão da cobrança.'}</DialogDescription>
       <form className={styles.form} onSubmit={save}>
-        {creating && <div className={styles.wide}><UserLookupFilter label="Cliente titular" role="CLIENTE" value={userId} onChange={setUserId} /></div>}
+        {creating && <div className={styles.wide}><UserLookupFilter activeOnly label="Cliente titular" role="CLIENTE" value={userId} onChange={setUserId} /></div>}
         {!stopping && <>
           <label>Plano<select name="planId" defaultValue={row?.planId ?? ''} required>
             <option value="">Selecione</option>

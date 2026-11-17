@@ -1,4 +1,5 @@
 import { idString } from '../utils/dto.js';
+import { randomUUID } from 'node:crypto';
 
 export function createPaymentModel(database){
     const rows=async(c,sql,args=[])=> (await c.execute(sql,args))[0];
@@ -6,6 +7,16 @@ export function createPaymentModel(database){
     const projection='i.id_intencao,i.id_usuario,i.chave_idempotencia,i.id_pedido,i.id_cobranca,i.id_metodo,i.valor,i.estado,i.provider,i.provider_ref,i.moeda,i.ultimo_evento_em,m.provider AS metodo_provider,m.provider_token,m.ativo AS metodo_ativo,p.id_pagamento,p.status AS pagamento_status,p.transacao_id';
     const joins=' FROM pagamento_intencoes i JOIN metodos_pagamento m ON m.id_metodo=i.id_metodo LEFT JOIN pagamentos p ON p.id_intencao=i.id_intencao';
     return {
+        async prepareCounterPix(c,{orderId,amount,owner,key}){
+            const [method]=await c.execute(
+                "INSERT INTO metodos_pagamento(id_usuario,tipo,identificacao,principal,provider,provider_token,ativo) VALUES(?,'PIX','Pix balcão',FALSE,'simulado',?,FALSE)",
+                [owner,`sim_${randomUUID()}`]);
+            const methodId=idString(method.insertId);
+            const [intention]=await c.execute(
+                'INSERT INTO pagamento_intencoes(id_usuario,chave_idempotencia,id_pedido,id_metodo,valor) VALUES(?,?,?,?,?)',
+                [owner,key,orderId,methodId,amount]);
+            return {id_intencao:idString(intention.insertId),id_pedido:orderId,id_cobranca:null,id_metodo:methodId,valor:amount};
+        },
         lockOrder:(c,id)=>one(c,'SELECT id_pedido FROM pedidos WHERE id_pedido=? FOR UPDATE',[id]),
         async intent(id,c=database,lock=false){
             if(lock&&!await one(c,'SELECT id_intencao FROM pagamento_intencoes WHERE id_intencao=? FOR UPDATE',[id]))return null;

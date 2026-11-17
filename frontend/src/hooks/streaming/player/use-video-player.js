@@ -27,6 +27,9 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
   const dialog = useRef(null), shell = useRef(null), video = useRef(null), surface = useRef(null), timer = useRef(null), gesture = useRef(null);
   const mediaKey = JSON.stringify([episode?.id ?? media.id, content.src]);
   const [previousMediaKey, setPreviousMediaKey] = useState(mediaKey);
+  const [pip, setPip] = useState(false);
+  const [pipSupported, setPipSupported] = useState(false);
+  const [controlError, setControlError] = useState("");
   const fullscreenOrigin = useRef(mode);
   const focusReturn = useRef(null);
   const embed = youtubeEmbed(content.src);
@@ -71,9 +74,14 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     }
   }, [mode]);
   useEffect(() => {
-    const changed = () => setFull(Boolean(document.fullscreenElement));
+    const screen = surface.current;
+    const changed = () => setFull(document.fullscreenElement === screen);
+    changed();
     document.addEventListener("fullscreenchange", changed);
-    return () => document.removeEventListener("fullscreenchange", changed);
+    return () => {
+      document.removeEventListener("fullscreenchange", changed);
+      if (screen && document.fullscreenElement === screen) void document.exitFullscreen().catch(() => {});
+    };
   }, []);
   useEffect(() => {
     const drag = (e) => { if (gesture.current && gesture.current.y - e.clientY > 25) setStoryboard(true); };
@@ -86,8 +94,19 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
   useEffect(() => {
     const el = video.current;
     if (!el) return;
+    setPipSupported(Boolean(document.pictureInPictureEnabled && el.requestPictureInPicture));
+    setPip(false);
+    const entered = () => setPip(true);
+    const left = () => setPip(false);
+    el.addEventListener("enterpictureinpicture", entered);
+    el.addEventListener("leavepictureinpicture", left);
     // Start loading only after the video and its metadata handler are mounted.
     el.src = content.src;
+    return () => {
+      el.removeEventListener("enterpictureinpicture", entered);
+      el.removeEventListener("leavepictureinpicture", left);
+      if (document.pictureInPictureElement === el) void document.exitPictureInPicture().catch(() => {});
+    };
   }, [content.src, mediaKey]);
   useEffect(() => {
     const el = video.current;
@@ -123,22 +142,37 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     setCurrent(el.currentTime);
   };
   const fullscreen = async () => {
-    if (document.fullscreenElement) {
+    if (document.fullscreenElement === surface.current) {
       await document.exitFullscreen().catch(() => {});
       return;
     }
     if (mode === "expanded") { setMode(fullscreenOrigin.current); return; }
     fullscreenOrigin.current = mode;
     try {
-      if (shell.current?.requestFullscreen && document.fullscreenEnabled) { await shell.current.requestFullscreen(); return; }
+      if (surface.current?.requestFullscreen && document.fullscreenEnabled) { await surface.current.requestFullscreen(); surface.current?.focus(); return; }
       if (video.current?.webkitEnterFullscreen) { video.current.webkitEnterFullscreen(); return; }
     } catch { /* A prévia incorporada pode bloquear a API nativa. */ }
     // Fallback visível e reversível, inclusive quando a prévia bloqueia fullscreen.
     setMode("expanded");
   };
   const changeMode = async (newMode) => {
-    if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
+    if (document.fullscreenElement === surface.current) await document.exitFullscreen().catch(() => {});
     setPanel(null); setMode(newMode); showControls();
+  };
+  const togglePip = async () => {
+    setControlError("");
+    const element = video.current;
+    if (!element?.requestPictureInPicture) return;
+    try {
+      if (document.pictureInPictureElement === element) {
+        await document.exitPictureInPicture();
+      } else {
+        await element.requestPictureInPicture();
+        await changeMode("mini");
+      }
+    } catch {
+      setControlError("Não foi possível abrir o Picture-in-Picture neste vídeo.");
+    }
   };
   const selectEpisode = (item) => {
     setAutoPlayEpisode(item.id); setEpisodeId(item.id); setSeason(item.season); setPanel(null);
@@ -146,7 +180,7 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
   const close = () => {
     if (video.current) options.onPause?.(video.current.currentTime);
     video.current?.pause();
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    if (document.fullscreenElement === surface.current) document.exitFullscreen().catch(() => {});
     onClose();
   };
   const updated = () => {
@@ -190,5 +224,5 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
 
   const paused = () => { setPlaying(false); if (video.current) options.onPause?.(video.current.currentTime); };
   const ended = () => { setPlaying(false); if (video.current) options.onPause?.(video.current.duration); };
-  return { dialog,mode,full,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,startProgressGesture,endProgressGesture,leaveProgress,progressPointer,duration,current,seek,paused,ended };
+  return { dialog,mode,full,pip,pipSupported,controlError,togglePip,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,startProgressGesture,endProgressGesture,leaveProgress,progressPointer,duration,current,seek,paused,ended };
 }

@@ -3,17 +3,17 @@
 import { useState } from 'react';
 import { PackagePlus } from 'lucide-react';
 import { unitOperation, useUnitList } from '@/hooks/unit/use-unit-data';
-import { UnitFeedback, UnitListState, UnitMore } from './unit-layout';
+import { UnitFeedback, UnitListState } from './unit-layout';
 import styles from './unit.module.css';
 
 export default function UnitEquipmentRequest({ localId, canManage, sessionId, action }) {
   const [selected, setSelected] = useState('');
+  const [sessionStatus,setSessionStatus] = useState('AGENDADA');
   const canRequest = Boolean(localId && (canManage || sessionId));
   const sources = useUnitList(canRequest ? `/sources?kind=equipment&limit=20&localId=${localId}` : null, unitOperation);
   const sessionsPath = canManage && localId ? `/sessions?limit=20&localId=${localId}` : null;
-  const scheduled = useUnitList(sessionsPath ? `${sessionsPath}&status=AGENDADA` : null, unitOperation);
-  const showing = useUnitList(sessionsPath ? `${sessionsPath}&status=EM_CARTAZ` : null, unitOperation);
-  const sessions = [...showing.items, ...scheduled.items];
+  const sessionOptions = useUnitList(sessionsPath ? `${sessionsPath}&status=${sessionStatus}` : null, unitOperation);
+  const sessions = sessionOptions.items;
   const equipment = sources.items.find(item => item.id_equipamento === selected);
 
   async function submit(event) {
@@ -54,14 +54,21 @@ export default function UnitEquipmentRequest({ localId, canManage, sessionId, ac
             </select>
           </label>
           {equipment && <p className={styles.full}>Quantidade da transferência: {equipment.disponivel}. A transferência é integral.</p>}
-          {canManage ? <label className={styles.full}>Sessão
-            <select name="sessionId" required defaultValue="" disabled={action.pending}>
+          {sources.nextCursor && <button type="button" className={styles.secondary} disabled={sources.loadingMore || action.pending} onClick={sources.loadMore}>Mais equipamentos</button>}
+          {canManage ? <>
+          <label>Situação da sessão<select value={sessionStatus} disabled={action.pending} onChange={event=>setSessionStatus(event.target.value)}>
+            <option value="AGENDADA">Agendada</option><option value="EM_CARTAZ">Em cartaz</option>
+          </select></label>
+          <label>Sessão
+            <select key={sessionStatus} name="sessionId" required defaultValue="" disabled={action.pending || sessionOptions.loading}>
               <option value="">Selecione</option>
               {sessions.map(item => <option key={item.id_sessao} value={item.id_sessao}>
                 {item.titulo_filme || `Sessão #${item.id_sessao}`} · {item.data.split('-').reverse().join('/')} às {item.horario_inicio.slice(0, 5)}
               </option>)}
             </select>
-          </label> : <p className={styles.full}>Sessão da equipe #{sessionId}</p>}
+          </label>
+          {sessionOptions.nextCursor && <button type="button" className={styles.secondary} disabled={sessionOptions.loadingMore || action.pending} onClick={sessionOptions.loadMore}>Mais sessões</button>}
+          </> : <p className={styles.full}>Sessão da equipe #{sessionId}</p>}
           <label className={styles.full}>Observação<input name="note" maxLength={2000} placeholder="Opcional" disabled={action.pending} /></label>
           <button type="submit" className={styles.button} disabled={action.pending || !equipment || (canManage && !sessions.length)}>
             {action.pending ? 'Aguarde…' : 'Solicitar equipamento'}
@@ -69,15 +76,7 @@ export default function UnitEquipmentRequest({ localId, canManage, sessionId, ac
         </form>
         <UnitFeedback error={action.error} notice={action.notice} />
         <UnitListState list={sources} empty="Não há equipamentos disponíveis para transferência." />
-        <UnitMore list={sources} caption="Carregar mais equipamentos" />
-        {canManage && <>
-          {scheduled.error && <UnitListState list={scheduled} empty="" />}
-          {showing.error && <UnitListState list={showing} empty="" />}
-          {!sessions.length && !scheduled.error && !showing.error &&
-            <p className={styles.empty}>{scheduled.loading || showing.loading ? 'Carregando sessões…' : 'Não há sessões agendadas ou em cartaz.'}</p>}
-          <UnitMore list={showing} caption="Carregar mais sessões em cartaz" />
-          <UnitMore list={scheduled} caption="Carregar mais sessões agendadas" />
-        </>}
+        {canManage && <UnitListState list={sessionOptions} empty="Nenhuma sessão com essa situação." />}
       </> : <p className={styles.empty}>{localId ? 'É preciso ter uma sessão vinculada à sua equipe.' : 'Aguardando o vínculo com a unidade.'}</p>}
     </div>
   </section>;

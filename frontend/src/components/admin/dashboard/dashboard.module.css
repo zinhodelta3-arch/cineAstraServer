@@ -123,15 +123,6 @@
 .actionTrigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .actionMenu { display: grid; width: 46px; min-width: 46px; justify-items: center; gap: 2px; }
 .actionItem { display: grid; width: 36px; height: 36px; justify-content: center; padding: 0; cursor: pointer; }
-.tableFooter { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 65px; padding: 12px 24px; color: var(--muted-foreground); font-size: 11px; }
-.pagination { display: flex; align-items: center; gap: 18px; }
-.pagination label { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-.pagination select { min-height: 32px; padding: 0 7px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--foreground); cursor: pointer; }
-.pageButtons { display: flex; gap: 5px; }
-.pageButtons button { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--border); border-radius: 6px; color: var(--foreground); cursor: pointer; }
-.pageButtons button:hover:not(:disabled) { background: var(--muted); }
-.pageButtons button:disabled { cursor: not-allowed; opacity: .4; }
-.pageButtons button:focus-visible, .pagination select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .sessions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;list-style:none}.sessions li{display:flex;gap:16px;align-items:center;padding:15px 0;border-bottom:1px solid var(--border)}.sessions time{display:grid;gap:3px;flex-shrink:0;color:var(--muted-foreground);font-size:11px;white-space:nowrap}.sessions time strong{font-size:18px;font-weight:650;color:var(--primary)}.sessions li>div{min-width:0}.sessions li>div strong{display:block;font-size:12px;font-weight:600}.sessions span{display:block;margin-top:6px;font-size:10px;color:var(--muted-foreground);line-height:1.45}
 
 @media (max-width: 1190px) {
@@ -145,7 +136,6 @@
   .metric:nth-child(n + 3) { border-top: 1px solid var(--border); }
   .charts, .bottom { grid-template-columns: 1fr; }
   .sessions { grid-template-columns: 1fr; gap: 0; }
-  .tableFooter { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 560px) {
   .dashboard { padding: 24px 16px 40px; }
@@ -168,6 +158,4 @@
   .tableSearch { width: 100%; }
   .tableWrap { margin: 0 16px; }
   .tableState { flex-direction: column; margin: 0 16px; }
-  .tableFooter { padding: 15px 16px; }
-  .pagination { flex-wrap: wrap; gap: 10px 14px; }
 }

@@ -9,7 +9,7 @@ export function createSalesModel() {
     },
     order:(c,id)=>one(c,'SELECT id_pedido,status,proposta_admin FROM pedidos WHERE id_pedido=? FOR UPDATE',[id]),
     updateDraft:(c,id,draft)=>c.execute('UPDATE pedidos SET proposta_admin=? WHERE id_pedido=?',[JSON.stringify(draft),id]),
-    cancelDraft:(c,id)=>c.execute("UPDATE pedidos SET status='CANCELADO' WHERE id_pedido=?",[id]),
+    cancelDraft:(c,id,adminId,reason)=>c.execute("UPDATE pedidos SET status='CANCELADO',cancelado_por_admin=?,motivo_cancelamento_admin=? WHERE id_pedido=?",[adminId,reason,id]),
     payment:(c,id)=>one(c,'SELECT id_pagamento FROM pagamentos WHERE id_pagamento=? FOR UPDATE',[id]),
     paymentNotes:(c,id)=>rows(c,'SELECT id_nota,id_admin,nota,criado_em FROM pagamento_notas_admin WHERE id_pagamento=? ORDER BY id_nota DESC LIMIT 20',[id]),
     addPaymentNote:(c,id,adminId,note)=>c.execute('INSERT INTO pagamento_notas_admin(id_pagamento,id_admin,nota) VALUES(?,?,?)',[id,adminId,note]),
@@ -19,7 +19,9 @@ export function createSalesModel() {
       if (q.status) { where.push('o.status = ?'); args.push(q.status); }
       if (q.userId) { where.push('o.id_usuario = ?'); args.push(q.userId); }
       args.push(q.limit + 1);
-      return rows(c, `SELECT o.id_pedido,o.id_usuario,u.nome AS cliente,o.status,o.valor_total,o.data_pedido,o.proposta_admin FROM pedidos o JOIN usuarios u ON u.id_usuario=o.id_usuario ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY o.id_pedido DESC LIMIT ?`, args);
+      return rows(c, `SELECT o.id_pedido,o.id_usuario,u.nome AS cliente,o.status,o.valor_total,o.data_pedido,o.proposta_admin,
+        o.cancelado_por_admin,o.motivo_cancelamento_admin FROM pedidos o JOIN usuarios u ON u.id_usuario=o.id_usuario
+        ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY o.id_pedido DESC LIMIT ?`, args);
     },
     payments(c, q) {
       const where = [], args = [];

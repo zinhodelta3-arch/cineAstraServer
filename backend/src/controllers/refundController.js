@@ -8,11 +8,14 @@ const respond=(service,req,res,result,status=200,refund=result)=>{
     return success(res,result,status);
 };
 export function createRefundController(service){return {
+    orderHistory:async(req,res)=>success(res,await service.orderHistory(req.params.id,req.refundPage,context(req))),
+    requestOrder:admin=>async(req,res)=>respond(service,req,res,await service.requestOrder(req.params.id,req.input,req.paymentKey,context(req),admin),202),
     adminList:async(req,res)=>success(res,await service.adminList(req.adminRefundQuery,context(req))),
     adminGet:async(req,res)=>success(res,await service.adminGet(req.params.id,context(req))),
     request:async(req,res)=>respond(service,req,res,await service.request(req.params.id,req.input,req.paymentKey,context(req)),202),
     get:async(req,res)=>success(res,await service.get(req.params.id,context(req))),
     reconcile:async(req,res)=>success(res,await service.reconcile(req.params.id,context(req))),
+    reconcileAdmin:async(req,res)=>success(res,await service.reconcile(req.params.id,context(req),true)),
     decide:async(req,res)=>respond(service,req,res,await service.decide(req.params.id,req.input,context(req))),
     cancelPlan:async(req,res)=>{const result=await service.cancelPlan(req.params.id,context(req));return respond(service,req,res,result,200,result.refund);}
 };}

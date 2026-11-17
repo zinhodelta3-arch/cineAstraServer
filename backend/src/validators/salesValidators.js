@@ -10,6 +10,7 @@ const paymentQuery = z.object({ ...base, status: z.enum(['PENDENTE', 'APROVADO',
 export const salesDraft = orderBody.omit({ acceptance:true }).refine(draft => draft.lines.reduce((total,line)=>total+line.quantity,0)<=500);
 export const salesDraftCreate = z.object({ userId, draft:salesDraft }).strict();
 export const salesPaymentNote = z.object({ note:z.string().trim().min(1).max(1000) }).strict();
+export const salesCancellation = z.object({ reason:z.string().trim().min(3).max(1000) }).strict();
 export function salesId(req,res,next) {
   if(!id.safeParse(req.params.id).success)throw ApiError.validacao('Identificador inválido.');
   next();

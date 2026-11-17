@@ -2,6 +2,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { venueTypes, eventSeatingLabels } from "@/lib/api/cinema-locations.mjs"
+import styles from "../ticket.module.css"
 
 export default function ExperienceCatalog({ chooseExperience, experiences, list }) {
   return (
@@ -9,7 +10,7 @@ export default function ExperienceCatalog({ chooseExperience, experiences, list 
         <div className="mb-9 flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
             <div className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-[.25em] text-primary uppercase"><span className="h-px w-7 bg-primary" /> Escolha seu formato</div>
-            <h2 className="f-display text-5xl font-black leading-none sm:text-6xl md:text-7xl">Experiências<br className="sm:hidden" /> extraordinárias<span className="text-primary">.</span></h2>
+            <h2 className={`${styles.title} text-5xl font-black leading-none sm:text-6xl md:text-7xl`}>Experiências<br className="sm:hidden" /> extraordinárias<span className="text-primary">.</span></h2>
           </div>
           <p className="max-w-md text-sm leading-6 text-muted-foreground">De uma comemoração intimista a um evento para muita gente: encontre o cenário perfeito para sua próxima história.</p>
         </div>
@@ -20,13 +21,13 @@ export default function ExperienceCatalog({ chooseExperience, experiences, list 
         <div className="grid gap-5 lg:grid-cols-3">
           {experiences.map((experience) => {
             return (
-              <article key={experience.id} className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/60 transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10">
+              <article key={experience.id} id={`experiencia-${experience.id}`} tabIndex={-1} className={`${styles.ticket} group flex h-full scroll-mt-28 flex-col overflow-hidden motion-safe:transition-colors hover:border-primary/50 target:border-primary`}>
                 {experience.imageUrl && <div className="relative aspect-[5/3] overflow-hidden bg-muted">
-                  <img src={experience.imageUrl} alt={experience.imageAlt ?? ""} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <img src={experience.imageUrl} alt={experience.imageAlt ?? ""} loading="lazy" className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-105" />
                 </div>}
                 <div className="flex flex-1 flex-col p-5 md:p-6">
                   {experience.tag && <div className="text-xs font-bold text-primary">{experience.tag}</div>}
-                  <h3 className="f-display mt-2 text-3xl font-black leading-none sm:text-4xl">{experience.title}</h3>
+                  <h3 className={`${styles.title} mt-2 text-3xl font-black leading-none sm:text-4xl`}>{experience.title}</h3>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">{experience.summary}</p>
                   {experience.location && <p className="mt-3 text-sm text-muted-foreground">
                     {[experience.location.name,venueTypes[experience.location.type],
@@ -43,11 +44,12 @@ export default function ExperienceCatalog({ chooseExperience, experiences, list 
                   <div className="my-5 space-y-2">
                     {experience.details.map((detail) => <div key={detail} className="flex items-start gap-2 text-xs text-foreground/80"><CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-primary" /><span>{detail}</span></div>)}
                   </div>
-                  <div className="mt-auto grid gap-2">
-                    {experience.description && <details className="mb-2 text-sm"><summary className="cursor-pointer font-semibold">Saber mais</summary><p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground">{experience.description}</p></details>}
-                    <Button onClick={() => chooseExperience(experience.id)}>Solicitar orçamento <ArrowRight className="size-4" /></Button>
-                    {experience.targetUrl && <Button variant="outline" nativeButton={false} render={<Link href={experience.targetUrl} />}>{experience.ctaLabel ?? "Ver página da experiência"}</Button>}
-                  </div>
+                  {experience.description && <details className="text-sm"><summary className="cursor-pointer font-semibold">Saber mais</summary><p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground">{experience.description}</p></details>}
+                </div>
+                <div className={styles.tear} aria-hidden="true" />
+                <div className={`${styles.stub} grid gap-2 px-5 py-4 md:px-6`}>
+                  <Button onClick={() => chooseExperience(experience.id)}>Solicitar orçamento <ArrowRight className="size-4" /></Button>
+                  {experience.targetUrl && <Button variant="outline" nativeButton={false} render={<Link href={experience.targetUrl} />}>{experience.ctaLabel ?? "Ver página da experiência"}</Button>}
                 </div>
               </article>
             )

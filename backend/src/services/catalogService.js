@@ -24,7 +24,7 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
     }
     function page(rows, q, dto, pk) { const limit = q.limit ?? 20; return { items: rows.slice(0, limit).map(dto), pagination: { limit, nextCursor: rows.length > limit ? idString(rows[limit - 1][pk]) : null } }; }
     return {
-        async popularFilms() { return (await model.popularFilms()).map(r => filmDto(r)); },
+        async popularFilms(limit) { return (await model.popularFilms(limit)).map(r => filmDto(r)); },
         async listFilms(q, isAdmin) { return page(await model.listFilms(q, isAdmin), q, r => filmDto(r, isAdmin), 'id_filme'); },
         async film(id, isAdmin) { return filmDto(found(await model.film(id, isAdmin)), isAdmin); },
         async listGenres(q, isAdmin, filmId) {

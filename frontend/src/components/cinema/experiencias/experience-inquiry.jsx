@@ -26,9 +26,9 @@ export default function ExperienceInquiry({ selectedExperience, sent, submitInqu
               <div role="status" className="rounded-xl border border-primary/30 bg-primary/10 p-6 text-center">
                 <CheckCircle2 className="mx-auto size-9 text-primary" />
                 <h4 className="mt-3 text-lg font-black">Solicitação enviada</h4>
-                <p className="mt-2 text-sm text-muted-foreground">Chamado #{sent.id}. A equipe responderá pelo suporte.</p>
+                <p className="mt-2 text-sm text-muted-foreground">Protocolo {sent.protocol}. A equipe responderá na área de Experiências.</p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  <Button nativeButton={false} render={<Link href="/cinema/suporte" />}>Acompanhar no suporte</Button>
+                  <Button nativeButton={false} render={<Link href={`/cinema/experiencias/solicitacoes?pedido=${sent.id}`} />}>Acompanhar solicitação</Button>
                   <Button type="button" variant="outline" onClick={resetInquiry}>Enviar outra solicitação</Button>
                 </div>
               </div>
@@ -43,11 +43,17 @@ export default function ExperienceInquiry({ selectedExperience, sent, submitInqu
                   <label className="grid gap-1.5 text-xs font-semibold text-foreground">Data desejada
                     <input type="date" name="date" required disabled={pending} value={form.date} onChange={update("date")} min={minimumDate} className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
                   </label>
+                  <label className="grid gap-1.5 text-xs font-semibold text-foreground">Horário desejado (opcional)
+                    <input type="time" name="time" disabled={pending} value={form.time} onChange={update("time")} className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+                  </label>
                   <label className="grid gap-1.5 text-xs font-semibold text-foreground">{experience?.location ? "Quantidade de pessoas" : "Quantidade de pessoas/veículos"}
                     <input type="number" name="guests" required disabled={pending} value={form.guests} onChange={update("guests")} min="1" max={experience?.location?.eventCapacity ?? 100000} placeholder="Ex.: 40" className="h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
                   </label>
                   <label className="grid gap-1.5 text-xs font-semibold text-foreground sm:col-span-2">Conte mais sobre seu evento
                     <textarea name="details" required disabled={pending} value={form.details} onChange={update("details")} minLength={10} maxLength={4000} rows={4} placeholder="Tipo de evento, cidade/local, duração e o que você imagina..." className="resize-y rounded-lg border border-border bg-background px-3 py-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+                  </label>
+                  <label className="grid gap-1.5 text-xs font-semibold text-foreground sm:col-span-2">Preferências (opcional)
+                    <textarea name="preferences" disabled={pending} value={form.preferences} onChange={update("preferences")} maxLength={1000} rows={2} className="resize-y rounded-lg border border-border bg-background px-3 py-3 text-sm font-normal outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
                   </label>
                 </div>
                 {detailLoading && <p className="mt-3 text-sm" role="status">Consultando a experiência…</p>}

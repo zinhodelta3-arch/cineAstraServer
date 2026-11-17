@@ -53,7 +53,7 @@ export default function ReplenishmentLinksAdmin({ locals }) {
         </tr>)}</tbody>
       </table>
     </div>}
-    {list.nextCursor && <TablePagination list={list} />}
+    <TablePagination list={list} noun="vínculos" />
     <Dialog open={Boolean(actions.dialog)} onOpenChange={value => { if (!value) actions.close(); }}>
       <DialogContent className={styles.dialog}>
         <DialogTitle>{editing ? 'Vincular insumos' : 'Remover vínculo'}</DialogTitle>

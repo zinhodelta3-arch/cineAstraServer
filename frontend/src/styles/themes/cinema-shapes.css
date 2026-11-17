@@ -1,0 +1,74 @@
+html[data-theme="odisseia"] {
+  --radius: 0.3rem;
+  --cinema-ticket-radius: 1.5rem 1.5rem 0.25rem 0.25rem;
+  --theme-font-display: Georgia, "Times New Roman", serif;
+  --odisseia-frame: color-mix(in oklab, var(--primary) 56%, var(--border));
+}
+
+html[data-theme="odisseia"] :is(#hero h1, .f-display) {
+  font-family: var(--theme-font-display);
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+}
+
+html[data-theme="odisseia"] :is([data-slot="cinema-header-frame"], [data-slot="dialog-content"], [data-slot="card"]) {
+  border: 3px double var(--odisseia-frame);
+  border-radius: var(--cinema-ticket-radius);
+}
+
+html[data-theme="odisseia"] .ticket-v:has(> [data-slot="cinema-poster-image"]) {
+  mask: none;
+  border: 3px double var(--odisseia-frame);
+  border-radius: 2.75rem 2.75rem 0.25rem 0.25rem;
+}
+
+html[data-theme="odisseia"] [data-slot="cinema-poster-image"] {
+  margin-inline: 0.35rem;
+  border-radius: 45% 45% 0 0 / 22% 22% 0 0;
+}
+
+html[data-theme="odisseia"] :is([data-slot="button"].bg-primary, #hero button.bg-primary) {
+  border-block: 3px double currentColor;
+}
+
+html[data-theme="odisseia"] #hero .grid > * {
+  min-width: 0;
+}
+
+html[data-theme="interestelar"] {
+  --radius: 0.2rem;
+  --cinema-ticket-radius: 0.95rem 0.2rem;
+  --interestelar-frame: color-mix(in oklab, var(--primary) 55%, var(--border));
+  --interestelar-corners: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+
+html[data-theme="interestelar"] :is([data-slot="cinema-header-frame"], [data-slot="dialog-content"], [data-slot="card"]) {
+  border-radius: var(--cinema-ticket-radius);
+  border-inline-start: 3px solid var(--interestelar-frame);
+  border-block-end: 2px solid var(--interestelar-frame);
+}
+
+html[data-theme="interestelar"] :is([data-slot="input"], [data-slot="button"]) {
+  border-radius: 0.65rem 0.12rem;
+}
+
+html[data-theme="interestelar"] .ticket-v:has(> [data-slot="cinema-poster-image"]) {
+  mask: none;
+  border-radius: var(--cinema-ticket-radius);
+  border-inline-start: 3px solid var(--interestelar-frame);
+}
+
+html[data-theme="interestelar"] [data-slot="cinema-poster-image"] > img {
+  clip-path: var(--interestelar-corners);
+}
+
+html[data-theme="interestelar"] #hero h1 {
+  border-inline-start: 3px solid var(--interestelar-frame);
+  padding-inline-start: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+@media (max-width: 639px) {
+  html[data-theme="odisseia"] #hero h1 {
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+}

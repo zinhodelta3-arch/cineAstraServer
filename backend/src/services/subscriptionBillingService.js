@@ -10,15 +10,19 @@ export function createSubscriptionBillingService({model,identity,notifications,i
   async function notify(c,userId,type,key,message){if(notifications)await notifications.emit(c,{recipientId:idString(userId),title:'Cobrança da assinatura',message,type,dedupeKey:key});}
   async function issue(id,today=todayUtc()){return tx(async c=>{
     const s=await model.subscription(c,id,true);
-    if(!s||s.status!=='ATIVA'||!s.renovacao_automatica||!s.fim||s.fim>=today||!s.preco_contratado)return null;
+    if(!s||s.status!=='ATIVA'||!s.fim||s.fim>=today||!s.preco_contratado)return null;
     const due=dueAfterCycle(s.fim),competence=competenceOf(due);
+    const scheduled=typeof s.alteracao_programada==='string'?JSON.parse(s.alteracao_programada):s.alteracao_programada;
+    const change=scheduled?.effectiveOn===due?scheduled:null;
+    if(!s.renovacao_automatica&&!change)return null;
     if(await model.cycle(c,id,competence))return null;
     const mode=s.tipo_divisao_proximo&&s.tipo_divisao_efetiva_em<=competence?s.tipo_divisao_proximo:s.tipo_divisao;
     const members=await model.participants(c,id),users=[s.id_usuario,...members.map(x=>x.id_usuario)];
-    const shares=divideCents(cents(s.preco_contratado),users,mode,s.id_usuario);
+    const price=change?.price??s.preco_contratado;
+    const shares=divideCents(cents(price),users,mode,s.id_usuario);
     const total=shares.reduce((sum,x)=>sum+cents(x.amount),0n);
-    if(total!==cents(s.preco_contratado))throw new Error('Rateio inconsistente');
-    const cycleId=await model.insertCycle(c,id,competence,due,mode,s.preco_contratado,shares);
+    if(total!==cents(price))throw new Error('Rateio inconsistente');
+    const cycleId=await model.insertCycle(c,id,competence,due,mode,price,shares);
     for(const share of shares){if(mode==='TITULAR_PAGA'&&share.userId!==idString(s.id_usuario))continue;
       await model.insertCharge(c,id,share.userId,competence,share.amount,due);
       await notify(c,share.userId,'COBRANCA_ASSINATURA',`ciclo:${id}:${competence}:${share.userId}`,'Nova cobrança da assinatura disponível para pagamento. Consulte valor e vencimento na sua conta.');

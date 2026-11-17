@@ -24,6 +24,8 @@ const logisticsRouteDto = row => ({
 });
 const shipmentDto = r => ({id_logistica:idString(r.id_logistica),id_fornecedor:idString(r.id_fornecedor),id_local_origem:r.id_local_origem==null?null:idString(r.id_local_origem),id_local_destino:idString(r.id_local_destino),id_solicitacao:r.id_solicitacao==null?null:idString(r.id_solicitacao),id_insumo_origem:r.id_insumo_origem==null?null:idString(r.id_insumo_origem),id_equipamento_origem:r.id_equipamento_origem==null?null:idString(r.id_equipamento_origem),id_insumo_destino:r.id_insumo_destino==null?null:idString(r.id_insumo_destino),quantidade:r.quantidade,status:r.status,data_envio:r.data_envio??null,data_prevista:r.data_prevista??null,data_recebimento:r.data_recebimento??null,data_devolucao:r.data_devolucao??null,id_usuario_recebimento:r.id_usuario_recebimento==null?null:idString(r.id_usuario_recebimento),id_usuario_devolucao:r.id_usuario_devolucao==null?null:idString(r.id_usuario_devolucao),observacao:r.observacao??null,
     id_transporte:r.id_transporte==null?null:idString(r.id_transporte),nome_transporte:r.nome_transporte??null,
+    id_rota_referencia:r.id_rota_referencia==null?null:idString(r.id_rota_referencia),
+    distancia_rota_km:r.distancia_rota_km??null,tempo_rota_min:r.tempo_rota_min??null,
     devolucao_disponivel:Number(r.devolucao_disponivel)===1});
 const page = (rows,q,dto,key) => { const items=rows.slice(0,q.limit);return {items:items.map(dto),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(items.at(-1)[key]):null}}; };
 const inputLinkDto = row => ({
@@ -113,9 +115,14 @@ export function createSupplyService({model,identity,notifications}) {
             return logisticsRouteDto(found(await model.logisticsRoute(id,c)));
         }),
         patchLogisticsRoute:(id,input,context)=>adminTx(context,async c=>{
-            found(await model.logisticsRoute(id,c));
+            const previous=found(await model.lockLogisticsRoute(c,id));
+            const stateChanged=input.status&&input.status!==previous.status;
+            if(Object.keys(input).length===1&&input.status&&!stateChanged){
+                return logisticsRouteDto(found(await model.logisticsRoute(id,c)));
+            }
             await model.updateLogisticsRoute(c,id,input);
-            await identity.audit(c,'LOGISTICS.ROUTE_CHANGED',id,context);
+            const event=stateChanged?(input.status==='INATIVO'?'LOGISTICS.ROUTE_ARCHIVED':'LOGISTICS.ROUTE_RESTORED'):'LOGISTICS.ROUTE_CHANGED';
+            await identity.audit(c,event,id,context);
             return logisticsRouteDto(found(await model.logisticsRoute(id,c)));
         }),
         async sources(q,context) { return tx(context,async(c,a)=>{

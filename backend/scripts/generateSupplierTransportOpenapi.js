@@ -7,7 +7,10 @@ const object=(properties,required=Object.keys(properties))=>({type:'object',addi
 const reference=name=>({$ref:`#/components/schemas/${name}`});
 const text=(maxLength,nullable=false)=>({type:'string',maxLength,...(nullable?{nullable:true}:{minLength:1})});
 const fields={nome:text(120),tipo:text(60),identificacao:text(40,true),observacao:text(2000,true)};
-spec.components.schemas.SupplierTransport=object({id_transporte:id,id_fornecedor:id,...fields,status,em_uso:{type:'boolean'},criado_em:{type:'string'},atualizado_em:{type:'string'}});
+spec.components.schemas.SupplierTransport=object({id_transporte:id,id_fornecedor:id,...fields,status,em_uso:{type:'boolean'},
+    id_entrega_ativa:{type:'string',pattern:'^[1-9][0-9]{0,19}$',nullable:true},
+    status_entrega_ativa:{type:'string',enum:['ENVIADO','EM_TRANSITO',null],nullable:true},
+    criado_em:{type:'string'},atualizado_em:{type:'string'}});
 spec.components.schemas.SupplierTransportPage=object({items:{type:'array',items:reference('SupplierTransport')},pagination:object({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...id,nullable:true}})});
 for(const {method,path,operationId,action} of supplierTransportOperations){
     const op={operationId,tags:['Fornecedores'],summary:operationId.replaceAll('_',' '),description:'FORNECEDOR ativo autenticado. A empresa é obtida pela sessão; consultas e alterações são limitadas aos seus transportes. DELETE inativa, preservando o cadastro. Identificação é opcional e única dentro do fornecedor; PATCH pode reativar o registro.',security:[{bearerAuth:[]}],parameters:[],responses:{}};

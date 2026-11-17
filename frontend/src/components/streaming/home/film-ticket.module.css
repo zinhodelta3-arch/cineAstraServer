@@ -1,0 +1,44 @@
+.notches::before,
+.notches::after {
+  position: absolute;
+  z-index: 2;
+  inset-block-start: var(--notch-line, 50%);
+  inline-size: 5px;
+  block-size: 10px;
+  transform: translateY(-50%);
+  border: 1px solid var(--border);
+  background: var(--background);
+  pointer-events: none;
+  content: "";
+}
+
+.notches::before {
+  inset-inline-start: 0;
+  border-inline-start: 0;
+  border-radius: 0 100% 100% 0 / 0 50% 50% 0;
+}
+
+.notches::after {
+  inset-inline-end: 0;
+  border-inline-end: 0;
+  border-radius: 100% 0 0 100% / 50% 0 0 50%;
+}
+
+.stub {
+  --notch-line: 0%;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  min-block-size: 58px;
+  padding: 9px 12px;
+  border-block-start: 1px dashed var(--border);
+  background: color-mix(in oklab, var(--primary) 5%, var(--card));
+}
+
+.rank {
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}

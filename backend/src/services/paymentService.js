@@ -17,13 +17,12 @@ function normalized(event){
     if(!Number.isFinite(time.getTime())||time.getTime()>Date.now()+300000)throw ApiError.validacao('Evento do gateway inválido');
     return {...event,intentionId,occurredSql:time.toISOString().replace('T',' ').replace('Z','').slice(0,23)};
 }
-export function createPaymentService({model,methods,identity,provider,checkout,subscriptions}){
+export function createPaymentService({model,methods,identity,provider,checkout,subscriptions,socialProgram}){
     const tx=(context,fn)=>identity.transaction(fn,context);
     function ready(){if(provider?.available===false||!/^[A-Za-z0-9_-]{2,40}$/.test(provider?.name??'')||typeof provider.create!=='function'||typeof provider.consult!=='function'||typeof provider.verifyWebhook!=='function')throw unavailable();}
     async function ownPayment(id,context){return tx(context,async c=>{const a=await contextActor(identity,c,context);const row=await model.byPayment(id,c);if(!row||idString(row.id_usuario)!==idString(a.id_usuario))throw ApiError.naoEncontrado();return statusDto(row);});}
-    async function applyEvent(raw,type,context={}){
-        const e=normalized(raw);
-        return tx(context,async c=>{
+    async function applyEventOnConnection(c,raw,type,context){
+            const e=normalized(raw);
             const hint=await model.intent(e.intentionId,c);
             if(hint?.id_pedido)await model.lockOrder(c,hint.id_pedido);
             const row=await model.intent(e.intentionId,c,true);
@@ -49,10 +48,23 @@ export function createPaymentService({model,methods,identity,provider,checkout,s
             }
             await model.settle(c,row,e.status,e.occurredSql,e.transactionId,fulfill);
             if(e.status==='APROVADO'&&fulfill&&checkoutOrder)await checkout.confirm(c,row.id_pedido,row.id_usuario,e.occurredSql);
+            if(e.status==='APROVADO'&&fulfill&&row.id_pedido)await socialProgram?.capture(c,{
+                orderId:row.id_pedido,paymentId:row.id_pagamento,amount:e.amount,occurredAt:e.occurredSql});
             if(e.status==='APROVADO'&&fulfill&&!row.id_pedido&&subscriptions)await subscriptions.activate(c,row.id_cobranca,e.occurredSql);
             await identity.audit(c,e.status==='APROVADO'?(fulfill?'PAYMENT.APPROVED':'PAYMENT.APPROVAL_REVIEW'):'PAYMENT.DECLINED',row.id_pagamento,context);
             return {duplicate:false,status:e.status};
-        });
+    }
+    const applyEvent=(raw,type,context={})=>tx(context,c=>applyEventOnConnection(c,raw,type,context));
+    async function settleCounter(c,{orderId,amount,owner,key},context){
+        ready();
+        if(provider.name!=='simulado')throw unavailable();
+        const intention=await model.prepareCounterPix(c,{orderId,amount,owner,key});
+        const paymentId=await model.claim(c,intention,provider.name);
+        const request={intentionId:intention.id_intencao,amount,idempotencyKey:key,currency:'BRL'};
+        const {transactionId}=await provider.create(request);
+        const event=await provider.consult({...request,transactionId});
+        await applyEventOnConnection(c,event,'CONSULTA',context);
+        return paymentId;
     }
     async function create(input,key,context){
         ready();
@@ -114,5 +126,5 @@ export function createPaymentService({model,methods,identity,provider,checkout,s
         if(!verified)throw ApiError.naoAutorizado();
         return applyEvent(verified,'WEBHOOK',context);
     }
-    return {create,get:ownPayment,reconcile,webhook,reconcileByAdmin:(id,context)=>reconcile(id,context,true)};
+    return {create,get:ownPayment,reconcile,webhook,settleCounter,reconcileByAdmin:(id,context)=>reconcile(id,context,true)};
 }

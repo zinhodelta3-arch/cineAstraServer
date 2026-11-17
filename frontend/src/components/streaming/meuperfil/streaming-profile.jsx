@@ -1,18 +1,22 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import useStreamingHome from "@/hooks/streaming/home/use-streaming-home";
 import Button from "@/components/streaming/home/button";
 import Row from "@/components/streaming/home/row";
 import Thumb from "@/components/streaming/home/thumb";
-import DetailsModal from "@/components/streaming/home/details-modal";
-import PlayerModal from "@/components/streaming/home/player-modal";
 import CinemaStyles from "@/components/streaming/home/cinema-styles";
+import { useStreamingDetails } from "@/components/streaming/home/streaming-details-provider";
 import ProfileHeader from "./profile-header";
 
 export default function StreamingProfile() {
+  const router = useRouter();
+  const openDetails = useStreamingDetails();
+  const openFilm = (movie) => router.push("/streaming/assistir/filme/" + encodeURIComponent(movie.id) + "?reproduzir=1");
   const state = useStreamingHome();
-  const { ready, error, actionError, retry, profile, history, catalog, continuing, recent, explore, myList, favoriteIds, toggleList, progress, accessByFilm, updateProgress, playing, setPlaying, details, setDetails, closePlayer, closeDetails } = state;
-  const card = (movie) => <Thumb key={movie.id} movie={movie} onSelect={setDetails} onPlay={setPlaying} inList={favoriteIds.has(movie.id)} onToggleList={toggleList} progress={progress[movie.id]} />;
+  const { ready, error, actionError, retry, profile, history, continuing, recent, explore, myList, favoriteIds, toggleList, progress } = state;
+  const selectMovie = (movie) => openDetails(movie, { inList: favoriteIds.has(movie.id), onToggleList: toggleList, progress: progress[movie.id] });
+  const card = (movie) => <Thumb key={movie.id} movie={movie} onSelect={selectMovie} onPlay={openFilm} inList={favoriteIds.has(movie.id)} onToggleList={toggleList} progress={progress[movie.id]} />;
   return (
     <div className="min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
       <CinemaStyles />
@@ -28,8 +32,6 @@ export default function StreamingProfile() {
           </div>
         </>}
       </main>
-      {ready && details && <DetailsModal key={details.id} movie={details} onClose={closeDetails} onPlay={setPlaying} inList={favoriteIds.has(details.id)} onToggleList={toggleList} catalog={catalog} progress={progress} />}
-      {ready && playing && <PlayerModal movie={playing} profileId={profile.id} access={accessByFilm[playing.id]} onProgress={updateProgress} onClose={closePlayer} />}
     </div>
   );
 }

@@ -2,7 +2,6 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {planOperations} from '../src/routes/planRoutes.js';
 
 const file=new URL('../src/docs/openapi.json',import.meta.url),spec=JSON.parse(await readFile(file,'utf8'));
-spec.info.version='1.25.0';
 spec.tags=[...spec.tags.filter(x=>x.name!=='Plans'),{name:'Plans',description:'Planos, contratos de assinatura e solicitação de combo mensal.'}];
 const id={type:'string',pattern:'^[1-9][0-9]{0,19}$'};
 const money={type:'string',pattern:'^[0-9]{1,8}\\.[0-9]{2}$',nullable:true};
@@ -15,6 +14,11 @@ spec.components.schemas.Plan=obj({id:id,...planInput,monthlyPrice:money,annualPr
 spec.components.schemas.PlanAdmin=obj({...spec.components.schemas.Plan.properties,monthlyBenefitCost:money,annualBenefitCost:money});
 spec.components.schemas.PlanContract=obj({id:id,planId:id,period:{type:'string',enum:['MENSAL','ANUAL']},divisionMode:{type:'string',enum:['TITULAR_PAGA','DIVISAO_IGUAL']},status:{type:'string',enum:['PENDENTE','ATIVA','CANCELADA','EXPIRADA']},autoRenew:{type:'boolean'},startsOn:{type:'string',format:'date',nullable:true},endsOn:{type:'string',format:'date',nullable:true},contractPrice:money,contract:{...ref('Plan'),nullable:true},chargeId:id,chargeStatus:{type:'string',enum:['PENDENTE','PAGO','ATRASADO','ISENTO']},paymentPath:{type:'string'}},['id','planId','period','divisionMode','status','autoRenew','startsOn','endsOn','contractPrice','contract']);
 spec.components.schemas.PlanContract.properties.administrativeDraft={type:'boolean'};
+Object.assign(spec.components.schemas.PlanContract.properties,{
+  planName:{type:'string',nullable:true},suspended:{type:'boolean'},
+  chargeDue:{type:'string',format:'date'},chargeAmount:money,paymentId:{...id,nullable:true},paymentStatus:{type:'string',nullable:true},
+  scheduledChange:{...obj({planId:id,planName:{type:'string'},period:{type:'string',enum:['MENSAL','ANUAL']},price:money,effectiveOn:{type:'string',format:'date'}}),nullable:true},
+});
 spec.components.schemas.PlanComboRequest=obj({id,subscriptionId:id,comboId:id,competence:{type:'string',format:'date'},status:{type:'string',enum:['SOLICITADO']}});
 const body=schema=>({required:true,content:{'application/json':{schema}}});
 const pathId=name=>({name,in:'path',required:true,schema:id});
@@ -49,10 +53,18 @@ for(const route of planOperations){
     op.description='Cria snapshot imutável da oferta e cobrança PENDENTE. Use o chargeId retornado em POST /api/payments com outro Idempotency-Key. A assinatura só ativa após confirmação autenticada do gateway.';
   }
   if(route.operationId==='request_monthly_combo')op.description='Exige contrato ATIVA, cobrança paga e combo incluído no snapshot. Reserva uma única solicitação por competência; SOLICITADO não equivale a entrega.';
+  if(route.operationId==='get_current_subscription')op.summary='Consultar o plano atual do titular ou participante';
+  if(route.operationId==='schedule_subscription_change'){
+    op.summary='Agendar mudança para o próximo ciclo';
+    op.description='Preserva o ciclo atual. A mudança passa a valer após confirmação da cobrança do próximo ciclo.';
+    op.requestBody=body(obj({...draftFields,autoRenew:{type:'boolean'},divisionMode:{type:'string',enum:['TITULAR_PAGA','DIVISAO_IGUAL']},
+      acceptance:obj({accepted:{type:'boolean',enum:[true]},offerHash:{type:'string',pattern:'^[a-f0-9]{64}$'}})},['planId','period','acceptance']));
+  }
   const responseSchema=route.operationId.includes('plan')&&!route.operationId.includes('subscription')?ref(isAdmin?'PlanAdmin':'Plan'):
+    route.operationId==='get_current_subscription'?obj({subscription:{...obj({planName:{type:'string'},period:{type:'string'},status:{type:'string'},endsOn:{type:'string',format:'date',nullable:true}}),nullable:true}}):
     route.operationId==='request_monthly_combo'?ref('PlanComboRequest'):ref('PlanContract');
   const data=['list_public_plans','list_admin_plans','list_my_subscriptions'].includes(route.operationId)?page(responseSchema):responseSchema;
-  const code=route.method==='delete'?'204':route.method==='post'?'201':'200';
+  const code=route.method==='delete'?'204':route.method==='post'&&route.operationId!=='schedule_subscription_change'?'201':'200';
   op.responses[code]=code==='204'?{description:'Plano arquivado'}:{description:'Sucesso',content:{'application/json':{schema:envelope(data)}}};
   for(const [status,name] of Object.entries(errors))op.responses[status]={$ref:`#/components/responses/${name}`};
   (spec.paths[route.path]??={})[route.method]=op;

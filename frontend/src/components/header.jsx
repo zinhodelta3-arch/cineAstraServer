@@ -76,7 +76,7 @@ export function Header({ showAssistant = false }) {
     <>
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95">
         <div className="mx-auto w-full max-w-[96rem] px-3 py-2 sm:px-5 lg:px-6">
-          <div className="relative flex h-16 w-full items-center rounded-lg border border-border/70 bg-card">
+          <div data-slot="cinema-header-frame" className="relative flex h-16 w-full items-center rounded-lg border border-border/70 bg-card">
             <Notch side="left" />
             <Notch side="right" />
             <Perforation className="top-1" />
@@ -135,8 +135,8 @@ export function Header({ showAssistant = false }) {
       </header>
 
       {session.user && <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />}
-      {showAssistant && !session.loading && (!session.user || session.user.role === "CLIENTE") && (
-        <FloatingAssistant key={session.user?.id ?? "visitor"} signedIn={Boolean(session.user)} />
+      {showAssistant && !session.loading && session.user?.role === "CLIENTE" && (
+        <FloatingAssistant key={session.user.id} signedIn />
       )}
     </>
   )

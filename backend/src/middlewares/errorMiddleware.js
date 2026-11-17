@@ -1,9 +1,11 @@
 import { ApiError } from '../utils/ApiError.js';
 import { report } from '../utils/telemetry.js';
+import { redactRoute } from './logMiddleware.js';
 
 export function errorMiddleware(error, req, res, next) {
+    const context = { requestId: res.locals.requestId, route: redactRoute(req), error };
     if (res.headersSent) {
-        report('request_failed_after_headers', { requestId: res.locals.requestId, error });
+        report('request_failed_after_headers', { ...context, status: res.statusCode });
         if (!res.writableEnded) res.destroy();
         return;
     }
@@ -19,9 +21,9 @@ export function errorMiddleware(error, req, res, next) {
     else if (!(error instanceof ApiError) && ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN', 'EPIPE', 'PROTOCOL_CONNECTION_LOST', 'ER_CON_COUNT_ERROR', 'ER_TOO_MANY_USER_CONNECTIONS'].includes(error?.code)) safe = ApiError.indisponivel();
     else if (!(error instanceof ApiError) && ['ER_LOCK_DEADLOCK', 'ER_LOCK_WAIT_TIMEOUT'].includes(error?.code)) {
         safe = new ApiError('Conflito temporário na operação. Atualize os dados antes de tentar novamente.', 409, null, 'TRANSACTION_CONFLICT');
-        report('transaction_conflict', { requestId: res.locals.requestId, status: 409, error });
+        report('transaction_conflict', { ...context, status: 409 });
     }
-    if (safe.statusCode >= 500) report('request_failed', { requestId: res.locals.requestId, status: safe.statusCode, error });
+    if (safe.statusCode >= 500) report('request_failed', { ...context, status: safe.statusCode });
     if (safe.statusCode === 401) res.set('WWW-Authenticate', 'Bearer');
     if (safe.statusCode === 503) res.set('Retry-After', '5');
     res.status(safe.statusCode).json(safe.toJSON(res.locals.requestId));

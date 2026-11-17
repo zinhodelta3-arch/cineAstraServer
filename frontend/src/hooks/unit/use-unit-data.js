@@ -18,10 +18,13 @@ export async function unitSessions(path, { signal } = {}) {
   return readSessionResponse(response);
 }
 
-export async function unitOperation(path, { method = 'GET', body, signal } = {}) {
+export async function unitOperation(path, { method = 'GET', body, signal, idempotencyKey } = {}) {
+  const headers = new Headers();
+  if (body != null) headers.set('Content-Type', 'application/json');
+  if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey);
   const response = await sessionFetch(`/api/unidade/operacoes${path}`, {
     method, cache: 'no-store', credentials: 'same-origin', signal,
-    headers: body == null ? undefined : { 'Content-Type': 'application/json' },
+    headers,
     body: body == null ? undefined : JSON.stringify(body) });
   if (response.status === 204) return null;
   return readSessionResponse(response);

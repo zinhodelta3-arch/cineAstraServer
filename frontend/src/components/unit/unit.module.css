@@ -12,6 +12,11 @@ a.card:hover { border-color: var(--primary); transform: translateY(-2px); }
 .card p, .muted { color: var(--muted-foreground); font-size: 12px; line-height: 1.5; }
 .cardFooter { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px dashed var(--border); font-size: 12px; font-weight: 650; }
 .panel { margin-top: 18px; overflow: hidden; }
+.teamSections { display: grid; gap: clamp(12px, 2vw, 24px); }
+.teamSections > .panel { margin-top: 0; }
+.teamSections :is(.panelHeader > div, .list > li > div, .form label) { min-width: 0; overflow-wrap: anywhere; }
+.teamSections .body > h3 { margin-block: 16px 8px; }
+.teamSections .select { max-width: 100%; }
 .panelHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 20px 22px; border-bottom: 1px dashed var(--border); }
 .panelHeader h2 { font-size: 16px; font-weight: 750; }
 .panelHeader p { margin-top: 5px; color: var(--muted-foreground); font-size: 12px; }

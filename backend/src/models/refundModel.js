@@ -8,6 +8,13 @@ export function createRefundModel(database){
     const adminFields='r.id_reembolso,r.id_pagamento,r.id_usuario,r.motivo,r.dentro_prazo,r.valor_solicitado,r.valor_confirmado,r.status,r.compensacao_status,r.solicitado_em,r.prazo_resposta_em,r.respondido_em,p.id_pedido,p.id_cobranca,p.valor AS pagamento_valor,p.status AS pagamento_status';
     const adminFrom=' FROM reembolso_solicitacoes r JOIN pagamentos p ON p.id_pagamento=r.id_pagamento';
     return {
+        order:(c,id)=>one(c,'SELECT id_pedido,id_usuario,status FROM pedidos WHERE id_pedido=?',[id]),
+        orderPayment:(c,id)=>one(c,`SELECT p.id_pagamento FROM pagamentos p JOIN pagamento_intencoes i ON i.id_intencao=p.id_intencao
+            WHERE p.id_pedido=? AND p.status IN ('APROVADO','PARCIALMENTE_ESTORNADO') AND i.provider IS NOT NULL
+            ORDER BY p.id_pagamento DESC LIMIT 1`,[id]),
+        orderRequests:(c,id,owner,limit,cursor)=>rows(c,`SELECT ${adminFields}${adminFrom}
+            WHERE p.id_pedido=? AND r.id_usuario=? AND (? IS NULL OR r.id_reembolso<?)
+            ORDER BY r.id_reembolso DESC LIMIT ?`,[id,owner,cursor??null,cursor??null,limit+1]),
         async adminList(c,q){
             const where=[],args=[];
             if(q.cursor){where.push('r.id_reembolso<?');args.push(q.cursor);}
@@ -15,7 +22,15 @@ export function createRefundModel(database){
             args.push(q.limit+1);
             return rows(c,`SELECT ${adminFields}${adminFrom} ${where.length?'WHERE '+where.join(' AND '):''} ORDER BY r.id_reembolso DESC LIMIT ?`,args);
         },
-        adminGet:(c,id)=>one(c,`SELECT ${adminFields},r.detalhes,r.termos_versao,r.decisao_fundamento${adminFrom} WHERE r.id_reembolso=?`,[id]),
+        adminGet:(c,id)=>one(c,`SELECT ${adminFields},r.detalhes,r.termos_versao,r.decisao_fundamento,r.itens_selecionados${adminFrom} WHERE r.id_reembolso=?`,[id]),
+        orderItems:(c,id)=>rows(c,`SELECT ip.id_item,ip.subtotal,ip.quantidade,
+            COALESCE(f.titulo,sf.titulo,co.nome,i.nome,'Item da compra') AS nome
+            FROM itens_pedido ip LEFT JOIN filmes f ON f.id_filme=ip.id_filme
+            LEFT JOIN sessoes s ON s.id_sessao=ip.id_sessao LEFT JOIN filmes sf ON sf.id_filme=s.id_filme
+            LEFT JOIN combos co ON co.id_combo=ip.id_combo LEFT JOIN insumos i ON i.id_insumo=ip.id_insumo
+            WHERE ip.id_pedido=? ORDER BY ip.id_item`,[id]),
+        selectedHistory:(c,paymentId)=>rows(c,"SELECT itens_selecionados FROM reembolso_solicitacoes WHERE id_pagamento=? AND status='CONFIRMADA' AND itens_selecionados IS NOT NULL",[paymentId]),
+        recordItems:(c,id,items)=>c.execute('UPDATE reembolso_solicitacoes SET itens_selecionados=? WHERE id_reembolso=?',[JSON.stringify(items),id]),
         async payment(id,c=database,lock=false){if(lock&&!await one(c,'SELECT id_pagamento FROM pagamentos WHERE id_pagamento=? FOR UPDATE',[id]))return null;return one(c,paymentSql,[id]);},
         async refund(id,c=database,lock=false){if(lock&&!await one(c,'SELECT id_reembolso FROM reembolso_solicitacoes WHERE id_reembolso=? FOR UPDATE',[id]))return null;return one(c,refundSql,[id]);},
         byKey:(owner,key,c)=>one(c,'SELECT id_reembolso FROM reembolso_solicitacoes WHERE id_usuario=? AND chave_idempotencia=?',[owner,key]),
@@ -31,6 +46,6 @@ export function createRefundModel(database){
         },
         plan:(id,c,lock=false)=>one(c,`SELECT id_assinatura,id_usuario,inicio,status,renovacao_automatica FROM assinaturas WHERE id_assinatura=?${lock?' FOR UPDATE':''}`,[id]),
         latestPlanPayment:(id,owner,c)=>one(c,"SELECT p.id_pagamento FROM pagamentos p JOIN assinatura_cobrancas ac ON ac.id_cobranca=p.id_cobranca WHERE ac.id_assinatura=? AND ac.id_usuario=? AND p.status IN ('APROVADO','PARCIALMENTE_ESTORNADO') ORDER BY p.data_pagamento DESC,p.id_pagamento DESC LIMIT 1",[id,owner]),
-        cancelPlan:(c,id)=>c.execute("UPDATE assinaturas SET status='CANCELADA',renovacao_automatica=FALSE,fim=UTC_DATE() WHERE id_assinatura=? AND status IN ('ATIVA','PENDENTE')",[id])
+        cancelPlan:(c,id)=>c.execute("UPDATE assinaturas SET status='CANCELADA',renovacao_automatica=FALSE,fim=UTC_DATE(),alteracao_programada=NULL WHERE id_assinatura=? AND status IN ('ATIVA','PENDENTE')",[id])
     };
 }

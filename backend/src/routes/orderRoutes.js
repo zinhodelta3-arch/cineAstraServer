@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { allowRoles } from '../middlewares/authMiddleware.js';
 import { validateBody } from '../validators/identityValidators.js';
-import { orderBody,checkoutBody,orderCancelBody,orderPage } from '../validators/orderValidators.js';
+import { orderBody,checkoutBody,orderCancelBody,orderPage,counterQuoteBody,counterSaleBody } from '../validators/orderValidators.js';
 import { paymentKey } from '../validators/paymentValidators.js';
 import { ticketIdParam } from '../validators/ticketValidators.js';
 export const orderOperations=[
@@ -12,7 +12,19 @@ export const orderOperations=[
     {method:'post',path:'/api/orders/checkout',operationId:'checkout_order',action:'checkout'},
     {method:'post',path:'/api/orders/{orderId}/cancel',operationId:'cancel_order',action:'cancel'}
 ];
-export function orderRoutes(controller,{auth,limits}){const router=Router();for(const r of orderOperations){
+const counterPath='/api/unit/sessions/{sessionId}/counter';
+export const counterOrderOperations=[
+    {method:'get',path:counterPath,operationId:'counter_catalog',action:'counterCatalog',middleware:()=>[]},
+    {method:'post',path:`${counterPath}/quote`,operationId:'counter_quote',action:'counterQuote',middleware:limits=>[...limits.checkout,validateBody(counterQuoteBody)]},
+    {method:'post',path:`${counterPath}/orders`,operationId:'counter_sale',action:'counterSale',middleware:limits=>[...limits.checkout,paymentKey,validateBody(counterSaleBody)]},
+];
+export function orderRoutes(controller,{auth,limits}){
+    const router=Router();
+    const counter=[(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth,allowRoles('COLABORADOR'),ticketIdParam];
+    for(const r of counterOrderOperations){
+        router[r.method](r.path.replace('{sessionId}',':sessionId'),...counter,...r.middleware(limits),controller[r.action]);
+    }
+    for(const r of orderOperations){
     const middleware=[(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth,allowRoles('CLIENTE')];
     if(r.action==='checkout'||r.action==='cancel')middleware.push(...limits.checkout,paymentKey);
     if(['status','cancel','draft'].includes(r.action))middleware.push(ticketIdParam);

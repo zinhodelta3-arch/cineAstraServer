@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ArrowDownToLine, History, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import ShipmentHistory from '@/components/logistics/shipment-history';
+import ShipmentEstimate from '@/components/logistics/shipment-estimate';
 import { unitOperation } from '@/hooks/unit/use-unit-data';
 import { UnitFeedback, UnitListState, UnitMore, dateTime, label } from './unit-layout';
 import styles from './unit.module.css';
@@ -67,7 +68,10 @@ export default function UnitDeliveries({ list, action }) {
     <Dialog open={Boolean(tracking)} onOpenChange={open => { if (!open) setTracking(null); }}>
       <DialogContent className={styles.dialog}>
         <DialogTitle>Histórico da entrega #{tracking?.id_logistica}</DialogTitle>
-        <DialogDescription>{tracking?.nome_transporte ?? 'Sem transporte vinculado'}. {tracking?.data_prevista ? `Chegada estimada pela rota em ${dateTime(tracking.data_prevista)}.` : 'Sem estimativa de chegada.'}</DialogDescription>
+        <DialogDescription>{tracking?.nome_transporte ?? 'Sem transporte vinculado'}</DialogDescription>
+        {tracking && <dl className="grid gap-3 sm:grid-cols-2 [&_dt]:text-xs [&_dt]:text-muted-foreground [&_dd]:mt-1">
+          <ShipmentEstimate shipment={tracking} />
+        </dl>}
         {tracking && <ShipmentHistory path={`/logistics/${tracking.id_logistica}/history?limit=10`} request={unitOperation} />}
       </DialogContent>
     </Dialog>

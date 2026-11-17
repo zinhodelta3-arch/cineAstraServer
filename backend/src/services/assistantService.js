@@ -14,14 +14,16 @@ export function createAssistantService({identity,support,provider=unavailableAss
             if(sensitiveText.test(input.message)||sensitiveText.test(question))return local('Retire dados pessoais ou credenciais e envie somente a dúvida sobre o CineAstra.');
             if(restrictedQuestion.test(question))return local('Informações internas e dados privados são restritos. Posso orientar sobre as funções disponíveis para a sua conta.');
             if(role!=='CLIENTE')return local(roleGuidance(role,question));
-            if(provider.available!==true)return {identity:'IA',available:false,message:'Assistente indisponível. Encaminhe sua dúvida ao suporte humano.',handoffPath};
+            const fallback=()=>({...local(roleGuidance(role,question)), available:false});
+            if(provider.available!==true)return fallback();
             // O provedor recebe a dúvida, sem acesso à identidade ou à sessão do cliente.
             try{const answer=await provider.answer({message:input.message,signal:context.signal});
                 const message=typeof answer==='string'?answer:answer?.message;
                 if(typeof message!=='string'||!message.trim()||message.length>4000)throw new Error('Resposta inválida');
+                if(answer?.available===false)return fallback();
                 const sessions=Array.isArray(answer?.sessions)?answer.sessions.filter(item=>typeof item?.id==='string'&&/^[1-9]\d{0,19}$/.test(item.id)&&typeof item.label==='string').slice(0,6):[];
                 return {identity:'IA',available:answer?.available!==false,message,handoffPath,...(sessions.length?{sessions}:{})};
-            }catch{return {identity:'IA',available:false,message:'Assistente indisponível. Encaminhe sua dúvida ao suporte humano.',handoffPath};}
+            }catch{return fallback();}
         },
         handoff:(input,context)=>{
             if(sensitiveText.test(input.message)||sensitiveText.test(normalizeQuestion(input.message)))throw ApiError.validacao('Retire dados pessoais ou credenciais antes de encaminhar a dúvida.');

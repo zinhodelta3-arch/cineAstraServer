@@ -2,7 +2,7 @@
 .summary { color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
 .size, .buttons { display: flex; align-items: center; gap: 6px; }
 .size { gap: 8px; margin-left: auto; }
-.pagination button, .pagination select { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 40px; min-width: 40px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--foreground); font: inherit; cursor: pointer; }
+.pagination button, .pagination select { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; min-width: 44px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--foreground); font: inherit; cursor: pointer; }
 .pagination button:hover:enabled { background: var(--muted); }
 .pagination button[aria-current="page"] { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); opacity: 1; }
 .pagination :is(button, select):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }

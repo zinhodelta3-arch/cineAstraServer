@@ -8,9 +8,15 @@ import {commerceErrors} from '@/lib/api/commerce-errors.mjs';
 const json=(body,status=200)=>NextResponse.json(body,{status,headers:{'Cache-Control':'no-store'}});
 const failure=e=>json(authErrorPayload(e, {code:e instanceof AuthError?e.code:null,message:(e instanceof AuthError&&Object.hasOwn(commerceErrors,e.code)?commerceErrors[e.code]:null)??(e.status===409?'A oferta mudou ou você já possui uma assinatura ativa ou pendente. Consulte suas assinaturas e revise a oferta.':e.status===403?'Sua conta não está habilitada para esta contratação. Confira seu perfil e a verificação de idade.':e.status===404?'Plano ou recurso indisponível. Atualize a página.':e instanceof AuthError?e.message:'Não foi possível acessar os planos.')}),e instanceof AuthError?e.status:500);
 export async function GET(request,{params}){
- if((await params).action!=='mine')return json({message:'Recurso não encontrado.'},404);
+ const action=(await params).action;
+ if(!['mine','current','subscription'].includes(action))return json({message:'Recurso não encontrado.'},404);
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({message:'Entre na sua conta.'},401);
+ if(action!=='mine'){
+  const id=new URL(request.url).searchParams.get('id');
+  if(action==='subscription'&&(typeof id!=='string'||!/^[1-9]\d{0,9}$/.test(id)||BigInt(id)>4294967295n))return json({message:'Assinatura inválida.'},422);
+  try{return json(await backendAuth(action==='current'?'/subscriptions/current':`/subscriptions/${id}`,{token}));}catch(e){return failure(e);}
+ }
  const cursor=new URL(request.url).searchParams.get('cursor')||'0';
  if(!/^(0|[1-9]\d{0,9})$/.test(cursor)||BigInt(cursor)>4294967295n)return json({message:'Página inválida.'},422);
  try{return json(await backendAuth(`/subscriptions/me?limit=20&cursor=${cursor}`,{token}));}catch(e){return failure(e);}
@@ -18,7 +24,7 @@ export async function GET(request,{params}){
 export async function POST(request,{params}){
  if(!isAllowedAuthOrigin(request))return json({message:'Origem não permitida.'},403);
  const action=(await params).action;
- if(!['summary','subscribe','cancel'].includes(action))return json({message:'Recurso não encontrado.'},404);
+ if(!['summary','subscribe','cancel','change'].includes(action))return json({message:'Recurso não encontrado.'},404);
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({message:'Entre na sua conta para contratar.'},401);
  try{
@@ -29,7 +35,13 @@ export async function POST(request,{params}){
    if(typeof id!=='string'||! /^[1-9]\d{0,9}$/.test(id)||BigInt(id)>4294967295n)return json({message:'Assinatura inválida.'},422);
    return json(await backendAuth(`/subscriptions/${id}/cancel`,{token,method:'POST'}));
   }
-  const input=subscriptionInput(raw,action==='subscribe');
+  if(action==='change'){
+   const {subscriptionId,...fields}=raw??{};
+   const input=subscriptionInput(fields,true,true);
+   if(typeof subscriptionId!=='string'||!/^[1-9]\d{0,9}$/.test(subscriptionId)||BigInt(subscriptionId)>4294967295n||!input)return json({message:'Confira a assinatura, a oferta e o aceite.'},422);
+   return json(await backendAuth(`/subscriptions/${subscriptionId}/change`,{token,method:'POST',body:input}));
+  }
+  const input=subscriptionInput(raw,action==='subscribe',action==='summary');
   if(!input)return json({message:'Confira o plano, período e aceite do contrato.'},422);
   const key=request.headers.get('Idempotency-Key');
   if(action==='subscribe'&&!/^[A-Za-z0-9._:-]{8,120}$/.test(key||''))return json({message:'Identificador da contratação inválido.'},422);

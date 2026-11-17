@@ -11,7 +11,7 @@ function targetFor(method, parts, search) {
     if (parts.length === 1 && ["GET", "POST"].includes(method)) return `/admin/sessions${method === "GET" ? search : ""}`;
     if (!id(parts[1])) return null;
     if (parts.length === 2 && ["GET", "PATCH", "DELETE"].includes(method)) return `/admin/sessions/${parts[1]}`;
-    if (parts.length === 3 && method === "GET" && ["tickets", "attendance"].includes(parts[2])) return `/sessions/${parts[1]}/${parts[2]}${search}`;
+    if (parts.length === 3 && method === "GET" && ["tickets", "attendance", "pending-orders"].includes(parts[2])) return `/sessions/${parts[1]}/${parts[2]}${search}`;
   }
   return null;
 }

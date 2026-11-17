@@ -1,7 +1,9 @@
 "use client";
 
 import { Film, X } from "lucide-react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
+import TablePagination from "@/components/ui/table-pagination";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useCinemaMovies } from "@/hooks/cinema/filmes/use-cinema-movies";
 import ListStatus from "@/components/cinema/home/list-status";
@@ -14,9 +16,26 @@ import MovieDetailsDialog from "./movie-details-dialog";
 import styles from "./filmes.module.css";
 
 export default function CinemaMoviesPage() {
+  const results = useRef(null);
   const catalog = useCinemaMovies();
   const { section, genre, query, selectedMovie, visibleMovies, activeLabel,
     setSelectedMovie, changeDetailsOpen, changeSection, clearFilters } = catalog;
+  const { films, searching } = catalog;
+
+  function changePage(action, ...args) {
+    action(...args);
+    results.current?.focus({ preventScroll: true });
+    results.current?.scrollIntoView({ block: "start" });
+  }
+
+  const pagination = {
+    ...films,
+    loading: films.loading || searching,
+    nextPage: () => changePage(films.nextPage),
+    previousPage: () => changePage(films.previousPage),
+    goToPage: page => changePage(films.goToPage, page),
+    setPageSize: size => changePage(films.setPageSize, size),
+  };
 
   return (
     <main className={`${styles.root} min-h-screen bg-background text-foreground`}>
@@ -37,30 +56,34 @@ export default function CinemaMoviesPage() {
           {SECTIONS.map((item) => (
             <TabsContent key={item.value} value={item.value} className="mt-0 outline-none">
               <MovieFilters catalog={catalog} item={item} />
-              <ListStatus list={catalog.genreList} empty="" more="Carregar mais gêneros" />
+              {(catalog.genreList.cursor || catalog.genreList.error) && <ListStatus list={catalog.genreList} empty="" more="Carregar mais gêneros" />}
 
-              <div className="mb-6 flex min-h-6 flex-wrap items-center justify-between gap-3">
-                <p className="text-[11px] text-muted-foreground" role="status" aria-live="polite">
-                  <span className="font-semibold text-foreground">{visibleMovies.length} {visibleMovies.length === 1 ? "filme" : "filmes"}</span> · {activeLabel}
-                  {catalog.films.cursor ? " · na parte carregada do catálogo" : ""}
-                </p>
+              <div ref={results} tabIndex={-1} aria-label="Resultados do catálogo"
+                className="mb-6 flex min-h-6 scroll-mt-28 flex-wrap items-center justify-between gap-3 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
+                <p className="text-xs font-semibold text-muted-foreground">{activeLabel}</p>
                 {(genre !== "Todos" || query) && <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 gap-1.5 px-0 text-[11px] text-muted-foreground hover:bg-transparent"><X className="size-3" />Limpar filtros</Button>}
               </div>
 
+              <div aria-busy={films.loading || searching}>
               {visibleMovies.length ? (
                 <div className="grid grid-cols-2 gap-x-5 gap-y-9 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-11">
                   {visibleMovies.map((movie, index) => <MoviePoster key={movie.id} movie={movie} index={index} onSelect={setSelectedMovie} />)}
                 </div>
-              ) : !catalog.films.loading && !catalog.films.error && !catalog.searching ? (
+              ) : !films.loading && !films.error && !searching ? (
                 <div className="flex min-h-72 flex-col items-center justify-center border-y border-dashed border-border px-6 text-center">
                   <Film className="mb-4 size-7 text-primary" aria-hidden="true" />
                   <h2 className={`${styles.display} text-3xl font-bold`}>Nenhum filme por aqui</h2>
-                  <p className="mt-2 max-w-sm text-sm text-muted-foreground">{catalog.films.cursor ? "Nenhum filme desta aba na parte carregada. Carregue mais filmes para continuar." : "Tente outro título, gênero ou aba para encontrar seu filme."}</p>
-                  <Button variant="outline" onClick={clearFilters} className="mt-5 rounded-full">Ver todos nesta aba</Button>
+                  <p className="mt-2 max-w-sm text-sm text-muted-foreground">Tente outro título, gênero ou aba para encontrar seu filme.</p>
+                  {(genre !== "Todos" || query) && <Button variant="outline" onClick={clearFilters} className="mt-5 rounded-full">Ver todos nesta aba</Button>}
                 </div>
               ) : null}
-              {catalog.searching && <p role="status">Buscando filmes…</p>}
-              <ListStatus list={catalog.films} empty="" more="Carregar mais filmes" />
+              </div>
+              <ListStatus list={{ loading: films.loading || searching, error: searching ? null : films.error, items: [], retry: films.reload }} empty="" />
+              {(visibleMovies.length > 0 || films.page > 1) && (
+                <div className={`${styles.sectionDivider} mt-8`}>
+                  <TablePagination list={pagination} noun="filmes" pageSizes={[10, 20, 50]} />
+                </div>
+              )}
             </TabsContent>
           ))}
         </Tabs>

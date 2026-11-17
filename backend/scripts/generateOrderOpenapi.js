@@ -1,7 +1,9 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {orderOperations} from '../src/routes/orderRoutes.js';
 import {documentAdminSales} from './adminSalesOpenapi.js';
+import {documentCounterOrders} from './counterOrdersOpenapi.js';
 const file=new URL('../src/docs/openapi.json',import.meta.url),spec=JSON.parse(await readFile(file,'utf8'));
+documentCounterOrders(spec);
 spec.info.version='1.21.0';
 spec.info.description=spec.info.description.replace('Tarefa32: ocupação de assentos é serviço interno transacional; ainda não há rota pública de reserva ou disponibilidade.','Tarefa34: checkout transacional com TTL de 15 minutos, pagamento separado e aprovação autenticada; tickets seguem na tarefa35.');
 spec.tags=[...spec.tags.filter(x=>x.name!=='Carrinho'),{name:'Carrinho',description:'Cotação e checkout de pedidos avulsos.'}];
@@ -51,7 +53,7 @@ for(const r of orderOperations){
         continue;
     }
     if(r.action==='checkout'){
-        const op={operationId:r.operationId,tags:['Carrinho'],summary:'Finalizar checkout avulso',description:'CLIENTE cria pedido, itens, snapshot, reserva de cupom/estoque/assento numa transação. Combo exige sessionId do mesmo local e gera retirada vinculada à sessão. Máximo de 500 unidades por checkout. Idempotency-Key é única por usuário e entrada; repetição idêntica devolve o mesmo pedido, alteração retorna 409. Reserva dura 15 minutos; não pago é cancelado sem ticket. O gateway é chamado depois via POST /api/payments com orderId e methodId. Aprovação autenticada dentro do prazo consome reservas e emite tickets por unidade; aprovação tardia requer revisão. Meia sem comprovação e menor sem autorização não finalizam. Taxa deste fluxo: 0.00; encargos RN12 aplicam-se a assinaturas vencidas, não a pedido avulso que expira.',security:[{bearerAuth:[]}],parameters:[{name:'Idempotency-Key',in:'header',required:true,schema:{type:'string',minLength:8,maxLength:120},example:'checkout:pedido-123'}],requestBody:{required:true,content:{'application/json':{schema:ref('OrderCartInput'),example:{localId:'2',lines:[{kind:'SESSION',id:'3',seatId:'4',quantity:1}]}}}},responses:{'201':checkoutResponse}};
+        const op={operationId:r.operationId,tags:['Carrinho'],summary:'Finalizar checkout avulso',description:'CLIENTE cria pedido, itens, snapshot, reserva de cupom/estoque/assento numa transação. Combos comuns podem ser comprados sozinhos para retirada no cinema. Quando há sessionId, a retirada é vinculada à sessão. Combos temáticos mantêm a exigência de ingresso da sessão vinculada. Máximo de 500 unidades por checkout. Idempotency-Key é única por usuário e entrada; repetição idêntica devolve o mesmo pedido, alteração retorna 409. Reserva dura 15 minutos; não pago é cancelado sem ticket. O gateway é chamado depois via POST /api/payments com orderId e methodId. Aprovação autenticada dentro do prazo consome reservas e emite tickets por unidade; aprovação tardia requer revisão. Meia sem comprovação e menor sem autorização não finalizam. Taxa deste fluxo: 0.00; encargos RN12 aplicam-se a assinaturas vencidas, não a pedido avulso que expira.',security:[{bearerAuth:[]}],parameters:[{name:'Idempotency-Key',in:'header',required:true,schema:{type:'string',minLength:8,maxLength:120},example:'checkout:pedido-123'}],requestBody:{required:true,content:{'application/json':{schema:ref('OrderCartInput'),example:{localId:'2',lines:[{kind:'SESSION',id:'3',seatId:'4',quantity:1}]}}}},responses:{'201':checkoutResponse}};
         for(const [code,name] of Object.entries(errors))op.responses[code]={$ref:`#/components/responses/${name}`};
         (spec.paths[r.path]??={})[r.method]=op;
         continue;

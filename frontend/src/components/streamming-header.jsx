@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CircleHelp, Film, LayoutGrid, Menu, UserRound, X } from "lucide-react";
+import { ArrowLeft, CircleHelp, Film, LayoutGrid, Maximize, Minimize, Menu, UserRound, X } from "lucide-react";
 import { AppearanceSelector } from "@/components/appearance-selector";
 import SessionControls from "@/components/auth/session-controls";
 import { NotificationButton } from "@/components/notifications/notification-button";
@@ -14,21 +15,57 @@ const navigation = [
   { label: "Filmes", href: "/streaming/home", icon: Film },
   { label: "Categorias", href: "/streaming/categorias", icon: LayoutGrid },
   { label: "Minha CineAstra", href: "/streaming/meuperfil", icon: UserRound },
-  { label: "Suporte", href: "/cinema/suporte", icon: CircleHelp },
+  { label: "Suporte", href: "/streaming/suporte", icon: CircleHelp },
 ];
 
 function CinemaLink({ compact = false, onClick }) {
-  return <Link href="/cinema/home" className={styles.backLink} onClick={onClick}>
+  return <Link prefetch={false} href="/cinema/home" className={styles.backLink} onClick={onClick}>
     <ArrowLeft size={16} aria-hidden="true" />
     {compact ? "Voltar ao cinema" : <span className={styles.backCopy}><small>Voltar ao</small>Cinema</span>}
   </Link>;
 }
 
 function Navigation({ isActive, onNavigate }) {
-  return navigation.map(({ label, href, icon: Icon }) => <Link
+  return navigation.map(({ label, href, icon: Icon }) => <Link prefetch={false}
     key={href} href={href} onClick={onNavigate}
     className={styles.navLink} aria-current={isActive(href) ? "page" : undefined}
   ><Icon size={16} aria-hidden="true" />{label}</Link>);
+}
+
+function SiteFullscreen() {
+  const [supported, setSupported] = useState(false);
+  const [active, setActive] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setSupported(Boolean(document.fullscreenEnabled && document.documentElement.requestFullscreen));
+    const update = () => setActive(document.fullscreenElement === document.documentElement);
+    document.addEventListener("fullscreenchange", update);
+    return () => {
+      document.removeEventListener("fullscreenchange", update);
+      if (document.fullscreenElement === document.documentElement) void document.exitFullscreen().catch(() => {});
+    };
+  }, []);
+
+  if (!supported) return null;
+  const label = active ? "Sair da tela cheia do site" : "Tela cheia do site";
+
+  async function toggle() {
+    setError("");
+    try {
+      if (active) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      setError("O navegador não conseguiu abrir a tela cheia do site.");
+    }
+  }
+
+  return <>
+    <button type="button" onClick={toggle} className={styles.utilityButton} aria-label={label} title={label} aria-pressed={active}>
+      {active ? <Minimize size={17} aria-hidden="true" /> : <Maximize size={17} aria-hidden="true" />}
+    </button>
+    {error && <p role="status" className={styles.fullscreenError}>{error}</p>}
+  </>;
 }
 
 export default function StreammingHeader() {
@@ -39,7 +76,7 @@ export default function StreammingHeader() {
       <span className={`${styles.perforation} ${styles.perforationTop}`} aria-hidden="true" />
       <span className={`${styles.perforation} ${styles.perforationBottom}`} aria-hidden="true" />
       <div className={styles.row}>
-        <Link href="/streaming/home" onClick={closeMenu} className={styles.brand} aria-label="CineAstra Streaming — início">
+        <Link prefetch={false} href="/streaming/home" onClick={closeMenu} className={styles.brand} aria-label="CineAstra Streaming — início">
           <CineAstraLogo className={styles.logo} />
           <span className={styles.wordmark} aria-hidden="true">
             <span className={styles.name}>cine<span>astra.</span></span>
@@ -54,6 +91,7 @@ export default function StreammingHeader() {
         <div className={styles.utilities}>
         <div className={styles.actions}>
           <HeaderSearch />
+          <SiteFullscreen />
           {session.user && <NotificationButton key={session.user.id} userId={session.user.id} />}
           <div className={styles.appearance}><AppearanceSelector /></div>
           <SessionControls session={session} />

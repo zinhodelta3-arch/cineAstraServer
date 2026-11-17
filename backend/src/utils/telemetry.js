@@ -17,12 +17,12 @@ function errorDetails(error) {
 }
 const resourceNames = new Set(['http', 'log_retention', 'checkout_expiry', 'subscription_billing', 'newsletter_delivery', 'support_live_expiry', 'log_queue', 'application', 'database']);
 const metricNames = ['rssBytes', 'heapUsedBytes', 'heapTotalBytes', 'externalBytes', 'arrayBuffersBytes', 'eventLoopDelayP99Ms'];
-export function report(event, { requestId, status, count, error, reason, exitCode, fields, resource, metrics } = {}) {
+export function report(event, { requestId, route, status, count, error, reason, exitCode, fields, resource, metrics } = {}) {
     const safeReason = ['SIGINT','SIGTERM','uncaughtException','unhandledRejection'].includes(reason) ? reason : null;
     const safeFields = Array.isArray(fields) ? fields.filter(field => typeof field === 'string' && /^[A-Z][A-Z0-9_]{0,63}$/.test(field)).slice(0, 100) : null;
     const safeMetrics = Object.fromEntries(metricNames.filter(key => Number.isFinite(metrics?.[key]) && metrics[key] >= 0).map(key => [key, Math.round(metrics[key])]));
     console.error(JSON.stringify({ event, timestamp: new Date().toISOString(), pid: process.pid,
-        ...(requestId && { requestId }), ...(Number.isInteger(status) && { status }), ...(count !== undefined && { count }),
+        ...(requestId && { requestId }), ...(route && { route }), ...(Number.isInteger(status) && { status }), ...(count !== undefined && { count }),
         ...errorDetails(error), ...(safeReason && { reason: safeReason }),
         ...(Number.isInteger(exitCode) && { exitCode }), ...(safeFields && { fields: safeFields }),
         ...(resourceNames.has(resource) && { resource }), ...(Object.keys(safeMetrics).length && { metrics: safeMetrics }) }));

@@ -15,7 +15,14 @@ const SUGGESTIONS = [
   "Quais formas de pagamento são aceitas?",
 ];
 
-export function FloatingAssistant({ signedIn }) {
+const STAFF_SUGGESTIONS = {
+  ADMIN: ["Onde acompanho os pedidos?", "Como encaminhar solicitações de experiências?"],
+  SUPERVISOR: ["Como acompanho experiências da unidade?", "Onde consulto o estoque?"],
+  COLABORADOR: ["Onde vejo minhas equipes?", "Como acompanho chamados da unidade?"],
+  FORNECEDOR: ["Onde vejo minhas entregas?", "Como consulto meu estoque?"],
+};
+
+export function FloatingAssistant({ signedIn, supportHref = "/cinema/suporte", role = "CLIENTE" }) {
   const { question, setQuestion, messages, needsSignIn, pending, ask } = useFloatingAssistant(signedIn);
   const [open, setOpen] = useState(false);
   const conversation = useRef(null);
@@ -60,7 +67,7 @@ export function FloatingAssistant({ signedIn }) {
                 <p className={styles.bubble}>Olá! Como posso ajudar você com o CineAstra?</p>
                 {messages.length === 0 && (
                   <ul className={styles.suggestions} aria-label="Sugestões de perguntas">
-                    {SUGGESTIONS.map(suggestion => (
+                    {(STAFF_SUGGESTIONS[role] ?? SUGGESTIONS).map(suggestion => (
                       <li key={suggestion}>
                         <button
                           type="button"
@@ -84,7 +91,7 @@ export function FloatingAssistant({ signedIn }) {
                     </p>
                     <AssistantSessionLinks sessions={sessions} onNavigate={() => setOpen(false)} />
                     {showSupport && (
-                      <Link href="/cinema/suporte" className={styles.link} onNavigate={() => setOpen(false)}>
+                      <Link href={supportHref} className={styles.link} onNavigate={() => setOpen(false)}>
                         Acessar o suporte
                       </Link>
                     )}

@@ -9,7 +9,7 @@ import styles from '../catalog/catalog.module.css';
 
 const kinds = { INPUT: 'Produto avulso', COMBO: 'Combo', SESSION: 'Ingresso', STREAMING: 'Aluguel de filme' };
 const emptyLine = { kind: 'INPUT', id: '', quantity: 1, key: 0 };
-const titles = { create: 'Nova proposta de pedido', edit: 'Editar proposta', cancel: 'Cancelar pedido', reconcile: 'Consultar provedor', notes: 'Notas administrativas' };
+const titles = { create: 'Nova proposta de pedido', edit: 'Editar proposta', cancel: 'Cancelar pedido', refund: 'Solicitar reembolso', reconcile: 'Consultar provedor', notes: 'Notas administrativas' };
 
 export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
   const [userId, setUserId] = useState('');
@@ -20,6 +20,7 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
   const [pending, setPending] = useState(false);
   const nextKey = useRef(lines.length);
   const lock = useRef(false);
+  const refundAttempt=useRef(null);
   const id = row?.id;
   const draftMode = mode === 'create' || mode === 'edit';
 
@@ -43,6 +44,13 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
     const form = new FormData(event.currentTarget);
     let path = mode === 'cancel' ? `orders/${id}/cancel` : `payments/${id}/${mode}`;
     let body = mode === 'notes' ? { note: String(form.get('note') ?? '').trim() } : {};
+    if(mode==='cancel')body={reason:String(form.get('reason')).trim()};
+    if(mode==='refund'){
+      path=`orders/${id}/refunds`;
+      body={reason:String(form.get('refundReason')),details:String(form.get('details')).trim()};
+      const fingerprint=JSON.stringify(body);
+      if(refundAttempt.current?.fingerprint!==fingerprint)refundAttempt.current={fingerprint,key:crypto.randomUUID()};
+    }
     if (draftMode) {
       const localId = String(form.get('localId') ?? '').trim();
       const draft = {
@@ -59,8 +67,8 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
     setPending(true);
     setError('');
     try {
-      const result = await salesRequest(path, { method: mode === 'edit' ? 'PATCH' : 'POST', body });
-      const messages = { create: 'Proposta disponível em Minhas compras para o cliente.', edit: 'Proposta atualizada.', cancel: 'Pedido cancelado.', reconcile: `Consulta concluída. Estado atual do pagamento: ${statusName(result.status)}.`, notes: 'Nota adicionada ao histórico.' };
+      const result = await salesRequest(path, { method: mode === 'edit' ? 'PATCH' : 'POST', body, idempotencyKey:refundAttempt.current?.key });
+      const messages = { create: 'Proposta disponível em Minhas compras para o cliente.', edit: 'Proposta atualizada.', cancel: 'Pedido cancelado.', refund:'Solicitação disponível para análise em Reembolsos.', reconcile: `Consulta concluída. Estado atual do pagamento: ${statusName(result.status)}.`, notes: 'Nota adicionada ao histórico.' };
       onSaved(messages[mode]);
     } catch (cause) { setError(cause.message); }
     finally { lock.current = false; setPending(false); }
@@ -69,9 +77,14 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
   return <Dialog open onOpenChange={open => { if (!open && !lock.current) onClose(); }}>
     <DialogContent className={styles.dialog}>
       <DialogTitle className={styles.dialogTitle}>{titles[mode]}{id && ` #${id}`}</DialogTitle>
-      <DialogDescription className={styles.dialogDescription}>{draftMode ? 'O cliente revisará os itens e o preço antes de concluir a compra.' : mode === 'notes' ? 'As notas ficam no histórico administrativo do pagamento.' : mode === 'cancel' ? 'As reservas de um pedido pendente serão liberadas quando o cancelamento for aceito.' : 'A consulta usa o provedor vinculado ao pagamento.'}</DialogDescription>
+      <DialogDescription className={styles.dialogDescription}>{draftMode ? 'O cliente selecionado revisará os itens e o preço antes de concluir a compra.' : mode === 'notes' ? 'As notas ficam no histórico administrativo do pagamento.' : mode === 'refund' ? 'A solicitação passa pela análise em Reembolsos. O pedido original fica no histórico.' : mode === 'cancel' ? 'As reservas de um pedido pendente serão liberadas quando o cancelamento for aceito.' : 'A consulta usa o provedor vinculado ao pagamento.'}</DialogDescription>
       <form className={styles.form} onSubmit={submit}>
-        {mode === 'create' && <div className={styles.wide}><UserLookupFilter label="Cliente" role="CLIENTE" value={userId} onChange={setUserId} /></div>}
+        {mode === 'create' && <div className={styles.wide}><UserLookupFilter activeOnly label="Cliente" role="CLIENTE" value={userId} onChange={setUserId} /></div>}
+        {mode==='cancel'&&<label className={styles.wide}>Motivo do cancelamento<textarea name="reason" required minLength={3} maxLength={1000} /></label>}
+        {mode==='refund'&&<>
+          <label>Motivo<select name="refundReason" required defaultValue=""><option value="">Selecione</option><option value="ARREPENDIMENTO">Arrependimento</option><option value="DEFEITO">Problema com a compra</option><option value="OUTRO">Outro motivo</option></select></label>
+          <label className={styles.wide}>Justificativa<textarea name="details" required maxLength={1000} /></label>
+        </>}
         {draftMode && <>
           <label className={styles.wide}>ID do cinema<input name="localId" inputMode="numeric" pattern="[1-9][0-9]{0,19}" defaultValue={row?.draft?.localId ?? ''} placeholder="Obrigatório para AstraSnack" /></label>
           {lines.map((line,index) => <fieldset className={`${styles.form} ${styles.wide}`} key={line.key}>

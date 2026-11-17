@@ -16,7 +16,14 @@ export class ApiError extends Error {
         const safeDetails = Array.isArray(this.details) ? this.details
             .filter(d => d && /^[a-zA-Z0-9_.-]{1,80}$/.test(d.field) && /^[A-Z_]{1,50}$/.test(d.code))
             .map(d => ({ field: d.field, code: d.code })).slice(0, 20) : [];
-        return { success: false, code: this.code, message: this.statusCode >= 500 ? (this.statusCode === 503 ? 'Dependência indisponível' : 'Erro interno do servidor') : this.message,
+        let message = this.message;
+        if (this.statusCode >= 500) {
+            message = 'Erro interno do servidor';
+            if (this.statusCode === 503) {
+                message = this.code === 'REQUEST_TIMEOUT' ? 'Tempo de execução excedido' : 'Dependência indisponível';
+            }
+        }
+        return { success: false, code: this.code, message,
             requestId, ...(safeDetails.length && { details: safeDetails }) };
     }
 }

@@ -2,11 +2,12 @@ import { Play, Plus, Check } from "lucide-react";
 import { ACCENT } from "./data";
 import Art from "./art";
 import Badge from "./badge";
+import ticket from "./film-ticket.module.css";
 
 export default function Thumb({ movie, onSelect, onPlay, inList, onToggleList, progress }) {
   return (
     <article
-      className="group snap-start shrink-0 relative w-[250px] max-w-[calc(100vw-40px)] md:w-[330px] aspect-video rounded-md overflow-hidden bg-card border border-border transition-all duration-300 md:hover:scale-[1.05] hover:z-20 hover:border-primary hover:shadow-2xl hover:shadow-black/60 focus-within:ring-2 focus-within:ring-primary"
+      className={`${ticket.notches} group snap-start shrink-0 relative w-[250px] max-w-[calc(100vw-40px)] md:w-[330px] aspect-video rounded-md overflow-hidden bg-card border border-border motion-safe:transition-transform motion-safe:md:hover:scale-[1.03] hover:z-20 hover:border-primary focus-within:ring-2 focus-within:ring-primary`}
     >
       <Art movie={movie} variant="thumb" className="absolute inset-0 size-full object-cover" />
       <button type="button" onClick={() => onSelect(movie)} aria-label={`Detalhes de ${movie.title}`} className="absolute inset-0 size-full cursor-pointer outline-none" />

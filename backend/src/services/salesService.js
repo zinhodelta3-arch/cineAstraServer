@@ -35,7 +35,8 @@ export function createSalesService({ model, identity, checkout, paymentService }
     return adminTransaction(context,async c => {
       if (kind === 'orders') return page(await model.orders(c, q), q, 'id_pedido', row => ({
         id: idString(row.id_pedido), userId: idString(row.id_usuario), customer: row.cliente,
-        status: row.status, total: String(row.valor_total), createdAt: date(row.data_pedido), draft:parse(row.proposta_admin)??null
+        status: row.status, total: String(row.valor_total), createdAt: date(row.data_pedido), draft:parse(row.proposta_admin)??null,
+        ...(row.cancelado_por_admin&&{cancellation:{adminId:idString(row.cancelado_por_admin),reason:row.motivo_cancelamento_admin}})
       }));
       return page(await model.payments(c, q), q, 'id_pagamento', row => ({
         id: idString(row.id_pagamento), orderId: row.id_pedido == null ? null : idString(row.id_pedido),
@@ -62,17 +63,17 @@ export function createSalesService({ model, identity, checkout, paymentService }
       await identity.audit(c,'ORDER.ADMIN_DRAFT_UPDATED',id,context);
       return {orderId:id,status:row.status};
     }),
-    async cancel(id,context) {
-      const draft=await adminTransaction(context,async c=>{
+    async cancel(id,reason,context) {
+      const draft=await adminTransaction(context,async (c,admin)=>{
         const row=found(await model.order(c,id));
         if(row.proposta_admin==null||!['EM_ANDAMENTO','CANCELADO'].includes(row.status))return null;
         if(row.status==='EM_ANDAMENTO'){
-          await model.cancelDraft(c,id);
+          await model.cancelDraft(c,id,admin.id_usuario,reason);
           await identity.audit(c,'ORDER.ADMIN_DRAFT_CANCELLED',id,context);
         }
         return {orderId:id,status:'CANCELADO'};
       });
-      return draft??await checkout.cancelByAdmin(id,context);
+      return draft??await checkout.cancelByAdmin(id,context,reason);
     },
     reconcile:(id,context)=>paymentService.reconcileByAdmin(id,context),
     paymentNotes:(id,context)=>adminTransaction(context,async c=>{
