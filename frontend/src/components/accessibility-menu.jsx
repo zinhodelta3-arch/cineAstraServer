@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useId, useState } from "react"
-import { usePathname } from "next/navigation"
+import { createPortal } from "react-dom"
 import {
   Accessibility, Contrast, Type, MoveVertical, MoveHorizontal,
   Pause, Eye, RotateCcw, X, Check,
@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useAccessibility } from "@/hooks/use-accessibility"
+import { useDraggableFab } from "@/hooks/use-draggable-fab"
 import { ACCESSIBILITY_OPTIONS } from "@/lib/accessibility"
 
 function Adjustment({ icon: Icon, label, value, level, count, onClick, disabled, toggle = false }) {
@@ -48,8 +49,14 @@ export function AccessibilityMenu() {
   const {
     settings, ready, storageAvailable, systemReducedMotion,
     activeCount, cycle, toggleMotion, reset,
-    accountError, retryAccount, accountSaving, synced,
   } = useAccessibility()
+
+  // Botão arrastável (posição salva separadamente do botão de notícias)
+  const { pos, buttonProps, wasDragged } = useDraggableFab({
+    storageKey: "cineastra:a11y-pos",
+    size: 48,
+    defaultPosition: (vw, vh) => ({ x: vw - 48 - 16, y: vh / 2 - 24 }),
+  })
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 640px)")
@@ -73,13 +80,23 @@ export function AccessibilityMenu() {
     { key: "spacing", label: "Espaçamento", icon: MoveHorizontal },
   ]
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
+  if (!pos) return null // aguarda a posição no navegador (evita piscar/hidratação)
+
+  // Portal no body: o botão fica fixo na tela mesmo dentro de header com transform/blur
+  return createPortal(
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (wasDragged()) return // soltar o arrasto não deve abrir/fechar o painel
+        setOpen(next)
+      }}
+    >
       {/* Base UI usa render, em vez de asChild. */}
       <PopoverTrigger
         render={<Button type="button" className="ca-a11y-trigger" />}
         aria-label={open ? "Fechar menu de acessibilidade" : "Abrir menu de acessibilidade"}
-        title="Acessibilidade"
+        title="Acessibilidade (arraste para mover)"
+        {...buttonProps}
       >
         <Accessibility className="size-6" strokeWidth={1.8} aria-hidden="true" />
         {activeCount > 0 && (
@@ -88,7 +105,11 @@ export function AccessibilityMenu() {
       </PopoverTrigger>
 
       <PopoverContent
-        side={mobile ? "top" : "left"}
+        side={
+          mobile
+            ? pos.y > window.innerHeight / 2 ? "top" : "bottom"
+            : pos.x > window.innerWidth / 2 ? "left" : "right"
+        }
         sideOffset={12}
         align={mobile ? "end" : "center"}
         className="ca-a11y-panel"
@@ -176,25 +197,19 @@ export function AccessibilityMenu() {
               Restaurar padrão
             </Button>
             <p className="ca-a11y-save">
-              {accountError ? accountError : accountSaving ? "Salvando preferências…" : !ready ? "Carregando preferências…" : synced ? "Preferências vinculadas à sua conta." : storageAvailable
+              {!ready ? "Carregando preferências…" : storageAvailable
                 ? "Preferências salvas neste navegador."
                 : "Ajustes ativos nesta sessão. O navegador bloqueou o salvamento."}
             </p>
-            {accountError && <Button variant="outline" onClick={retryAccount}>Tentar novamente</Button>}
           </footer>
         </div>
         <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
           {announcement}
         </span>
       </PopoverContent>
-    </Popover>
+    </Popover>,
+    document.body,
   )
 }
 
 export default AccessibilityMenu
-
-export function GlobalAccessibilityMenu() {
-  const pathname = usePathname();
-  const accountArea = /^\/(cinema|streaming)(\/|$)/.test(pathname ?? '');
-  return accountArea ? null : <AccessibilityMenu />;
-}

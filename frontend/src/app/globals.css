@@ -86,3 +86,45 @@
     @apply bg-background text-foreground min-h-screen antialiased;
   }
 }
+
+/* ============================================================
+   ANIMAÇÃO DE LETREIRO (estilo jornal / telejornal)
+   Usada no título "CineAstra News" e na faixa "Últimas".
+   ============================================================ */
+@keyframes ca-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ca-marquee {
+  animation: ca-marquee 34s linear infinite !important;
+}
+
+.ca-marquee-title {
+  animation: ca-marquee 32s linear infinite !important;
+}
+
+.ca-marquee:hover,
+.ca-marquee-title:hover {
+  animation-play-state: paused !important;
+}
+
+/* ============================================================
+   MENU DE ACESSIBILIDADE: alto contraste
+   ============================================================ */
+html.high-contrast body {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+html.high-contrast a {
+  color: #ffff00 !important;
+}
+
+html.high-contrast button {
+  outline: 2px solid #fff;
+}

@@ -13,7 +13,7 @@ export default async function CinemaLayout({ children }) {
 
   return (
     <SessionProvider initialUser={await publicSessionSnapshot(user)}>
-      <AccountPreferencesProvider userId={user?.role === 'CLIENTE' ? user.id : null}>
+      <AccountPreferencesProvider userId={user?.role === "CLIENTE" ? user.id : null}>
         <AccessibilityMenu />
         <Header showAssistant />
         {children}

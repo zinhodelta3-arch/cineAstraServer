@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
 import {
-  Film, Ticket, CalendarDays, MapPin, Clock3, Megaphone, Handshake, ArrowRight, ArrowUpRight,
+  Film, Ticket, CalendarDays, Clock3, Megaphone, Handshake, ArrowRight, ArrowUpRight,
   Share2, Check, Users, Trees, Theater, Bell, Popcorn, Mail, Clapperboard, Info, X,
   Newspaper, CircleDot, UserRound, Radio,
 } from "lucide-react";
@@ -163,7 +163,8 @@ const CinemaStyles = () => (
 
     @keyframes ca-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
     .ca-marquee { animation: ca-marquee 34s linear infinite; }
-    @media (prefers-reduced-motion: reduce) { .ca-marquee { animation: none; } }
+    .ca-marquee-title { animation: ca-marquee 32s linear infinite; }
+    .ca-marquee-title:hover, .ca-marquee:hover { animation-play-state: paused; }
   `}</style>
 );
 
@@ -238,11 +239,21 @@ function Masthead() {
           <span className="flex items-center gap-1.5 font-semibold text-primary"><Newspaper className="w-4 h-4" aria-hidden="true" /> Notícias da empresa</span>
           <span>{EDICAO}</span>
         </div>
-        <div className="news-rule pt-5 flex items-end justify-between gap-6 flex-wrap">
+        <div className="news-rule pt-5">
+          <h1 className="sr-only">CineAstra News</h1>
+          <div className="overflow-hidden" aria-hidden="true">
+            <div className="ca-marquee-title flex w-max items-center whitespace-nowrap">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <span key={i} className="f-display uppercase text-6xl sm:text-8xl lg:text-[8rem] font-black text-foreground leading-[0.95] flex items-center gap-8 pr-8">
+                  CineAstra <span className="text-primary">News</span>
+                  <Film className="w-10 h-10 sm:w-14 sm:h-14 text-primary" />
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 flex items-end justify-between gap-6 flex-wrap">
           <div>
-            <h1 className="f-display uppercase text-6xl sm:text-8xl lg:text-[8rem] font-black text-foreground leading-[0.82]">
-              CineAstra <span className="text-primary">News</span>
-            </h1>
             <p className="text-sm md:text-base text-muted-foreground mt-4 max-w-xl leading-relaxed">
               Anúncios, parcerias e acontecimentos do CineAstra para a nossa comunidade.
             </p>
@@ -271,7 +282,7 @@ function Masthead() {
   );
 }
 
-/* ============ MANCHETE + LATERAL ============ */
+/* ============ MANCHETE ============ */
 function Manchete({ item, onOpen }) {
   return (
     <article style={{ "--n": "74%" }} className="ticket stub-glow group bg-card border border-border rounded-xl grid sm:grid-cols-[1fr_170px] h-full">
@@ -300,6 +311,7 @@ function Manchete({ item, onOpen }) {
   );
 }
 
+/* ============ LATERAL: MAIS RECENTES ============ */
 function MaisRecentes({ itens, onOpen }) {
   return (
     <aside aria-label="Mais recentes" className="bg-card/60 border border-border rounded-xl p-5 h-full">
@@ -470,64 +482,45 @@ function ParceirosSection() {
   );
 }
 
-
 /* ============ CONTATO ============ */
 function ContatoSection() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle");
-  // idle | enviando | ok | erro
+  const [status, setStatus] = useState("idle"); // idle | enviando | ok | erro
 
   const submit = async (e) => {
     e.preventDefault();
-
     if (!email.trim() || status === "enviando") return;
 
     setStatus("enviando");
 
-    
-try {
-  const res = await fetch("/api/avisos", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: email.trim(),
-    }),
-  });
+    try {
+      const res = await fetch("/api/avisos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
 
-  // Lê a resposta como texto primeiro
-  const resposta = await res.text();
+      // Lê a resposta como texto primeiro
+      const resposta = await res.text();
 
-  let resultado;
+      let resultado;
+      try {
+        resultado = JSON.parse(resposta);
+      } catch {
+        console.error("Resposta inválida da API:", resposta);
+        throw new Error(`O servidor retornou uma resposta inválida (HTTP ${res.status}).`);
+      }
 
-  try {
-    resultado = JSON.parse(resposta);
-  } catch {
-    console.error("Resposta inválida da API:", resposta);
+      if (!res.ok || !resultado?.ok) {
+        console.error("Erro no cadastro:", { status: res.status, resposta: resultado });
+        throw new Error(resultado?.error || `Não foi possível realizar o cadastro (HTTP ${res.status}).`);
+      }
 
-    throw new Error(
-      `O servidor retornou uma resposta inválida (HTTP ${res.status}).`
-    );
-  }
-
-  if (!res.ok || !resultado?.ok) {
-  console.error("Erro no cadastro:", {
-    status: res.status,
-    resposta: resultado,
-  });
-
-  throw new Error(
-    resultado?.error ||
-      `Não foi possível realizar o cadastro (HTTP ${res.status}).`
-  );
-}
-
-  setStatus("ok");
-} catch (error) {
-  console.error("Erro ao cadastrar aviso:", error);
-  setStatus("erro");
-}
+      setStatus("ok");
+    } catch (error) {
+      console.error("Erro ao cadastrar aviso:", error);
+      setStatus("erro");
+    }
   };
 
   return (
@@ -553,21 +546,13 @@ try {
             </p>
 
             {status === "ok" ? (
-              <p
-                className="flex items-center gap-2 text-sm font-semibold text-primary"
-                role="status"
-              >
+              <p className="flex items-center gap-2 text-sm font-semibold text-primary" role="status">
                 <Check className="w-4 h-4" aria-hidden="true" />
                 Tudo certo! Você vai receber nossas notícias.
               </p>
             ) : (
-              <form
-                onSubmit={submit}
-                className="flex flex-col sm:flex-row gap-3"
-              >
-                <label htmlFor="email-aviso" className="sr-only">
-                  Seu e-mail
-                </label>
+              <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3">
+                <label htmlFor="email-aviso" className="sr-only">Seu e-mail</label>
 
                 <div className="relative flex-1">
                   <Mail
@@ -602,13 +587,8 @@ try {
                 </Button>
 
                 {status === "erro" && (
-                  <p
-                    id="erro-aviso"
-                    role="alert"
-                    className="text-sm text-destructive sm:basis-full"
-                  >
-                    Não foi possível realizar o cadastro. Confira o e-mail e
-                    tente novamente.
+                  <p id="erro-aviso" role="alert" className="text-sm text-destructive sm:basis-full">
+                    Não foi possível realizar o cadastro. Confira o e-mail e tente novamente.
                   </p>
                 )}
               </form>
@@ -618,9 +598,7 @@ try {
           <div className="tear tear-v md:border-t-0 bg-secondary/15 p-6 flex flex-col items-center justify-center gap-4">
             <Film className="w-10 h-10 text-primary" aria-hidden="true" />
             <Barcode seed={11} />
-            <span className="f-title text-[11px] uppercase text-muted-foreground tracking-widest">
-              CineAstra
-            </span>
+            <span className="f-title text-[11px] uppercase text-muted-foreground tracking-widest">CineAstra</span>
           </div>
         </div>
       </div>

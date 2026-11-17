@@ -8,7 +8,7 @@ import { SessionProvider } from "@/hooks/auth/use-session";
 import { loginDestination } from "@/lib/auth/destination.mjs";
 import { redirect } from "next/navigation";
 import { AccountPreferencesProvider } from "@/components/providers/account-preferences-provider";
-import { AccessibilityMenu } from "@/components/accessibility-menu";
+import { AccessibilityMenu } from "@/components/Accessibility-menu";
 import watch from "@/components/streaming/watch/film-watch.module.css";
 
 export default async function StreamingLayout({ children }) {

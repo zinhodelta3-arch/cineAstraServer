@@ -11,10 +11,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import AppearanceInitializer from "@/components/providers/appearance-initializer";
 import { DEFAULT_APPEARANCE } from "@/lib/themes";
 import { CartProvider } from "@/components/cart/cart-provider";
-
-
-import { GlobalAccessibilityMenu } from "@/components/accessibility-menu"
-
+import NoticiasWidget from "@/components/noticias-widget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,8 +61,8 @@ export default function RootLayout({ children }) {
         <AppearanceInitializer />
         <ThemeProvider>
           <CartProvider>
-            <GlobalAccessibilityMenu />
             {children}
+            <NoticiasWidget />
           </CartProvider>
         </ThemeProvider>
       </body>
