@@ -16,16 +16,23 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
     const { transaction, activeActor, audit } = identity;
     const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
     async function admin(c, context) { if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); }
-    function validateFilm(row, input) {
+    function validateFilm(row, input, editing) {
         if (row.status === 'ATIVO' && (!Number.isInteger(row.duracao) || row.duracao <= 0)) throw ApiError.validacao('Filme ativo exige duração positiva');
-        if (row.disponivel_streaming && row.preco_aluguel == null && row.preco_compra == null) throw ApiError.validacao('Streaming exige preço de aluguel ou compra');
+        const streamingChanged = !editing || ['disponivel_streaming', 'preco_aluguel', 'preco_compra'].some(key => Object.hasOwn(input, key));
+        if (streamingChanged && row.disponivel_streaming && row.preco_aluguel == null && row.preco_compra == null) throw ApiError.validacao('Streaming exige preço de aluguel ou compra');
         if (row.preco_aluguel != null && (!Number.isInteger(row.dias_acesso_aluguel) || row.dias_acesso_aluguel <= 0)) throw ApiError.validacao('Aluguel exige prazo positivo');
         for (const key of ['trailer', 'url_reproducao']) if (input[key] != null && !mediaHosts.includes(new URL(input[key]).hostname.toLowerCase())) throw ApiError.validacao('Host de mídia não permitido', [{ field: key, code: 'MEDIA_HOST_DENIED' }]);
     }
     function page(rows, q, dto, pk) { const limit = q.limit ?? 20; return { items: rows.slice(0, limit).map(dto), pagination: { limit, nextCursor: rows.length > limit ? idString(rows[limit - 1][pk]) : null } }; }
     return {
         async popularFilms(limit) { return (await model.popularFilms(limit)).map(r => filmDto(r)); },
-        async listFilms(q, isAdmin) { return page(await model.listFilms(q, isAdmin), q, r => filmDto(r, isAdmin), 'id_filme'); },
+        async listFilms(q, isAdmin, signal) {
+            if (!isAdmin && q.page) {
+                const {items, pagination} = await model.listNumberedFilms(q, signal);
+                return { items:items.map(row => filmDto(row)), pagination };
+            }
+            return page(await model.listFilms(q, isAdmin), q, r => filmDto(r, isAdmin), 'id_filme');
+        },
         async film(id, isAdmin) { return filmDto(found(await model.film(id, isAdmin)), isAdmin); },
         async listGenres(q, isAdmin, filmId) {
             if (filmId) found(await model.film(filmId, isAdmin));
@@ -36,7 +43,7 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
             return transaction(async c => {
                 await admin(c, context);
                 const previous = id ? found(await model.film(id, true, c, true)) : {};
-                validateFilm({ ...previous, ...input }, input);
+                validateFilm({ ...previous, ...input }, input, Boolean(id));
                 if (id) await model.patchFilm(c, id, input); else id = await model.createFilm(c, input);
                 await audit(c, 'CATALOG.FILM_CHANGED', id, context);
                 return filmDto(await model.film(id, true, c), true);

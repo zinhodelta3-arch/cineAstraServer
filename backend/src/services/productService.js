@@ -5,7 +5,17 @@ import { validateRetailInput } from './retailInputPricing.js';
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'PRODUCT_CONFLICT');
 const key = type => type === 'inputs' ? 'id_insumo' : 'id_equipamento';
-const productDto = (type, row, role) => ({ [key(type)]: idString(row[key(type)]), id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, categoria: row.categoria ?? null, ...(type === 'inputs' ? { quantidade_minima: row.quantidade_minima, venda_avulsa: Boolean(row.venda_avulsa), preco: moneyString(row.preco), ...(role === 'ADMIN' ? { custo_receita: row.custo_receita ?? null, custo_parceria: row.custo_parceria ?? null } : {}) } : { numero_patrimonio: row.numero_patrimonio ?? null }), quantidade: row.quantidade, status: row.status, data_cadastro: row.data_cadastro });
+const localIdOf = row => row.id_local == null ? null : idString(row.id_local);
+const productDto = (type, row, role) => ({ [key(type)]: idString(row[key(type)]), id_fornecedor: idString(row.id_fornecedor), id_local: localIdOf(row), nome: row.nome, descricao: row.descricao ?? null, categoria: row.categoria ?? null, ...(type === 'inputs' ? { quantidade_minima: row.quantidade_minima, venda_avulsa: Boolean(row.venda_avulsa), preco: moneyString(row.preco), ...(role === 'ADMIN' ? { custo_receita: row.custo_receita ?? null, custo_parceria: row.custo_parceria ?? null } : {}) } : { numero_patrimonio: row.numero_patrimonio ?? null }), quantidade: row.quantidade, status: row.status, data_cadastro: row.data_cadastro });
+const categories = {
+    inputs: ['Pipocas', 'Bebidas', 'Doces', 'Salgados', 'Embalagens', 'Ingredientes', 'Outros'],
+    equipment: ['Projeção', 'Áudio', 'Iluminação', 'Refrigeração', 'Bomboniere', 'Mobiliário', 'Informática', 'Outros'],
+};
+function validateCategory(type, input, previous) {
+    if (input.categoria != null && input.categoria !== previous?.categoria && !categories[type].includes(input.categoria)) {
+        throw new ApiError('Selecione uma categoria da lista.', 422, null, 'PRODUCT_CATEGORY_INVALID');
+    }
+}
 const grantDto = row => ({ id_fornecedor: idString(row.id_fornecedor), id_local: idString(row.id_local), status: row.status, criado_em: row.criado_em,
     ...(row.nome_local != null && { nome_local: row.nome_local }) });
 const page = (rows, q, dto, id) => { const items = rows.slice(0, q.limit); return { items: items.map(dto), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1)[id]) : null } }; };
@@ -21,6 +31,7 @@ export function createProductService({ model, identity, pricing }) {
     async function allowedContext(c, supplierId, localId) {
         const supplier = found(await model.supplier(supplierId, c, true));
         if (supplier.status !== 'ATIVO' || supplier.tipo_usuario !== 'FORNECEDOR' || supplier.usuario_status !== 'ATIVO') throw conflict('Fornecedor indisponível');
+        if (localId == null) return supplier;
         const local = found(await model.local(localId, c, true));
         if (local.status !== 'ATIVO') throw conflict('Local indisponível');
         const grant = await model.grant(supplierId, localId, c, true);
@@ -36,7 +47,7 @@ export function createProductService({ model, identity, pricing }) {
             return transaction(context, async (c, u) => {
                 const supplierId = u.tipo === 'FORNECEDOR' ? idString((await ownSupplier(c, u.id)).id_fornecedor) : null;
                 const rows = await model.categories(type, q, supplierId, c), items = rows.slice(0, q.limit);
-                return { items: items.map(row => ({ name: row.categoria })), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? items.at(-1).categoria : null } };
+                return { items: items.map(row => ({ name: row.categoria })), options: categories[type], pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? items.at(-1).categoria : null } };
             });
         },
         async list(type, q, context) {
@@ -55,7 +66,11 @@ export function createProductService({ model, identity, pricing }) {
                 if (input.priceMode === 'RULE' && u.tipo !== 'ADMIN') throw ApiError.acessoNegado();
                 let supplierId;
                 if (u.tipo === 'ADMIN') { if (!input.supplierId) throw ApiError.validacao('supplierId obrigatório para ADMIN'); supplierId = input.supplierId; }
-                else { if (input.supplierId) throw ApiError.acessoNegado(); supplierId = idString((await ownSupplier(c, u.id)).id_fornecedor); }
+                else {
+                    if (input.supplierId || input.localId != null) throw ApiError.acessoNegado();
+                    supplierId = idString((await ownSupplier(c, u.id)).id_fornecedor);
+                    validateCategory(type, input);
+                }
                 await allowedContext(c, supplierId, input.localId);
                 const { priceMode, ...data } = input;
                 if (type === 'inputs') {
@@ -63,7 +78,7 @@ export function createProductService({ model, identity, pricing }) {
                     if (priceMode === 'RULE') data.preco = await pricing.catalogPriceForCreate(c, 'INPUT', data);
                     validateRetailInput({ ...data, status: 'DISPONIVEL' });
                 }
-                const id = await model.create(type, c, { ...data, supplierId });
+                const id = await model.create(type, c, { ...data, supplierId, localId: input.localId ?? null });
                 await identity.audit(c, `PRODUCT.${type.toUpperCase()}.CREATED`, id, context);
                 return productDto(type, found(await model.product(type, id, c)), u.tipo);
             });
@@ -74,7 +89,8 @@ export function createProductService({ model, identity, pricing }) {
                 if (u.tipo === 'FORNECEDOR' && idString((await ownSupplier(c, u.id)).id_fornecedor) !== idString(initial.id_fornecedor)) throw ApiError.acessoNegado();
                 if (u.tipo === 'FORNECEDOR' || input.status === 'DISPONIVEL') await allowedContext(c, initial.id_fornecedor, initial.id_local);
                 const row = found(await model.product(type, id, c, true));
-                if (idString(row.id_fornecedor) !== idString(initial.id_fornecedor) || idString(row.id_local) !== idString(initial.id_local)) throw conflict('Vínculo do item alterado');
+                if (idString(row.id_fornecedor) !== idString(initial.id_fornecedor) || localIdOf(row) !== localIdOf(initial)) throw conflict('Vínculo do item alterado');
+                if (u.tipo === 'FORNECEDOR') validateCategory(type, input, row);
                 if (type === 'inputs') {
                     checkCostsPermission(input, u);
                     validateRetailInput({ ...row, ...input });
@@ -92,7 +108,7 @@ export function createProductService({ model, identity, pricing }) {
                     await allowedContext(c, initial.id_fornecedor, initial.id_local);
                 }
                 const row = found(await model.product(type, id, c, true));
-                if (idString(row.id_fornecedor) !== idString(initial.id_fornecedor) || idString(row.id_local) !== idString(initial.id_local)) throw conflict('Vínculo do item alterado');
+                if (idString(row.id_fornecedor) !== idString(initial.id_fornecedor) || localIdOf(row) !== localIdOf(initial)) throw conflict('Vínculo do item alterado');
                 if (row.status === 'INDISPONIVEL') return;
                 await model.update(type, c, id, { status: 'INDISPONIVEL' });
                 await identity.audit(c, `PRODUCT.${type.toUpperCase()}.ARCHIVED`, id, context);

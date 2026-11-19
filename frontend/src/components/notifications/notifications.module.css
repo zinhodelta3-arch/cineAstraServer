@@ -59,6 +59,9 @@
 .detailsButton { display: flex; align-items: center; gap: 9px; border: none; background: transparent; padding: 9px 0; color: var(--primary); font-size: 14px !important; font-weight: 800 !important; min-height: 44px; }
 .detailsButton svg { transition: transform .18s; }
 .detailsButton:hover svg { transform: translateX(3px); }
+a.detailsButton { width: fit-content; text-underline-offset: 4px; }
+a.detailsButton:hover { text-decoration: underline; }
+a.detailsButton:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
 .secondaryActions { display: flex; gap: 12px; align-items: center; }
 .secondaryActions button { display: flex; align-items: center; gap: 8px; border: none; background: transparent; color: var(--muted-foreground); font-size: 14px; padding: 9px; border-radius: 4px; min-height: 44px; }
 .secondaryActions button:hover { background: var(--muted); color: var(--foreground); }

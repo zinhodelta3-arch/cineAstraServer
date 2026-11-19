@@ -78,7 +78,7 @@ test('combo: ADMIN exclusivo, compensação SQL e remoção preservam staging pr
     f.failInsert = false;
     const created = await request(f.app).post('/api/admin/combos/1/images').set('X-Role','ADMIN').send({ stagingKey: source.key, tipo: 'PRINCIPAL' }).expect(201);
     assert.equal(created.body.data.tipo, 'PRINCIPAL');
-    await request(f.app).get(created.body.data.url).expect(200);
+    await request(f.app).get(created.body.data.url).expect(200).expect('Cross-Origin-Resource-Policy', 'cross-origin');
     await request(f.app).delete(`/api/admin/combos/1/images/${created.body.data.id_imagem}`).set('X-Role','ADMIN').expect(204);
     await request(f.app).get(created.body.data.url).expect(404);
     assert.equal((await readdir(join(f.root,'combos'))).filter(x => x.endsWith('.webp')).length, 0);

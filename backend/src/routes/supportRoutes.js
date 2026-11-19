@@ -1,6 +1,6 @@
 import {Router} from 'express';
 import {allowRoles} from '../middlewares/authMiddleware.js';
-import {supportCreate,supportMessage,supportAssign,supportId,supportPage,supportQueuePage} from '../validators/supportValidators.js';
+import {supportCreate,supportMessage,supportAssign,supportId,supportPage,supportHistoryPage,supportQueuePage} from '../validators/supportValidators.js';
 
 export const supportOperations=[
     {method:'post',path:'/api/support',operationId:'create_support_request'},
@@ -19,7 +19,7 @@ export function supportRoutes(controller,{auth,limits}){const r=Router(),noStore
     r.post('/api/support',...client,...limits.checkout,supportCreate,controller.create);
     r.get('/api/support',...client,supportPage,controller.ownList);
     r.get('/api/support/:id',...shared,supportId,controller.get);
-    r.get('/api/support/:id/messages',...shared,supportId,supportPage,controller.messages);
+    r.get('/api/support/:id/messages',...shared,supportId,supportHistoryPage,controller.messages);
     r.post('/api/support/:id/messages',...shared,...limits.checkout,supportId,supportMessage,controller.message);
     r.post('/api/support/:id/close',...client,supportId,controller.close);
     r.get('/api/admin/support',...admin,supportQueuePage,controller.adminQueue);

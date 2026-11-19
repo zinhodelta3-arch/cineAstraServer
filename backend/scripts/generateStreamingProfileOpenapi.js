@@ -5,7 +5,7 @@ const file=new URL('../src/docs/openapi.json',import.meta.url),spec=JSON.parse(a
 const obj=(properties,required=Object.keys(properties))=>({type:'object',additionalProperties:false,properties,...(required.length?{required}:{})});
 const id={type:'string',pattern:'^[1-9][0-9]{0,9}$',description:'INT UNSIGNED, máximo 4294967295.'};
 const fields={name:{type:'string',minLength:1,maxLength:24,description:'Normalizado NFC e aparado; único na conta sem diferenciar maiúsculas/minúsculas. Sem caracteres de controle.'},avatar:{type:'string',enum:profileAvatars,default:'astronauta'},kids:{type:'boolean',default:false,description:'Preferência visual; não constitui autorização parental nem altera permissões de reprodução.'}};
-spec.components.schemas.StreamingProfile=obj({id,...fields,selected:{type:'boolean'},photoUrl:{type:'string',nullable:true,description:'Foto privada; buscar com Bearer. null usa avatar padrão.'}});
+spec.components.schemas.StreamingProfile=obj({id,...fields,selected:{type:'boolean'},photoUrl:{type:'string',nullable:true,description:'Campo legado sempre nulo. A interface usa o avatar oficial indicado em avatar.'}});
 spec.components.schemas.StreamingProfileCreate=obj(fields,['name']);
 spec.components.schemas.StreamingProfilePatch={...obj(fields,[]),minProperties:1};
 const ref=n=>({$ref:`#/components/schemas/${n}`});

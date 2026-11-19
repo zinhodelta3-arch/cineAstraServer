@@ -12,12 +12,12 @@ export function useSessionSelection() {
   const pathname = usePathname();
   const [selected, setSelected] = useState(null);
   const [date, setDate] = useState("");
-  const list = useAdminSchedule(`sessions?limit=100${date ? `&date=${date}` : ""}`);
+  const list = useAdminSchedule(`sessions?limit=20${date ? `&date=${date}` : ""}`, { itemKey: "id_sessao" });
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("sessao");
     if (!/^[1-9]\d{0,9}$/.test(id ?? "")) return;
     let active = true;
-    scheduleRequest(`sessions/${id}`).then((value) => { if (active) setSelected(value); }).catch(() => {});
+    scheduleRequest(`sessions/${id}`).then((value) => { if (active && new URLSearchParams(window.location.search).get("sessao") === id) setSelected(value); }).catch(() => {});
     return () => { active = false; };
   }, []);
   function select(value) {
@@ -36,6 +36,6 @@ export default function SessionPicker({ selection }) {
       {list.nextCursor && <button type="button" className={styles.secondary} onClick={list.loadMore} disabled={list.loadingMore}>{list.loadingMore ? "Carregando…" : "Mais sessões"}</button>}
     </div>
     {selected && <p className={styles.hint}>Sessão #{selected.id_sessao} · {label(selected)}</p>}
-    {list.error && <div><p className={styles.error} role="alert">{list.error}</p><button type="button" className={styles.secondary} onClick={list.reload}>Tentar novamente</button></div>}
+    {list.error && <div><p className={styles.error} role="alert">{list.error}</p>{!list.nextCursor && <button type="button" className={styles.secondary} onClick={list.reload}>Tentar novamente</button>}</div>}
   </section>;
 }

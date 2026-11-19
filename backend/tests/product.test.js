@@ -30,7 +30,7 @@ function fixture() {
         async create(type, c, input) {
             if (type === 'equipment' && input.numero_patrimonio && state.equipment.some(e => e.numero_patrimonio?.trim().toUpperCase() === input.numero_patrimonio.trim().toUpperCase())) throw Object.assign(new Error('duplicate'), { code: 'ER_DUP_ENTRY' });
             const id = String(type === 'inputs' ? nextInput++ : nextEquipment++);
-            data(type).push({ [key(type)]: id, id_fornecedor: String(input.supplierId), id_local: String(input.localId), nome: input.nome, descricao: input.descricao ?? null, categoria: input.categoria ?? null, quantidade: 0, ...(type === 'inputs' ? { venda_avulsa: input.venda_avulsa ?? false, quantidade_minima: input.quantidade_minima ?? 0, preco: input.preco } : { numero_patrimonio: input.numero_patrimonio ?? null }), status: 'DISPONIVEL', data_cadastro: '2026-10-08 00:00:00' }); return id;
+            data(type).push({ [key(type)]: id, id_fornecedor: String(input.supplierId), id_local: input.localId == null ? null : String(input.localId), nome: input.nome, descricao: input.descricao ?? null, categoria: input.categoria ?? null, quantidade: 0, ...(type === 'inputs' ? { venda_avulsa: input.venda_avulsa ?? false, quantidade_minima: input.quantidade_minima ?? 0, preco: input.preco } : { numero_patrimonio: input.numero_patrimonio ?? null }), status: 'DISPONIVEL', data_cadastro: '2026-10-08 00:00:00' }); return id;
         },
         async update(type, c, id, input) { Object.assign(data(type).find(row => row[key(type)] === String(id)), input); }
     };
@@ -48,28 +48,31 @@ function fixture() {
     return { app, api, get state() { return state; } };
 }
 
-test('fornecedor cria apenas no local autorizado; ADMIN controla vínculo', async () => {
+test('fornecedor cadastra item próprio sem cinema; ADMIN controla o vínculo operacional', async () => {
     const f = fixture();
     await request(f.app).post('/api/inputs').send({ localId: '1', nome: 'Milho', preco: '12.00' }).expect(401);
     await f.api('post', '/api/inputs', '4').send({ localId: '1', nome: 'Milho', preco: '12.00' }).expect(403);
     await f.api('post', '/api/inputs', '2').send({ localId: '2', nome: 'Milho', preco: '12.00' }).expect(403);
     await f.api('post', '/api/inputs', '2').send({ supplierId: '11', localId: '1', nome: 'Milho', preco: '12.00' }).expect(403);
     await f.api('post', '/api/inputs').send({ localId: '1', nome: 'Milho', preco: '12.00' }).expect(422);
-    const created = await f.api('post', '/api/inputs', '2').send({ localId: '1', nome: 'Milho', preco: '12.00', quantidade_minima: 5 }).expect(201);
+    await f.api('post', '/api/inputs', '2').send({ localId: '1', nome: 'Milho', preco: '12.00' }).expect(403);
+    await f.api('post', '/api/inputs', '2').send({ nome: 'Milho', categoria: 'Categoria inexistente', preco: '12.00' }).expect(422);
+    const created = await f.api('post', '/api/inputs', '2').send({ nome: 'Milho', categoria: 'Ingredientes', preco: '12.00', quantidade_minima: 5 }).expect(201);
     assert.equal(created.body.data.id_fornecedor, '10');
+    assert.equal(created.body.data.id_local, null);
     assert.equal(created.body.data.quantidade, 0);
     assert.equal(created.body.data.preco, '12.00');
     await f.api('get', '/api/suppliers/me/locations', '2').expect(200);
     await f.api('post', '/api/admin/suppliers/10/locations', '2').send({ localId: '2' }).expect(403);
     await f.api('post', '/api/admin/suppliers/10/locations').send({ localId: '2' }).expect(201);
-    await f.api('post', '/api/inputs', '2').send({ localId: '2', nome: 'Óleo', preco: '1.00' }).expect(201);
+    await f.api('post', '/api/inputs').send({ supplierId: '10', localId: '2', nome: 'Óleo', preco: '1.00' }).expect(201);
     await f.api('delete', '/api/admin/suppliers/10/locations/2').expect(204);
-    await f.api('post', '/api/inputs', '2').send({ localId: '2', nome: 'Açúcar', preco: '2.00' }).expect(403);
+    await f.api('post', '/api/inputs').send({ supplierId: '10', localId: '2', nome: 'Açúcar', preco: '2.00' }).expect(403);
 });
 
 test('fornecedor alheio não lê/edita; saldo e custo não aceitam PATCH genérico', async () => {
     const f = fixture();
-    await f.api('post', '/api/inputs', '2').send({ localId: '1', nome: 'Milho', preco: '12.00' }).expect(201);
+    await f.api('post', '/api/inputs', '2').send({ nome: 'Milho', preco: '12.00' }).expect(201);
     await f.api('get', '/api/inputs/1', '3').expect(403);
     await f.api('patch', '/api/inputs/1', '3').send({ nome: 'Invadido' }).expect(403);
     await f.api('delete', '/api/inputs/1', '3').expect(403);
@@ -85,9 +88,10 @@ test('fornecedor alheio não lê/edita; saldo e custo não aceitam PATCH genéri
 
 test('patrimônio único normalizado, equipamento e arquivamento preservam registro', async () => {
     const f = fixture();
-    const created = await f.api('post', '/api/equipment', '2').send({ localId: '1', nome: 'Projetor', numero_patrimonio: ' ab-1 ' }).expect(201);
+    const created = await f.api('post', '/api/equipment', '2').send({ nome: 'Projetor', numero_patrimonio: ' ab-1 ' }).expect(201);
     assert.equal(created.body.data.numero_patrimonio, 'AB-1');
-    await f.api('post', '/api/equipment', '2').send({ localId: '1', nome: 'Outro', numero_patrimonio: 'ab-1' }).expect(409);
+    assert.equal(created.body.data.id_local, null);
+    await f.api('post', '/api/equipment', '2').send({ nome: 'Outro', numero_patrimonio: 'ab-1' }).expect(409);
     await f.api('patch', '/api/equipment/1', '2').send({ quantidade: 9 }).expect(422);
     await f.api('patch', '/api/equipment/1', '2').send({ status: 'MANUTENCAO' }).expect(200);
     await f.api('delete', '/api/equipment/1', '2').expect(204);
@@ -109,7 +113,7 @@ test('SQL usa filtros por fornecedor/local, preço exato e bloqueia atualizaçã
 
 test('publicação avulsa é opt-in e respeita propriedade do fornecedor', async () => {
     const f = fixture();
-    const created = await f.api('post', '/api/inputs', '2').send({localId:'1',nome:'Milho',preco:'12.00'}).expect(201);
+    const created = await f.api('post', '/api/inputs', '2').send({nome:'Milho',preco:'12.00'}).expect(201);
     assert.equal(created.body.data.venda_avulsa, false);
     const path = '/api/inputs/' + created.body.data.id_insumo;
     await f.api('patch', path, '3').send({venda_avulsa:true}).expect(403);

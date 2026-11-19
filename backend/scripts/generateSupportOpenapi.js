@@ -18,6 +18,7 @@ for(const route of supportOperations){
     const op={operationId:route.operationId,tags:['Suporte'],summary:route.operationId.replaceAll('_',' '),security:[{bearerAuth:[]}],responses:{}};
     if(route.path.includes('{id}'))op.parameters=[{name:'id',in:'path',required:true,schema:id}];
     if(['list_own_support','admin_support_queue','support_message_history'].includes(route.operationId))op.parameters=[...(op.parameters??[]),{name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:{type:'string',default:'0'}}];
+    if(route.operationId==='support_message_history')op.parameters.push({name:'order',in:'query',description:'Use desc para começar pelas mensagens mais recentes e continue com nextCursor na mesma ordem.',schema:{type:'string',enum:['asc','desc'],default:'asc'}});
     if(route.operationId==='create_support_request')op.requestBody=body({subject:str(150),message:str(10000)});
     if(route.operationId==='append_support_message')op.requestBody={required:true,content:{'application/json':{schema:obj({message:str(10000),mode:{type:'string',enum:['ASYNC','LIVE'],default:'ASYNC'}},['message'])}}};
     if(route.operationId==='assign_support_request')op.requestBody=body({attendantId:id});

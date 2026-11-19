@@ -12,6 +12,13 @@ export const inventoryOperations = [
 ];
 export function inventoryRoutes(controller,{ auth }) {
     const router = Router();
+    const supervisor = [auth, allowRoles('SUPERVISOR')];
+    for (const kind of ['inputs','combos']) {
+        router.get(`/api/unit/snack-offers/${kind}`, ...supervisor, inventoryQuery(inventorySchemas.offerQuery), controller.offers(kind));
+        router.patch(`/api/unit/snack-offers/${kind}/:id`, ...supervisor, inventoryParams, validateBody(inventorySchemas.offer), controller.offer(kind));
+    }
+    router.get('/api/unit/snack-offers/combos/:id/components', ...supervisor, inventoryParams, controller.components);
+    router.patch('/api/unit/snack-offers/inputs/:id/stock', ...supervisor, inventoryParams, validateBody(inventorySchemas.adjustment), controller.adjustment);
     for (const r of inventoryOperations) {
         const middleware = [(req,res,next) => { res.set('Cache-Control','no-store'); next(); },auth,allowRoles('ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR')];
         if (r.path.includes('{id}')) middleware.push(inventoryParams);

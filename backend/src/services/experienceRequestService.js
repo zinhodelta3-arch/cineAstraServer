@@ -1,9 +1,10 @@
 import { ApiError } from '../utils/ApiError.js';
 import { idString } from '../utils/dto.js';
+import { experienceRequestNotice } from './notificationService.js';
 
 const select = `SELECT s.id_solicitacao,s.id_experiencia,s.id_local,s.id_responsavel,s.titulo,
     DATE_FORMAT(s.data_desejada,'%Y-%m-%d') AS data_desejada,TIME_FORMAT(s.horario_desejado,'%H:%i') AS horario_desejado,
-    s.quantidade,s.descricao,s.preferencias,s.status,s.atualizada_em,l.nome AS unidade
+    s.quantidade,s.descricao,s.preferencias,s.requisitos_estrutura,s.status,s.atualizada_em,l.nome AS unidade
     FROM solicitacoes_experiencia s LEFT JOIN locais l ON l.id_local=s.id_local`;
 const scope = actor => {
     if (actor.tipo_usuario === 'ADMIN') return { clause: '1=1', args: [] };
@@ -18,7 +19,8 @@ const dto = row => ({
     id: idString(row.id_solicitacao), protocol: 'EXP-' + row.id_solicitacao, title: row.titulo, status: row.status,
     locationId: row.id_local == null ? null : idString(row.id_local), location: row.unidade,
     date: row.data_desejada, time: row.horario_desejado, guests: row.quantidade, details: row.descricao,
-    preferences: row.preferencias, updatedAt: row.atualizada_em
+    preferences: row.preferencias, requirements: row.requisitos_estrutura, custom: row.id_experiencia == null,
+    updatedAt: row.atualizada_em
 });
 const one = async (connection, sql, values) => (await connection.execute(sql, values))[0][0];
 const writeEvent = (connection, requestId, type, sender, text) => connection.execute(
@@ -32,7 +34,7 @@ const transitions = {
     CONCLUIDA: [], CANCELADA: []
 };
 
-export function createExperienceRequestService({ identity, promotional }) {
+export function createExperienceRequestService({ identity, promotional, notifications }) {
     const run = (context, operation) => identity.transaction(async connection => {
         const actor = await identity.activeActor(connection, context);
         return operation(connection, actor);
@@ -47,16 +49,29 @@ export function createExperienceRequestService({ identity, promotional }) {
     return {
         create: (input, context) => run(context, async (connection, actor) => {
             if (actor.tipo_usuario !== 'CLIENTE') throw ApiError.acessoNegado();
-            const item = await promotional.get(connection, 'experiences', input.experienceId, false, true);
-            if (!item) throw ApiError.naoEncontrado();
-            if (item.lotacao_eventos != null && input.guests > item.lotacao_eventos) throw ApiError.validacao('A quantidade excede a lotação do local.');
-            const data = typeof item.dados === 'string' ? JSON.parse(item.dados) : item.dados;
+            const item = input.experienceId ? await promotional.get(connection, 'experiences', input.experienceId, false, true) : null;
+            if (input.experienceId && !item) throw ApiError.naoEncontrado();
+            const linkedLocation = item?.id_local_evento;
+            if (linkedLocation != null && input.locationId && input.locationId !== idString(linkedLocation)) {
+                throw ApiError.validacao('A experiência está vinculada a outra unidade.');
+            }
+            const locationId = linkedLocation ?? input.locationId ?? null;
+            if (locationId != null) {
+                const location = await one(connection, "SELECT lotacao_eventos FROM locais WHERE id_local=? AND status='ATIVO' FOR UPDATE", [locationId]);
+                if (!location) throw ApiError.validacao('Selecione uma unidade ativa.');
+                if (location.lotacao_eventos != null && input.guests > location.lotacao_eventos) {
+                    throw ApiError.validacao('A quantidade excede a lotação do local.');
+                }
+            }
+            const data = typeof item?.dados === 'string' ? JSON.parse(item.dados) : item?.dados;
             const [result] = await connection.execute(`INSERT INTO solicitacoes_experiencia
-                (id_experiencia,id_cliente,id_local,titulo,data_desejada,horario_desejado,quantidade,descricao,preferencias)
-                VALUES(?,?,?,?,?,?,?,?,?)`, [input.experienceId, actor.id_usuario, item.id_local_evento, data.title, input.date,
-                input.time ?? null, input.guests, input.details, input.preferences || null]);
+                (id_experiencia,id_cliente,id_local,titulo,data_desejada,horario_desejado,quantidade,descricao,preferencias,requisitos_estrutura)
+                VALUES(?,?,?,?,?,?,?,?,?,?)`, [input.experienceId ?? null, actor.id_usuario, locationId,
+                input.customSpace ?? data.title, input.date, input.time ?? null, input.guests, input.details,
+                input.preferences || null, input.requirements || null]);
             const id = idString(result.insertId);
             await writeEvent(connection, id, 'STATUS', 'CLIENTE', 'RECEBIDA');
+            await notifications.emit(connection, experienceRequestNotice(idString(actor.id_usuario), id));
             return dto(await find(connection, actor, id));
         }),
         list: (cursor, context) => run(context, async (connection, actor) => {

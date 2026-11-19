@@ -3,13 +3,15 @@ import { notificationOperations } from '../src/routes/notificationRoutes.js';
 
 const file = new URL('../src/docs/openapi.json', import.meta.url);
 const spec = JSON.parse(await readFile(file, 'utf8'));
-spec.info.version = '1.9.0';
 spec.tags = [...spec.tags.filter(t => t.name !== 'Notificações'), { name: 'Notificações', description: 'Consulta e leitura de notificações próprias; emissão somente por serviço interno.' }];
 const id = { type: 'string', pattern: '^[1-9][0-9]{0,19}$', description: 'BIGINT UNSIGNED decimal retornado como string.' };
 const obj = (properties, required = Object.keys(properties)) => ({ type: 'object', additionalProperties: false, properties, required });
 const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const response = data => ({ description: 'Sucesso', content: { 'application/json': { schema: obj({ success: { type: 'boolean', enum: [true] }, data, requestId: { type: 'string', format: 'uuid' } }) } } });
 spec.components.schemas.Notification = obj({ id_notificacao: id, titulo: { type: 'string', maxLength: 200 }, mensagem: { type: 'string', nullable: true }, tipo: { type: 'string', maxLength: 50, nullable: true }, lida: { type: 'boolean' }, data_envio: { type: 'string' } });
+spec.components.schemas.Notification.properties.solicitacao_experiencia_id = {
+    type: 'string', pattern: '^[1-9][0-9]{0,9}$', description: 'Identificador da solicitação em notificações de confirmação de experiência.'
+};
 for (const r of notificationOperations) {
     const list = r.action === 'list';
     const op = { operationId: r.operationId, tags: ['Notificações'], summary: list ? 'Listar minhas notificações' : 'Marcar minha notificação como lida',
@@ -17,6 +19,7 @@ for (const r of notificationOperations) {
         security: [{ bearerAuth: [] }], parameters: list ? [
             { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
             { name: 'cursor', in: 'query', schema: id },
+            { name: 'order', in: 'query', schema: { type: 'string', enum: ['recent'] }, description: 'Ordena do mais recente ao mais antigo. Repita o valor ao usar o próximo cursor.' },
             { name: 'unread', in: 'query', schema: { type: 'boolean' } },
             { name: 'type', in: 'query', schema: { type: 'string', minLength: 1, maxLength: 50 } }
         ] : [{ name: 'id', in: 'path', required: true, schema: id }], responses: {} };

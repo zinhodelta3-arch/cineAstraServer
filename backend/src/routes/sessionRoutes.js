@@ -20,7 +20,7 @@ export function sessionRoutes(controller, { auth }) {
     const unitAccess = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, auth, (req,res,next)=>allowRoles(...(req.method==='GET'?['SUPERVISOR','COLABORADOR']:['SUPERVISOR']))(req,res,next), sessionParams];
     router.get('/api/unit/sessions', ...unitAccess, sessionQuery(sessionSchemas.adminQuery), controller.unitList);
     router.get('/api/unit/sessions/:id', ...unitAccess, controller.unitGet);
-    router.post('/api/unit/sessions', ...unitAccess, validateBody(sessionSchemas.create), controller.unitCreate);
+    router.post('/api/unit/sessions', ...unitAccess, validateBody(sessionSchemas.unitCreate), controller.unitCreate);
     router.patch('/api/unit/sessions/:id', ...unitAccess, validateBody(sessionSchemas.patch), controller.unitPatch);
     router.delete('/api/unit/sessions/:id', ...unitAccess, controller.unitCancel);
     router.get('/api/films/:filmId/availability', (req, res, next) => {

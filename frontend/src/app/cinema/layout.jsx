@@ -6,6 +6,7 @@ import { SessionProvider } from "@/hooks/auth/use-session";
 import { loginDestination } from "@/lib/auth/destination.mjs";
 import { AccountPreferencesProvider } from "@/components/providers/account-preferences-provider";
 import { AccessibilityMenu } from "@/components/accessibility-menu";
+import { CartProvider } from "@/components/cart/cart-provider";
 
 export default async function CinemaLayout({ children }) {
   const user = await currentUser();
@@ -13,12 +14,14 @@ export default async function CinemaLayout({ children }) {
 
   return (
     <SessionProvider initialUser={await publicSessionSnapshot(user)}>
-      <AccountPreferencesProvider userId={user?.role === "CLIENTE" ? user.id : null}>
-        <AccessibilityMenu />
-        <Header showAssistant />
-        {children}
-        <Footer />
-      </AccountPreferencesProvider>
+      <CartProvider>
+        <AccountPreferencesProvider userId={user?.role === "CLIENTE" ? user.id : null}>
+          <AccessibilityMenu />
+          <Header showAssistant />
+          {children}
+          <Footer />
+        </AccountPreferencesProvider>
+      </CartProvider>
     </SessionProvider>
   );
 }

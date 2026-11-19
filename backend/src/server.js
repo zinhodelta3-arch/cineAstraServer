@@ -1,10 +1,12 @@
 import { createServer } from 'node:http';
+import { setTimeout as delay } from 'node:timers/promises';
 import { pathToFileURL } from 'node:url';
 import { EnvironmentValidationError, loadEnvironment } from './config/env.js';
 import { runtimeConfig } from './config/runtime.js';
 import { createDatabase } from './config/database.js';
 import { createApp } from './app.js';
 import { simulatedPaymentProvider } from './providers/paymentProvider.js';
+import { brevoNewsletterEmailProvider } from './providers/newsletterEmailProvider.js';
 import { createLogModel } from './models/logModel.js';
 import { createLogQueue } from './services/logService.js';
 import { createLogRetention } from './jobs/logRetention.js';
@@ -20,12 +22,37 @@ export async function startServer(config, overrides = {}) {
     const queue = overrides.logQueue ?? createLogQueue(log => model.insert(log), { limit: config.logging.queueLimit });
     const retention = overrides.retention ?? createLogRetention(model, config.logging);
     const lifecycle = { stopping: false };
+    const startup = new AbortController();
     let app;
-    let server, closeApp, monitor, shutdown;
+    let server, closeApp, monitor, shutdown, startWorkers;
     const workers = [{ name: 'log_retention', job: retention }];
+
+    async function startWorkersWhenDatabaseReady() {
+        const { signal } = startup;
+        let waiting = false;
+        while (!signal.aborted) {
+            try {
+                await database.ping({ signal });
+                break;
+            } catch (error) {
+                if (signal.aborted) return;
+                if (!waiting) {
+                    report('workers_waiting_for_database', { error });
+                    waiting = true;
+                }
+                try { await delay(2000, undefined, { signal, ref: false }); }
+                catch (error) { if (signal.aborted) return; throw error; }
+            }
+        }
+        if (signal.aborted) return;
+        for (const { job } of workers) job.start();
+        if (waiting) report('workers_started_after_database_ready');
+    }
+
     const close = () => {
         shutdown ??= (async () => {
             lifecycle.stopping = true;
+            startup.abort();
             monitor?.close();
             const deadline = Date.now() + config.shutdownTimeout;
             // Reserve parte do prazo para drenar logs e fechar o pool após o HTTP.
@@ -43,6 +70,7 @@ export async function startServer(config, overrides = {}) {
                         server.close(error => error ? reject(error) : resolve());
                         server.closeIdleConnections();
                     })),
+                    release('worker_startup', () => startWorkers),
                     ...workers.map(({ name, job }) => release(name, () => job.close()))
                 ]);
                 await release('log_queue', () => queue.close({ timeoutMs: Math.max(0, deadline - Date.now() - config.db.timeout) }));
@@ -54,7 +82,8 @@ export async function startServer(config, overrides = {}) {
         return shutdown;
     };
     try {
-        app = createApp({ config, database, logQueue: queue, retention, lifecycle, identityProviders: overrides.identityProviders, captchaProvider: overrides.captchaProvider, paymentProvider: overrides.paymentProvider ?? (config.paymentMode === 'SIMULATED' ? simulatedPaymentProvider() : undefined), streamingProvider: overrides.streamingProvider, newsletterEmailProvider: overrides.newsletterEmailProvider, assistantProvider: overrides.assistantProvider, ipcaProvider: overrides.ipcaProvider, storeFactory: overrides.storeFactory, registerCleanup: cleanup => { closeApp = cleanup; } });
+        const newsletterEmailProvider = overrides.newsletterEmailProvider ?? (config.newsletterBrevo ? brevoNewsletterEmailProvider(config.newsletterBrevo) : undefined);
+        app = createApp({ config, database, logQueue: queue, retention, lifecycle, identityProviders: overrides.identityProviders, captchaProvider: overrides.captchaProvider, paymentProvider: overrides.paymentProvider ?? (config.paymentMode === 'SIMULATED' ? simulatedPaymentProvider() : undefined), streamingProvider: overrides.streamingProvider, newsletterEmailProvider, assistantProvider: overrides.assistantProvider, ipcaProvider: overrides.ipcaProvider, storeFactory: overrides.storeFactory, registerCleanup: cleanup => { closeApp = cleanup; } });
         server = createServer(app);
         server.requestTimeout = config.httpTimeout;
         server.headersTimeout = Math.min(config.httpTimeout, 5000);
@@ -66,12 +95,9 @@ export async function startServer(config, overrides = {}) {
         const newsletterDelivery=createNewsletterDeliveryJob(app.locals.newsletterDelivery);
         const supportLiveExpiry=createSupportLiveExpiry(app.locals.support);
         workers.push({ name: 'checkout_expiry', job: checkoutExpiry }, { name: 'subscription_billing', job: subscriptionBilling },
-            { name: 'newsletter_delivery', job: newsletterDelivery }, { name: 'support_live_expiry', job: supportLiveExpiry });
-        retention.start();
-        checkoutExpiry.start();
-        subscriptionBilling.start();
-        if(app.locals.newsletterDeliveryEnabled)newsletterDelivery.start();
-        supportLiveExpiry.start();
+            { name: 'support_live_expiry', job: supportLiveExpiry });
+        if (app.locals.newsletterDeliveryEnabled) workers.push({ name: 'newsletter_delivery', job: newsletterDelivery });
+        startWorkers = startWorkersWhenDatabaseReady().catch(error => report('worker_startup_failed', { error }));
         monitor = startRuntimeMonitor();
         return { server, app, lifecycle, close };
     } catch (error) {

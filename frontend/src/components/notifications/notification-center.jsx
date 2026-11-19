@@ -16,13 +16,13 @@ function Feed({userId}){
  return <>
   <div className={styles.contentGrid}>
    <div className={styles.feed}>
-    <div className={styles.toolbar}><div className={styles.filters} role="group" aria-label="Filtrar notificações">{[['all','Todas'],['unread','Não lidas'],['read','Lidas']].map(([value,label])=><button key={value} type="button" aria-pressed={s.filter===value} className={s.filter===value?styles.activeFilter:''} onClick={()=>s.setFilter(value)}>{label}</button>)}</div><Button variant="outline" disabled={list.loading||list.pending} onClick={list.retry}>Atualizar notificações</Button></div>
+    <div className={styles.toolbar}><div className={styles.filters} role="group" aria-label="Filtrar notificações">{[['all','Todas'],['unread','Não lidas'],['read','Lidas'],['experience','Experiências']].map(([value,label])=><button key={value} type="button" aria-pressed={s.filter===value} className={s.filter===value?styles.activeFilter:''} onClick={()=>s.setFilter(value)}>{label}</button>)}</div><Button variant="outline" disabled={list.loading||list.pending} onClick={list.retry}>Atualizar notificações</Button></div>
     <p className="my-4 text-xs text-muted-foreground">Filtros e contadores consideram as {list.items.length} notificações carregadas.</p>
     {list.actionError&&<p role="alert" className="my-4 text-sm text-destructive">{list.actionError}</p>}
     {s.filter!=='read'&&<NotificationGroup title="Novas atividades" entries={s.unread} isNew openDetails={s.openDetails} toggleRead={s.markRead} pending={list.pending} />}
     {s.filter!=='unread'&&<NotificationGroup title="Atividades lidas" entries={s.read} openDetails={s.openDetails} toggleRead={s.markRead} pending={list.pending} />}
     {!list.loading&&!list.error&&list.items.length>0&&((s.filter==='read'&&!s.read.length)||(s.filter==='unread'&&!s.unread.length))&&<p className="my-6">Nenhum aviso carregado corresponde a este filtro.</p>}
-    <ListStatus list={list} empty="Nenhuma notificação disponível." more="Carregar mais notificações" />
+    <ListStatus list={list} empty={s.filter==='experience'?'Nenhuma notificação de experiência disponível.':'Nenhuma notificação disponível.'} more="Carregar mais notificações" />
    </div>
    <NotificationSummary ready={!list.loading&&!list.error} unreadCount={list.unreadCount} />
   </div>

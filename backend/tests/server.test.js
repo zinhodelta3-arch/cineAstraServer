@@ -35,11 +35,42 @@ test('server HTTP inicializa, configura timeouts e fecha HTTP/worker/fila/pool u
 test('falha no encerramento de worker não impede tentativa de fechar fila e pool', async () => {
     const closed = [];
     const runtime = await startServer({ ...validateEnv(testEnvironment()), port: 0 }, {
-        database: { async close() { closed.push('database'); } },
+        database: { async ping() {}, async close() { closed.push('database'); } },
         logQueue: { enqueue() {}, async close() { closed.push('queue'); } },
         retention: { start() {}, async close() { throw new Error('fixture_shutdown_failure'); } }
     });
     await assert.rejects(runtime.close(), /Encerramento incompleto/);
     assert.deepEqual(closed, ['queue', 'database']);
     assert.equal(runtime.server.listening, false);
+});
+
+test('aguarda a conexão com o banco antes da primeira execução dos workers', { timeout: 7000 }, async t => {
+    const workerStarted = Promise.withResolvers();
+    let databaseReady = false;
+    let starts = 0;
+    const runtime = await startServer({ ...validateEnv(testEnvironment()), port: 0 }, {
+        database: {
+            async ping() { if (!databaseReady) throw new Error('Banco ainda iniciando'); },
+            async close() {}
+        },
+        logQueue: { enqueue() {}, async close() {} },
+        retention: {
+            start() { starts++; workerStarted.resolve(); },
+            async check() { return true; },
+            async close() {}
+        }
+    });
+    t.after(() => runtime.close());
+    const url = `http://127.0.0.1:${runtime.server.address().port}`;
+    const probe = await fetch(`${url}/ready`);
+    assert.equal(probe.status, 503);
+    await probe.json();
+    assert.equal(starts, 0);
+
+    databaseReady = true;
+    await workerStarted.promise;
+    assert.equal(starts, 1);
+    const ready = await fetch(`${url}/ready`);
+    assert.equal(ready.status, 200);
+    await ready.json();
 });

@@ -1,40 +1,33 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AVATARS, readProfilePhoto, validateName } from "@/components/streaming/profiles/profile-data";
+import { DEFAULT_AVATAR, officialAvatar, validateName } from "@/components/streaming/profiles/profile-data";
 
 export default function useProfileEditor(profile, profiles, onSave) {
-  const [draft, setDraft] = useState(profile || { name: "", avatar: AVATARS[profiles.length % AVATARS.length].id, photo: "", kids: false });
+  const [draft, setDraft] = useState(() => profile
+    ? { ...profile, avatar:officialAvatar(profile.avatar) }
+    : { name:"", avatar:DEFAULT_AVATAR, kids:false });
   const [error, setError] = useState(profile?.saveError || "");
-  const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
-  const fileRef = useRef(null);
+  const busy = useRef(false);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-  const update = (field, value) => { setDraft((p) => ({ ...p, [field]: value })); setError(""); };
-  const choosePhoto = async (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    setPhotoBusy(true); setError("");
-    try {
-      const photo = await readProfilePhoto(file);
-      if (alive.current) setDraft((p) => ({ ...p, photo }));
-    } catch (err) { if (alive.current) setError(err.message); }
-    finally { if (alive.current) setPhotoBusy(false); }
-  };
-  const submit = async (event) => {
+  const update = (field, value) => { setDraft(current => ({ ...current, [field]:value })); setError(""); };
+
+  const submit = async event => {
     event.preventDefault();
-    if (saving || photoBusy) return;
+    if (busy.current) return;
     const invalid = validateName(draft.name, profiles, profile?.id);
     if (invalid) return setError(invalid);
+    busy.current = true;
     setSaving(true);
     try {
-      const saveError = await onSave({ ...draft, name: draft.name.trim() });
+      const saveError = await onSave({ ...draft, name:draft.name.trim() });
       if (saveError && alive.current) setError(saveError);
-    } finally { if (alive.current) setSaving(false); }
+    } finally {
+      busy.current = false;
+      if (alive.current) setSaving(false);
+    }
   };
-  const openPhotoPicker = () => fileRef.current?.click();
-  const chooseAvatar = (id) => { setDraft((p) => ({ ...p, avatar: id, photo: "" })); setError(""); };
-  return { draft, error, photoBusy, saving, fileRef, update, choosePhoto, submit, chooseAvatar, openPhotoPicker };
+  return { draft, error, saving, update, submit };
 }

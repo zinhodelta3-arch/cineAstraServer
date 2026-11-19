@@ -30,17 +30,18 @@ export function createNewsletterService({database,model,emailProvider,terms=news
         if(input.accepted!==true||!Array.isArray(input.categories)||!input.categories.length||new Set(input.categories).size!==input.categories.length)throw ApiError.validacao('Aceite e categorias obrigatórios');
         if(input.termsVersion!==terms.version)throw ApiError.validacao('Versão do consentimento desatualizada');
         const email=input.email.trim().toLowerCase(),{token,hash}=tokenPair();
-        let created=false;
+        let confirmationIssued=false;
         try{await database.transaction(async c=>{
             const selected=await selectedCategories(c,input.categories);
-            if(await model.byEmail(c,email))return;
-            const id=await model.insert(c,{email,name:input.name,version:terms.version});
-            for(const category of selected)await model.preference(c,id,category.id_categoria);
+            const existing=await model.byEmail(c,email);
+            if(existing && (existing.status!=='PENDENTE'||await model.recentConfirmation(c,existing.id_inscrito)))return;
+            const id=existing?.id_inscrito ?? await model.insert(c,{email,name:input.name,version:terms.version});
+            if(!existing)for(const category of selected)await model.preference(c,id,category.id_categoria);
             await model.token(c,id,hash);
-            created=true;
+            confirmationIssued=true;
         },{signal:context.signal});}
         catch(error){if(error.code==='ER_DUP_ENTRY')return accepted;throw error;}
-        if(created)await emailProvider.sendConfirmation({email,token,expiresIn:86400,signal:context.signal});
+        if(confirmationIssued)await emailProvider.sendConfirmation({email,token,expiresIn:86400,signal:context.signal});
         return accepted;
     },
     async confirm(token,context={}){

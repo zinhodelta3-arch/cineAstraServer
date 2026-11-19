@@ -1,4 +1,4 @@
-import {createHash} from 'node:crypto';
+import {createHash,createHmac} from 'node:crypto';
 import {ApiError} from '../utils/ApiError.js';
 import {idString} from '../utils/dto.js';
 
@@ -12,21 +12,27 @@ const simulatedDocuments={
     terms:{slug:'terms',version:'1.0',title:'Termos da compra',body:{text:'Ao confirmar, você aceita os itens e valores apresentados. A reserva é mantida por 15 minutos e o pedido é concluído após a confirmação do pagamento.'},source:'SIMULADO',publishedAt:'2026-01-01T00:00:00.000Z'},
     privacy:{slug:'privacy',version:'1.0',title:'Privacidade dos dados',body:{text:'Os dados da conta e do pedido são utilizados para identificar a compra e disponibilizar os ingressos. O número completo e o código de segurança do cartão não são enviados nem armazenados neste fluxo.'},source:'SIMULADO',publishedAt:'2026-01-01T00:00:00.000Z'}
 };
-export function createContentService({model,identity,simulated=false}){
+export function createContentService({model,identity,checkoutSigningKey,simulated=false}){
     async function get(c,slug){const row=await model.current(c,slug);if(!row)throw ApiError.naoEncontrado();return publicDto(row);}
-    async function wrap(c,input,offer){
+    async function wrap(c,input,offer,sign=hash){
         const rows=simulated?null:await Promise.all(['business','terms','privacy'].map(slug=>model.current(c,slug)));
         if(rows?.some(row=>!row))throw unavailable();
         const [business,terms,privacy]=simulated?['business','terms','privacy'].map(slug=>simulatedDocuments[slug]):rows.map(publicDto);
         const summary={business,terms,privacy,offer};
-        return {...summary,offerHash:hash({input,summary})};
+        return {...summary,offerHash:sign({input,summary})};
     }
-    async function contract(c,input,quote){return wrap(c,{localId:input.localId??null,lines:input.lines,couponCode:input.couponCode??null},{lines:quote.lines,total:quote.total,fees:quote.fees??'0.00',currency:'BRL',paymentPath:'/api/payments',paymentMethodsPath:'/api/users/me/payment-methods',conditions:'Reserva por 15 minutos; confirmação depende da aprovação do pagamento.'});}
+    async function contract(c,input,quote,ownerId){
+        if(ownerId==null)throw ApiError.naoAutorizado();
+        const owner=idString(ownerId);
+        const sign=offer=>createHmac('sha256',checkoutSigningKey)
+            .update(JSON.stringify(['cineastra:order-offer',owner,offer])).digest('hex');
+        return wrap(c,{localId:input.localId??null,lines:input.lines,couponCode:input.couponCode??null},{lines:quote.lines,total:quote.total,fees:quote.fees??'0.00',currency:'BRL',paymentPath:'/api/payments',paymentMethodsPath:'/api/users/me/payment-methods',conditions:'Reserva por 15 minutos; confirmação depende da aprovação do pagamento.'},sign);
+    }
     async function planContract(c,input,plan,price){return wrap(c,{planId:input.planId,period:input.period,autoRenew:input.autoRenew,divisionMode:input.divisionMode??'TITULAR_PAGA'},{lines:[{kind:'PLAN',plan}],total:price,fees:'0.00',currency:'BRL',paymentPath:'/api/payments',paymentMethodsPath:'/api/users/me/payment-methods',conditions:'Assinatura pendente até aprovação do pagamento; renovações e rateio conforme condições do plano.'});}
     return {
         get:slug=>identity.transaction(c=>get(c,slug)),
         async publish(input,context){return identity.transaction(async c=>{const actor=await identity.activeActor(c,context);if(actor.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();let id;try{id=await model.publish(c,input,actor.id_usuario);}catch(error){if(error.code==='ER_DUP_ENTRY')throw new ApiError('Versão já publicada',409,null,'CONTENT_VERSION_EXISTS');throw error;}await identity.audit(c,'CONTENT.PUBLISHED',id,context);return {id,slug:input.slug,version:input.version};},context);},
-        preview:(input,quote)=>identity.transaction(c=>contract(c,input,quote)),
+        preview:(input,quote,context)=>identity.transaction(c=>contract(c,input,quote,context.actor.id),context),
         simulatedTermsVersion:simulated?simulatedDocuments.terms.version:null,
         contract,
         planContract,

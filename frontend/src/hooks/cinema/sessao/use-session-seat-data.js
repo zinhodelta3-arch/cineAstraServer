@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { publicGet, publicAsset } from "@/lib/api/public-api.mjs";
-import { CHECKOUT_SESSION_KEY } from "@/hooks/use-checkout-session";
 
 export function useSessionSeatData(sessionId) {
   const [state, setState] = useState({ id: null, loading: true, session: null, error: null });
@@ -30,10 +29,6 @@ export function useSessionSeatData(sessionId) {
           occupied: seat.availability !== "DISPONIVEL",
           accessible: ["PCD", "OBESO", "IDOSO"].includes(seat.type),
         }));
-        let previous = null;
-        try { previous = JSON.parse(sessionStorage.getItem(CHECKOUT_SESSION_KEY) || "null"); } catch { /* Seleção anterior indisponível. */ }
-        const seats = previous?.id === sessionId && Array.isArray(previous.seats)
-          ? previous.seats.filter(label => seatMap.some(seat => seat.id === label && !seat.occupied)) : [];
         const date = show.data.slice(0, 10);
         const session = {
           id: sessionId, movie: {
@@ -46,7 +41,7 @@ export function useSessionSeatData(sessionId) {
           dateLabel: new Date(`${date}T12:00:00Z`).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "UTC" }),
           time: show.horario_inicio.slice(0, 5), format: room.tipo,
           language: show.idioma, priceCents: Math.round(Number(show.preco_inteira) * 100),
-          seats, seatMap,
+          seats: [], seatMap,
         };
         setState({ id: sessionId, loading: false, session, error: null });
       } catch (error) {

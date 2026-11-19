@@ -18,7 +18,7 @@ export default function RoomsAdmin() {
   const [local, setLocal] = useState(null);
   const [status, setStatus] = useState("Todos");
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const locals = useAdminVenues("locations?limit=100");
+  const locals = useAdminVenues("locations?limit=20", { itemKey: "id_local" });
   const rooms = useAdminVenues(local ? `locations/${local.id_local}/rooms?limit=20${status === "Todos" ? "" : `&status=${status}`}` : null);
   const actions = useVenueActions(rooms);
   const item = actions.dialog?.item;
@@ -27,7 +27,7 @@ export default function RoomsAdmin() {
     const id = new URLSearchParams(window.location.search).get("local");
     if (!/^[1-9]\d{0,9}$/.test(id ?? "")) return;
     let active = true;
-    venueRequest(`locations/${id}`).then((result) => { if (active) setLocal(result); }).catch(() => {});
+    venueRequest(`locations/${id}`).then((result) => { if (active && new URLSearchParams(window.location.search).get("local") === id) setLocal(result); }).catch(() => {});
     return () => { active = false; };
   }, []);
   function selectLocal(value) {

@@ -1,6 +1,9 @@
+import LoadingImage from "@/components/ui/loading-image";
+import Link from 'next/link';
 import { ArrowRight, Clapperboard, Gift, Sparkles, Ticket } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import styles from "../ticket.module.css"
+import { subscriptionManagementPath } from '@/lib/auth/destination.mjs';
 
 export default function PlansHero({ showPlans }) {
   return (
@@ -12,12 +15,13 @@ export default function PlansHero({ showPlans }) {
             <p className="mt-6 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">Escolha o plano do Clube CineAstra pelos benefícios que você quer usar.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" onClick={showPlans}>Comparar planos <ArrowRight className="size-4" /></Button>
+              <Link className={buttonVariants({ size:'lg', variant:'outline' })} href={subscriptionManagementPath}>Gerenciar minha assinatura</Link>
             </div>
           </div>
           <div className="relative mx-auto w-full max-w-md">
             <div className={`${styles.ticket} overflow-hidden`}>
               <div className="relative aspect-[16/9] overflow-hidden bg-muted">
-                <img src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1100&q=85" alt="Poltronas de cinema em uma sala iluminada" className="h-full w-full object-cover" />
+                <LoadingImage src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1100&q=85" alt="Poltronas de cinema em uma sala iluminada" className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                 <div className="absolute bottom-4 left-5 text-white"><div className="text-[10px] font-bold tracking-[.25em] uppercase">Seu ingresso para</div><div className={`${styles.title} text-4xl font-black`}>mais histórias.</div></div>
               </div>

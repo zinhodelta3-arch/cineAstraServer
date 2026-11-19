@@ -79,7 +79,7 @@ export function createVenueService({ model, identity }) {
                 const previous = kind === 'local' ? place : kind === 'room' ? hall : chair;
                 const id = kind === 'local' ? ids.localId : kind === 'room' ? ids.roomId : ids.seatId;
                 if (kind === 'local') {
-                    if (id && Object.keys(input).some(k => !['telefone','tipo_local','lotacao_eventos','acesso_eventos','imagem_url'].includes(k)) && await model.localSessions(c, id)) throw conflict('Local com sessões vinculadas não admite alteração estrutural');
+                    if (id && Object.keys(input).some(k => !['cep','telefone','tipo_local','lotacao_eventos','acesso_eventos','imagem_url'].includes(k)) && await model.localSessions(c, id)) throw conflict('Local com sessões vinculadas não admite alteração estrutural');
                     if (id && input.status && input.status !== 'ATIVO' && total(await model.activeRooms(c, id)) > 0) throw conflict('Desative as salas antes do local');
                 } else if (kind === 'room') {
                     if (id && Object.keys(input).some(key => key !== 'nome')) await requireMutableRoom(c, id);

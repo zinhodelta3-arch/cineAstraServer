@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, SESSION_COOKIE } from "@/lib/auth/server";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
 
 const json = (body, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -27,8 +27,6 @@ async function handle(request, { params }) {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return json({ message: "Entre para acessar os locais." }, 401);
   try {
-    const user = await currentUser();
-    if (user?.role !== "ADMIN") return json({ message: "Acesso restrito à administração." }, 403);
     const target = targetFor(method, (await params).path ?? [], new URL(request.url).search);
     if (!target) return json({ message: "Operação de locais inválida." }, 422);
     let body;

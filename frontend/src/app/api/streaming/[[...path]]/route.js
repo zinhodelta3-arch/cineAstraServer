@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, SESSION_COOKIE } from "@/lib/auth/server";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
 
 const json = (body, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
@@ -21,7 +21,6 @@ async function handle(request, { params }) {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return json({ message: "Entre na sua conta para assistir." }, 401);
   try {
-    if ((await currentUser())?.role !== "CLIENTE") return json({ message: "Acesso restrito a clientes." }, 403);
     const data = await backendAuth(target, { token, method });
     return json(data);
   } catch (error) {

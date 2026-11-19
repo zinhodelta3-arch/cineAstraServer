@@ -8,5 +8,8 @@ export const supportCreate=body(z.object({subject:text(150),message:text(10000)}
 export const supportMessage=body(z.object({message:text(10000),mode:z.enum(['ASYNC','LIVE']).default('ASYNC')}).strict());
 export const supportAssign=body(z.object({attendantId:id}).strict());
 export function supportId(req,res,next){if(!id.safeParse(req.params.id).success)throw ApiError.validacao('ID inválido');next();}
-export function supportPage(req,res,next){const result=z.object({limit:z.coerce.number().int().min(1).max(100).default(20),cursor:cursor.default('0')}).strict().safeParse(req.query);if(!result.success)throw ApiError.validacao('Paginação inválida');req.supportPage=result.data;next();}
+const supportPagination=z.object({limit:z.coerce.number().int().min(1).max(100).default(20),cursor:cursor.default('0')}).strict();
+const validatePage=schema=>(req,res,next)=>{const result=schema.safeParse(req.query);if(!result.success)throw ApiError.validacao('Paginação inválida');req.supportPage=result.data;next();};
+export const supportPage=validatePage(supportPagination);
+export const supportHistoryPage=validatePage(supportPagination.extend({order:z.enum(['asc','desc']).default('asc')}));
 export function supportQueuePage(req,res,next){const result=z.object({limit:z.coerce.number().int().min(1).max(100).default(20),cursor:cursor.default('0'),q:text(150).optional(),status:z.enum(['ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO','ALL']).optional()}).strict().safeParse(req.query);if(!result.success)throw ApiError.validacao('Paginação ou status inválido');req.supportPage=result.data;next();}

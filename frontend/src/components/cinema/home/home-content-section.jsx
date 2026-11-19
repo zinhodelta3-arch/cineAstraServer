@@ -13,7 +13,7 @@ export default function HomeContentSection({ kind = 'experiences' }) {
    <div className="p-6 space-y-3">{item.tag && <span className="text-sm text-primary">{item.tag}</span>}<h3 className="f-display text-3xl font-bold">{item.title}</h3><p className="text-muted-foreground">{item.summary}</p>
     {item.priceLabel && <p>{item.priceLabel} {item.unit}</p>}
     {!banners && <Link className="inline-flex min-h-11 items-center rounded-full border border-primary px-5 py-2 font-semibold text-primary after:absolute after:inset-0 focus-visible:ring-2"
-      href={`/cinema/experiencias#experiencia-${encodeURIComponent(item.id)}`} aria-label={`Ver detalhes de ${item.title}`}>Ver detalhes →</Link>}
+      href={`/cinema/experiencias/${encodeURIComponent(item.id)}`} aria-label={`Ver detalhes de ${item.title}`}>Ver detalhes →</Link>}
     {banners && item.targetUrl && <a className="inline-block rounded-full border border-primary px-5 py-2 font-semibold text-primary focus-visible:ring-2" href={item.targetUrl}>{item.ctaLabel || 'Saiba mais'} →</a>}
    </div>
   </article>)}</div>

@@ -26,6 +26,8 @@ for (const { method, path, operationId } of socialProgramOperations) {
     for (const [status, component] of Object.entries({401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',422:'ValidationError',500:'InternalError'})) responses[status] = { $ref: '#/components/responses/' + component };
     const parameters = isList ? [{ name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } }, { name: 'cursor', in: 'query', schema: id }] :
         method === 'patch' ? [{ name: 'id', in: 'path', required: true, schema: id }] : [];
+    if (isList && !path.includes('/admin/')) parameters.push({ name: 'period', in: 'query', schema: { type: 'string', enum: ['current', 'other'] },
+        description: 'Filtra pelo mês atual do CineAstra ou pelos demais meses.' });
     const body = method === 'post' ? obj({ month, destinationId: id, proofUrl }, ['month','destinationId']) : obj({ proofUrl });
     const summary = isList ? 'Consultar iniciativas mensais e valores registrados' : method === 'post' ? 'Publicar a iniciativa de uma competência' : 'Atualizar link público de comprovação';
     (spec.paths[path] ??= {})[method] = { operationId, summary, tags: [name],

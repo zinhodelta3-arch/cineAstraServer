@@ -46,10 +46,10 @@ export function createOrderModel(){return {
         FROM sessoes s JOIN filmes f ON f.id_filme=s.id_filme JOIN salas sa ON sa.id_sala=s.id_sala JOIN locais l ON l.id_local=sa.id_local WHERE s.id_sessao=?`,[id]),
     seat:(c,id)=>one(c,'SELECT id_sala,status FROM assentos WHERE id_assento=?',[id]),
     occupiedSeat:(c,sessionId,seatId)=>one(c,"SELECT id_ocupacao FROM assento_ocupacoes WHERE id_sessao=? AND id_assento=? AND (estado='CONFIRMADA' OR expira_em>UTC_TIMESTAMP(3)) LIMIT 1",[sessionId,seatId]),
-    input:(c,id)=>one(c,`SELECT i.id_local,i.status,i.venda_avulsa,l.status AS local_status,f.status AS fornecedor_status,u.status AS usuario_status,fl.status AS vinculo_status
+    input:(c,id)=>one(c,`SELECT i.id_local,i.status,i.venda_avulsa,i.oferta_local,l.status AS local_status,f.status AS fornecedor_status,u.status AS usuario_status,fl.status AS vinculo_status
         FROM insumos i JOIN locais l ON l.id_local=i.id_local JOIN fornecedores f ON f.id_fornecedor=i.id_fornecedor JOIN usuarios u ON u.id_usuario=f.id_usuario
         JOIN fornecedor_locais fl ON fl.id_fornecedor=f.id_fornecedor AND fl.id_local=i.id_local WHERE i.id_insumo=? FOR UPDATE`,[id]),
-    combo:(c,id,lock=false)=>one(c,`SELECT co.id_local,co.ativo,l.status AS local_status,co.id_sessao_evento,
+    combo:(c,id,lock=false)=>one(c,`SELECT co.id_local,co.ativo,co.oferta_local,l.status AS local_status,co.id_sessao_evento,
         co.limite_evento,co.limite_cliente_evento,e.ativo AS event_active,e.id_local_evento,
         TIMESTAMP(s.data,s.horario_inicio)>UTC_TIMESTAMP(3) AS event_future
         FROM combos co JOIN locais l ON l.id_local=co.id_local

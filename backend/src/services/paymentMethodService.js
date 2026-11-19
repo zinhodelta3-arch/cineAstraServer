@@ -21,7 +21,13 @@ export function createPaymentMethodService({model,identity,provider}) {
         if(!row||!row.ativo||idString(row.id_usuario)!==idString(owner))throw ApiError.naoEncontrado();
         return row;
     }
-    async function list(context) {return tx(context,async c=>{const a=await actor(c,context);return (await model.list(a.id_usuario,c)).map(dto);});}
+    async function list(context) {return tx(context,async c=>{
+        const a=await actor(c,context);
+        return (await model.list(a.id_usuario,c)).map(row=>({
+            ...dto(row),
+            checkoutAvailable:Boolean(provider?.available && row.provider===provider.name && row.provider_token)
+        }));
+    });}
     async function get(id,context) {return tx(context,async c=>{const a=await actor(c,context);return dto(await own(c,id,a.id_usuario));});}
     async function create(input,context) {
         // Provider fora do lock; setupReference é referência opaca de sessão hospedada.

@@ -9,17 +9,20 @@ import {snackCatalogRoutes} from '../src/routes/snackCatalogRoutes.js';
 import {errorMiddleware} from '../src/middlewares/errorMiddleware.js';
 function fixture(){
  let reads=0;
- const rows=[{id_insumo:'1',id_local:'2',nome:'Pipoca',descricao:'Porção',categoria:'Comida',preco:'12.50',em_estoque:1,imagem:'/api/input-images/example',quantidade:10,custo_receita:'1.00',id_fornecedor:'secret'},{id_insumo:'2',id_local:'2',nome:'Refrigerante',categoria:'Bebida',preco:'7.00',em_estoque:0}];
+ const rows=[{id_insumo:'1',id_local:'2',nome:'Pipoca',descricao:'Porção',categoria:'Comida',preco:'12.50',em_estoque:1,imagem:'/api/input-images/example',quantidade:10,custo_receita:'1.00',id_fornecedor:'secret'},{id_insumo:'2',id_local:'2',nome:'Refrigerante',categoria:'Bebida',preco:'7.00',em_estoque:0,imagem_alternativa:'/astrasnack/exemplo.webp'}];
  const model={list:async(local,q)=>{reads++;return rows.filter(r=>r.id_local===local&&(!q.cursor||BigInt(r.id_insumo)>BigInt(q.cursor))&&(!q.category||r.categoria===q.category)&&(!q.q||r.nome.toLowerCase().includes(q.q.toLowerCase()))&&(q.inStock===undefined||Boolean(r.em_estoque)===q.inStock)).slice(0,q.limit+1);},get:async(local,id)=>{reads++;return rows.find(r=>r.id_local===local&&r.id_insumo===id);}};
  const app=express();app.use(snackCatalogRoutes(createSnackCatalogController(createSnackCatalogService({model}))));app.use(errorMiddleware);
  return {app,reads:()=>reads,api:path=>request(app).get('/api/locations/'+path)};
 }
 test('catálogo público paginado, filtros e DTO sem informações internas',async()=>{
  const f=fixture(),first=await f.api('2/snacks?limit=1').expect(200);assert.equal(first.headers['cache-control'],'no-store');
- assert.deepEqual(first.body.data.items[0],{id:'1',localId:'2',name:'Pipoca',description:'Porção',category:'Comida',publishedPrice:'12.50',currency:'BRL',inStock:true,imageUrl:'/api/input-images/example',purchaseKind:'INPUT'});assert.equal(first.body.data.pagination.nextCursor,'1');
+ assert.deepEqual(first.body.data.items[0],{id:'1',localId:'2',name:'Pipoca',description:'Porção',category:'Comida',publishedPrice:'12.50',currency:'BRL',inStock:true,imageUrl:'/api/input-images/example',alternateImageUrl:null,purchaseKind:'INPUT'});assert.equal(first.body.data.pagination.nextCursor,'1');
  const last=await f.api('2/snacks?limit=1&cursor=1').expect(200);assert.equal(last.body.data.items[0].inStock,false);assert.equal(last.body.data.items[0].imageUrl,null);assert.equal(last.body.data.pagination.nextCursor,null);
  assert.deepEqual((await f.api('2/snacks?category=Comida&q=pip&inStock=true')).body.data.items.map(x=>x.id),['1']);
- assert.deepEqual((await f.api('2/snacks?inStock=false')).body.data.items.map(x=>x.id),['2']);
+ const withoutMain=(await f.api('2/snacks?inStock=false')).body.data.items;
+ assert.deepEqual(withoutMain.map(x=>x.id),['2']);
+ assert.equal(withoutMain[0].imageUrl,null);
+ assert.equal(withoutMain[0].alternateImageUrl,'/astrasnack/exemplo.webp');
  const detail=await f.api('2/snacks/1').expect(200);assert.deepEqual(detail.body.data,first.body.data.items[0]);
  await f.api('3/snacks/1').expect(404);await f.api('2/snacks/99').expect(404);assert.deepEqual((await f.api('3/snacks')).body.data.items,[]);
 });

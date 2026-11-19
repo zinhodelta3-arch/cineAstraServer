@@ -6,6 +6,7 @@ import TablePagination from '@/components/ui/table-pagination';
 import { reportRequest, useAdminReport } from '@/hooks/admin/use-admin-reports';
 import ReportsLayout, { money, ReportState } from './reports-layout';
 import styles from '../catalog/catalog.module.css';
+import reports from './reports.module.css';
 import SocialDestinations from './social-destinations';
 
 export default function SocialAdmin() {
@@ -39,7 +40,7 @@ export default function SocialAdmin() {
     <section className={styles.panel}>
       <header className={styles.panelHeader}><div><h2>Iniciativas mensais</h2><p>Uma instituição por mês. Valores consideram pagamentos e reembolsos confirmados.</p></div></header>
       {notice && <p role={notice.error ? 'alert' : 'status'} className={notice.error ? styles.error : styles.notice}>{notice.error || notice.message}</p>}
-      <form className={styles.form} onSubmit={event => submit(event, null)}>
+      <form className={`${styles.form} ${reports.editor}`} onSubmit={event => submit(event, null)}>
         <label>Competência<input type="month" name="month" min={now} defaultValue={now} required /></label>
         <label>Instituição cadastrada<select name="destinationId" defaultValue="" required>
           <option value="" disabled>Selecione uma destinação</option>
@@ -64,7 +65,7 @@ export default function SocialAdmin() {
             <div><dt>Saldo líquido</dt><dd>{money(item.amount)}</dd></div>
           </dl>
           {item.proofUrl && <a href={item.proofUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 text-primary underline">Ver comprovação <ExternalLink size={14} aria-hidden="true" /></a>}
-          <form className={styles.form} onSubmit={event => submit(event, item.id)}>
+          <form className={`${styles.form} ${reports.editor}`} onSubmit={event => submit(event, item.id)}>
             <label>Link da comprovação<input type="url" name="proofUrl" maxLength={2048} defaultValue={item.proofUrl || ''} /></label>
             <button type="submit" disabled={saving} className={styles.secondary}>Atualizar comprovação</button>
           </form>

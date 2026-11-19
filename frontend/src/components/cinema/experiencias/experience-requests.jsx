@@ -47,13 +47,18 @@ export default function ExperienceRequests({ role, userId, initialId }) {
     finally { setBusy(false); }
   }
 
+  const detail = selected && <div className="min-w-0 lg:col-start-2 lg:row-start-1">
+    <RequestDetails key={selected} id={selected} role={role} userId={userId} onUpdate={() => refresh(value => value + 1)} />
+  </div>;
+
   return <section className="mx-auto w-full max-w-6xl px-4 py-10 text-foreground md:px-8">
     {client && <Link className="text-primary underline" href="/cinema/experiencias">Voltar ao catálogo de experiências</Link>}
     <h1 className="f-display mb-6 mt-3 text-4xl font-bold">{client ? 'Minhas experiências' : 'Solicitações de experiências'}</h1>
     {error && <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => { setError(''); refresh(value => value + 1); }}>Tentar novamente</Button></div>}
     {!list && !error && <p role="status">Carregando solicitações…</p>}
-    {list && <div className="grid items-start gap-6 lg:grid-cols-[minmax(230px,1fr)_2fr]">
-      <ul className="space-y-2" aria-label="Solicitações">
+    {(list || selected) && <div className="grid items-start gap-6 lg:grid-cols-[minmax(230px,1fr)_2fr]">
+      {initialId && detail}
+      {list && <ul className="space-y-2 lg:col-start-1 lg:row-start-1" aria-label="Solicitações">
         {!list.items.length && <li>Nenhuma solicitação disponível.</li>}
         {list.items.map(item => <li key={item.id}>
           <button type="button" aria-pressed={selected === item.id} onClick={() => setSelected(item.id)}
@@ -63,8 +68,8 @@ export default function ExperienceRequests({ role, userId, initialId }) {
           </button>
         </li>)}
         {list.nextCursor && <li><Button variant="outline" disabled={busy} onClick={more}>Carregar mais solicitações</Button></li>}
-      </ul>
-      {selected && <RequestDetails key={selected} id={selected} role={role} userId={userId} onUpdate={() => refresh(value => value + 1)} />}
+      </ul>}
+      {!initialId && detail}
     </div>}
   </section>;
 }
@@ -119,6 +124,7 @@ function RequestDetails({ id, role, userId, onUpdate }) {
       <p className="text-muted-foreground">{data.location || 'Aguardando encaminhamento a uma unidade'}</p>
       <p className="whitespace-pre-wrap break-words">{data.details}</p>
       {data.preferences && <p className="whitespace-pre-wrap break-words"><strong>Preferências</strong><br />{data.preferences}</p>}
+      {data.requirements && <p className="whitespace-pre-wrap break-words"><strong>Requisitos de estrutura para análise</strong><br />{data.requirements}</p>}
       {role !== 'CLIENTE' && nextStages.length > 0 && <div className="grid gap-3 border-y border-border py-4 sm:grid-cols-2">
         <label>Atualizar status<select className={field} value="" disabled={busy} onChange={event => {
           const status = event.target.value;

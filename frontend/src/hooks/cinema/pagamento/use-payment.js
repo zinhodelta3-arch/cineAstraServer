@@ -5,24 +5,19 @@ import { useCart } from "@/components/cart/cart-provider";
 import { useSession } from "@/hooks/auth/use-session";
 import { cartOrder } from "@/lib/api/cart-order.mjs";
 import { operationKey } from "@/lib/api/operation-key.mjs";
+import { checkoutStorageKey, readCheckoutState } from "@/lib/api/checkout-storage.mjs";
+import { maskCep, maskPhone } from "@/lib/br-fields.mjs";
 import { sessionFetch, readSessionResponse } from "@/lib/auth/session-response.mjs";
 
 const EMPTY_DETAILS = { name: "", phone: "", email: "", street: "", number: "", complement: "", district: "", city: "", state: "", country: "BR", postalCode: "" };
 const EMPTY_CARD = { holder: "", number: "", expiry: "", cvv: "" };
 const draftLabels = { INPUT: "Produto", COMBO: "Combo", SESSION: "Ingresso", STREAMING: "Aluguel de filme" };
-const couponKey = "cineastra:checkout:coupon";
-const acceptanceKey = "cineastra:checkout:accepted";
 const noSubscription = () => () => {};
 const emptyCoupon = () => "";
 const reconciliationDelays = [5000, 10000, 20000, 30000, 30000, 30000];
 const canReconcile = (payment, order) => ["PENDENTE", "APROVADO"].includes(payment) && !["PAGO", "FINALIZADO", "CANCELADO"].includes(order);
-function savedCoupon() {
-  try { return sessionStorage.getItem(couponKey) || ""; }
-  catch { return ""; }
-}
 const transientKeys = new Map();
 const digits = value => value.replace(/\D/g, "");
-const maskCep = value => { const d = digits(value).slice(0, 8); return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d; };
 const maskCard = value => digits(value).slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
 const maskExpiry = value => { const d = digits(value).slice(0, 4); return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
 
@@ -59,10 +54,12 @@ export default function usePayment(method = null, draftId = null) {
   const session = useSession();
   const userId = session.user?.id;
   const role = session.user?.role;
+  const couponKey = checkoutStorageKey("coupon", userId);
+  const acceptanceKey = checkoutStorageKey("accepted", userId);
   const [details, setDetails] = useState(EMPTY_DETAILS);
   const [card, setCard] = useState(EMPTY_CARD);
   const [cepResult, setCepResult] = useState(null);
-  const coupon = useSyncExternalStore(noSubscription, savedCoupon, emptyCoupon);
+  const coupon = useSyncExternalStore(noSubscription, () => readCheckoutState(couponKey) || "", emptyCoupon);
   const [offerState, setOfferState] = useState(null);
   const [previousCartKey, setPreviousCartKey] = useState(null);
   const [accepted, setAcceptedState] = useState(false);
@@ -73,10 +70,30 @@ export default function usePayment(method = null, draftId = null) {
   const [pollPausedFor, setPollPausedFor] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [draftState, setDraftState] = useState(null);
+  const [wallet, setWallet] = useState(null);
+  const [newCard, setNewCard] = useState(false);
   const lock = useRef(false);
+  const confirming = useRef(null);
   const reconciliation = useRef(null);
   const retryBudget = useRef(null);
-  useEffect(() => () => reconciliation.current?.abort(), []);
+  useEffect(() => () => {
+    confirming.current?.abort();
+    reconciliation.current?.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    request("methods", { signal: controller.signal })
+      .then(data => {
+        if (!controller.signal.aborted) setWallet(data.items ?? []);
+      })
+      .catch(() => { if (!controller.signal.aborted) setWallet([]); });
+    return () => controller.abort();
+  }, []);
+
+  const principalMethod = wallet?.find(item => item.principal && item.checkoutAvailable);
+  const methodType = { pix: "PIX", debito: "DEBITO", credito: "CREDITO" }[method];
+  const savedMethod = !newCard && principalMethod?.type === methodType ? principalMethod : null;
 
   const draftKey = draftId && role === "CLIENTE" ? `${userId}:${draftId}` : null;
   const draft = draftState?.key === draftKey ? draftState : null;
@@ -93,7 +110,6 @@ export default function usePayment(method = null, draftId = null) {
   let input = null, issue = "";
   if (draftId) { input = draft?.data ?? null; issue = draft?.error ?? ""; }
   else { try { input = cartOrder(cart.items, coupon); } catch (caught) { issue = caught.message; } }
-  if (!issue && input?.lines.some(line => line.kind === "COMBO" && !line.sessionId)) issue = "Para finalizar um combo, selecione uma sessão de retirada.";
   const quoteInput = input && !issue && role === "CLIENTE" ? JSON.stringify({ ...input, ...(draftId ? { draftOrderId: draftId } : {}) }) : null;
   const cartKey = JSON.stringify([userId, role, quoteInput, draftId ? [] : cart.items.map(item => [item.id, item.details, item.quantity])]);
   const paid = ["PAGO", "FINALIZADO"].includes(result?.orderStatus);
@@ -110,7 +126,7 @@ export default function usePayment(method = null, draftId = null) {
   const offerError = currentOffer?.error ?? "";
   const offerHash = offer?.contract?.offerHash;
   const checkoutKey = `cineastra:order:${userId}:${draftId ? `draft:${draftId}:` : ''}${offerHash}`;
-  const ready = Boolean(quoteInput && offer?.finalizable && accepted);
+  const ready = Boolean(wallet && quoteInput && offer?.finalizable && accepted);
   const pixKey = method === "pix" && ready && !result?.paymentId ? offerHash : null;
   if (countdown && countdown.key !== pixKey && !result?.paymentId) setCountdown(null);
   const remaining = countdown?.key === pixKey ? countdown.remaining : 15;
@@ -141,7 +157,7 @@ export default function usePayment(method = null, draftId = null) {
       })
       .catch(caught => { if (!abort.signal.aborted) setOfferState({ key: cartKey, offer: null, error: caught.message }); });
     return () => abort.abort();
-  }, [cartKey, quoteInput, userId, draftId]);
+  }, [cartKey, quoteInput, userId, draftId, acceptanceKey]);
 
   function setAccepted(value) {
     setAcceptedState(value);
@@ -175,6 +191,7 @@ export default function usePayment(method = null, draftId = null) {
         return { ...current, postalCode: next, street: "", district: "", city: "", state: "" };
       }
       if (name === "country") return { ...current, country: value, postalCode: "", street: "", district: "", city: "", state: "" };
+      if (name === "phone" && current.country === "BR") return { ...current, phone: maskPhone(value) };
       return { ...current, [name]: value };
     });
   }
@@ -250,25 +267,31 @@ export default function usePayment(method = null, draftId = null) {
   async function confirmPayment(type, last4) {
     if (lock.current || result?.paymentId) return;
     if (!ready) { setError(issue || "Volte à seleção e aceite a oferta antes de continuar."); return; }
-    if (type !== "PIX") {
+    if (type !== "PIX" && !savedMethod) {
       if (!validCard(card)) { setError("Confira nome, número de 16 dígitos, validade futura e código de 3 ou 4 dígitos."); return; }
       if (!details.name.trim() || !details.email.trim() || digits(details.phone).length < 8 || !details.street.trim() || !details.number.trim() || !details.city.trim() || details.country === "BR" && (!/^\d{5}-\d{3}$/.test(details.postalCode) || !details.state.trim())) { setError("Confira seus dados de contato e endereço."); return; }
     }
     lock.current = true; setPending(true); setError("");
+    const controller = new AbortController();
+    confirming.current = controller;
+    const signal = controller.signal;
     try {
-      const order = result?.orderId ? { orderId: result.orderId, expiresAt: result.expiresAt } : await request("order", { body: { ...JSON.parse(quoteInput), acceptance: { accepted: true, offerHash } }, key: savedKey(checkoutKey) });
+      const order = result?.orderId ? { orderId: result.orderId, expiresAt: result.expiresAt } : await request("order", { body: { ...JSON.parse(quoteInput), acceptance: { accepted: true, offerHash } }, key: savedKey(checkoutKey), signal });
+      if (signal.aborted) return;
       if (!order.orderId) throw new Error("Pedido criado sem identificador. Consulte seus pedidos antes de tentar novamente.");
       setResult({ orderId: order.orderId, expiresAt:order.expiresAt, paymentId: null, status: "AGUARDANDO_PAGAMENTO", orderStatus: "AGUARDANDO_PAGAMENTO" });
-      const paymentMethod = result?.methodId ? { id: result.methodId } : await request("methods", { body: type === "PIX" ? { type } : { type, last4 } });
+      const paymentMethod = result?.methodId ? { id: result.methodId } : savedMethod ?? await request("methods", { body: type === "PIX" ? { type } : { type, last4 }, signal });
+      if (signal.aborted) return;
       if (!paymentMethod.id) throw new Error("Método de pagamento não cadastrado.");
       setResult(current => ({ ...current, methodId: paymentMethod.id }));
-      const payment = await request("pay", { body: { orderId: order.orderId, methodId: paymentMethod.id }, key: savedKey(`cineastra:payment:${order.orderId}:${type}`) });
+      const payment = await request("pay", { body: { orderId: order.orderId, methodId: paymentMethod.id }, key: savedKey(`cineastra:payment:${order.orderId}:${type}`), signal });
+      if (signal.aborted) return;
       if (!payment.id || !payment.status) throw new Error("Pagamento iniciado sem resposta completa. Consulte o pedido antes de repetir.");
       setResult({ orderId: order.orderId, expiresAt:order.expiresAt, methodId: paymentMethod.id, paymentId: payment.id, status: payment.status, orderStatus: "AGUARDANDO_PAGAMENTO", total: Number(offer.total), items });
       setCard(EMPTY_CARD);
       if (await refreshPayment(payment.id) === "pause") setPollPausedFor(payment.id);
-    } catch (caught) { setError(caught.message); }
-    finally { lock.current = false; setPending(false); }
+    } catch (caught) { if (!signal.aborted) setError(caught.message); }
+    finally { confirming.current = null; lock.current = false; if (!signal.aborted) setPending(false); }
   }
 
   function confirmCard(event) { event.preventDefault(); confirmPayment(method === "debito" ? "DEBITO" : "CREDITO", digits(card.number).slice(-4)); }
@@ -292,6 +315,7 @@ export default function usePayment(method = null, draftId = null) {
   }, [pixKey]);
   const displayItems = paid && result.items ? result.items : items;
   return { items: displayItems, itemCount: paid || draftId ? displayItems.reduce((count,item) => count + item.quantity, 0) : cart.itemCount, total: paid ? result.total : offer ? Number(offer.total) : draftId ? 0 : cart.total, details, changeDetail, cepStatus,
+    principalMethod, savedMethod, newCard, setNewCard, walletLoading: wallet === null,
     card, changeCard, session, issue, offer, offerLoading, offerError, accepted, setAccepted, ready,
     result, pending, error, remaining, confirmCard, retryPix: () => confirmPayment("PIX"), refreshPayment,
     checkingPayment, pollingPaused: Boolean(paymentId && pollPausedFor===paymentId && canReconcile(paymentStatus,orderStatus)) };

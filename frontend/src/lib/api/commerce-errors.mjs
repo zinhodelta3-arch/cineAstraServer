@@ -1,4 +1,9 @@
 export const commerceErrors = {
+  PRODUCT_CATEGORY_INVALID: 'Selecione uma categoria da lista.',
+  TRANSPORT_TYPE_INVALID: 'Selecione um tipo de transporte da lista.',
+  COUPON_INVALID: 'Cupom inválido. Confira o código e tente novamente.',
+  COUPON_EXPIRED: 'Este cupom expirou.',
+  COUPON_LIMIT_REACHED: 'Este cupom atingiu o limite de uso.',
   AGE_DATE_INVALID: 'Confira a data de nascimento da conta. Ela deve ser válida e não pode estar no futuro.',
   AGE_VERIFICATION_REQUIRED: 'Sua conta precisa concluir ou renovar a verificação de idade. CPF e data de nascimento preenchidos não substituem essa verificação.',
   AGE_RESTRICTION: 'A idade da conta não atende à restrição etária desta operação.',

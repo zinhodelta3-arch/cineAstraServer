@@ -13,7 +13,7 @@ export default function StreamingProfile() {
   const router = useRouter();
   const openDetails = useStreamingDetails();
   const openFilm = (movie) => router.push("/streaming/assistir/filme/" + encodeURIComponent(movie.id) + "?reproduzir=1");
-  const state = useStreamingHome();
+  const state = useStreamingHome({ includePopular: false });
   const { ready, error, actionError, retry, profile, history, continuing, recent, explore, myList, favoriteIds, toggleList, progress } = state;
   const selectMovie = (movie) => openDetails(movie, { inList: favoriteIds.has(movie.id), onToggleList: toggleList, progress: progress[movie.id] });
   const card = (movie) => <Thumb key={movie.id} movie={movie} onSelect={selectMovie} onPlay={openFilm} inList={favoriteIds.has(movie.id)} onToggleList={toggleList} progress={progress[movie.id]} />;

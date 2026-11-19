@@ -47,11 +47,11 @@ export function createOrderService({model,identity,pricing,socialProgram,selfDec
                 }
             }else if(line.kind==='INPUT'){
                 const row=found(await model.input(c,line.id));
-                if(!row.venda_avulsa||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO')throw conflict('Insumo indisponível no local');
+                if(row.oferta_local===0||row.oferta_local===false||!row.venda_avulsa||!input.localId||idString(row.id_local)!==input.localId||row.status!=='DISPONIVEL'||row.local_status!=='ATIVO'||row.fornecedor_status!=='ATIVO'||row.usuario_status!=='ATIVO'||row.vinculo_status!=='ATIVO')throw conflict('Insumo indisponível no local');
                 addStock(line.id,line.quantity);
             }else if(line.kind==='COMBO'){
                 const row=found(await model.combo(c,line.id));
-                if(!input.localId||idString(row.id_local)!==input.localId||!row.ativo||row.local_status!=='ATIVO')throw conflict('Combo indisponível no local');
+                if(row.oferta_local===0||row.oferta_local===false||!input.localId||idString(row.id_local)!==input.localId||!row.ativo||row.local_status!=='ATIVO')throw conflict('Combo indisponível no local');
                 await validateEventCombo(c,row,line,input,user.id_usuario);
                 if(line.sessionId){
                     const session=found(await model.session(c,line.sessionId));

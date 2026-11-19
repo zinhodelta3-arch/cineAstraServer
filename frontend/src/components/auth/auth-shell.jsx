@@ -10,7 +10,7 @@ import { useAuthForm } from "@/hooks/auth/use-auth-form";
 import SessionControls from "@/components/auth/session-controls";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export function Field({ label, icon: Icon, type = "text", value, onChange, placeholder, autoComplete, required = true, minLength, maxLength, max }) {
+export function Field({ label, icon: Icon, type = "text", value, onChange, placeholder, autoComplete, required = true, minLength, maxLength, max, inputMode, pattern }) {
   const inputId = useId();
   const [visible, setVisible] = useState(false);
   const isPassword = type === "password";
@@ -33,6 +33,8 @@ export function Field({ label, icon: Icon, type = "text", value, onChange, place
           minLength={minLength}
           maxLength={maxLength}
           max={max}
+          inputMode={inputMode}
+          pattern={pattern}
         />
         {isPassword && (
           <Button
@@ -114,7 +116,7 @@ export function RegisterPage() {
       <p className="mt-5 mb-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">Sua idade será autodeclarada, não verificada. Recursos que exigem comprovação continuarão sujeitos à verificação.</p>
       <form className="grid gap-[17px]" onSubmit={handleSubmit}>
         <Field label="Nome completo" icon={UserRound} value={form.name} onChange={update("name")} autoComplete="name" minLength={2} maxLength={100} />
-        <Field label="CPF" icon={UserRound} value={form.cpf} onChange={update("cpf")} placeholder="000.000.000-00" inputMode="numeric" maxLength={14} />
+        <Field label="CPF" icon={UserRound} value={form.cpf} onChange={update("cpf")} placeholder="000.000.000-00" inputMode="numeric" maxLength={14} pattern="[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}" />
         <Field label="Data de nascimento" icon={UserRound} type="date" value={form.dateOfBirth} onChange={update("dateOfBirth")} autoComplete="bday" max={today} />
         <Field label="E-mail" icon={Mail} type="email" value={form.email} onChange={update("email")} placeholder="seuemail@exemplo.com" autoComplete="email" />
 
@@ -126,7 +128,7 @@ export function RegisterPage() {
 
         <p className="text-xs text-muted-foreground">Senha com 12 caracteres ou mais, maiúscula, minúscula, número e símbolo.</p>
         <div className="space-y-3">
-          {[documents.terms, documents.privacy].map(doc => <a key={doc.slug} href={doc.url} target="_blank" rel="noopener noreferrer" className="block font-semibold text-primary underline">Abrir {doc.title} (PDF) ↗</a>)}
+          {[documents.terms, documents.privacy].map(doc => <a key={doc.slug} href={doc.url} target="_blank" rel="noopener noreferrer" className="block font-semibold text-primary underline">Abrir {doc.title} ↗</a>)}
         </div>
         <div className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground [&_a]:font-bold [&_a]:text-primary [&_a]:underline-offset-4 [&_a:hover]:underline">
           <Checkbox id={termsId} className="mt-0.5 shrink-0" disabled={!documents || pending || success} checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} />
@@ -217,9 +219,9 @@ function ProfileSwitch({ value, onChange, disabled }) {
   );
 }
 
-export function LoginPage() {
+export function LoginPage({ next }) {
   const [profile, setProfile] = useState("cliente");
-  const { form, update, resetOpen, setResetOpen, message, pending, user, handleSubmit } = useAuthForm(profile);
+  const { form, update, resetOpen, setResetOpen, message, pending, user, handleSubmit } = useAuthForm({ next, profile: profile === "fornecedor" ? "FORNECEDOR" : "CLIENTE" });
   const current = LOGIN_PROFILES[profile];
 
   const changeProfile = (next) => {

@@ -8,32 +8,36 @@ import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs
 import {planBenefits,planMoney} from '@/lib/api/plan-subscription.mjs';
 import {STREAMING_ACCESS_CHANGE_EVENT} from '@/hooks/cinema/use-streaming-access';
 
+const emptyMine = { items:[], loading:true, error:null, cursor:null };
+
 async function request(action,body,signal,key){
  return readSessionResponse(await sessionFetch('/api/plans/'+action,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal,headers:body?{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
 }
-export default function useCinemaPlans(){
- const list=usePublicList('/plans?limit=12'),session=useSession(),userId=session.user?.id;
+export default function useCinemaPlans({ management = false } = {}){
+ const session=useSession(),userId=session.user?.id,client=session.user?.role==='CLIENTE';
+ const list=usePublicList(!management||client?'/plans?limit=12':null);
  const [billing,setBilling]=useState('monthly'),[selected,setSelected]=useState(null),[autoRenew,setAutoRenew]=useState(false);
  const [offer,setOffer]=useState(null),[accepted,setAccepted]=useState(false),[error,setError]=useState(''),[pending,setPending]=useState(false),[result,setResult]=useState(null);
- const [mine,setMine]=useState({items:[],loading:false,error:null,cursor:null}),[revision,setRevision]=useState(0);
+ const [mineState,setMine]=useState(emptyMine),[revision,setRevision]=useState(0);
+ const mine=mineState.owner===userId?mineState:emptyMine;
  const [cancelNotice,setCancelNotice]=useState(null);
  const [change,setChange]=useState(null);
+ const [changeResult,setChangeResult]=useState(null);
  const lock=useRef(false),generation=useRef(0),keys=useRef(new Map()),listLock=useRef(false);
  const identity=useRef(userId);identity.current=userId;
- const client=session.user?.role==='CLIENTE';
  useEffect(()=>{
-  generation.current++;setOffer(null);setAccepted(false);setResult(null);setError('');setCancelNotice(null);setChange(null);
+  generation.current++;setOffer(null);setAccepted(false);setResult(null);setError('');setCancelNotice(null);setChange(null);setChangeResult(null);
  },[userId]);
  useEffect(()=>{
-  if(!client)return;
+  if(!management||!client)return;
   const abort=new AbortController();listLock.current=true;
-  setMine({items:[],loading:true,error:null,cursor:null});
+  setMine({...emptyMine,owner:userId});
   request('mine',null,abort.signal).then(data=>{
    if(!Array.isArray(data.items))throw new Error('Resposta de assinaturas inválida.');
-   if(!abort.signal.aborted)setMine({items:data.items,cursor:data.pagination?.nextCursor,loading:false,error:null});
-  }).catch(e=>{if(!abort.signal.aborted)setMine({items:[],loading:false,cursor:null,error:e.message});}).finally(()=>{if(!abort.signal.aborted)listLock.current=false;});
+   if(!abort.signal.aborted)setMine({owner:userId,items:data.items,cursor:data.pagination?.nextCursor,loading:false,error:null});
+  }).catch(e=>{if(!abort.signal.aborted)setMine({...emptyMine,owner:userId,loading:false,error:e.message});}).finally(()=>{if(!abort.signal.aborted)listLock.current=false;});
   return()=>abort.abort();
- },[client,userId,revision]);
+ },[management,client,userId,revision]);
  const loadMore=async()=>{
   if(listLock.current||!mine.cursor)return;
   const owner=userId;listLock.current=true;setMine(s=>({...s,loading:true,error:null}));
@@ -42,13 +46,13 @@ export default function useCinemaPlans(){
    if(!Array.isArray(data.items)||data.pagination?.nextCursor===mine.cursor)throw new Error('Paginação inválida.');
    if(identity.current===owner)setMine(s=>({...s,items:[...s.items,...data.items],cursor:data.pagination?.nextCursor,loading:false}));
   }catch(e){if(identity.current===owner)setMine(s=>({...s,error:e.message,loading:false}));}
-  finally{listLock.current=false;}
+  finally{if(identity.current===owner)listLock.current=false;}
  };
  const reset=()=>{generation.current++;setOffer(null);setAccepted(false);setError('');setResult(null);};
  const changeBilling=value=>{if(lock.current)return;setBilling(value);reset();};
- const choose=id=>{if(lock.current)return;setSelected(id);reset();document.getElementById('assinar')?.scrollIntoView({behavior:'smooth',block:'start'});};
+ const choose=id=>{if(lock.current)return;setSelected(id);reset();};
  const chooseDraft=draft=>{if(lock.current)return;setBilling(draft.period==='ANUAL'?'annual':'monthly');setAutoRenew(false);choose(draft.planId);};
- const startChange=item=>{if(lock.current)return;setChange(item);setBilling(item.period==='ANUAL'?'annual':'monthly');setAutoRenew(item.autoRenew);choose(item.planId);};
+ const startChange=item=>{if(lock.current)return;setChange(item);setChangeResult(null);setBilling(item.period==='ANUAL'?'annual':'monthly');setAutoRenew(item.autoRenew);choose(item.planId);};
  const selectedPlan=list.items.find(plan=>plan.id===selected);
  const selectedPrice=selectedPlan?.[billing==='monthly'?'monthlyPrice':'annualPrice'];
  const input={planId:selected,period:billing==='monthly'?'MENSAL':'ANUAL',autoRenew,divisionMode:change?.divisionMode??'TITULAR_PAGA'};
@@ -71,9 +75,10 @@ export default function useCinemaPlans(){
   try{
    if(change){
     const data=await request('change',{...body,subscriptionId:change.id});
+    if(!data.scheduledChange?.effectiveOn)throw new Error('Confira a situação da troca antes de tentar novamente.');
     if(version===generation.current){
      setChange(null);reset();setRevision(v=>v+1);
-     setCancelNotice(`Mudança programada para ${data.scheduledChange.effectiveOn.split('-').reverse().join('/')}. O novo plano entra em vigor após o pagamento do próximo ciclo.`);
+     setChangeResult(data.scheduledChange);
     }
     return;
    }
@@ -113,6 +118,8 @@ export default function useCinemaPlans(){
   hero:{showPlans:()=>document.getElementById('planos')?.scrollIntoView({behavior:'smooth'})},
   catalog:{list,plans,billing,setBilling:changeBilling,periodFor:billing==='monthly'?'/mês':'/ano',startSubscription:choose,pending},
   subscription:{selectedPlanAvailable:Number(selectedPrice)>0,selectedPlanName:selectedPlan?.name,planNames:Object.fromEntries(plans.map(plan=>[plan.id,plan.name])),selected,billing,autoRenew,changeAutoRenew:value=>{if(!lock.current){setAutoRenew(value);reset();}},offer,accepted,setAccepted,error,pending,result,review,subscribe,session,chooseDraft,
-   cancel,cancelNotice,change,startChange,resetChange:()=>{setChange(null);reset();},mine:client?{...mine,loadMore,retry:()=>setRevision(v=>v+1)}:null}
+   cancel,cancelNotice,change,startChange,changeResult,editChoice:()=>{if(!lock.current)reset();},
+   resetChange:()=>{if(!lock.current){setChange(null);setSelected(null);setChangeResult(null);reset();}},
+   mine:management&&client?{...mine,loadMore,retry:()=>setRevision(v=>v+1)}:null}
  };
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import LoadingImage from "@/components/ui/loading-image";
+
 import { Film } from "lucide-react";
 import { useMoviePoster } from "@/hooks/cinema/filmes/use-movie-poster";
 
@@ -11,7 +13,7 @@ export default function PosterImage({ movie, className = "", eager = false }) {
       <span className="text-xs">Cartaz de {movie.title}</span>
     </div>
   ) : (
-    <img src={movie.poster} alt={`Cartaz de ${movie.title}`} width={500} height={750}
+    <LoadingImage src={movie.poster} alt={`Cartaz de ${movie.title}`} width={500} height={750}
       loading={eager ? "eager" : "lazy"} decoding="async" className={className} onError={onError} />
   );
 }

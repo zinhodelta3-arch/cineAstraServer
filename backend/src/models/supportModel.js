@@ -10,7 +10,12 @@ export function createSupportModel(){return {
     adminUser:(c,id)=>one(c,"SELECT id_usuario FROM usuarios WHERE id_usuario=? AND tipo_usuario='ADMIN' AND status='ATIVO'",[id]),
     async create(c,owner,input){const [result]=await c.execute("INSERT INTO suporte(id_cliente,assunto,mensagem,status,data_abertura,prazo_resposta_em,ultima_interacao_em) VALUES(?,?,?,'ABERTO',UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL 5 DAY),UTC_TIMESTAMP())",[owner,input.subject,input.message]);return idString(result.insertId);},
     async append(c,id,author,role,message){const [result]=await c.execute("INSERT INTO suporte_mensagens(id_suporte,id_autor,papel,mensagem,registrada_em,origem) VALUES(?,?,?,?,UTC_TIMESTAMP(),'NOVA')",[id,author,role,message]);return idString(result.insertId);},
-    messages:(c,id,limit,cursor)=>rows(c,'SELECT id_mensagem,id_autor,papel,mensagem,registrada_em,origem FROM suporte_mensagens WHERE id_suporte=? AND id_mensagem>? ORDER BY id_mensagem LIMIT ?',[id,cursor,limit+1]),
+    messages(c,id,limit,cursor,order){
+        const newestFirst=order==='desc';
+        const cursorFilter=newestFirst?(cursor==='0'?'':' AND id_mensagem<?'):' AND id_mensagem>?';
+        const direction=newestFirst?'DESC':'ASC';
+        return rows(c,`SELECT id_mensagem,id_autor,papel,mensagem,registrada_em,origem FROM suporte_mensagens WHERE id_suporte=?${cursorFilter} ORDER BY id_mensagem ${direction} LIMIT ?`,cursorFilter?[id,cursor,limit+1]:[id,limit+1]);
+    },
     lastAdminMessage:(c,id)=>one(c,"SELECT id_mensagem FROM suporte_mensagens WHERE id_suporte=? AND papel='ADMIN' ORDER BY id_mensagem DESC LIMIT 1",[id]),
     lastClientMessage:(c,id)=>one(c,"SELECT id_mensagem FROM suporte_mensagens WHERE id_suporte=? AND papel='CLIENTE' ORDER BY id_mensagem DESC LIMIT 1",[id]),
     assign:(c,id,adminId)=>c.execute('UPDATE suporte SET id_atendente=? WHERE id_suporte=? AND id_atendente IS NULL',[adminId,id]),

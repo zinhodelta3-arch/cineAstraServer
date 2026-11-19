@@ -1,5 +1,7 @@
 "use client";
 
+import LoadingImage from "@/components/ui/loading-image";
+
 import TablePagination from '@/components/ui/table-pagination';
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { ImagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
@@ -28,6 +30,7 @@ function imageFields(form) {
 export default function ImagesAdmin() {
   const [query, setQuery] = useState("");
   const [film, setFilm] = useState(null);
+  const [savedImage, setSavedImage] = useState(null);
   const [dialog, setDialog] = useState(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -53,12 +56,16 @@ export default function ImagesAdmin() {
 
   function open(mode, image = null) { setError(""); setNotice(""); setPreview(null); setType(image?.tipo ?? "CAPA"); setBannerContext(image?.contexto_banner ?? "GERAL"); setDialog({ type: mode, image }); }
   function close() { if (!pending) { setDialog(null); setPreview(null); } }
-  function selectFilm(item) { if (pending) return; setFilm(item); setDialog(null); setError(""); setNotice(""); window.history.replaceState(null, "", `/admin/filmes/imagens?filme=${item.id_filme}`); }
+  function selectFilm(item) { if (pending) return; setFilm(item); setSavedImage(null); setDialog(null); setError(""); setNotice(""); window.history.replaceState(null, "", `/admin/filmes/imagens?filme=${item.id_filme}`); }
 
   async function run(task, message) {
     if (lock.current) return;
     lock.current = true; setPending(true); setError("");
-    try { await task(); setDialog(null); setPreview(null); setNotice(message); images.reload(); films.reload(); }
+    try {
+      const saved = await task();
+      setSavedImage(saved?.id_imagem ? saved : null);
+      setDialog(null); setPreview(null); setNotice(message); images.reload(); films.reload();
+    }
     catch (cause) { setError(cause.message); }
     finally { lock.current = false; setPending(false); }
   }
@@ -66,6 +73,8 @@ export default function ImagesAdmin() {
   function save(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const target = film ?? films.items.find(item => item.id_filme === form.get("filmId"));
+    if (!target) { setError("Selecione o filme da imagem."); return; }
     let fields;
     try { fields = imageFields(form); }
     catch (cause) { setError(cause.message); return; }
@@ -76,13 +85,22 @@ export default function ImagesAdmin() {
     return run(async () => {
       const upload = new FormData(); upload.set("image", file);
       const staged = await catalogRequest("uploads", { method: "POST", body: upload });
-      try { await catalogRequest(`films/${film.id_filme}/images`, { method: "POST", body: { stagingKey: staged.key, ...fields } }); }
+      try {
+        const created = await catalogRequest(`films/${target.id_filme}/images`, { method: "POST", body: { stagingKey: staged.key, ...fields } });
+        if (!film) {
+          setFilm(target);
+          window.history.replaceState(null, "", `/admin/filmes/imagens?filme=${target.id_filme}`);
+        }
+        return created;
+      }
       finally { await catalogRequest(`uploads/${staged.key}`, { method: "DELETE" }).catch(() => {}); }
     }, "Imagem adicionada.");
   }
 
   const image = dialog?.image;
-  return <CatalogLayout title="Imagens" description="Gerencie capas, banners e imagens adicionais de cada filme." action={<button type="button" className={styles.primary} onClick={() => open("form")} disabled={!film}><Plus size={16} aria-hidden="true" />Adicionar imagem</button>}>
+  const rows = savedImage && images.page === 1 && !images.loading && !images.items.some(item => item.id_imagem === savedImage.id_imagem)
+    ? [savedImage, ...images.items] : images.items;
+  return <CatalogLayout title="Imagens" description="Gerencie capas, banners e imagens adicionais de cada filme." action={<button type="button" className={styles.primary} onClick={() => open("form")}><Plus size={16} aria-hidden="true" />Adicionar nova imagem</button>}>
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     <section className={styles.filmPicker} aria-labelledby="picker-title"><h2 id="picker-title">Selecione um filme</h2><label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Buscar filme pelo título</span><input type="search" maxLength={200} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar filme" /></label>
       {film && <p className={styles.hint}>Selecionado: <strong>{film.titulo}</strong></p>}
@@ -90,15 +108,20 @@ export default function ImagesAdmin() {
       <CatalogState list={films} empty="Nenhum filme encontrado." noun="filmes" />
       {films.nextCursor && <button type="button" className={styles.secondary} onClick={films.loadMore} disabled={films.loadingMore}>{films.loadingMore ? "Carregando…" : "Carregar mais filmes"}</button>}
     </section>
-    <section className={styles.panel} aria-labelledby="images-title"><header className={styles.panelHeader}><div><h2 id="images-title">{film ? `Galeria · ${film.titulo}` : "Galeria de imagens"}</h2><p>{film ? "Capas, banners e alternativas cadastradas para este filme." : "Selecione um filme para visualizar e editar sua galeria."}</p></div>{film && <span className={styles.count}>{images.items.length} carregadas</span>}</header>
+    <section className={styles.panel} aria-labelledby="images-title"><header className={styles.panelHeader}><div><h2 id="images-title">{film ? `Galeria · ${film.titulo}` : "Galeria de imagens"}</h2><p>{film ? "Capas, banners e alternativas cadastradas para este filme." : "Selecione um filme para visualizar e editar sua galeria."}</p></div>{film && <span className={styles.count}>{rows.length} carregadas</span>}</header>
       {!film && <p className={styles.state}>Selecione um filme acima para começar.</p>}
-      {film && <><CatalogState list={images} empty="Este filme ainda não tem imagens cadastradas." noun="imagens" />{images.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de imagens; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Imagens do filme {film.titulo}</caption><thead><tr><th scope="col">Imagem</th><th scope="col">Tipo</th><th scope="col">Texto alternativo</th><th scope="col">Ordem</th><th scope="col">Principal</th><th scope="col" aria-label="Ações" /></tr></thead><tbody>{images.items.map((item) => <tr key={item.id_imagem}><th scope="row"><span className={styles.filmCell}><span className={styles.imageThumb}>{publicAsset(item.url) && <img src={publicAsset(item.url)} alt="" />}</span><span className={styles.muted}>#{item.id_imagem}</span></span></th><td>{typeLabel(item.tipo)}{item.tipo === "BANNER" && <span className="block text-xs text-muted-foreground">{bannerContexts[item.contexto_banner] ?? bannerContexts.GERAL}{bannerDevices[item.dispositivo_banner] && ` · ${bannerDevices[item.dispositivo_banner]}`}</span>}</td><td>{item.texto_alternativo || <span className={styles.muted}>Sem descrição</span>}</td><td>{item.ordem}</td><td>{item.principal ? <span className={styles.badge}>Sim</span> : <span className={styles.muted}>Não</span>}</td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar imagem" aria-label={`Editar imagem ${item.id_imagem}`} onClick={() => open("form", item)}><Pencil size={16} aria-hidden="true" /></button><button type="button" className={`${styles.iconButton} ${styles.destructive}`} title="Excluir imagem" aria-label={`Excluir imagem ${item.id_imagem}`} onClick={() => open("delete", item)}><Trash2 size={16} aria-hidden="true" /></button></div></td></tr>)}</tbody></table></div>}
+      {film && <><CatalogState list={images} empty="Este filme ainda não tem imagens cadastradas." noun="imagens" />{rows.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de imagens; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Imagens do filme {film.titulo}</caption><thead><tr><th scope="col">Imagem</th><th scope="col">Tipo</th><th scope="col">Texto alternativo</th><th scope="col">Ordem</th><th scope="col">Principal</th><th scope="col" aria-label="Ações" /></tr></thead><tbody>{rows.map((item) => <tr key={item.id_imagem}><th scope="row"><span className={styles.filmCell}><span className={styles.imageThumb}>{publicAsset(item.url) && <LoadingImage src={publicAsset(item.url)} alt="" />}</span><span className={styles.muted}>#{item.id_imagem}</span></span></th><td>{typeLabel(item.tipo)}{item.tipo === "BANNER" && <span className="block text-xs text-muted-foreground">{bannerContexts[item.contexto_banner] ?? bannerContexts.GERAL}{bannerDevices[item.dispositivo_banner] && ` · ${bannerDevices[item.dispositivo_banner]}`}</span>}</td><td>{item.texto_alternativo || <span className={styles.muted}>Sem descrição</span>}</td><td>{item.ordem}</td><td>{item.principal ? <span className={styles.badge}>Sim</span> : <span className={styles.muted}>Não</span>}</td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar imagem" aria-label={`Editar imagem ${item.id_imagem}`} onClick={() => open("form", item)}><Pencil size={16} aria-hidden="true" /></button><button type="button" className={`${styles.iconButton} ${styles.destructive}`} title="Excluir imagem" aria-label={`Excluir imagem ${item.id_imagem}`} onClick={() => open("delete", item)}><Trash2 size={16} aria-hidden="true" /></button></div></td></tr>)}</tbody></table></div>}
         <TablePagination list={images} /></>}
     </section>
     <Dialog open={Boolean(dialog)} onOpenChange={(value) => { if (!value) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{dialog?.type === "delete" ? "Excluir imagem" : image ? "Editar imagem" : "Adicionar imagem"}</DialogTitle>
       {dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>{image ? "Atualize a posição e a descrição da imagem." : "Envie uma imagem JPG, PNG ou WebP de até 5 MB."}</DialogDescription><form key={image?.id_imagem ?? "new"} className={styles.form} onSubmit={save}>
+        {!film && <>
+          <label className={styles.wide}>Buscar filme no catálogo<input type="search" value={query} maxLength={200} onChange={event => setQuery(event.target.value)} /></label>
+          <label className={styles.wide}>Filme<select name="filmId" required defaultValue=""><option value="">{films.loading ? "Buscando filmes…" : "Selecione um filme"}</option>{films.items.map(item => <option key={item.id_filme} value={item.id_filme}>{item.titulo}</option>)}</select></label>
+          {films.error && <p role="alert" className={`${styles.error} ${styles.wide}`}>{films.error}</p>}
+        </>}
         {!image && <label className={styles.wide}>Arquivo de imagem<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required onChange={(event) => { const file = event.target.files?.[0]; setPreview(file ? URL.createObjectURL(file) : null); }} /></label>}
-        {preview && <div className={styles.wide}><img src={preview} alt="Prévia da imagem selecionada" style={{ maxWidth: "100%", maxHeight: 180, objectFit: "contain" }} /></div>}
+        {preview && <div className={styles.wide}><LoadingImage src={preview} alt="Prévia da imagem selecionada" style={{ maxWidth: "100%", maxHeight: 180, objectFit: "contain" }} /></div>}
         <label>Tipo<select name="tipo" value={type} onChange={event=>setType(event.target.value)}>{types.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
         <label>Ordem<input name="ordem" type="number" min="0" max="4294967295" required defaultValue={image?.ordem ?? 0} /></label>
         {type === "BANNER" && <>

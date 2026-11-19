@@ -682,9 +682,31 @@
   font-size: 10px;
   font-weight: 800;
 }
+.ca-film .cf-availability-filter {
+  min-width: 0;
+  margin-bottom: 10px;
+  text-overflow: ellipsis;
+}
+.ca-film .cf-availability-scroll {
+  max-block-size: min(21rem, 48dvh);
+  overflow-y: auto;
+  scrollbar-color: var(--border) transparent;
+  scrollbar-gutter: stable;
+  padding: 2px 4px 2px 2px;
+}
+.ca-film .cf-availability-scroll:focus-visible,
+.ca-film .cf-location-card:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
 .ca-film .cf-availability-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 9px;
+}
+.ca-film .cf-availability-actions {
+  margin: 10px 0 0;
+  font-size: 12px;
 }
 .ca-film .cf-location-card {
   display: grid;
@@ -715,6 +737,7 @@
   font-size: 12px;
   font-weight: 800;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 .ca-film .cf-location-name svg {
   flex: none;

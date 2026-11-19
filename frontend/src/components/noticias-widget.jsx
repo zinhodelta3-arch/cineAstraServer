@@ -13,7 +13,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { articlePath, newsPath } from "@/lib/content/cineastra-news.mjs";
 import { cn } from "@/lib/utils";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 
@@ -171,7 +172,9 @@ export function NoticiasWidget({ className }) {
                   Manchete
                 </span>
               </div>
-              <h3 className="text-sm font-extrabold leading-snug">{destaque.titulo}</h3>
+              <h3 className="text-sm font-extrabold leading-snug">
+                <Link href={articlePath(destaque.id)} prefetch={false} onClick={() => setOpen(false)} className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring">{destaque.titulo}</Link>
+              </h3>
               <p className="mt-1 text-xs opacity-80">{destaque.resumo}</p>
               <p className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
                 <CalendarDays className="size-3.5" aria-hidden="true" />
@@ -186,7 +189,9 @@ export function NoticiasWidget({ className }) {
                   <n.icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                   <div className="min-w-0">
                     <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">{n.categoria}</span>
-                    <h3 className="text-[13px] font-bold leading-snug">{n.titulo}</h3>
+                    <h3 className="text-[13px] font-bold leading-snug">
+                      <Link href={articlePath(n.id)} prefetch={false} onClick={() => setOpen(false)} className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring">{n.titulo}</Link>
+                    </h3>
                     <p className="mt-0.5 text-xs text-muted-foreground">{n.resumo}</p>
                   </div>
                 </li>
@@ -196,11 +201,10 @@ export function NoticiasWidget({ className }) {
 
           {/* Rodapé */}
           <footer className="border-t-2 border-dashed border-border px-5 pb-4 pt-4">
-            <Button asChild className="w-full rounded-full font-bold">
-              <Link href="/cinema/noticias" onClick={() => setOpen(false)}>
-               CineAstra News
-              </Link>
-            </Button>
+            <Link href={newsPath} prefetch={false} onClick={() => setOpen(false)}
+              className={buttonVariants({ className: "min-h-11 w-full rounded-full font-bold" })}>
+              Abrir CineAstraNews
+            </Link>
             <p className="mt-3 text-center text-[11px] text-muted-foreground">Atualizado em {ATUALIZADO_EM}</p>
           </footer>
         </section>

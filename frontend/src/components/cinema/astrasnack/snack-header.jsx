@@ -4,7 +4,7 @@ import { ShoppingBag, Ticket } from "lucide-react";
 import styles from "../ticket.module.css";
 
 
-export default function SnackHeader({ cartCount, loggedIn }) {
+export default function SnackHeader({ cartCount, showCart }) {
   return (
       <section className="border-b border-border/70 bg-background">
         <div className="mx-auto max-w-[1600px] px-5 py-6 md:px-8 md:py-8">
@@ -21,7 +21,7 @@ export default function SnackHeader({ cartCount, loggedIn }) {
                 O sabor também faz parte da sessão. Escolha seu snack, encontre seu combo e leve a experiência CineAstra para a poltrona.
               </p>
             </div>
-            {loggedIn && <>
+            {showCart && <>
               <div className={styles.tear} aria-hidden="true" />
               <div className={`${styles.stub} flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm font-semibold sm:px-8`}>
                 <ShoppingBag className="size-4 text-primary" aria-hidden="true" />

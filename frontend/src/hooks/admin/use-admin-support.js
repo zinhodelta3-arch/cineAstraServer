@@ -48,7 +48,7 @@ export function useAdminSupport() {
     setThread((current) => current.id === selectedId ? { ...current, loading: true, error: null } : { ...emptyThread, id: selectedId, loading: true });
     Promise.all([request(selectedId, undefined, abort.signal), request(`${selectedId}/messages`, undefined, abort.signal)]).then(([ticket, history]) => {
       if (!ticket?.id || !Array.isArray(history.items)) throw new Error("A conversa retornou dados inválidos.");
-      if (!abort.signal.aborted && generation === threadGeneration.current) setThread({ id: selectedId, ticket, messages: history.items, nextCursor: history.pagination?.nextCursor ?? null, loading: false, loadingMore: false, error: null });
+      if (!abort.signal.aborted && generation === threadGeneration.current) setThread({ id: selectedId, ticket, messages: history.items.reverse(), nextCursor: history.pagination?.nextCursor ?? null, loading: false, loadingMore: false, error: null });
     }).catch((cause) => {
       if (!abort.signal.aborted && generation === threadGeneration.current) setThread((current) => ({ ...current, loading: false, error: cause.message }));
     });
@@ -68,13 +68,14 @@ export function useAdminSupport() {
 
   async function loadMoreMessages() {
     const cursor = thread.nextCursor;
-    if (!selectedId || !cursor || thread.loading || thread.loadingMore) return;
+    if (!selectedId || !cursor || thread.loading || thread.loadingMore || actionLock.current) return;
     const generation = threadGeneration.current;
     setThread((current) => ({ ...current, loadingMore: true, error: null }));
     try {
       const data = await request(`${selectedId}/messages?cursor=${encodeURIComponent(cursor)}`);
       if (!Array.isArray(data.items) || data.pagination?.nextCursor === cursor) throw new Error("Não foi possível carregar mais mensagens.");
-      if (generation === threadGeneration.current) setThread((current) => ({ ...current, messages: [...current.messages, ...data.items], nextCursor: data.pagination?.nextCursor ?? null, loadingMore: false }));
+      const olderMessages = data.items.reverse();
+      if (generation === threadGeneration.current) setThread((current) => ({ ...current, messages: [...olderMessages, ...current.messages], nextCursor: data.pagination?.nextCursor ?? null, loadingMore: false }));
     } catch (cause) {
       if (generation === threadGeneration.current) setThread((current) => ({ ...current, loadingMore: false, error: cause.message }));
     }

@@ -9,6 +9,15 @@ const ticketActions = ['validate', 'consume', 'entry', 'exit'];
 
 function target(parts, method, search) {
   const [section, first, second, third, fourth] = parts;
+  if (section === 'snack-offers' && ['inputs', 'combos'].includes(first)) {
+    const base = `/unit/snack-offers/${first}`;
+    if (parts.length === 2 && method === 'GET') return base + search;
+    if (parts.length === 3 && id(second) && method === 'PATCH') return `${base}/${second}`;
+    if (parts.length === 4 && id(second)) {
+      if (first === 'inputs' && third === 'stock' && method === 'PATCH') return `${base}/${second}/stock`;
+      if (first === 'combos' && third === 'components' && method === 'GET') return `${base}/${second}/components`;
+    }
+  }
   if (section === 'sessions') {
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/unit/sessions${method === 'GET' ? search : ''}`;
     if (parts.length === 2 && id(first) && ['GET', 'PATCH', 'DELETE'].includes(method)) return `/unit/sessions/${first}`;
@@ -68,7 +77,9 @@ async function handle(request, { params }) {
   try {
     const role=(await currentUser())?.role;
     if (!['SUPERVISOR','COLABORADOR'].includes(role)) return json({ message: 'Acesso restrito à equipe da unidade.' }, 403);
-    const path = target((await params).path ?? [], method, new URL(request.url).search);
+    const parts = (await params).path ?? [];
+    if (parts[0] === 'snack-offers' && role !== 'SUPERVISOR') return json({ message: 'A oferta é administrada pelo supervisor da unidade.' }, 403);
+    const path = target(parts, method, new URL(request.url).search);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
     const staffActions = ['/stock/requests', '/inventory/movements', ...ticketActions.map(action => `/tickets/${action}`)];
     const counterPost = /^\/unit\/sessions\/\d+\/counter\/(quote|orders)$/.test(path);

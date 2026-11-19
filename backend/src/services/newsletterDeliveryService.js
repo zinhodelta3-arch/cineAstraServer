@@ -50,6 +50,7 @@ export function createNewsletterDeliveryService({database,model,provider,maxAtte
         if(provider?.available===false||typeof provider?.verifyBounce!=='function'||name!==provider.name)throw ApiError.naoEncontrado();
         if(!Buffer.isBuffer(rawBody)||rawBody.length<1||rawBody.length>65536)throw ApiError.validacao('Webhook inválido');
         const event=await provider.verifyBounce({rawBody,headers,signal:context.signal});
+        if(event?.verified===true&&event.ignored===true)return {blocked:false};
         if(event?.verified!==true||!['BOUNCE','COMPLAINT'].includes(event.type)||typeof event.email!=='string'||event.email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(event.email)||typeof event.eventId!=='string'||event.eventId.length<1||event.eventId.length>255)throw ApiError.naoAutorizado();
         return database.transaction(async c=>{
             const subscriber=await model.subscriberByEmail(c,event.email.trim().toLowerCase());

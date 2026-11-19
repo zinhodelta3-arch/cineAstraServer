@@ -2,15 +2,20 @@ import {NextResponse} from 'next/server';
 import {cookies} from 'next/headers';
 import { authErrorPayload,backendAuth,AuthError,SESSION_COOKIE} from '@/lib/auth/server';
 import {isAllowedAuthOrigin} from '@/lib/auth/request-origin.mjs';
-import {notificationId} from '@/lib/api/notifications.mjs';
+import {experienceNotificationType,notificationId} from '@/lib/api/notifications.mjs';
 const json=(body,status=200)=>NextResponse.json(body,{status,headers:{'Cache-Control':'no-store'}});
 const failure=e=>json(authErrorPayload(e, {message:e.status===404?'Notificação não encontrada para esta conta.':e instanceof AuthError?e.message:'Não foi possível acessar suas notificações.'}),e instanceof AuthError?e.status:500);
 export async function GET(request,{params}){
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({message:'Entre para consultar notificações.'},401);
- const parts=(await params).path||[],cursor=new URL(request.url).searchParams.get('cursor');
+ const parts=(await params).path||[],search=new URL(request.url).searchParams;
+ const cursor=search.get('cursor'),type=search.get('type');
  if(parts.length||cursor!==null&&!notificationId(cursor))return json({message:'Página inválida.'},422);
- try{return json(await backendAuth('/notifications/me?limit=20'+(cursor?'&cursor='+cursor:''),{token}));}catch(e){return failure(e);}
+ if(type!==null&&type!==experienceNotificationType)return json({message:'Filtro inválido.'},422);
+ const query=new URLSearchParams({limit:'20',order:'recent'});
+ if(cursor)query.set('cursor',cursor);
+ if(type)query.set('type',type);
+ try{return json(await backendAuth('/notifications/me?'+query.toString(),{token}));}catch(e){return failure(e);}
 }
 export async function PATCH(request,{params}){
  if(!isAllowedAuthOrigin(request))return json({message:'Origem não permitida.'},403);

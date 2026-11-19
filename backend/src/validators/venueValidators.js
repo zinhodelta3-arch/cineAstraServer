@@ -19,7 +19,7 @@ const localFields = {
     tipo_local: venueType.optional(), lotacao_eventos: z.number().int().min(1).max(100000).nullable().optional(),
     acesso_eventos: z.enum(['NUMERADO','LIVRE']).nullable().optional(),
     nome: limited(150), cidade: limited(100), estado: z.string().regex(/^[A-Z]{2}$/),
-    cep: z.string().trim().max(10).nullable().optional(), logradouro: limited(150).nullable().optional(),
+    cep: z.string().trim().regex(/^\d{5}-?\d{3}$/).transform(value => value.replace(/^(\d{5})(\d{3})$/, '$1-$2')).nullable().optional(), logradouro: limited(150).nullable().optional(),
     numero: limited(20).nullable().optional(), complemento: limited(100).nullable().optional(),
     bairro: limited(100).nullable().optional(), telefone: limited(20).nullable().optional()
 };
@@ -33,6 +33,7 @@ const paging = { limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.n
 export const venueSchemas = {
     local, localPatch: patch({ ...localFields, status: localStatus }), room, roomPatch: patch({ ...roomFields, tipo: roomType, status: roomStatus }), seat, seatPatch: patch({ ...seatFields, tipo: seatType, status: seatStatus }),
     list: z.object(paging).strict(),
+    publicLocals: z.object({ ...paging, q: limited(150).optional() }).strict(),
     adminLocals: z.object({ ...paging, q: limited(150).optional(), status: z.enum(['ATIVO', 'INATIVO', 'MANUTENCAO']).optional() }).strict(),
     adminRooms: z.object({ ...paging, status: z.enum(['ATIVA', 'INATIVA', 'MANUTENCAO']).optional() }).strict(),
     seats: z.object({ ...paging, accessible: z.enum(['true', 'false']).transform(v => v === 'true').optional() }).strict(),

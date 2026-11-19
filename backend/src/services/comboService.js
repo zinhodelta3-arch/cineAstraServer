@@ -6,7 +6,7 @@ const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'COMBO_CONFLICT');
 const cost = row => row.custo_operacional == null ? null : moneyString(row.custo_operacional);
 const eventDto = row => row.id_evento == null ? {} : {event:{eventId:idString(row.id_evento),sessionId:idString(row.id_sessao_evento),totalLimit:row.limite_evento,customerLimit:row.limite_cliente_evento}};
-const dto = (row, items) => ({ id_combo: idString(row.id_combo), id_local: row.id_local === null ? null : idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, preco: moneyString(row.preco), imagem: row.imagem ?? null, ativo: Boolean(row.ativo), data_cadastro: row.data_cadastro, ...eventDto(row), items: items.map(i => ({ id_insumo: idString(i.id_insumo), nome: i.nome, quantidade: i.quantidade })) });
+const dto = (row, items) => ({ id_combo: idString(row.id_combo), id_local: row.id_local === null ? null : idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, preco: moneyString(row.preco), imagem: row.imagem ?? null, imagem_alternativa: row.imagem_alternativa ?? null, ativo: Boolean(row.ativo), data_cadastro: row.data_cadastro, ...eventDto(row), items: items.map(i => ({ id_insumo: idString(i.id_insumo), nome: i.nome, quantidade: i.quantidade })) });
 export function createComboService({ model, identity, pricing }) {
     async function admin(c, context) { if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); }
     async function transact(context, work) { return identity.transaction(async c => { await admin(c, context); return work(c); }, context); }
@@ -20,7 +20,7 @@ export function createComboService({ model, identity, pricing }) {
         if (local.status !== 'ATIVO') throw conflict('Local indisponível');
         const ids = items.map(i => i.inputId);
         const rows = await model.inputs(ids, c, true);
-        if (rows.length !== ids.length || rows.some(i => idString(i.id_local) !== idString(localId) || i.status !== 'DISPONIVEL' || i.fornecedor_status !== 'ATIVO' || i.usuario_status !== 'ATIVO' || i.tipo_usuario !== 'FORNECEDOR' || i.vinculo_status !== 'ATIVO')) throw conflict('Composição exige insumos disponíveis do mesmo local e fornecedor autorizado');
+        if (rows.length !== ids.length || rows.some(i => i.id_local == null || idString(i.id_local) !== idString(localId) || i.status !== 'DISPONIVEL' || i.fornecedor_status !== 'ATIVO' || i.usuario_status !== 'ATIVO' || i.tipo_usuario !== 'FORNECEDOR' || i.vinculo_status !== 'ATIVO')) throw conflict('Composição exige insumos disponíveis do mesmo local e fornecedor autorizado');
         return rows;
     }
     async function detail(id, c, includeCost = false) {

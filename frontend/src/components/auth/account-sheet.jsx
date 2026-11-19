@@ -7,6 +7,7 @@ import {useAccountMenu} from '@/hooks/auth/use-account-menu';
 import {sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
 import {useAccountPreferences} from '@/components/providers/account-preferences-provider';
 import ProfileAvatar from '@/components/cinema/perfil/profile-avatar';
+import { subscriptionManagementPath } from '@/lib/auth/destination.mjs';
 export default function AccountSheet({session}){
  const {user,message,pending,logout}=session,menu=useAccountMenu(user);
  const avatar=useAccountPreferences()?.data?.avatar;
@@ -28,7 +29,7 @@ export default function AccountSheet({session}){
    <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-2 w-2 border-x border-dashed border-border"/>
    <SheetClose aria-label="Fechar minha conta" className="absolute right-4 top-4 grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"><X className="size-5"/></SheetClose>
    <SheetHeader className="px-6 pb-8 pt-20"><div className="mb-5 flex size-16 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xl font-bold text-primary" aria-hidden="true">{avatar?<ProfileAvatar avatar={avatar} name={user.name} small />:menu.initials}</div><SheetTitle className="break-words text-2xl font-bold leading-tight">{user.name}</SheetTitle><SheetDescription>Minha conta CineAstra</SheetDescription></SheetHeader>
-   {user.role==='CLIENTE'&&<Link href="/cinema/planos#assinar" onClick={menu.close} className="mx-6 mb-4 block rounded-lg border border-border p-3 text-sm focus-visible:outline-2">
+   {user.role==='CLIENTE'&&<Link href={subscriptionManagementPath} onClick={menu.close} className="mx-6 mb-4 block rounded-lg border border-border p-3 text-sm focus-visible:outline-2">
     <span className="block font-semibold">{planError?'Plano indisponível':plan?.planName??(loaded?'Sem plano ativo':'Consultando plano…')}</span>
     <span>{plan?.status==='SUSPENSA'?'Acesso suspenso · ':''}Gerenciar assinatura e benefícios</span>
    </Link>}

@@ -7,6 +7,8 @@ export function createNewsletterModel(){return {
     async insert(c,{email,name,version}){const [r]=await c.execute("INSERT INTO newsletter_inscritos(email,nome,status,origem,versao_termo,consentimento_em) VALUES(?,?,'PENDENTE','SITE',?,UTC_TIMESTAMP())",[email,name??null,version]);return idString(r.insertId);},
     preference:(c,id,categoryId)=>c.execute('INSERT INTO newsletter_preferencias(id_inscrito,id_categoria,aceita) VALUES(?,?,TRUE)',[id,categoryId]),
     token:(c,id,hash)=>c.execute("INSERT INTO newsletter_tokens(id_inscrito,finalidade,token_hash,expira_em) VALUES(?,'CONFIRMACAO',?,DATE_ADD(UTC_TIMESTAMP(),INTERVAL 24 HOUR))",[id,hash]),
+    recentConfirmation:(c,id)=>one(c,`SELECT id_token FROM newsletter_tokens WHERE id_inscrito=? AND finalidade='CONFIRMACAO'
+        AND utilizado_em IS NULL AND expira_em>UTC_TIMESTAMP() AND criado_em>=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 5 MINUTE) LIMIT 1`,[id]),
     tokenOwner:(c,hash)=>one(c,'SELECT id_inscrito FROM newsletter_tokens WHERE token_hash=?',[hash]),
     subscriber:(c,id)=>one(c,'SELECT id_inscrito,email,status,consentimento_em FROM newsletter_inscritos WHERE id_inscrito=? FOR UPDATE',[id]),
     lockedToken:(c,id,hash)=>one(c,'SELECT id_token,finalidade,utilizado_em,expira_em FROM newsletter_tokens WHERE id_inscrito=? AND token_hash=? FOR UPDATE',[id,hash]),

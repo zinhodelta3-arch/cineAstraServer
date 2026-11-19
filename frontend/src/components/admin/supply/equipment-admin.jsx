@@ -67,7 +67,7 @@ export default function EquipmentAdmin() {
     actions.run(() => supplyRequest('inventory/movements', { method: 'POST', body: { equipmentId: item.id_equipamento, tipo: type, quantidade: quantity * sign, ...(reason ? { motivo: reason } : {}) } }), 'Movimentação registrada.');
   }
   const supplierName = id => suppliers.items.find(row => row.id_fornecedor === id)?.nome_cine || suppliers.items.find(row => row.id_fornecedor === id)?.razao_social || `Fornecedor #${id}`;
-  const localName = id => locals.items.find(row => row.id_local === id)?.nome ?? `Cinema #${id}`;
+  const localName = id => id ? locals.items.find(row => row.id_local === id)?.nome ?? `Cinema #${id}` : "Sem cinema vinculado";
 
   return <SupplyLayout title="Equipamentos" description="Cadastre equipamentos e acompanhe suas quantidades por cinema." action={<button type="button" className={styles.primary} onClick={() => open('form')}><Plus size={16} aria-hidden="true" />Novo equipamento</button>}>
     {actions.notice && <p className={styles.notice} role="status">{actions.notice}</p>}

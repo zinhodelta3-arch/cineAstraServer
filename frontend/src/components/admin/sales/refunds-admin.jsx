@@ -1,5 +1,7 @@
 'use client';
 
+import MoneyInput from "@/components/ui/money-input";
+
 import TablePagination from '@/components/ui/table-pagination';
 import { useEffect, useRef, useState } from 'react';
 import { Eye, Scale } from 'lucide-react';
@@ -42,7 +44,7 @@ export default function RefundsAdmin() {
 
   function open(row) { setNotice(''); setDecision('APPROVE'); setSelected(row); }
   function close() { if (!lock.current) setSelected(null); }
-  const partial=Boolean(detail?.orderId)&&decision==='APPROVE'&&Number(amount.replace(',','.'))<Number(detail.remainingAmount);
+  const partial=Boolean(detail?.orderId)&&decision==='APPROVE'&&Boolean(amount)&&Number(amount)<Number(detail.remainingAmount);
   async function reconcile(){
     if(lock.current||!detail)return;
     lock.current=true;setPending(true);setError('');
@@ -84,7 +86,7 @@ export default function RefundsAdmin() {
       {detailLoading && <p role="status">Carregando solicitação…</p>}
       {detail && <><dl className={styles.detailGrid}><div><dt>Cliente</dt><dd>#{detail.userId}</dd></div><div><dt>Pagamento</dt><dd>#{detail.paymentId}</dd></div><div><dt>Pedido</dt><dd>{detail.orderId ? `#${detail.orderId}` : '—'}</dd></div><div><dt>Status</dt><dd>{statusName(detail.status)}</dd></div><div><dt>Motivo</dt><dd>{statusName(detail.reason)}</dd></div><div><dt>Valor solicitado</dt><dd>{money(detail.requestedAmount)}</dd></div><div><dt>Prazo de resposta</dt><dd>{dateTime(detail.responseDueAt)}</dd></div><div><dt>Compensação</dt><dd>{statusName(detail.compensation)}</dd></div></dl>{detail.details && <p className={styles.hint}>Detalhes: {detail.details}</p>}{detail.decisionBasis && <p className={styles.hint}>Justificativa registrada: {detail.decisionBasis}</p>}</>}
       {detail?.selectedItems?.length>0&&<ul>{detail.selectedItems.map(item=><li key={item.itemId}>Item #{item.itemId} · {money(item.amount)}</li>)}</ul>}
-      {detail?.status === 'EM_ANALISE' && <form className={styles.form} onSubmit={decide}><label>Decisão<select value={decision} onChange={event => setDecision(event.target.value)}><option value="APPROVE">Aprovar</option><option value="DENY">Negar</option><option value="CANCEL">Cancelar solicitação</option></select></label>{decision === 'APPROVE' && <label>Valor aprovado (R$)<input name="amount" inputMode="decimal" value={amount} onChange={event=>setAmount(event.target.value)} required /></label>}{partial&&<fieldset className={styles.wide}><legend>Itens reembolsados</legend>{detail.eligibleItems.map(item=><label key={item.id} className="flex items-center gap-2"><input name="refundItem" type="checkbox" value={item.id} />{item.name} · {item.quantity} un. · saldo {money(item.remainingAmount)}</label>)}</fieldset>}<label>Versão dos termos<input name="termsVersion" defaultValue={detail.termsVersion ?? ''} maxLength={50} required /></label><label className={styles.wide}>Justificativa<textarea name="basis" minLength={10} maxLength={1000} required /></label><div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Registrando…' : 'Registrar decisão'}</button></div></form>}
+      {detail?.status === 'EM_ANALISE' && <form className={styles.form} onSubmit={decide}><label>Decisão<select value={decision} onChange={event => setDecision(event.target.value)}><option value="APPROVE">Aprovar</option><option value="DENY">Negar</option><option value="CANCEL">Cancelar solicitação</option></select></label>{decision === 'APPROVE' && <label>Valor aprovado (R$)<MoneyInput name="amount" defaultValue={amount} onAmountChange={setAmount} required /></label>}{partial&&<fieldset className={styles.wide}><legend>Itens reembolsados</legend>{detail.eligibleItems.map(item=><label key={item.id} className="flex items-center gap-2"><input name="refundItem" type="checkbox" value={item.id} />{item.name} · {item.quantity} un. · saldo {money(item.remainingAmount)}</label>)}</fieldset>}<label>Versão dos termos<input name="termsVersion" defaultValue={detail.termsVersion ?? ''} maxLength={50} required /></label><label className={styles.wide}>Justificativa<textarea name="basis" minLength={10} maxLength={1000} required /></label><div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Registrando…' : 'Registrar decisão'}</button></div></form>}
       {['RECEBIDA','ENVIADA'].includes(detail?.status)&&<button type="button" className={styles.secondary} disabled={pending} onClick={reconcile}>{pending?'Consultando…':'Consultar provedor'}</button>}
       {error && <p className={styles.error} role="alert">{error}</p>}
     </DialogContent></Dialog>

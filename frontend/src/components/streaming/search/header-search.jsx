@@ -46,7 +46,7 @@ function SearchField() {
                 close();
                 openDetails(movie, { opener: trigger.current });
               }}>
-              <div className={styles.poster}><Art movie={movie} variant="poster" />
+              <div className={styles.poster}><Art movie={movie} variant="poster" loading="eager" />
                 {!movie.soon && <span className={styles.play}><ArrowUpRight size={24} aria-hidden="true" /></span>}
               </div>
               <strong>{movie.title}</strong><span>{movie.soon ? "Em breve" : movie.duration} · {movie.genre}</span>

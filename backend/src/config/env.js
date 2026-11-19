@@ -83,12 +83,26 @@ export function validateEnv(env = process.env) {
         identity: { allowLocalRegistrationDocuments: boolean('ALLOW_LOCAL_REGISTRATION_DOCUMENTS', true), allowSelfDeclaredAge: boolean('ALLOW_SELF_DECLARED_AGE', true), encryptionKey, bcryptCost: integer('BCRYPT_COST', 12, 10, 14), termsVersion: env.TERMS_VERSION || null, privacyVersion: env.PRIVACY_VERSION || null, legalBasis: env.IDENTITY_LEGAL_BASIS || null },
         // O CineAstra usa pagamento simulado por padrão, inclusive no ambiente publicado.
         paymentMode: env.PAYMENT_MODE || 'SIMULATED',
+        newsletterBrevo: null,
         assistant: { apiKey: env.OPENAI_API_KEY?.trim(), model: env.ASSISTANT_OPENAI_MODEL?.trim() },
         db: { host: required('DB_HOST'), port: integer('DB_PORT', 3306, 1, 65535), user: required('DB_USER'), password: required('DB_PASSWORD'), database: required('DB_NAME'),
             connectionLimit: integer('DB_CONNECTION_LIMIT', 10, 1, 100), queueLimit: integer('DB_QUEUE_LIMIT', 100, 1, 1000), timeout: integer('DB_TIMEOUT_MS', 3000, 100, 5000) },
         rate: { max: integer('RATE_LIMIT_MAX', 120, 1, 10000), windowMs: integer('RATE_LIMIT_WINDOW_MS', 60000, 100, 3600000) },
         logging: { queueLimit: integer('LOG_QUEUE_LIMIT', 200, 1, 10000), sampleRate, retentionMode, purgeInterval: integer('LOG_PURGE_INTERVAL_MS', 900000, 60000, 3600000) }
     };
+    const brevo = { apiKey: env.NEWSLETTER_BREVO_API_KEY?.trim(), sender: env.NEWSLETTER_BREVO_SENDER?.trim(),
+        siteOrigin: env.NEWSLETTER_SITE_ORIGIN?.trim().replace(/\/$/, ''), webhookToken: env.NEWSLETTER_BREVO_WEBHOOK_TOKEN?.trim() };
+    if (Object.values(brevo).some(Boolean)) {
+        if (!brevo.apiKey || !/^[\x21-\x7e]{20,255}$/.test(brevo.apiKey)) errors.add('NEWSLETTER_BREVO_API_KEY');
+        if (!brevo.sender || brevo.sender.length > 254 || !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(brevo.sender)) errors.add('NEWSLETTER_BREVO_SENDER');
+        const site = URL.parse(brevo.siteOrigin ?? '');
+        if (!site || brevo.siteOrigin !== site.origin ||
+            (site.protocol !== 'https:' && !(site.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(site.hostname)))) {
+            errors.add('NEWSLETTER_SITE_ORIGIN');
+        }
+        if (!brevo.webhookToken || !/^[A-Za-z0-9_-]{32,256}$/.test(brevo.webhookToken)) errors.add('NEWSLETTER_BREVO_WEBHOOK_TOKEN');
+        config.newsletterBrevo = Object.freeze(brevo);
+    }
     if (!['SIMULATED', 'UNAVAILABLE'].includes(config.paymentMode)) errors.add('PAYMENT_MODE');
     if (config.db.database && !/^[a-zA-Z0-9_]+$/.test(config.db.database)) errors.add('DB_NAME');
     if (typeof config.jwt.issuer !== 'string' || !config.jwt.issuer.trim()) errors.add('JWT_ISSUER');

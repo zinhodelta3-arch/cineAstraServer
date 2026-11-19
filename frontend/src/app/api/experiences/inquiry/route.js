@@ -9,7 +9,7 @@ export async function POST(request){
  const token=(await cookies()).get(SESSION_COOKIE)?.value;
  if(!token)return json({message:'Entre na sua conta para solicitar informações.'},401);
  try{
-  const text=await request.text();if(text.length>6000)return json({message:'Dados excessivos.'},413);
+  const text=await request.text();if(text.length>45000)return json({message:'Dados excessivos.'},413);
   let raw;try{raw=JSON.parse(text);}catch{return json({message:'Dados inválidos.'},400);}
   const input=validateExperienceInquiry(raw);if(!input)return json({message:'Confira a experiência, a data, a quantidade e a descrição (10 a 4.000 caracteres).'},422);
   return json(await backendAuth('/experience-requests',{token,method:'POST',body:input}),201);

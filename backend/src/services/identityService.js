@@ -139,6 +139,12 @@ export function createIdentityService({ database, model, config, tokens, provide
             const snapshot = await credential(input.email, input.password);
             return transaction(async c => {
                 const user = await activeUser(c, snapshot.id_usuario); sameCredential(user, snapshot);
+                if (input.profile === 'CLIENTE' && user.tipo_usuario === 'FORNECEDOR') {
+                    throw new ApiError('Selecione Fornecedor para entrar com esta conta.', 403, null, 'LOGIN_SUPPLIER_PROFILE_REQUIRED');
+                }
+                if (input.profile === 'FORNECEDOR' && user.tipo_usuario !== 'FORNECEDOR') {
+                    throw new ApiError('Selecione Cliente para entrar com esta conta.', 403, null, 'LOGIN_CUSTOMER_PROFILE_REQUIRED');
+                }
                 const factors = twoFactorEnabled ? await model.factors(c, user.id_usuario) : [];
                 if (factors.length) {
                     const factor = factors.find(f => f.metodo === 'APP') ?? factors[0];

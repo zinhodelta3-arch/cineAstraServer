@@ -20,6 +20,7 @@ for (const [name, schema] of Object.entries(schemas)) {
         json.properties[field].description = 'Máximo 72 bytes UTF-8; senha nova mínimo 12 caracteres, maiúscula, minúscula, número e símbolo. Confirmação idêntica. Sem truncamento bcrypt.';
     }
     if (json.properties?.captchaToken) json.properties.captchaToken.description = 'Obrigatório somente quando CAPTCHA_ENABLED=true; omitido em standby.';
+    if (name === 'login') json.properties.profile.description = 'Seleção opcional do formulário. FORNECEDOR exige conta de fornecedor; CLIENTE admite cliente e equipe interna. Com credenciais válidas, escolha incompatível retorna 403 antes da emissão de sessão.';
     if (json.properties?.cpf) json.properties.cpf.description = 'CPF normalizado para 11 dígitos e dígitos verificadores válidos; UNIQUE também no banco.';
     if (json.properties?.dateOfBirth) json.properties.dateOfBirth.description = 'Data civil real, não futura. Cadastro exige prova do provider vinculada a CPF/e-mail/data; autodeclaração não comprova idade.';
     if (name === 'enroll') json.description = 'Exatamente um: challengeToken restrito recebido no login OU password com Bearer. Rotação exige code atual. APP implementado. SMS/EMAIL retornam 503 até integração real de destino verificado e entrega.';

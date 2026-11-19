@@ -2,6 +2,7 @@
 
 import { usePaginatedList } from '@/hooks/use-paginated-list';
 import { sessionFetch, readSessionResponse } from "@/lib/auth/session-response.mjs";
+import { invalidateStreamingCatalog } from "@/lib/api/streaming-data.mjs";
 
 export async function catalogRequest(path, { method = "GET", body, signal } = {}) {
   const multipart = body instanceof FormData;
@@ -12,8 +13,9 @@ export async function catalogRequest(path, { method = "GET", body, signal } = {}
     signal,
     headers: body == null || multipart ? undefined : { "Content-Type": "application/json" },
     body: body == null ? undefined : multipart ? body : JSON.stringify(body) });
-  if (response.status === 204) return null;
-  return readSessionResponse(response);
+  const data = response.status === 204 ? null : await readSessionResponse(response);
+  if (method !== "GET" && /^(films|genres)(?:\/|$)/.test(path)) invalidateStreamingCatalog();
+  return data;
 }
 
 export function useAdminCatalogList(path) {

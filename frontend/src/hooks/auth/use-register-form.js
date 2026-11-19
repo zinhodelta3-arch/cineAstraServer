@@ -1,4 +1,6 @@
 "use client";
+
+import { maskCpf } from "@/lib/br-fields.mjs";
 import {useState,useEffect,useRef} from 'react';
 import {registrationDocuments} from '@/lib/auth/registration-documents.mjs';
 import {passwordValid} from '@/lib/auth/destination.mjs';
@@ -11,9 +13,7 @@ export function useRegisterForm(){
  useEffect(()=>()=>active.current?.abort(),[]);
  const update=key=>event=>{
   const raw=event.target.value;
-  const value=key==='cpf'
-   ? raw.replace(/\D/g,'').slice(0,11).replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3}\.\d{3})(\d)/,'$1.$2').replace(/(\d{3}\.\d{3}\.\d{3})(\d)/,'$1-$2')
-   : raw;
+  const value=key==='cpf' ? maskCpf(raw) : raw;
   setForm(current=>({...current,[key]:value}));
  };
  const handleSubmit=async event=>{

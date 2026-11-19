@@ -6,7 +6,7 @@ export function createCatalogController(service) {
             const { limit } = req.catalogQuery;
             return success(res, { items: await service.popularFilms(limit), pagination: { limit, nextCursor: null } });
         },
-        listFilms: admin => async (req, res) => success(res, await service.listFilms(req.catalogQuery, admin)),
+        listFilms: admin => async (req, res) => success(res, await service.listFilms(req.catalogQuery, admin, req.signal)),
         film: admin => async (req, res) => success(res, await service.film(req.params.id, admin)),
         listGenres: admin => async (req, res) => success(res, await service.listGenres(req.catalogQuery, admin, req.params.id)),
         genre: admin => async (req, res) => success(res, await service.genre(req.params.id, admin)),

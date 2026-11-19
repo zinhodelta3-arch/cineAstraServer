@@ -9,7 +9,25 @@ const eventSchema = z.object({
     type: z.string().regex(/^[A-Z][A-Z0-9_]{0,49}$/),
     dedupeKey: z.string().trim().min(1).max(191)
 }).strict();
-export const notificationDto = row => ({ id_notificacao: idString(row.id_notificacao), titulo: row.titulo, mensagem: row.mensagem ?? null, tipo: row.tipo ?? null, lida: Boolean(row.lida), data_envio: row.data_envio });
+const experienceType = 'EXPERIENCE_REQUEST_CREATED';
+const experienceKey = 'experience-request-created';
+export function experienceRequestNotice(recipientId, requestId) {
+    return {
+        recipientId, type: experienceType, dedupeKey: `${experienceKey}:${requestId}`,
+        title: 'Solicitação de experiência recebida',
+        message: `Acompanhe o pedido EXP-${requestId} e as mensagens da equipe.`
+    };
+}
+export const notificationDto = row => {
+    // A chave desse evento é estável por solicitação; expomos somente o identificador público.
+    const [key, requestId, extra] = row.tipo === experienceType ? (row.dedupe_key ?? '').split(':') : [];
+    const hasRequest = key === experienceKey && extra === undefined && /^[1-9]\d{0,9}$/.test(requestId) && Number(requestId) <= 4294967295;
+    return {
+        id_notificacao: idString(row.id_notificacao), titulo: row.titulo, mensagem: row.mensagem ?? null,
+        tipo: row.tipo ?? null, lida: Boolean(row.lida), data_envio: row.data_envio,
+        ...(hasRequest && { solicitacao_experiencia_id: requestId })
+    };
+};
 export function createNotificationService({ model, identity }) {
     return {
         // API interna: sempre usa a conexão da transação de negócio do consumidor.

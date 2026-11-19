@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft, Check, Clock3, Inbox, RefreshCw, Search, Send, Ticket } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useAdminSupport } from "@/hooks/admin/use-admin-support";
 import styles from "./admin-support.module.css";
 import TablePagination from '@/components/ui/table-pagination';
@@ -45,9 +46,14 @@ function Conversation({ support }) {
   const mine = ticket?.attendantId === support.session.user?.id;
   const assignedOther = Boolean(ticket?.attendantId && !mine);
   const canRespond = Boolean(mine && ticket && !["RESOLVIDO", "FECHADO"].includes(ticket.status));
-  const lastAdmin = support.thread.messages.filter((item) => item.role === "ADMIN").at(-1);
-  const lastClient = support.thread.messages.filter((item) => item.role === "CLIENTE").at(-1);
-  const canResolve = Boolean(canRespond && !support.thread.nextCursor && lastAdmin && (!lastClient || BigInt(lastAdmin.id) > BigInt(lastClient.id)));
+  const lastMessage = support.thread.messages.at(-1);
+  const canResolve = canRespond && lastMessage?.role === "ADMIN";
+  const historyRef = useRef(null);
+
+  useEffect(() => {
+    const history = historyRef.current;
+    if (history) history.scrollTop = history.scrollHeight;
+  }, [ticket?.id, lastMessage?.id]);
 
   if (!support.selectedId) return <section className={`${styles.conversation} ${styles.conversationEmpty}`} aria-label="Conversa do chamado"><Ticket size={28} aria-hidden="true" /><h2>Selecione um chamado</h2><p>Escolha um ticket na lista para consultar a conversa e responder ao cliente.</p></section>;
 
@@ -70,16 +76,16 @@ function Conversation({ support }) {
         {assignedOther && <span className={styles.attendant}>Atribuído a outro atendente</span>}
         {mine && <span className={styles.attendant}>Em atendimento por você</span>}
         {!ticket.attendantId && <button type="button" className={styles.assign} onClick={support.assign} disabled={support.pending || support.session.loading || !support.session.user}>Assumir chamado</button>}
-        {mine && !canResolve && <span className={styles.resolveHint}>{support.thread.nextCursor ? "Carregue o histórico antes de resolver." : "Responda ao cliente antes de resolver."}</span>}
+        {canRespond && !canResolve && <span className={styles.resolveHint}>Responda ao cliente antes de resolver.</span>}
         {mine && <button type="button" className={styles.resolve} onClick={support.resolve} disabled={support.pending || !canResolve}><Check size={16} aria-hidden="true" />Resolver</button>}
       </div>
-      <ol className={styles.messages} aria-label="Histórico da conversa">
+      {support.thread.nextCursor && <button type="button" className={styles.moreMessages} onClick={support.loadMoreMessages} disabled={support.thread.loadingMore || support.thread.loading || support.pending}>{support.thread.loadingMore ? "Carregando…" : "Carregar mensagens anteriores"}</button>}
+      <ol ref={historyRef} className={styles.messages} aria-label="Histórico da conversa">
         {support.thread.messages.map((item) => <li key={item.id} className={`${styles.message} ${item.role === "ADMIN" ? styles.adminMessage : ""}`}>
           <div className={styles.bubble}><span>{item.role === "ADMIN" ? "Atendimento" : item.role === "CLIENTE" ? "Cliente" : "Sistema"}</span><p>{item.message}</p><time>{stamp(item.createdAt)}</time></div>
         </li>)}
         {!support.thread.messages.length && !support.thread.loading && <li className={styles.noMessages}>Nenhuma mensagem disponível neste chamado.</li>}
       </ol>
-      {support.thread.nextCursor && <button type="button" className={styles.moreMessages} onClick={support.loadMoreMessages} disabled={support.thread.loadingMore}>{support.thread.loadingMore ? "Carregando…" : "Carregar próximas mensagens"}</button>}
       <form className={styles.composer} onSubmit={support.send}>
         <label htmlFor="admin-support-reply">Sua resposta</label>
         <textarea id="admin-support-reply" value={support.draft} onChange={(event) => support.setDraft(event.target.value)} placeholder={assignedOther ? "Este chamado está com outro atendente." : ticket.attendantId ? "Escreva sua resposta…" : "Assuma o chamado para responder."} maxLength={10000} rows={3} disabled={!canRespond || support.pending} required />

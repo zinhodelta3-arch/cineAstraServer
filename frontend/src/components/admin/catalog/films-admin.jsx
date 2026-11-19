@@ -1,5 +1,7 @@
 "use client";
 
+import MoneyInput from "@/components/ui/money-input";
+
 import TablePagination from '@/components/ui/table-pagination';
 import Link from "next/link";
 import { useDeferredValue, useRef, useState } from "react";
@@ -13,7 +15,7 @@ import styles from "./catalog.module.css";
 const classifications = ["L", "10", "12", "14", "16", "18"];
 const onlyHttps = (value) => !value || /^https:\/\/[^\s]+$/i.test(value);
 
-function payloadFrom(form) {
+function payloadFrom(form, film) {
   const value = (key) => String(form.get(key) ?? "").trim();
   const price = (key) => {
     const raw = value(key);
@@ -25,7 +27,6 @@ function payloadFrom(form) {
   const duration = Number(value("duracao"));
   const days = Number(value("dias_acesso_aluguel"));
   if (!Number.isInteger(duration) || duration < 1 || !Number.isInteger(days) || days < 1) throw new Error("Confira a duração e o prazo de aluguel.");
-  if (!onlyHttps(value("trailer")) || !onlyHttps(value("url_reproducao"))) throw new Error("Os links de mídia devem usar HTTPS.");
   const result = {
     titulo: value("titulo"), descricao: value("descricao") || null, duracao: duration,
     classificacao: value("classificacao"), data_lancamento: value("data_lancamento") || null,
@@ -36,8 +37,14 @@ function payloadFrom(form) {
     dias_acesso_aluguel: days, status: value("status"),
   };
   if (!result.titulo || result.titulo.length > 200) throw new Error("Informe um título de até 200 caracteres.");
-  if (result.disponivel_streaming && result.preco_aluguel === null && result.preco_compra === null) throw new Error("Informe o preço de aluguel ou compra para disponibilizar o filme no streaming.");
-  return result;
+  const changed = film ? Object.fromEntries(Object.entries(result).filter(([key, entry]) => {
+    const previous = key === "data_lancamento" ? film[key]?.slice(0, 10) : film[key];
+    return entry !== (previous ?? (key === "dias_acesso_aluguel" ? 3 : null));
+  })) : result;
+  if (!onlyHttps(changed.trailer) || !onlyHttps(changed.url_reproducao)) throw new Error("Os links de mídia devem usar HTTPS.");
+  if (["disponivel_streaming", "preco_aluguel", "preco_compra"].some(key => Object.hasOwn(changed, key))
+    && result.disponivel_streaming && result.preco_aluguel === null && result.preco_compra === null) throw new Error("Informe o preço de aluguel ou compra para disponibilizar o filme no streaming.");
+  return changed;
 }
 
 export default function FilmsAdmin() {
@@ -74,9 +81,10 @@ export default function FilmsAdmin() {
   function save(event) {
     event.preventDefault();
     let body;
-    try { body = payloadFrom(new FormData(event.currentTarget)); }
-    catch (cause) { setError(cause.message); return; }
     const film = dialog?.film;
+    try { body = payloadFrom(new FormData(event.currentTarget), film); }
+    catch (cause) { setError(cause.message); return; }
+    if (!Object.keys(body).length) { setError("Nenhuma alteração para salvar."); return; }
     run(() => catalogRequest(film ? `films/${film.id_filme}` : "films", { method: film ? "PATCH" : "POST", body }), film ? "Filme atualizado." : "Filme cadastrado.");
   }
 
@@ -117,15 +125,15 @@ export default function FilmsAdmin() {
       {dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>Preencha os dados do filme. Gêneros e imagens podem ser organizados após o cadastro.</DialogDescription><form key={film?.id_filme ?? "new"} className={styles.form} onSubmit={save}>
         <label className={styles.wide}>Título<input name="titulo" required maxLength={200} defaultValue={film?.titulo ?? ""} /></label>
         <label>Duração (minutos)<input name="duracao" type="number" min="1" required defaultValue={film?.duracao ?? ""} /></label>
-        <label>Classificação<select name="classificacao" defaultValue={film?.classificacao ?? "L"}>{classifications.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label>Classificação indicativa<select name="classificacao" defaultValue={film?.classificacao ?? "L"}>{classifications.map((item) => <option key={item} value={item}>{item === "L" ? "Livre" : `${item} anos`}</option>)}</select></label>
         <label>Data de lançamento<input name="data_lancamento" type="date" defaultValue={film?.data_lancamento?.slice(0, 10) ?? ""} /></label>
         <label>Direção<input name="diretor" maxLength={150} defaultValue={film?.diretor ?? ""} /></label>
         <label className={styles.wide}>Sinopse<textarea name="descricao" maxLength={10000} defaultValue={film?.descricao ?? ""} /></label>
         <label className={styles.wide}>Trailer (URL HTTPS)<input name="trailer" type="url" defaultValue={film?.trailer ?? ""} /></label>
         <label className={styles.wide}>Reprodução (URL HTTPS)<input name="url_reproducao" type="url" defaultValue={film?.url_reproducao ?? ""} /></label>
         <div className={`${styles.checks} ${styles.wide}`}><label><input type="checkbox" name="disponivel_cinema" defaultChecked={film?.disponivel_cinema ?? true} /> Disponível no cinema</label><label><input type="checkbox" name="disponivel_streaming" defaultChecked={film?.disponivel_streaming ?? false} /> Disponível no streaming</label></div>
-        <label>Aluguel (R$)<input name="preco_aluguel" type="number" min="0" step="0.01" defaultValue={film?.preco_aluguel ?? ""} /></label>
-        <label>Compra (R$)<input name="preco_compra" type="number" min="0" step="0.01" defaultValue={film?.preco_compra ?? ""} /></label>
+        <label>Aluguel (R$)<MoneyInput name="preco_aluguel" defaultValue={film?.preco_aluguel ?? ""} /></label>
+        <label>Compra (R$)<MoneyInput name="preco_compra" defaultValue={film?.preco_compra ?? ""} /></label>
         <label>Dias de acesso no aluguel<input name="dias_acesso_aluguel" type="number" min="1" max="36500" required defaultValue={film?.dias_acesso_aluguel ?? 3} /></label>
         <label>Status<select name="status" defaultValue={film?.status ?? "ATIVO"}><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select></label>
         <p className={`${styles.hint} ${styles.wide}`}>Streaming exige preço de aluguel ou compra. Links de mídia precisam usar um host autorizado pelo sistema.</p>

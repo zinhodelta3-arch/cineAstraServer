@@ -13,6 +13,16 @@ export function createCatalogModel(database) {
          WHERE fg.id_filme = f.id_filme AND g.status = 'ATIVO') AS generos`;
     function pageLimit(limit = 20) { if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new TypeError('Limite inválido'); return limit + 1; }
     function fields(input, allowed) { const keys = Object.keys(input); if (!keys.length || keys.some(k => !allowed.includes(k))) throw new TypeError('Campos inválidos'); return keys; }
+    function filmFilters(q, admin) {
+        const where = [], args = [];
+        if (!admin || q.status) { where.push('f.status = ?'); args.push(admin ? q.status : 'ATIVO'); }
+        if (q.titulo) { where.push("f.titulo LIKE ? ESCAPE '!'"); args.push(`%${q.titulo.replace(/[!%_]/g, v => `!${v}`)}%`); }
+        if (q.classificacao) { where.push('f.classificacao = ?'); args.push(q.classificacao); }
+        if (q.upcoming !== undefined) where.push(q.upcoming ? 'f.data_lancamento > UTC_DATE()' : '(f.data_lancamento IS NULL OR f.data_lancamento <= UTC_DATE())');
+        for (const [key, column] of [['cinema', 'disponivel_cinema'], ['streaming', 'disponivel_streaming']]) if (q[key] !== undefined) { where.push(`f.${column} = ?`); args.push(q[key]); }
+        if (q.genreId) { where.push(`EXISTS (SELECT 1 FROM filme_generos fg JOIN generos g ON g.id_genero = fg.id_genero WHERE fg.id_filme = f.id_filme AND fg.id_genero = ?${admin ? '' : " AND g.status = 'ATIVO'"})`); args.push(q.genreId); }
+        return { where, args };
+    }
     return {
         popularFilms: (limit = 4) => rows(database, `SELECT ${selection(false)}, COUNT(t.id_ticket) AS views
             FROM filmes f JOIN sessoes s ON s.id_filme = f.id_filme
@@ -23,14 +33,20 @@ export function createCatalogModel(database) {
         film: (id, admin = false, c = database, lock = false) => one(c, `SELECT ${selection(admin)} FROM filmes f WHERE f.id_filme = ?${admin ? '' : " AND f.status = 'ATIVO'"}${lock ? ' FOR UPDATE' : ''}`, [id]),
         genre: (id, admin = false, c = database, lock = false) => one(c, `SELECT id_genero,nome,status FROM generos WHERE id_genero = ?${admin ? '' : " AND status = 'ATIVO'"}${lock ? ' FOR UPDATE' : ''}`, [id]),
         listFilms(q, admin = false) {
-            const where = ['f.id_filme > ?'], args = [q.cursor ?? '0'];
-            if (!admin || q.status) { where.push('f.status = ?'); args.push(admin ? q.status : 'ATIVO'); }
-            if (q.titulo) { where.push("f.titulo LIKE ? ESCAPE '!'"); args.push(`%${q.titulo.replace(/[!%_]/g, v => `!${v}`)}%`); }
-            if (q.classificacao) { where.push('f.classificacao = ?'); args.push(q.classificacao); }
-            if (q.upcoming !== undefined) where.push(q.upcoming ? 'f.data_lancamento > UTC_DATE()' : '(f.data_lancamento IS NULL OR f.data_lancamento <= UTC_DATE())');
-            for (const [key, column] of [['cinema', 'disponivel_cinema'], ['streaming', 'disponivel_streaming']]) if (q[key] !== undefined) { where.push(`f.${column} = ?`); args.push(q[key]); }
-            if (q.genreId) { where.push(`EXISTS (SELECT 1 FROM filme_generos fg JOIN generos g ON g.id_genero = fg.id_genero WHERE fg.id_filme = f.id_filme AND fg.id_genero = ?${admin ? '' : " AND g.status = 'ATIVO'"})`); args.push(q.genreId); }
-            return rows(database, `SELECT ${selection(admin)} FROM filmes f WHERE ${where.join(' AND ')} ORDER BY f.id_filme LIMIT ${pageLimit(q.limit)}`, args);
+            const { where, args } = filmFilters(q, admin);
+            return rows(database, `SELECT ${selection(admin)} FROM filmes f WHERE ${['f.id_filme > ?', ...where].join(' AND ')} ORDER BY f.id_filme LIMIT ${pageLimit(q.limit)}`, [q.cursor ?? '0', ...args]);
+        },
+        listNumberedFilms(q, signal) {
+            const limit = pageLimit(q.limit) - 1;
+            const { where, args } = filmFilters(q, false);
+            const from = `FROM filmes f WHERE ${where.join(' AND ')}`;
+            return database.transaction(async c => {
+                const total = Number((await one(c, `SELECT COUNT(*) AS total ${from}`, args)).total);
+                const totalPages = Math.max(1, Math.ceil(total / limit));
+                const page = Math.min(q.page, totalPages);
+                const items = total === 0 ? [] : await rows(c, `SELECT ${selection(false)} ${from} ORDER BY f.id_filme LIMIT ? OFFSET ?`, [...args, limit, (page - 1) * limit]);
+                return { items, pagination:{ limit, nextCursor:null, page, total, totalPages } };
+            }, { signal });
         },
         listGenres(q, admin = false, filmId = null, c = database) {
             const where = ['g.id_genero > ?'], args = [q.cursor ?? '0'];

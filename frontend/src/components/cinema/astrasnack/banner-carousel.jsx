@@ -1,5 +1,7 @@
 "use client";
 
+import LoadingImage from "@/components/ui/loading-image";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BANNERS } from "./data";
@@ -16,7 +18,7 @@ export default function BannerCarousel() {
             key={item.id}
             className={`absolute inset-0 transition-opacity duration-700 ${index === current ? "opacity-100" : "pointer-events-none opacity-0"}`}
           >
-            <img
+            <LoadingImage
               src={item.image}
               alt=""
               className="absolute inset-0 h-full w-full object-cover object-center"

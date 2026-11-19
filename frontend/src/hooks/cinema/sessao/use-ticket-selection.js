@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ticketTypes, emptySelection, quantityOf, totalOf, updateQuantity, createOrder } from "@/components/checkout/ticket-state.mjs";
 
 export default function useTicketSelection(session, onContinue) {
-  const [selection, setSelection] = useState(() => ({ ...emptySelection(), inteira: session.priceCents != null ? session.seats.length : 0 }));
+  const [selection, setSelection] = useState(emptySelection);
   const [halfDeclared, setHalfDeclared] = useState(false);
   const [info, setInfo] = useState(null);
   const [message, setMessage] = useState("");

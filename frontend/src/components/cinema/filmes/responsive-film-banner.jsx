@@ -1,5 +1,7 @@
 'use client';
 
+import LoadingImage from "@/components/ui/loading-image";
+
 import { useEffect, useState } from 'react';
 import { publicAsset, publicGet } from '@/lib/api/public-api.mjs';
 
@@ -43,7 +45,7 @@ export default function ResponsiveFilmBanner({ filmId, context, legacyBanner, co
   return <div className={`absolute inset-0 overflow-hidden bg-muted ${className}`} aria-hidden="true">
     <picture key={JSON.stringify([sources, base])} className="block size-full">
       {sources.map(([src, media]) => <source key={media} media={media} srcSet={src} />)}
-      <img src={base} alt="" onError={handleError} fetchPriority={active ? 'high' : 'auto'} className={`size-full ${imagePosition} ${fallback ? 'object-cover' : `object-scale-down ${sources.map(([, , fit]) => fit).join(' ')}`}`} />
+      <LoadingImage src={base} alt="" onError={handleError} fetchPriority={active ? 'high' : 'auto'} className={`size-full ${imagePosition} ${fallback ? 'object-cover' : `object-scale-down ${sources.map(([, , fit]) => fit).join(' ')}`}`} />
     </picture>
   </div>;
 }

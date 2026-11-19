@@ -1,5 +1,7 @@
 'use client';
 
+import MoneyInput from "@/components/ui/money-input";
+
 import { useEffect, useRef, useState } from 'react';
 import { Search, Send } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -103,14 +105,15 @@ export default function CostsAdmin() {
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     <section className={styles.filmPicker} aria-labelledby="costs-picker-title">
       <h2 id="costs-picker-title">Selecione o item</h2>
-      <form className={styles.pickerControl} onSubmit={load}>
+      <form className={`${styles.pickerControl} ${styles.costPicker}`} onSubmit={load}>
         <label>Tipo<select value={kind} onChange={event => changeKind(event.target.value)} disabled={pending}>{Object.keys(fields).map(value => <option key={value} value={value}>{labels[value]}</option>)}</select></label>
         <label>Buscar entre os itens carregados<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={`Buscar ${labels[kind].toLocaleLowerCase('pt-BR')}`} disabled={pending} /></label>
-        <label className={styles.costItemPicker}>{labels[kind]}<select value={id} onChange={event => changeId(event.target.value)} disabled={pending || items.loading} required>
+        <label className={styles.costItemPicker}>{labels[kind]}<select value={id} onChange={event => changeId(event.target.value)} disabled={pending || items.loading} required aria-describedby={kind === 'sessions' && selected ? 'selected-pricing-session' : undefined}>
           <option value="">Selecione {labels[kind].toLocaleLowerCase('pt-BR')}</option>
           {id && !filtered.some(item => itemId(kind, item) === id) && <option value={id}>{selected ? `${itemName(kind, selected)} · #${id}` : `${labels[kind]} #${id}`}</option>}
           {filtered.map(item => <option key={itemId(kind, item)} value={itemId(kind, item)}>{itemName(kind, item)} · #{itemId(kind, item)}</option>)}
         </select></label>
+        {kind === 'sessions' && selected && <p id="selected-pricing-session" className={styles.costSelection}>{itemName(kind, selected)}</p>}
         <button type="submit" className={styles.primary} disabled={loading || pending || items.loading || !id}><Search size={16} aria-hidden="true" />{loading ? 'Carregando…' : 'Consultar custos'}</button>
       </form>
       {items.loading && <p className={styles.hint} role="status">Carregando {labels[kind].toLocaleLowerCase('pt-BR')}…</p>}
@@ -120,7 +123,7 @@ export default function CostsAdmin() {
     </section>
     {error && !resource && <p className={styles.error} role="alert">{error}</p>}
     {resource && <section className={styles.panel} aria-labelledby="costs-title"><header className={styles.panelHeader}><div><h2 id="costs-title">{labels[kind]} #{id}</h2><p>{catalogPrice ? 'O preço de venda é definido no cadastro do produto. Custos e markup orientam a sugestão de preço.' : 'Salve os custos antes de publicar um novo preço.'}</p></div></header>
-      <form className={`${styles.form} ${styles.pricingForm}`} onSubmit={save}>{fields[kind].map(field => <label key={field.key}>{field.label}{field.count ? <input name={field.key} type="number" min="0" max="1" defaultValue={resource[field.key] ?? 0} required /> : <input name={field.key} inputMode="decimal" defaultValue={resource[field.key] ?? ''} placeholder={kind === 'films' ? 'Opcional' : '0.00'} required={kind !== 'films'} />}</label>)}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Salvando…' : 'Salvar custos'}</button></div></form>
+      <form className={`${styles.form} ${styles.pricingForm}`} onSubmit={save}>{fields[kind].map(field => <label key={field.key}>{field.label}{field.count ? <input name={field.key} type="number" min="0" max="1" defaultValue={resource[field.key] ?? 0} required /> : <MoneyInput key={id} name={field.key} defaultValue={resource[field.key]} required={kind !== "films"} />}</label>)}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Salvando…' : 'Salvar custos'}</button></div></form>
       <div className={styles.pricingPublish}><label>Categoria do preço<select value={category} onChange={event => setCategory(event.target.value)}>{categoriesByKind[kind].map(value => <option key={value} value={value}>{categories[value]}</option>)}</select></label><button type="button" className={styles.secondary} onClick={() => { setConfirm(true); setError(''); }} disabled={pending}><Send size={16} aria-hidden="true" />{catalogPrice ? 'Validar preço cadastrado' : 'Publicar preço'}</button></div>
       {published && <p className={styles.notice} role="status">{categories[published.category]}: {money(published.price)}{published.suggestedPrice != null && <> · Sugestão por custos e markup: {money(published.suggestedPrice)}</>}{published.annualPrice != null ? ` · Anual: ${money(published.annualPrice)}` : ''}</p>}
       {error && <p className={styles.error} role="alert">{error}</p>}

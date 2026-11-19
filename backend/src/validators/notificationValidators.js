@@ -5,6 +5,7 @@ const notificationId = z.string().regex(/^[1-9]\d{0,19}$/).refine(v => BigInt(v)
 export const notificationQuerySchema = z.object({
     limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),
     cursor: notificationId.optional(),
+    order: z.enum(['recent']).optional(),
     unread: z.enum(['true','false']).transform(v => v === 'true').optional(),
     type: z.string().trim().min(1).max(50).optional()
 }).strict();

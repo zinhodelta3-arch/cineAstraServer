@@ -22,7 +22,7 @@ const streamingSections = [
 export default function Footer({ supportHref = "/cinema/suporte" }) {
   const streaming = supportHref.startsWith("/streaming/");
   const sections = [...(streaming ? streamingSections : cinemaSections), { title: "CineAstra", items: [
-    ["Sobre nós", "/cinema/sobre-nos"], ["Parcerias", "/cinema/parcerias"], ["Destinação social", "/cinema/destinacao-social"],
+    ["Sobre nós", "/cinema/sobre-nos"], ["CineAstraNews", "/cinema/noticias"], ["Parcerias", "/cinema/parcerias"], ["Destinação social", "/cinema/destinacao-social"],
     [registrationDocuments.terms.title, registrationDocuments.terms.url], [registrationDocuments.privacy.title, registrationDocuments.privacy.url],
     ["Suporte", supportHref],
   ] }];

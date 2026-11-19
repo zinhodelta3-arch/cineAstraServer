@@ -112,14 +112,11 @@
 .sp-section-label { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 9px; font-weight: 600; letter-spacing: 1.7px; color: var(--muted-foreground); padding-bottom: 12px; border-bottom: 1px dashed var(--sp-line); }
 .sp-avatar-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 9px; margin: 18px 0 20px; }
 .sp-avatar-option { padding: 0; position: relative; border: 2px solid transparent; border-radius: calc(var(--radius, 10px) * .6); background: transparent; outline-offset: 3px; }
-.sp-avatar-option img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: calc(var(--radius, 10px) * .4); }
+.sp-avatar-option img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: calc(var(--radius, 10px) * .4); }
 .sp-avatar-option:hover, .sp-avatar-option.is-selected { border-color: var(--primary); }
 .sp-avatar-check { position: absolute; right: -5px; bottom: -5px; border: 2px solid var(--background); border-radius: 50%; background: var(--primary); color: var(--primary-foreground); display: grid; place-items: center; width: 19px; height: 19px; }
 .sp-avatar-check svg { width: 10px; height: 10px; }
-.sp-upload-row { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
 .sp-root .sp-btn-compact { padding: 10px 14px; min-height: 39px; font-size: 11px; }
-.sp-hidden { display: none; }
-.sp-text-button { border: 0; background: transparent; color: var(--primary); font-size: 11px !important; padding: 10px 0 0; text-decoration: underline; text-underline-offset: 4px; }
 .sp-kids-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; margin-top: 20px; border-top: 1px dashed var(--sp-line); border-bottom: 1px dashed var(--sp-line); cursor: pointer; }
 .sp-kids-row > span:first-child { display: flex; flex-direction: column; gap: 6px; }
 .sp-kids-row strong { font-size: 12px; font-weight: 650; }
@@ -181,7 +178,6 @@
   .sp-editor-photo { width: 70px; height: 70px; }
   .sp-avatar-grid { grid-template-columns: repeat(4, 1fr); gap: 13px; }
   .sp-avatar-option { max-width: 75px; }
-  .sp-upload-row { gap: 9px; }
   .sp-dialog-actions { flex-wrap: wrap; }
   .sp-actions-right { width: 100%; }
   .sp-actions-right .sp-btn { flex: 1; padding-inline: 10px; font-size: 11px; }

@@ -1,10 +1,11 @@
+import LoadingImage from "@/components/ui/loading-image";
 import Link from "next/link";
 import Icon from "./icon";
 
 export default function PartnershipsHero() {
   return (
     <section className="ca-hero ca-hero-cinema">
-      <img className="ca-hero-photo" src="/parcerias/sala-cinema.jpg" alt="" aria-hidden="true" width="1800" height="1200" fetchPriority="high" />
+      <LoadingImage className="ca-hero-photo" src="/parcerias/sala-cinema.jpg" alt="" aria-hidden="true" width="1800" height="1200" fetchPriority="high" />
       <div className="ca-hero-shade" aria-hidden="true" />
       <div className="ca-wrap ca-hero-stage">
         <nav aria-label="Navegação estrutural" className="ca-breadcrumb"><Link href="/">Cinema</Link><span aria-hidden="true">/</span><span aria-current="page">Parcerias e benefícios</span></nav>

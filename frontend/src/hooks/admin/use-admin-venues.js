@@ -13,8 +13,8 @@ export async function venueRequest(path, { method = "GET", body, signal } = {}) 
   return readSessionResponse(response);
 }
 
-export function useAdminVenues(path) {
-  return usePaginatedList(path, venueRequest);
+export function useAdminVenues(path, options) {
+  return usePaginatedList(path, venueRequest, options);
 }
 
 export function useVenueActions(list) {

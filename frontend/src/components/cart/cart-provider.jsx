@@ -1,48 +1,33 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react"
+import { useSession } from "@/hooks/auth/use-session"
+import { accountCartKey, cartChanged, guestCartKey, parseCart, readCartSnapshot, updateCart } from "@/lib/api/local-cart.mjs"
 
 const CartContext = createContext(null)
-const STORAGE_KEY = "cineastra:cart:v1"
-const noSubscription = () => () => {}
 const emptySnapshot = () => null
 
-function savedCartSnapshot() {
-  try { return localStorage.getItem(STORAGE_KEY) }
-  catch { return null }
-}
-
-function readItems(snapshot) {
-  try {
-    const saved = JSON.parse(snapshot || "[]")
-    if (Array.isArray(saved)) {
-      return saved
-        .filter(item => item && item.id && Number.isFinite(Number(item.quantity)) && Number(item.quantity) > 0)
-        .map(item => ({ ...item, quantity: Number(item.quantity) }))
-    }
-  } catch {
-    // Mantém o carrinho vazio se o armazenamento estiver indisponível.
+function subscribe(onChange) {
+  window.addEventListener("storage", onChange)
+  window.addEventListener(cartChanged, onChange)
+  return () => {
+    window.removeEventListener("storage", onChange)
+    window.removeEventListener(cartChanged, onChange)
   }
-  return []
 }
 
 export function CartProvider({ children }) {
-  const snapshot = useSyncExternalStore(noSubscription, savedCartSnapshot, emptySnapshot)
-  const savedItems = useMemo(() => readItems(snapshot), [snapshot])
-  const [updatedItems, setUpdatedItems] = useState(null)
-  const items = updatedItems ?? savedItems
+  const { user, loading } = useSession()
+  const key = loading ? null : !user ? guestCartKey : user.role === "CLIENTE" ? accountCartKey(user.id) : null
+  const getSnapshot = useCallback(() => readCartSnapshot(key), [key])
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, emptySnapshot)
+  const { items, savedForLater } = useMemo(() => parseCart(snapshot), [snapshot])
   const setItems = useCallback(update => {
-    setUpdatedItems(current => update(current ?? savedItems))
-  }, [savedItems])
-
-  useEffect(() => {
-    if (!updatedItems) return
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedItems))
-    } catch {
-      // O carrinho continua funcional durante a sessão mesmo sem armazenamento persistente.
-    }
-  }, [updatedItems])
+    updateCart(key, current => {
+      const next = update(current.items)
+      return next === current.items ? current : { ...current, items: next }
+    })
+  }, [key])
 
   const addItem = useCallback((product, quantity = 1) => {
     const amount = product.purchaseKind === 'SESSION' ? 1 : Math.min(100, Math.max(1, Math.floor(Number(quantity) || 1)))
@@ -82,7 +67,7 @@ export function CartProvider({ children }) {
   const updatePrices = useCallback((expectedItems, quotes) => {
     if (quotes.length !== expectedItems.length || quotes.some(quote => !quote || !Number.isFinite(Number(quote.unitPrice)) || Number(quote.unitPrice) < 0)) return
     // Uma resposta antiga não deve substituir itens alterados durante a consulta.
-    setItems(current => current !== expectedItems ? current : current.map((item, index) => ({
+    setItems(current => JSON.stringify(current) !== JSON.stringify(expectedItems) ? current : current.map((item, index) => ({
       ...item,
       price: Number(quotes[index].unitPrice),
       originalPrice: quotes[index].originalPrice ?? null,
@@ -90,10 +75,25 @@ export function CartProvider({ children }) {
     })))
   }, [setItems])
 
-  const clearCart = useCallback(() => setUpdatedItems([]), [])
+  const clearCart = useCallback(() => setItems(() => []), [setItems])
+  const resumeSavedItems = useCallback(() => {
+    updateCart(key, current => {
+      if (current.items.length || !current.savedForLater.length) return current
+      const [first, ...rest] = current.savedForLater
+      const items = [first]
+      const savedForLater = []
+      for (const item of rest) {
+        const fits = item.localId === first.localId && !items.some(entry => entry.id === item.id)
+          && items.length < 50 && items.reduce((total, entry) => total + entry.quantity, item.quantity) <= 500
+        if (fits) items.push(item)
+        else savedForLater.push(item)
+      }
+      return { items, savedForLater }
+    })
+  }, [key])
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const value = useMemo(() => ({ items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart }), [items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart])
+  const value = useMemo(() => ({ items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart, savedForLater, resumeSavedItems }), [items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart, savedForLater, resumeSavedItems])
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

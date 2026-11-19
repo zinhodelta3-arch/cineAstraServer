@@ -1,5 +1,7 @@
 "use client";
 
+import MoneyInput from "@/components/ui/money-input";
+
 import TablePagination from '@/components/ui/table-pagination';
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
@@ -79,7 +81,7 @@ export default function InputsAdmin() {
     actions.run(() => snackRequest(item ? `inputs/${item.id_insumo}` : "inputs", { method: item ? "PATCH" : "POST", body }), item ? "Insumo atualizado." : "Insumo cadastrado.");
   }
   const supplierName = (id) => suppliers.items.find((supplier) => supplier.id_fornecedor === id)?.nome_cine || suppliers.items.find((supplier) => supplier.id_fornecedor === id)?.razao_social || `Fornecedor #${id}`;
-  const localName = (id) => locals.items.find((local) => local.id_local === id)?.nome || `Cinema #${id}`;
+  const localName = (id) => id ? locals.items.find((local) => local.id_local === id)?.nome || `Cinema #${id}` : "Sem cinema vinculado";
 
   return <SnackLayout title="Insumos" description="Gerencie os produtos avulsos e os ingredientes usados nos combos." action={<button type="button" className={styles.primary} onClick={() => open("form")}><Plus size={16} aria-hidden="true" />Novo insumo</button>}>
     {actions.notice && <p className={styles.notice} role="status">{actions.notice}</p>}
@@ -96,10 +98,10 @@ export default function InputsAdmin() {
           {formSupplierId && formLocalId && <div className={styles.wide}>{grants.loading ? <p className={styles.hint}>Verificando autorização…</p> : grant ? <p className={styles.hint}>Fornecedor autorizado para este cinema.</p> : <button type="button" className={styles.secondary} onClick={authorize} disabled={grantPending}>{grantPending ? "Autorizando…" : "Autorizar fornecedor neste cinema"}</button>}{grantError && <p className={styles.error} role="alert">{grantError}</p>}{grants.error && <p className={styles.error} role="alert">{grants.error}</p>}</div>}</>}
         {item && <p className={`${styles.hint} ${styles.wide}`}>{supplierName(item.id_fornecedor)} · {localName(item.id_local)}. Esses vínculos não podem ser alterados após o cadastro.</p>}
         <label className={styles.wide}>Nome<input name="nome" required maxLength={150} defaultValue={item?.nome ?? ""} /></label><label>Categoria<select name="categoria" defaultValue={item?.categoria ?? ""}><option value="">Sem categoria</option>{item?.categoria && !categories.items.some(row => row.name === item.categoria) && <option value={item.categoria}>{item.categoria}</option>}{categories.items.map(row => <option key={row.name} value={row.name}>{row.name}</option>)}</select></label>{categories.error && <p role="alert">{categories.error}</p>}{categories.nextCursor && <button type="button" className={styles.secondary} onClick={categories.loadMore} disabled={categories.loadingMore}>Mais categorias</button>}{!item && <div className={`${styles.checkboxList} ${styles.wide}`}><label><input type="checkbox" name="usePricingRule" checked={usePricingRule} onChange={event => setUsePricingRule(event.target.checked)} /> Calcular preço pela regra cadastrada</label></div>}
-        {!usePricingRule && <label>Preço (R$)<input name="preco" type="number" min="0" max="99999999.99" step="0.01" required defaultValue={item?.preco ?? ""} /></label>}
+        {!usePricingRule && <label>Preço (R$)<MoneyInput name="preco" required defaultValue={item?.preco ?? ""} /></label>}
         {usePricingRule && <p className={`${styles.hint} ${styles.wide}`}>O preço será calculado com os custos informados e o markup da categoria, no momento de salvar.</p>}
-        <label>Custo da receita (R$)<input name="custo_receita" type="number" min="0" max="99999999.99" step="0.01" defaultValue={item?.custo_receita ?? ""} /></label>
-        <label>Custo da parceria (R$)<input name="custo_parceria" type="number" min="0" max="99999999.99" step="0.01" defaultValue={item?.custo_parceria ?? ""} /></label>
+        <label>Custo da receita (R$)<MoneyInput name="custo_receita" defaultValue={item?.custo_receita ?? ""} /></label>
+        <label>Custo da parceria (R$)<MoneyInput name="custo_parceria" defaultValue={item?.custo_parceria ?? ""} /></label>
         <p className={styles.wide}>Para vender avulso, preencha os dois custos. Informe R$ 0,00 quando um custo não se aplicar.</p>
         <label>Estoque mínimo<input name="quantidade_minima" type="number" min="0" max="2147483647" required defaultValue={item?.quantidade_minima ?? 0} /></label>{item && <label>Status<select name="status" defaultValue={item.status}><option value="DISPONIVEL">Disponível</option><option value="INDISPONIVEL">Indisponível</option></select></label>}<label className={styles.wide}>Descrição<textarea name="descricao" maxLength={10000} defaultValue={item?.descricao ?? ""} /></label><div className={`${styles.checks} ${styles.wide}`}><label><input type="checkbox" name="venda_avulsa" defaultChecked={item?.venda_avulsa ?? false} /> Produto vendido avulso</label></div>
         <div className={`${styles.dialogActions} ${styles.wide}`}>{suppliers.nextCursor && <button type="button" className={styles.secondary} onClick={suppliers.loadMore} disabled={suppliers.loadingMore}>Mais fornecedores</button>}{locals.nextCursor && <button type="button" className={styles.secondary} onClick={locals.loadMore} disabled={locals.loadingMore}>Mais cinemas</button>}{grants.nextCursor && <button type="button" className={styles.secondary} onClick={grants.loadMore} disabled={grants.loadingMore}>Mais vínculos</button>}</div>

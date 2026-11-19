@@ -1,100 +1,24 @@
 "use client";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useSyncExternalStore } from "react";
 import {
   Film, Ticket, CalendarDays, Clock3, Megaphone, Handshake, ArrowRight, ArrowUpRight,
-  Share2, Check, Users, Trees, Theater, Bell, Popcorn, Mail, Clapperboard, Info, X,
+  Share2, Check, Users, Trees, Theater, Bell, Popcorn, Clapperboard, Info, X,
   Newspaper, CircleDot, UserRound, Radio,
 } from "lucide-react";
+
+import { artigosCineAstra, EVENTO, articlePath } from "@/lib/content/cineastra-news.mjs";
+import NewsletterSignup from "@/components/cinema/noticias/newsletter-signup";
 
 /* ============ DADOS ============ */
 /* ATENÇÃO: confirme data, horários e detalhes do evento antes de publicar.
    Tudo o que muda fica concentrado aqui no topo. */
-const EVENTO = {
-  filme: "Vingadores: Doomsday",
-  local: "Parque Linear de São Caetano do Sul",
-  data: "Sáb, 14 Nov",   // ← CONFIRMAR
-  abertura: "18:00",     // ← CONFIRMAR
-  inicio: "19:30",       // ← CONFIRMAR
-  entrada: "Gratuita",   // ← CONFIRMAR
-};
-
 const EDICAO = "22 de outubro de 2026";
 const AUTOR = "Equipe CineAstra";
 
 const CATEGORIAS = ["Todas", "Parcerias", "Transmissões", "Comunidade", "Avisos"];
 
-const NOTICIAS = [
-  {
-    id: "n-1",
-    categoria: "Parcerias",
-    data: "22 Out 2026",
-    leitura: "3 min",
-    icon: Trees,
-    titulo: "CineAstra firma parceria com o Parque Linear de São Caetano do Sul",
-    resumo: "Acordo vai levar cinema, cultura e lazer para dentro do parque, aproximando a telona de quem vive e frequenta a cidade.",
-    corpo: [
-      "O CineAstra anuncia uma parceria com o Parque Linear de São Caetano do Sul. A iniciativa nasce com o objetivo de levar atividades de cinema e cultura para um dos espaços de convivência da cidade.",
-      "A primeira ação conjunta será a exibição ao ar livre de Vingadores: Doomsday, aberta à comunidade. Novas atividades poderão ser anunciadas conforme a parceria avançar.",
-      "Acompanhe este mural: todas as novidades, mudanças de programação e orientações ao público serão publicadas aqui em primeira mão.",
-    ],
-  },
-  {
-    id: "n-2",
-    categoria: "Transmissões",
-    data: "22 Out 2026",
-    leitura: "4 min",
-    icon: Clapperboard,
-    titulo: `${EVENTO.filme} será exibido ao ar livre no parque`,
-    resumo: `Sessão especial no ${EVENTO.local}. Leve cadeira, manta e a vizinhança toda.`,
-    corpo: [
-      `A transmissão de ${EVENTO.filme} acontecerá no ${EVENTO.local}, com tela montada ao ar livre e a estrutura de som do CineAstra.`,
-      `Os portões abrem às ${EVENTO.abertura} e a sessão começa às ${EVENTO.inicio}. Entrada: ${EVENTO.entrada.toLowerCase()}. Recomendamos chegar com antecedência para escolher bem o lugar no gramado.`,
-      "Haverá bomboniere no local, com pipoca e bebidas. Em caso de chuva ou qualquer mudança, o novo plano será divulgado neste mural e nas redes do CineAstra.",
-    ],
-    destaque: true,
-  },
-  {
-    id: "n-3",
-    categoria: "Parcerias",
-    data: "Em andamento",
-    leitura: "2 min",
-    icon: Theater,
-    titulo: "CineAstra conversa com teatros e cinemas da região",
-    resumo: "Objetivo é montar uma rede cultural local, com programação conjunta e benefícios entre parceiros.",
-    corpo: [
-      "Além do Parque Linear, o CineAstra está em conversas com teatros e cinemas da região para formar uma rede cultural integrada.",
-      "A ideia é compartilhar programação, criar sessões especiais e oferecer vantagens ao público que circula entre os espaços parceiros.",
-      "Os nomes serão divulgados assim que as parcerias forem confirmadas.",
-    ],
-  },
-  {
-    id: "n-4",
-    categoria: "Avisos",
-    data: "Antes do evento",
-    leitura: "2 min",
-    icon: Info,
-    titulo: "Guia do público: o que levar e o que esperar da sessão ao ar livre",
-    resumo: "Chegada, bomboniere, clima e acessibilidade: tudo o que você precisa saber antes de ir.",
-    corpo: [
-      "Leve cadeira de praia, manta ou almofada e, se quiser, um agasalho: à noite a temperatura costuma cair.",
-      "A bomboniere do CineAstra estará no local. Confira as orientações do parque sobre alimentos e bebidas trazidos de casa.",
-      "Dúvidas sobre acessibilidade ou acesso ao local? Fale com a gente pelo cadastro de avisos no fim da página.",
-    ],
-  },
-  {
-    id: "n-5",
-    categoria: "Comunidade",
-    data: "Contínuo",
-    leitura: "1 min",
-    icon: Users,
-    titulo: "Seu bairro, sua sessão: indique filmes para as próximas exibições",
-    resumo: "Queremos ouvir a comunidade para escolher os próximos títulos e locais.",
-    corpo: [
-      "O CineAstra quer que a programação ao ar livre reflita o que a comunidade gosta de assistir.",
-      "Envie sua sugestão de filme ou de local pelo cadastro de contato no fim da página. As ideias mais pedidas entram na curadoria das próximas sessões.",
-    ],
-  },
-];
+const articleIcons = { Trees, Clapperboard, Theater, Info, Users };
+const NOTICIAS = artigosCineAstra.map(item => ({ ...item, icon: articleIcons[item.icone] }));
 
 const AGENDA = [
   { id: "a-1", status: "Concluído", dia: "22", mes: "OUT", titulo: "Parceria com o Parque Linear anunciada", texto: "Anúncio oficial da parceria entre CineAstra e o parque." },
@@ -484,47 +408,8 @@ function ParceirosSection() {
 
 /* ============ CONTATO ============ */
 function ContatoSection() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | enviando | ok | erro
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!email.trim() || status === "enviando") return;
-
-    setStatus("enviando");
-
-    try {
-      const res = await fetch("/api/avisos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-
-      // Lê a resposta como texto primeiro
-      const resposta = await res.text();
-
-      let resultado;
-      try {
-        resultado = JSON.parse(resposta);
-      } catch {
-        console.error("Resposta inválida da API:", resposta);
-        throw new Error(`O servidor retornou uma resposta inválida (HTTP ${res.status}).`);
-      }
-
-      if (!res.ok || !resultado?.ok) {
-        console.error("Erro no cadastro:", { status: res.status, resposta: resultado });
-        throw new Error(resultado?.error || `Não foi possível realizar o cadastro (HTTP ${res.status}).`);
-      }
-
-      setStatus("ok");
-    } catch (error) {
-      console.error("Erro ao cadastrar aviso:", error);
-      setStatus("erro");
-    }
-  };
-
   return (
-    <section id="contato" className="relative py-24 bg-background">
+    <section id="contato" className="relative scroll-mt-24 py-24 bg-background">
       <div className="max-w-4xl mx-auto px-5 md:px-8">
         <div
           style={{ "--n": "50%" }}
@@ -537,7 +422,7 @@ function ContatoSection() {
             </Badge>
 
             <h2 className="f-display uppercase text-4xl md:text-5xl font-black text-card-foreground leading-[0.95] mb-3">
-              Fique por dentro de tudo
+              Receba o CineAstraNews por e-mail
             </h2>
 
             <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
@@ -545,54 +430,7 @@ function ContatoSection() {
               e convites para as próximas sessões.
             </p>
 
-            {status === "ok" ? (
-              <p className="flex items-center gap-2 text-sm font-semibold text-primary" role="status">
-                <Check className="w-4 h-4" aria-hidden="true" />
-                Tudo certo! Você vai receber nossas notícias.
-              </p>
-            ) : (
-              <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3">
-                <label htmlFor="email-aviso" className="sr-only">Seu e-mail</label>
-
-                <div className="relative flex-1">
-                  <Mail
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <input
-                    id="email-aviso"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    disabled={status === "enviando"}
-                    aria-invalid={status === "erro"}
-                    aria-describedby={status === "erro" ? "erro-aviso" : undefined}
-                    className="w-full rounded-full border border-border bg-muted/30 pl-11 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
-                  />
-                </div>
-
-                <Button type="submit" disabled={status === "enviando"}>
-                  {status === "enviando" ? (
-                    "Enviando..."
-                  ) : (
-                    <>
-                      Quero receber
-                      <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-                    </>
-                  )}
-                </Button>
-
-                {status === "erro" && (
-                  <p id="erro-aviso" role="alert" className="text-sm text-destructive sm:basis-full">
-                    Não foi possível realizar o cadastro. Confira o e-mail e tente novamente.
-                  </p>
-                )}
-              </form>
-            )}
+            <NewsletterSignup />
           </div>
 
           <div className="tear tear-v md:border-t-0 bg-secondary/15 p-6 flex flex-col items-center justify-center gap-4">
@@ -619,9 +457,10 @@ function ArtigoModal({ item, onClose }) {
   const share = async () => {
     const text = `${item.titulo} · CineAstra News`;
     try {
-      if (navigator.share) await navigator.share({ title: "CineAstra News", text, url: window.location.href });
+      const url = new URL(articlePath(item.id), window.location.origin).href;
+      if (navigator.share) await navigator.share({ title: "CineAstra News", text, url });
       else {
-        await navigator.clipboard.writeText(`${text} ${window.location.href}`);
+        await navigator.clipboard.writeText(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 2200);
       }
@@ -658,14 +497,28 @@ function ArtigoModal({ item, onClose }) {
 }
 
 /* ============ PÁGINA ============ */
+const listenToArticle = notify => {
+  window.addEventListener("hashchange", notify);
+  return () => window.removeEventListener("hashchange", notify);
+};
+const readArticle = () => NOTICIAS.find(item => window.location.hash === `#materia-${item.id}`) ?? null;
+const readInitialArticle = () => null;
+
 export default function ComunicadosPage() {
-  const [aberta, setAberta] = useState(null);
+  const aberta = useSyncExternalStore(listenToArticle, readArticle, readInitialArticle);
+  const open = item => { window.location.hash = `materia-${item.id}`; };
+  const close = () => {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    window.history.replaceState(null, '', url);
+    window.dispatchEvent(new Event('hashchange'));
+  };
 
   return (
     <div className="ca-root min-h-screen bg-background text-foreground transition-colors duration-300">
       <CinemaStyles />
       <Masthead />
-      <NoticiasSection onOpen={setAberta} />
+      <NoticiasSection onOpen={open} />
       <SectionDivider />
       <AgendaSection />
       <SectionDivider />
@@ -674,7 +527,7 @@ export default function ComunicadosPage() {
       <ParceirosSection />
       <SectionDivider />
       <ContatoSection />
-      {aberta && <ArtigoModal key={aberta.id} item={aberta} onClose={() => setAberta(null)} />}
+      {aberta && <ArtigoModal key={aberta.id} item={aberta} onClose={close} />}
     </div>
   );
 }

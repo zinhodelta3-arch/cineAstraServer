@@ -23,7 +23,7 @@ export default function ReportsLayout({ title, description, children }) {
 }
 
 export function ReportFilters({ range, onSubmit, children }) {
-  return <form className={`${styles.toolbar} ${reports.filters}`} onSubmit={event => { event.preventDefault(); onSubmit(); }}>
+  return <form className={reports.filters} onSubmit={event => { event.preventDefault(); onSubmit(); }}>
     <label className={styles.filter}>De<input type="date" value={range.from} onChange={event => range.setFrom(event.target.value)} min="1000-01-01" max="9999-12-30" required /></label>
     <label className={styles.filter}>Até<input type="date" value={range.to} onChange={event => range.setTo(event.target.value)} min="1000-01-01" max="9999-12-30" required /></label>
     {children}<button type="submit" className={styles.primary}>Aplicar filtros</button>

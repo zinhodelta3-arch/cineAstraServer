@@ -2,17 +2,8 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import { validSession } from "@/components/checkout/ticket-state.mjs";
-
-export const CHECKOUT_SESSION_KEY = "cineastra:checkout:session";
-
-function readSnapshot() {
-  try {
-    // Mantém o snapshot como string estável, sem criar objetos a cada leitura.
-    return window.sessionStorage.getItem(CHECKOUT_SESSION_KEY);
-  } catch {
-    return null;
-  }
-}
+import { useSession } from "@/hooks/auth/use-session";
+import { checkoutStorageKey, readCheckoutState } from "@/lib/api/checkout-storage.mjs";
 
 function serverSnapshot() {
   return null;
@@ -20,8 +11,7 @@ function serverSnapshot() {
 
 function subscribe(onChange) {
   function onStorage(event) {
-    if (event.storageArea === window.sessionStorage &&
-        (event.key === CHECKOUT_SESSION_KEY || event.key === null)) {
+    if (event.storageArea === window.sessionStorage) {
       onChange();
     }
   }
@@ -30,7 +20,9 @@ function subscribe(onChange) {
 }
 
 export function useCheckoutSession(fallback = null) {
-  const saved = useSyncExternalStore(subscribe, readSnapshot, serverSnapshot);
+  const { user, loading } = useSession();
+  const key = !loading && user?.role === "CLIENTE" ? checkoutStorageKey("session", user.id) : null;
+  const saved = useSyncExternalStore(subscribe, () => readCheckoutState(key), serverSnapshot);
 
   return useMemo(() => {
     try {

@@ -21,7 +21,7 @@ export default function useCinemaCart(){
    const response=await sessionFetch('/api/cart/quote',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(input),signal:abort.signal});
    const quote=await readSessionResponse(response);
    if(!abort.signal.aborted){
-    cart.updatePrices(cart.items,cart.items.map(item=>{
+    if(!quote.couponCode)cart.updatePrices(cart.items,cart.items.map(item=>{
      const index=input.lines.findIndex(line=>line.kind===item.purchaseKind&&line.id===item.sourceId&&(line.kind!=='SESSION'||line.seatId===item.seatId));
      return quote.lines[index];
     }));
@@ -38,5 +38,6 @@ export default function useCinemaCart(){
   increase:item=>{if(item.purchaseKind!=='SESSION')cart.updateQuantity(item.id,item.type,item.details,Math.min(100,item.quantity+1));},
   decrease:item=>cart.updateQuantity(item.id,item.type,item.details,item.quantity-1),
   remove:item=>cart.removeItem(item.id,item.type,item.details),goBack:()=>router.back(),
+  savedForLater:cart.savedForLater,resumeSavedItems:cart.resumeSavedItems,
   summary:{quote:current.quote,pending:current.pending,error:current.error,issue:cart.items.length?issue:null,session,coupon,setCoupon,calculate,itemCount:cart.itemCount,total:current.quote?Number(current.quote.total):cart.total}};
 }

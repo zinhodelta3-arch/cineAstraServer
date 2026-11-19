@@ -1,5 +1,7 @@
 "use client";
 
+import MoneyInput from "@/components/ui/money-input";
+
 import TablePagination from '@/components/ui/table-pagination';
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState } from "react";
@@ -129,9 +131,9 @@ export default function CombosAdmin() {
           <p className={`${styles.hint} ${styles.wide}`}>Use uma experiência e uma sessão do mesmo local. Deixe os quatro campos vazios para um combo do catálogo geral.</p>
         </fieldset>
         <label className={styles.wide}>Nome<input name="nome" required maxLength={150} defaultValue={item?.nome ?? ""} /></label>{!item && <div className={`${styles.checkboxList} ${styles.wide}`}><label><input type="checkbox" name="usePricingRule" checked={usePricingRule} onChange={event => setUsePricingRule(event.target.checked)} /> Calcular preço pela regra cadastrada</label></div>}
-        {!usePricingRule && <label>Preço (R$)<input name="preco" type="number" min="0" max="99999999.99" step="0.01" required defaultValue={item?.preco ?? ""} /></label>}
+        {!usePricingRule && <label>Preço (R$)<MoneyInput name="preco" required defaultValue={item?.preco ?? ""} /></label>}
         {usePricingRule && <p className={`${styles.hint} ${styles.wide}`}>O preço será calculado com os custos informados e o markup da categoria, no momento de salvar.</p>}<label className={styles.wide}>Descrição<textarea name="descricao" maxLength={10000} defaultValue={item?.descricao ?? ""} /></label>
-        <label>Custo operacional (R$)<input name="custo_operacional" type="number" min="0" max="99999999.99" step="0.01" required defaultValue={item?.custo_operacional ?? ""} /></label>
+        <label>Custo operacional (R$)<MoneyInput name="custo_operacional" required defaultValue={item?.custo_operacional ?? ""} /></label>
         <p className={`${styles.hint} ${styles.wide}`}>Informe 0,00 quando o combo não tiver custo adicional além dos insumos.</p>
         {!item && compositionEditor()}{actions.error && <p className={`${styles.error} ${styles.wide}`} role="alert">{actions.error}</p>}
         <div className={`${styles.dialogActions} ${styles.wide}`}>{locals.nextCursor && !item && <button type="button" className={styles.secondary} onClick={locals.loadMore} disabled={locals.loadingMore}>Mais cinemas</button>}<button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="submit" className={styles.primary} disabled={actions.pending}>{actions.pending ? "Salvando…" : item ? "Salvar alterações" : "Cadastrar combo"}</button></div>

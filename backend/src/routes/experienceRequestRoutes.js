@@ -8,10 +8,12 @@ const id = z.string().regex(/^[1-9]\d{0,9}$/).refine(value => Number(value) <= 4
 const date = z.iso.date().refine(value => value >= new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }));
 const statuses = z.enum(['RECEBIDA', 'EM_ANALISE', 'PROPOSTA_ENVIADA', 'CONCLUIDA', 'CANCELADA']);
 const create = z.object({
-    experienceId: id, date, guests: z.number().int().min(1).max(100000),
+    experienceId: id.optional(), customSpace: z.string().trim().min(3).max(150).optional(),
+    locationId: id.optional(), date, guests: z.number().int().min(1).max(100000),
     time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
-    details: z.string().trim().min(10).max(4000), preferences: z.string().trim().max(1000).optional()
-}).strict();
+    details: z.string().trim().min(10).max(4000), preferences: z.string().trim().max(1000).optional(),
+    requirements: z.string().trim().max(1000).optional()
+}).strict().refine(value => Boolean(value.experienceId) !== Boolean(value.customSpace));
 const message = z.object({ message: z.string().trim().min(1).max(4000) }).strict();
 const update = z.object({ status: statuses.optional(), locationId: id.optional(), supervisorId: id.optional() })
     .strict().refine(value => Object.keys(value).length > 0);

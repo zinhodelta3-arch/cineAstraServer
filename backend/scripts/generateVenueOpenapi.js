@@ -48,6 +48,7 @@ for (const r of venueOperations) {
     if (r.action === 'list') {
         op.parameters.push({ name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: id });
         if (r.kind === 'seat') op.parameters.push({ name: 'accessible', in: 'query', schema: { type: 'boolean' } });
+        if (r.kind === 'local') op.parameters.push({ name: 'q', in: 'query', description: 'Nome, cidade ou estado do local.', schema: { type: 'string', minLength: 1, maxLength: 150 } });
         if (r.admin) op.parameters.push({ name: 'status', in: 'query', schema: { type: 'string', enum: status[r.kind] } });
         op.responses['200'] = response(object({ items: { type: 'array', items: ref(`Venue${title}`) }, pagination: ref('Pagination') }));
     } else if (r.action === 'get') op.responses['200'] = response(ref(`Venue${title}`));

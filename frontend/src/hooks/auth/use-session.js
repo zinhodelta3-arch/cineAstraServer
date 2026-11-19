@@ -62,7 +62,12 @@ function useSessionState(initialUser, enabled) {
   let lastCheck=seeded?Date.now():0;
   const load=async event=>{
    if(event?.type==='storage'&&event.key!==SESSION_CHANGE_KEY)return;
-   if(event?.type===SESSION_CHANGE_EVENT||event?.type==='storage')invalidateSession(event);
+   const sessionChanged=event?.type===SESSION_CHANGE_EVENT||event?.type==='storage';
+   if(sessionChanged){
+    invalidateSession(event);
+    setLoading(true);
+    setUser(null);
+   }
    else if(Date.now()-lastCheck<SESSION_RECHECK_MS)return;
    lastCheck=Date.now();
    const current=++version;

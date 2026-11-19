@@ -27,13 +27,19 @@ export function createSocialProgramService({ database, identity, simulated }) {
     [month + '-01', ...(publishedBy ? [publishedBy] : [])]);
 
     return {
-        async list({ cursor, limit }, administrative = false) {
+        async list({ cursor, limit, period }, administrative = false) {
+            const filters = [], params = [];
+            if (cursor) { filters.push('i.id_iniciativa<?'); params.push(cursor); }
+            if (period) {
+                filters.push(period === 'current' ? 'i.competencia=?' : 'i.competencia<>?');
+                params.push(monthOf(new Date()) + '-01');
+            }
             const [rows] = await database.execute(`SELECT ${fields},
                 (SELECT COALESCE(SUM(d.valor),0) FROM destinacao_social_pedidos d WHERE d.id_iniciativa=i.id_iniciativa) AS gross,
                 (SELECT COALESCE(SUM(a.valor),0) FROM destinacao_social_ajustes a JOIN destinacao_social_pedidos d ON d.id_pedido=a.id_pedido
                     WHERE d.id_iniciativa=i.id_iniciativa) AS refunds
-                FROM iniciativas_sociais_mensais i ${cursor ? 'WHERE i.id_iniciativa<?' : ''}
-                ORDER BY i.id_iniciativa DESC LIMIT ?`, [...(cursor ? [cursor] : []), limit + 1]);
+                FROM iniciativas_sociais_mensais i ${filters.length ? 'WHERE ' + filters.join(' AND ') : ''}
+                ORDER BY i.id_iniciativa DESC LIMIT ?`, [...params, limit + 1]);
             const items = rows.slice(0, limit).map(({ gross, refunds, ...row }) => {
                 const amount = aggregateCents(gross) - aggregateCents(refunds);
                 return dto({ ...row, amount: (amount / 100n) + '.' + (amount % 100n).toString().padStart(2, '0'),

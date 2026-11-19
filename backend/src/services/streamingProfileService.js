@@ -1,6 +1,7 @@
 import {ApiError} from '../utils/ApiError.js';
 import {idString} from '../utils/dto.js';
-const dto=row=>({id:idString(row.id_perfil),name:row.nome,avatar:row.avatar,kids:Boolean(row.infantil),selected:Boolean(row.selecionado),photoUrl:row.tem_foto?`/api/streaming/profiles/${idString(row.id_perfil)}/photo`:null});
+import {defaultProfileAvatar, profileAvatars} from '../validators/streamingProfileValidators.js';
+const dto=row=>({id:idString(row.id_perfil),name:row.nome,avatar:profileAvatars.includes(row.avatar)?row.avatar:defaultProfileAvatar,kids:Boolean(row.infantil),selected:Boolean(row.selecionado),photoUrl:null});
 const nameKey=name=>name.normalize('NFC').trim().toLocaleLowerCase('pt-BR');
 const conflict=(message,code)=>new ApiError(message,409,null,code);
 export function createStreamingProfileService({model,identity}){

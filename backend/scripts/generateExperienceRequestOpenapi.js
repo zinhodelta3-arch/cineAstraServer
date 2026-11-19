@@ -16,13 +16,18 @@ const object = (properties, required = Object.keys(properties)) => ({ type: 'obj
 const array = items => ({ type: 'array', items });
 const fields = {
     id, protocol: str(14), title: str(150), status, locationId: nullable(id), location: nullable(str(150)),
-    date, time: nullable(time), guests, details: str(), preferences: nullable(str(1000)), updatedAt: str(40),
+    date, time: nullable(time), guests, details: str(), preferences: nullable(str(1000)),
+    requirements: nullable(str(1000)), custom: { type: 'boolean' }, updatedAt: str(40),
 };
 const event = object({ id, type: { type: 'string', enum: ['STATUS', 'MENSAGEM', 'ATRIBUICAO'] },
     sender: { type: 'string', enum: ['CLIENTE', 'EQUIPE'] }, text: str(), createdAt: str(40) });
 const definitions = [
     ['Listar solicitações visíveis à conta', object({ items: array(object(fields)), nextCursor: nullable(id) })],
-    ['Criar solicitação como cliente', object(fields), object({ experienceId: id, date, time, guests, details: str(), preferences: str(1000) }, ['experienceId','date','guests','details'])],
+    ['Criar solicitação como cliente', object(fields), {
+        ...object({ experienceId: id, customSpace: { ...str(150), minLength: 3 }, locationId: id, date, time, guests,
+            details: { ...str(), minLength: 10 }, preferences: str(1000), requirements: str(1000) }, ['date', 'guests', 'details']),
+        oneOf: [{ required: ['experienceId'] }, { required: ['customSpace'] }]
+    }],
     ['Consultar solicitação e histórico', object({ ...fields, canClaim: { type: 'boolean' }, events: array(event), nextCursor: nullable(id) })],
     ['Atualizar status ou encaminhar solicitação', object(fields), object({ status, locationId: id, supervisorId: id }, [])],
     ['Enviar mensagem à outra parte', object({ id }), object({ message: str() })],

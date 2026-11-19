@@ -39,7 +39,7 @@ export default function DetailsModal({ movie, open, onOpenChange, returnFocus, o
 
       <div className={styles.body}>
         <div className={styles.art} aria-hidden="true">
-          <Art movie={movie} variant="backdrop" showTitle={false} className="size-full object-cover" />
+          <Art movie={movie} variant="backdrop" showTitle={false} loading="eager" className="size-full object-cover" />
         </div>
         <div className={styles.information}>
           <p className="text-sm font-semibold text-foreground">{movie.soon ? "Em breve · " : ""}{movie.genre}</p>

@@ -46,10 +46,12 @@ export function createPricingService({model,identity,simulated=false}){
         const plan=await model.activePlan(actor.id_usuario,c);
         let coupon=null,couponBps=0;
         if(input.couponCode){
-            coupon=found(await model.coupon(input.couponCode,c,lockCoupon));
-            if(!coupon.ativo||String(coupon.validade)<new Date().toISOString().slice(0,10))throw conflict('Cupom indisponível');
+            coupon=await model.coupon(input.couponCode,c,lockCoupon);
+            if(!coupon)throw new ApiError('Cupom inválido',404,null,'COUPON_INVALID');
+            if(String(coupon.validade)<new Date().toISOString().slice(0,10))throw new ApiError('Este cupom expirou',409,null,'COUPON_EXPIRED');
+            if(!coupon.ativo)throw new ApiError('Cupom inválido',409,null,'COUPON_INVALID');
             const used=Number((await model.couponUses(coupon.id_cupom,c,lockCoupon))?.total??0);
-            if(coupon.limite_uso>0&&used>=coupon.limite_uso)throw conflict('Limite do cupom atingido');
+            if(coupon.limite_uso>0&&used>=coupon.limite_uso)throw new ApiError('Este cupom atingiu o limite de uso',409,null,'COUPON_LIMIT_REACHED');
             couponBps=Number(cents(coupon.desconto));
         }
         const lines=[];let total=0n;
@@ -57,6 +59,7 @@ export function createPricingService({model,identity,simulated=false}){
             if(line.category==='PURCHASE')throw new ApiError('Novas compras de filmes estão desativadas; consulte o aluguel',409,null,'STREAMING_PURCHASE_DISABLED');
             const p=found(await model.parameter(line.category,c));
             const row=found(await model.product(line.category,line.id,c,lockCoupon));
+            if(actor.tipo_usuario!=='ADMIN'&&(row.oferta_local===0||row.oferta_local===false))throw conflict('Item retirado da oferta local');
             if(!available(line.category,row)||(line.category==='INPUT'&&actor.tipo_usuario!=='ADMIN'&&!row.venda_avulsa))throw conflict('Item indisponível');
             const parts=line.category==='COMBO'?await model.comboParts(line.id,c):null;
             if(parts?.some(x=>x.status!=='DISPONIVEL'))throw conflict('Componente indisponível');

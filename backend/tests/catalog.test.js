@@ -97,6 +97,24 @@ test('SQL/projeção não expõem mídia privada; filtros parametrizados e uma q
     assert.ok(!Object.hasOwn(filmDto({ id_filme: '1', ...film, url_reproducao: 'private', segredo: 'extra' }), 'url_reproducao'));
     await assert.rejects(m.patchFilm(db, '1', { id_usuario: '2' }));
 });
+test('catálogo numerado usa os mesmos filtros no total e na página pedida', async () => {
+    const calls = [];
+    const db = { async transaction(work) {
+        return work({ async execute(sql, params) {
+            calls.push({ sql, params });
+            return sql.startsWith('SELECT COUNT') ? [[{ total:25 }]] : [[{ id_filme:23 }]];
+        } });
+    } };
+    const model = createCatalogModel(db);
+    const q = catalogSchemas.query.parse({ page:'99', limit:'10', genreId:'12', cinema:'true', titulo:'50%' });
+    const result = await model.listNumberedFilms(q);
+    assert.deepEqual(result.pagination,{ limit:10, nextCursor:null, page:3, total:25, totalPages:3 });
+    assert.deepEqual(calls[0].params,['ATIVO','%50!%%',true,'12']);
+    assert.deepEqual(calls[1].params,[...calls[0].params,10,20]);
+    assert.equal(calls[0].sql.split('FROM filmes f')[1],calls[1].sql.split('FROM filmes f')[1].split(' ORDER BY f.id_filme')[0]);
+    assert.equal(catalogSchemas.query.safeParse({ page:'3', cursor:'20' }).success,false);
+    assert.equal(catalogSchemas.query.safeParse({ page:'0' }).success,false);
+});
 test('rotas montadas no app real aplicam JWT/ADMIN/2FA antes do SQL de catálogo', async t => {
     const f = fixture(); t.after(async () => { await f.app.locals.close(); await f.logQueue.close(); });
     await request(f.app).post('/api/films').send(film).expect(401);

@@ -35,7 +35,12 @@ export function venueRoutes(controller, { auth }) {
         const middleware = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }];
         if (r.admin) middleware.push(auth, allowRoles('ADMIN'));
         middleware.push(venueParams);
-        if (r.action === 'list') middleware.push(venueQuery(venueSchemas[r.kind === 'seat' ? r.admin ? 'adminSeats' : 'seats' : r.admin ? r.kind === 'local' ? 'adminLocals' : 'adminRooms' : 'list']));
+        if (r.action === 'list') {
+            const schema = r.kind === 'local' ? (r.admin ? 'adminLocals' : 'publicLocals')
+                : r.kind === 'seat' ? (r.admin ? 'adminSeats' : 'seats')
+                    : (r.admin ? 'adminRooms' : 'list');
+            middleware.push(venueQuery(venueSchemas[schema]));
+        }
         if (r.action === 'save') middleware.push(validateBody(venueSchemas[r.kind + (r.method === 'patch' ? 'Patch' : '')]));
         const handler = r.action === 'list' ? controller.list(r.kind, r.admin) : r.action === 'get' ? controller.get(r.kind, r.admin) : r.action === 'save' ? controller.save(r.kind) : controller.archive(r.kind);
         router[r.method](r.path.replace(/\{(\w+)\}/g, ':$1'), ...middleware, handler);

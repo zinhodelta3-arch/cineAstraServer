@@ -27,7 +27,7 @@ export function usePublicList(path) {
     try {
       const data = await publicGet(`${path}${path.includes('?') ? '&' : '?'}cursor=${encodeURIComponent(state.cursor)}`, { signal: abort.signal });
       if (!Array.isArray(data.items) || !data.pagination || data.pagination.nextCursor === state.cursor) throw new Error('Paginação inválida. Tente atualizar a lista.');
-      if (!abort.signal.aborted) setState(s => ({ ...s, items: [...s.items, ...data.items], cursor: data.pagination.nextCursor, loading: false }));
+      if (!abort.signal.aborted) setState(s => ({ ...s, items: [...s.items, ...data.items], cursor: data.pagination.nextCursor, loading: false, loadedMore: true }));
     } catch (error) { if (!abort.signal.aborted) setState(s => ({ ...s, loading: false, error: error.message })); }
     finally { if (!abort.signal.aborted) busy.current = false; }
   }, [path, key, state.cursor, state.key]);

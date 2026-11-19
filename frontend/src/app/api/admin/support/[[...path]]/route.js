@@ -36,7 +36,7 @@ async function handle(request, { params }) {
     if (request.method === "GET") {
       if (!parts.length) target = `/admin/support?limit=${limit}&cursor=${cursor}${statusFilter ? `&status=${statusFilter}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`;
       else if (parts.length === 1) target = `/support/${parts[0]}`;
-      else if (parts.length === 2 && parts[1] === "messages") target = `/support/${parts[0]}/messages?limit=100&cursor=${cursor}`;
+      else if (parts.length === 2 && parts[1] === "messages") target = `/support/${parts[0]}/messages?limit=100&cursor=${cursor}&order=desc`;
     } else if (parts.length === 2) {
       if (parts[1] === "assign" && !Object.keys(body).length) target = `/admin/support/${parts[0]}/assign`;
       if (parts[1] === "resolve" && !Object.keys(body).length) target = `/admin/support/${parts[0]}/resolve`;

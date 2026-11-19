@@ -16,7 +16,7 @@ const strict = shape => z.object(shape).strict();
 const nonEmpty = schema => schema.refine(o => Object.keys(o).length > 0);
 export const schemas = {
     register: strict({ documentsSource: z.literal('LOCAL_TEST_PDF').optional(), name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, termsVersion: z.string().min(1).max(50), privacyVersion: z.string().min(1).max(50), acceptTerms: z.literal(true), acceptPrivacy: z.literal(true), ageProof: z.string().min(1).max(512).optional(), guardianProof: z.string().min(1).max(512).optional(), captchaToken: z.string().min(1).max(4096).optional() }),
-    login: strict({ email, password, captchaToken: z.string().min(1).max(4096).optional() }),
+    login: strict({ email, password, captchaToken: z.string().min(1).max(4096).optional(), profile: z.enum(['CLIENTE', 'FORNECEDOR']).optional() }),
     forgot: strict({ email, captchaToken: z.string().min(1).max(4096).optional() }),
     reset: strict({ token, password, passwordConfirmation: password, captchaToken: z.string().min(1).max(4096).optional() }),
     verify: strict({ challengeToken: token, code: z.string().regex(/^\d{6}$/) }),

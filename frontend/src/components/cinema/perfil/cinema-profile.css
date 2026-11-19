@@ -54,6 +54,45 @@
   color: var(--card-foreground);
 }
 
+.ca-profile .ca-account-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.ca-profile .ca-account-section summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 4px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.ca-profile .ca-account-section summary::-webkit-details-marker { display: none; }
+.ca-profile .ca-account-section summary:hover { color: var(--primary); }
+.ca-profile .ca-account-section summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.ca-profile .ca-account-section summary > svg:first-child { color: var(--primary); }
+.ca-profile .ca-account-section small { display: block; color: var(--muted-foreground); }
+.ca-profile .ca-account-section[open] .ca-account-chevron { transform: rotate(180deg); }
+
+.ca-profile .ca-subscription-facts > div,
+.ca-profile .ca-plan-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  justify-content: space-between;
+  padding: 11px 6px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.ca-profile .ca-subscription-facts dt { color: var(--muted-foreground); }
+.ca-profile .ca-subscription-facts dd { font-weight: 700; }
+.ca-profile .ca-plan-option { justify-content: flex-start; min-height: 56px; cursor: pointer; }
+.ca-profile .ca-plan-option > span:nth-child(2) { flex: 1 1 128px; }
+.ca-profile .ca-plan-option:has(input:checked) { background: color-mix(in oklab, var(--primary) 8%, var(--card)); }
+
 @media (prefers-reduced-motion: reduce) {
   .ca-profile *, .ca-profile-dialog * {
     transition-duration: 0.01ms !important;

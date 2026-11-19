@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { publicGet } from "@/lib/api/public-api.mjs";
 import { loadMyAccesses, loadProfileItems, loadStreamingFilms, loadStreamingGenres, streamingMovie, streamingRequest } from "@/lib/api/streaming-data.mjs";
 
-export default function useStreamingHome() {
+export default function useStreamingHome({ includePopular = true } = {}) {
   const router = useRouter();
   const [revision, setRevision] = useState(0);
   const [catalog, setCatalog] = useState([]);
@@ -30,7 +30,7 @@ export default function useStreamingHome() {
         const [films, allGenres, profiles, popular] = await Promise.all([
           loadStreamingFilms(controller.signal), loadStreamingGenres(controller.signal),
           streamingRequest("/profiles", { signal: controller.signal }),
-          publicGet("/films/popular", { signal: controller.signal }).catch(() => ({ items: [] })),
+          includePopular ? publicGet("/films/popular", { signal: controller.signal }).catch(() => null) : null,
         ]);
         const active = profiles.items?.find((item) => item.id === profiles.activeProfileId) || profiles.items?.[0];
         if (!active) { router.replace("/streaming/perfis"); return; }
@@ -55,7 +55,7 @@ export default function useStreamingHome() {
     }
     load();
     return () => controller.abort();
-  }, [revision, router]);
+  }, [revision, router, includePopular]);
 
   const chooseGenre = (value) => { setGenre(value); setActionError(""); };
   const released = useMemo(() => catalog.filter((movie) => !movie.soon), [catalog]);

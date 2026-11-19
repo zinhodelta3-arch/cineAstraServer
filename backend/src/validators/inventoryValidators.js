@@ -5,7 +5,12 @@ import { ApiError } from '../utils/ApiError.js';
 const bigId = z.string().regex(/^[1-9]\d{0,19}$/).refine(v => BigInt(v) <= 18446744073709551615n);
 const oneItem = value => Boolean(value.inputId) !== Boolean(value.equipmentId);
 const quantity = z.number().int().min(-2147483647).max(2147483647).refine(v => v !== 0);
+const balance = z.number().int().min(0).max(2147483647);
 export const inventorySchemas = {
+    offerQuery: z.object({ offered: z.enum(['true','false']).transform(v => v === 'true').default(true),
+        q: z.string().trim().min(1).max(150).optional(), limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().min(1).max(100)).default(20), cursor: catalogId.optional() }).strict(),
+    offer: z.object({ offered: z.boolean() }).strict(),
+    adjustment: z.object({ quantity: balance, expectedQuantity: balance, reason: z.string().trim().min(1).max(255) }).strict(),
     movement: z.object({ inputId: catalogId.optional(), equipmentId: catalogId.optional(), tipo: z.enum(['ENTRADA','SAIDA','AJUSTE','PERDA','DEVOLUCAO']), quantidade: quantity, motivo: z.string().trim().min(1).max(255).optional() }).strict().refine(oneItem).refine(v => !['AJUSTE','PERDA','DEVOLUCAO'].includes(v.tipo) || Boolean(v.motivo)).refine(v => ['ENTRADA','DEVOLUCAO'].includes(v.tipo) ? v.quantidade > 0 : ['SAIDA','PERDA'].includes(v.tipo) ? v.quantidade < 0 : true),
     movementsQuery: z.object({ inputId: catalogId.optional(), equipmentId: catalogId.optional(), localId: catalogId.optional(), limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: bigId.optional() }).strict().refine(v => !(v.inputId && v.equipmentId)),
     alertsQuery: z.object({ localId: catalogId, limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: catalogId.optional() }).strict()

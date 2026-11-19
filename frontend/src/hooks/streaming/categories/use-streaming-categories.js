@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import useStreamingHome from "@/hooks/streaming/home/use-streaming-home";
 
 export default function useStreamingCategories() {
-  const data = useStreamingHome();
+  const data = useStreamingHome({ includePopular: false });
   const params = useSearchParams();
   const genreId = params.get("genero") || "";
   const category = data.genres.find((item) => String(item.id_genero) === genreId);

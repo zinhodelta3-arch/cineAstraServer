@@ -4,14 +4,15 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, CreditCard, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import usePayment from "@/hooks/cinema/pagamento/use-payment";
+import { useSession } from "@/hooks/auth/use-session";
 import PaymentDetails from "./payment-details";
 import PaymentSummary from "./payment-summary";
 import styles from "./payment.module.css";
 
 const methods = [
-  { slug: "debito", label: "Débito", icon: CreditCard },
-  { slug: "pix", label: "Pix", icon: QrCode },
-  { slug: "credito", label: "Crédito", icon: CreditCard },
+  { slug: "debito", label: "Débito", icon: CreditCard, type: "DEBITO" },
+  { slug: "pix", label: "Pix", icon: QrCode, type: "PIX" },
+  { slug: "credito", label: "Crédito", icon: CreditCard, type: "CREDITO" },
 ];
 
 function CardFields({ card, changeCard }) {
@@ -45,11 +46,21 @@ function PixPanel({ payment }) {
   </section>;
 }
 
-export default function CinemaPayment({ method = null, draftId = null }) {
+export default function CinemaPayment(props) {
+  const { user, loading } = useSession();
+  if (loading) return <main className="mx-auto w-full max-w-6xl p-8" role="status">Verificando sua conta…</main>;
+  if (user?.role !== "CLIENTE") return <main className="mx-auto w-full max-w-6xl p-8">Entre com uma conta de cliente para pagar.{" "}<Link href={user ? "/cinema/carrinho" : "/auth/login?next=%2Fcinema%2Fcarrinho"} className="text-primary underline">{user ? "Voltar ao carrinho" : "Entrar"}</Link></main>;
+  return <AccountPayment key={user.id} {...props} />;
+}
+
+function AccountPayment({ method = null, draftId = null }) {
   const payment = usePayment(method, draftId);
   const draftQuery = draftId ? `?draft=${draftId}` : "";
   const returnHref = draftId ? "/cinema/minhascompras" : "/cinema/carrinho";
   const isCard = method === "credito" || method === "debito";
+  const principalType = payment.principalMethod?.type;
+  const priority = methods.find(item => item.type === principalType);
+  const sortedMethods = priority ? [priority, ...methods.filter(item => item !== priority)] : methods;
   return <main className={styles.page}>
     <div className={styles.container}>
       <Link href={method ? `/cinema/pagamento${draftQuery}` : returnHref} className={styles.back}><ArrowLeft size={16} />{method ? "Voltar aos métodos" : draftId ? "Voltar às compras" : "Voltar ao carrinho"}</Link>
@@ -59,18 +70,28 @@ export default function CinemaPayment({ method = null, draftId = null }) {
             <h1 className={styles.pageTitle}>Selecione um método <span>de pagamento.</span></h1>
             <p className={styles.lead}>Escolha como deseja concluir sua compra.</p>
             <div className={styles.methodGrid}>
-              {methods.map(({ slug, label, icon: Icon }) => <Link key={slug} href={payment.ready ? `/cinema/pagamento/${slug}${draftQuery}` : "#payment-consent"} aria-disabled={!payment.ready} onClick={event => { if (!payment.ready) event.preventDefault(); }} className={`${styles.methodTicket} ${!payment.ready ? styles.methodDisabled : ""}`}>
+              {sortedMethods.map(({ slug, label, icon: Icon, type }) => <Link key={slug} href={payment.ready ? `/cinema/pagamento/${slug}${draftQuery}` : "#payment-consent"} aria-disabled={!payment.ready} onClick={event => { if (!payment.ready) event.preventDefault(); }} className={`${styles.methodTicket} ${!payment.ready ? styles.methodDisabled : ""}`}>
                 <Icon size={25} aria-hidden="true" /><strong>{label}</strong>
+                {type === principalType && <span className="text-xs font-semibold text-primary">Principal do perfil</span>}
               </Link>)}
             </div>
-            {!payment.ready && <p className={styles.selectionHint}>Revise o resumo e aceite a oferta para escolher um método.</p>}
+            {payment.walletLoading ? <p className={styles.selectionHint} role="status">Consultando métodos salvos…</p> : !payment.ready && <p className={styles.selectionHint}>Revise o resumo e aceite a oferta para escolher um método.</p>}
           </> : isCard ? <>
             <h1 className={styles.pageTitle}>Cartão de <span>{method === "debito" ? "débito" : "crédito"}.</span></h1>
-            <p className={styles.lead}>Informe os dados do cartão para continuar.</p>
+            <p className={styles.lead}>{payment.savedMethod ? "Confira o cartão salvo antes de pagar." : "Informe os dados do cartão para continuar."}</p>
             <form id="payment-card-form" onSubmit={payment.confirmCard} className={styles.cardForm}>
-              <CardFields card={payment.card} changeCard={payment.changeCard} />
-              <div className={styles.formDivider} />
-              <PaymentDetails details={payment.details} onChange={payment.changeDetail} cepStatus={payment.cepStatus} />
+              {payment.walletLoading ? <p role="status">Consultando métodos salvos…</p> : payment.savedMethod ? (
+                <p className={styles.hint}>Método principal do perfil · {payment.savedMethod.identification}</p>
+              ) : <>
+                <CardFields card={payment.card} changeCard={payment.changeCard} />
+                <div className={styles.formDivider} />
+                <PaymentDetails details={payment.details} onChange={payment.changeDetail} cepStatus={payment.cepStatus} />
+              </>}
+              {principalType === (method === "debito" ? "DEBITO" : "CREDITO") && (
+                <button type="button" className={styles.retryButton} disabled={payment.pending || Boolean(payment.result?.methodId)} onClick={() => payment.setNewCard(!payment.newCard)}>
+                  {payment.newCard ? "Usar cartão principal" : "Usar outro cartão"}
+                </button>
+              )}
             </form>
           </> : <>
             <h1 className={styles.pageTitle}>Pague com <span>Pix.</span></h1>

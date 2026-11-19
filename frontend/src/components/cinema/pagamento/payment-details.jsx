@@ -6,7 +6,7 @@ export default function PaymentDetails({ details, onChange, cepStatus }) {
     <p className={styles.hint}>Confira seus dados antes de criar o pedido.</p>
     <div className={styles.fields}>
       <label className={styles.field}><span>Nome completo</span><input name="name" autoComplete="name" required maxLength={100} value={details.name} onChange={onChange} /></label>
-      <label className={styles.field}><span>Telefone</span><input name="phone" type="tel" autoComplete="tel" required maxLength={25} value={details.phone} onChange={onChange} /></label>
+      <label className={styles.field}><span>Telefone</span><input name="phone" type="tel" autoComplete="tel" placeholder={details.country === "BR" ? "(11) 99999-9999" : undefined} required maxLength={25} value={details.phone} onChange={onChange} /></label>
       <label className={styles.field}><span>E-mail</span><input name="email" type="email" autoComplete="email" required maxLength={160} value={details.email} onChange={onChange} /></label>
     </div>
     <div className={styles.addressFields}>

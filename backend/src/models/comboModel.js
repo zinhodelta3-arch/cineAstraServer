@@ -1,12 +1,15 @@
 import { idString } from '../utils/dto.js';
 const eventColumns='c.id_evento,c.id_sessao_evento,c.limite_evento,c.limite_cliente_evento';
+const imageColumns=`
+    (SELECT im.url FROM combos_imagens im WHERE im.id_combo=c.id_combo AND im.tipo='PRINCIPAL' ORDER BY im.ordem,im.id_imagem LIMIT 1) AS imagem,
+    (SELECT im.url FROM combos_imagens im WHERE im.id_combo=c.id_combo AND im.tipo='ALTERNATIVA' ORDER BY im.ordem,im.id_imagem LIMIT 1) AS imagem_alternativa`;
 
 export function createComboModel(database) {
     const rows = async (c, sql, params = []) => (await c.execute(sql, params))[0];
     const one = async (c, sql, params = []) => (await rows(c, sql, params))[0] ?? null;
     return {
         local: (id, c = database, lock = false) => one(c, `SELECT id_local,status FROM locais WHERE id_local = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
-        combo: (id, c = database, lock = false) => one(c, `SELECT c.id_combo,c.id_local,c.nome,c.descricao,c.preco,c.custo_operacional,c.ativo,c.data_cadastro,${eventColumns}, (SELECT im.url FROM combos_imagens im WHERE im.id_combo=c.id_combo AND im.tipo='PRINCIPAL' ORDER BY im.ordem,im.id_imagem LIMIT 1) AS imagem FROM combos c WHERE c.id_combo = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
+        combo: (id, c = database, lock = false) => one(c, `SELECT c.id_combo,c.id_local,c.nome,c.descricao,c.preco,c.custo_operacional,c.ativo,c.data_cadastro,${eventColumns},${imageColumns} FROM combos c WHERE c.id_combo = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
         eventSession:(c,event)=>one(c,`SELECT sa.id_local FROM conteudos_promocionais e
           JOIN sessoes s ON s.id_sessao=? JOIN salas sa ON sa.id_sala=s.id_sala
           WHERE e.id_conteudo=? AND e.tipo='experiences' AND e.id_local_evento=sa.id_local
@@ -45,9 +48,9 @@ export function createComboModel(database) {
             const stockFilter = q.inStock ? 'OR i.quantidade - i.quantidade_reservada < ci.quantidade' : '';
             const count = q.inStock ? ', (SELECT COUNT(*) FROM combo_itens ci WHERE ci.id_combo = c.id_combo) AS item_count' : '';
             return rows(c, `SELECT c.id_combo,c.id_local,c.nome,c.descricao,c.preco,c.ativo,c.data_cadastro,
-                (SELECT im.url FROM combos_imagens im WHERE im.id_combo=c.id_combo AND im.tipo='PRINCIPAL' ORDER BY im.ordem,im.id_imagem LIMIT 1) AS imagem${count}
+                ${imageColumns}${count}
                 FROM combos c JOIN locais l ON l.id_local = c.id_local
-                WHERE c.id_local = ? AND c.id_combo > ? AND c.ativo = 1 AND c.custo_operacional IS NOT NULL AND l.status = 'ATIVO' ${eventFilter}
+                WHERE c.id_local = ? AND c.id_combo > ? AND c.ativo = 1 AND c.oferta_local = TRUE AND c.custo_operacional IS NOT NULL AND l.status = 'ATIVO' ${eventFilter}
                 AND EXISTS (SELECT 1 FROM combo_itens ci WHERE ci.id_combo = c.id_combo)
                 AND NOT EXISTS (
                     SELECT 1 FROM combo_itens ci JOIN insumos i ON i.id_insumo = ci.id_insumo

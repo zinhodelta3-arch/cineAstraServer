@@ -12,7 +12,7 @@ export default function ProductCard({ product, onOpen }) {
       className={`${styles.ticket} flex h-full flex-col overflow-hidden text-left motion-safe:transition-colors hover:border-primary`}
     >
       <div className="relative aspect-square w-full bg-muted">
-        <ProductImage src={product.image} className="h-full w-full" />
+        <ProductImage src={product.image} alternatives={[product.alternateImage]} className="h-full w-full" showMissing />
         {product.badge && (
           <span className="absolute top-3 left-3 rounded-sm bg-primary px-2.5 py-1 text-[10px] font-bold text-primary-foreground uppercase">
             {product.badge}
@@ -23,7 +23,7 @@ export default function ProductCard({ product, onOpen }) {
         <div className="text-[10px] font-bold tracking-[.18em] text-muted-foreground uppercase">
           {product.category}
         </div>
-        <h3 className={`${styles.title} text-2xl leading-tight font-black`}>{product.name}</h3>
+        <h3 className={`${styles.title} line-clamp-2 h-[2.5em] overflow-hidden text-2xl leading-tight font-black [overflow-wrap:anywhere]`}>{product.name}</h3>
         <p className="line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
       </div>
       <div className="mt-auto w-full">

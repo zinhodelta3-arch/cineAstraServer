@@ -1,5 +1,7 @@
 'use client';
 
+import MoneyInput from "@/components/ui/money-input";
+
 import { useRef, useState } from 'react';
 import { History, Pencil, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -73,7 +75,7 @@ function DestinationForm({ row, onClose, onSaved }) {
         <label className={styles.wide}>Finalidade<textarea name="purpose" required maxLength={500} rows={2} defaultValue={row?.purpose} /></label>
         <label className={styles.wide}>Descrição<textarea name="description" required maxLength={1000} rows={3} defaultValue={row?.description} /></label>
         <label>Recurso<input name="resource" maxLength={150} defaultValue={row?.resource ?? ''} /></label>
-        <label>Valor em reais<input name="amount" inputMode="decimal" maxLength={13} placeholder="0,00" defaultValue={row?.amount?.replace('.', ',') ?? ''} /></label>
+        <label>Valor em reais<MoneyInput name="amount" defaultValue={row?.amount} maxWholeDigits={10} /></label>
         <label className={styles.wide}>Referência contábil<input name="accountingReference" maxLength={150} defaultValue={row?.accountingReference ?? ''} /></label>
         {error && <p className={`${styles.error} ${styles.wide}`} role="alert">{error}</p>}
         <div className={`${styles.dialogActions} ${styles.wide}`}>

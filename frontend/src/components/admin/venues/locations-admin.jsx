@@ -1,5 +1,7 @@
 "use client";
 
+import { maskCep, maskPhone } from "@/lib/br-fields.mjs";
+
 import TablePagination from '@/components/ui/table-pagination';
 import Link from "next/link";
 import { useDeferredValue, useState } from "react";
@@ -20,7 +22,8 @@ function readFields(form) {
     tipo_local:value("tipo_local"),lotacao_eventos:value("lotacao_eventos")?Number(value("lotacao_eventos")):null,acesso_eventos:value("acesso_eventos")||null };
   for (const key of nullable) body[key] = value(key) || null;
   if (!body.nome || !body.cidade || !/^[A-Z]{2}$/.test(body.estado)) throw new Error("Informe nome, cidade e UF válida.");
-  if (body.cep && !/^\d{5}-\d{3}$/.test(body.cep)) throw new Error("Informe o CEP no formato 00000-000.");
+  if (body.cep && !/^\d{5}-?\d{3}$/.test(body.cep)) throw new Error("Informe os oito dígitos do CEP.");
+  if (body.cep) body.cep = maskCep(body.cep);
   return body;
 }
 
@@ -63,8 +66,8 @@ export default function LocationsAdmin() {
         <label>Lotação para eventos<input name="lotacao_eventos" type="number" min="1" max="100000" step="1" defaultValue={item?.lotacao_eventos ?? ""} /></label>
         <label>Cidade<input name="cidade" required maxLength={100} defaultValue={item?.cidade ?? ""} /></label>
         <label>UF<input name="estado" required maxLength={2} pattern="[A-Za-z]{2}" defaultValue={item?.estado ?? ""} /></label>
-        <label>CEP<input name="cep" inputMode="numeric" maxLength={9} placeholder="00000-000" defaultValue={item?.cep ?? ""} onInput={(event) => { const digits = event.currentTarget.value.replace(/\D/g, "").slice(0, 8); event.currentTarget.value = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits; }} /></label>
-        <label>Telefone<input name="telefone" type="tel" maxLength={20} defaultValue={item?.telefone ?? ""} /></label>
+        <label>CEP<input name="cep" inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} pattern="[0-9]{5}-[0-9]{3}" defaultValue={maskCep(item?.cep ?? "")} onChange={(event) => { event.currentTarget.value = maskCep(event.currentTarget.value); }} /></label>
+        <label>Telefone<input name="telefone" type="tel" autoComplete="tel" maxLength={20} placeholder="(11) 99999-9999" defaultValue={item?.telefone ?? ""} onChange={event => { event.currentTarget.value = maskPhone(event.currentTarget.value); }} /></label>
         <label className={styles.wide}>Logradouro<input name="logradouro" maxLength={150} defaultValue={item?.logradouro ?? ""} /></label>
         <label>Número<input name="numero" maxLength={20} defaultValue={item?.numero ?? ""} /></label>
         <label>Complemento<input name="complemento" maxLength={100} defaultValue={item?.complemento ?? ""} /></label>

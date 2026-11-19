@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CHECKOUT_SESSION_KEY } from "@/hooks/use-checkout-session";
+import { useSession } from "@/hooks/auth/use-session";
+import { checkoutStorageKey, guestSeatKey, readCheckoutState } from "@/lib/api/checkout-storage.mjs";
 import { cleanSeats, MAX_SEATS, toggleSeat } from "@/components/cinema/assentos/seat-state.mjs";
 
 export function useSeatSelection(session) {
   const router = useRouter();
-  const [selected, setSelected] = useState(() => cleanSeats(session.seats, session.seatMap));
+  const { user, loading } = useSession();
+  const key = user ? checkoutStorageKey("session", user.id) : guestSeatKey;
+  const [selected, setSelected] = useState(() => {
+    try {
+      const previous = JSON.parse(readCheckoutState(key) || "null");
+      if (previous?.id === session.id) return cleanSeats(previous.seats, session.seatMap);
+    } catch { /* Uma seleção inválida começa vazia. */ }
+    return [];
+  });
   const [zoom, setZoom] = useState(100);
   const [error, setError] = useState("");
   const [continuing, setContinuing] = useState(false);
@@ -23,20 +32,24 @@ export function useSeatSelection(session) {
   }
 
   function continueToTickets() {
-    if (!selected.length || continuing) return;
+    if (!selected.length || continuing || loading) return;
+    if (user && user.role !== "CLIENTE") {
+      setError("Use uma conta de cliente para comprar ingressos.");
+      return;
+    }
     try {
-      sessionStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify({ ...session, seats: selected }));
+      sessionStorage.setItem(key, JSON.stringify({ ...session, seats: selected }));
     } catch {
       setError("Não foi possível guardar os assentos. Permita o armazenamento neste navegador e tente novamente.");
       return;
     }
     setContinuing(true);
-    router.push("/cinema/sessao/ingressos");
+    router.push(user ? "/cinema/sessao/ingressos" : "/auth/login?next=%2Fcinema%2Fsessao%2Fingressos");
   }
 
   const zoomOut = () => setZoom((value) => Math.max(80, value - 10));
   const zoomIn = () => setZoom((value) => Math.min(150, value + 10));
   const changeZoom = (event) => setZoom(Number(event.target.value));
 
-  return { selected, zoom, setZoom, zoomOut, zoomIn, changeZoom, error, continuing, selectSeat, continueToTickets };
+  return { selected, zoom, setZoom, zoomOut, zoomIn, changeZoom, error, continuing, checkingSession: loading, selectSeat, continueToTickets };
 }

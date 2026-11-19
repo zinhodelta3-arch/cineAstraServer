@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createNewsletterService,newsletterTerms} from '../src/services/newsletterService.js';
 import {createNewsletterModel} from '../src/models/newsletterModel.js';
-import {unavailableNewsletterEmailProvider} from '../src/providers/newsletterEmailProvider.js';
+import {brevoNewsletterEmailProvider,unavailableNewsletterEmailProvider} from '../src/providers/newsletterEmailProvider.js';
 import {newsletterOperations} from '../src/routes/newsletterRoutes.js';
 
 function fixture(){
@@ -11,6 +11,7 @@ function fixture(){
     const model={categories:async()=>state.categories,byEmail:async(c,email)=>state.subscriber?.email===email?state.subscriber:null,
         insert:async(c,data)=>{state.subscriber={id_inscrito:'9',email:data.email,status:'PENDENTE',version:data.version};return '9';},
         preference:async(c,id,categoryId)=>state.preferences.push(categoryId),token:async(c,id,hash)=>{state.token={id_token:'20',id_inscrito:id,hash,finalidade:'CONFIRMACAO',utilizado_em:null,expira_em:'2099-01-01 00:00:00'};},
+        recentConfirmation:async()=>state.token,
         tokenOwner:async(c,hash)=>state.token&&hash.equals(state.token.hash)?{id_inscrito:'9'}:null,subscriber:async()=>state.subscriber,
         lockedToken:async(c,id,hash)=>state.token&&hash.equals(state.token.hash)?state.token:null,
         useToken:async()=>{state.token.utilizado_em='2026-10-10 12:00:00';},activate:async()=>{state.subscriber.status='ATIVO';},invalidateOther:async()=>{}};
@@ -62,6 +63,17 @@ test('e-mail duplicado recebe resposta igual e não altera aceite nem envia toke
     assert.equal(f.state.subscriber.status,'ATIVO');
 });
 
+test('inscrição pendente pode pedir novo link após o intervalo, mantendo as categorias originais',async()=>{
+    const f=fixture();
+    await f.service.subscribe(input);
+    const previous=f.state.sent[0].token;
+    f.model.recentConfirmation=async()=>null;
+    await f.service.subscribe({...input,categories:['LANCAMENTOS']});
+    assert.deepEqual(f.state.preferences,['1']);
+    assert.notEqual(f.state.sent[1].token,previous);
+    assert.equal(f.state.subscriber.status,'PENDENTE');
+});
+
 test('sem provider de e-mail falha sem criar inscrição; termo/categoria inválidos são recusados',async()=>{
     const f=fixture();
     const unavailable=createNewsletterService({database:f.database,model:f.model,emailProvider:unavailableNewsletterEmailProvider()});
@@ -71,6 +83,33 @@ test('sem provider de e-mail falha sem criar inscrição; termo/categoria invál
     await assert.rejects(f.service.subscribe({...input,accepted:false}),{statusCode:422});
     await assert.rejects(f.service.subscribe({...input,categories:['INEXISTENTE']}),{statusCode:422});
     assert.equal(f.state.subscriber,null);
+});
+
+test('Brevo usa o endereço do site, preserva o identificador de retry e valida o webhook',async()=>{
+    const calls=[];
+    const webhookToken='webhook-token-sintetico-de-teste-local';
+    const provider=brevoNewsletterEmailProvider({apiKey:'chave-sintetica',sender:'news@cineastra.example',
+        siteOrigin:'https://cineastra.example',webhookToken},async(url,options)=>{
+        calls.push({url,options,body:JSON.parse(options.body)});
+        return calls.length===3 ? Response.json({code:'duplicate_parameter'},{status:400}) : Response.json({messageId:'brevo-test'});
+    });
+    const token='a'.repeat(64);
+    await provider.sendConfirmation({email:'cliente@example.com',token,expiresIn:86400});
+    assert.equal(calls[0].url,'https://api.brevo.com/v3/smtp/email');
+    assert.match(calls[0].body.textContent,new RegExp('/cinema/noticias/assinatura\\?acao=confirmar#token='+token));
+    const message={email:'cliente@example.com',subject:'Cinema',html:'<p>Matéria</p>',text:'Matéria',idempotencyKey:'8'};
+    assert.equal((await provider.sendCampaign(message)).messageId,'brevo-test');
+    assert.deepEqual(await provider.sendCampaign(message),{accepted:true});
+    assert.equal(calls[1].body.headers.IdempotencyKey,calls[2].body.headers.IdempotencyKey);
+    assert.match(calls[1].body.htmlContent,/Cancelar inscrição/);
+    const rawBody=Buffer.from(JSON.stringify({event:'hard_bounce',email:message.email,'message-id':'brevo-test',tags:['cineastra-newsletter']}));
+    await assert.rejects(provider.verifyBounce({rawBody,headers:{authorization:'Bearer errado'}}),{statusCode:401});
+    const headers={authorization:`Bearer ${webhookToken}`};
+    const bounce=await provider.verifyBounce({rawBody,headers});
+    assert.equal(bounce.type,'BOUNCE');
+    assert.equal(bounce.email,message.email);
+    assert.equal((await provider.verifyBounce({rawBody,headers})).eventId,bounce.eventId);
+    assert.deepEqual(await provider.verifyBounce({rawBody:Buffer.from('{}'),headers}),{verified:true,ignored:true});
 });
 
 test('SQL e contrato público não usam token puro nem revelam estado por e-mail',async()=>{

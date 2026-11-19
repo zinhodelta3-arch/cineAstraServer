@@ -18,6 +18,7 @@ function target(method, parts, search) {
     if (parts.length === 2 && id(second) && method === 'GET') return `/locations/${second}`;
   }
   if (['inputs', 'equipment'].includes(group)) {
+    if (parts.length === 2 && second === 'categories' && method === 'GET') return `/${group}/categories${search}`;
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/${group}${method === 'GET' ? search : ''}`;
     if (parts.length === 2 && id(second) && ['GET', 'PATCH', 'DELETE'].includes(method)) return `/${group}/${second}`;
   }

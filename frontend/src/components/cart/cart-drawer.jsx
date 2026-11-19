@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ArrowRight, Minus, Plus, ShoppingCart, Ticket, Trash2 } from "lucide-react"
 import { useCart } from "@/components/cart/cart-provider"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import ProductPrice from "@/components/cinema/astrasnack/product-price"
 
@@ -57,7 +57,7 @@ export function CartDrawer({ open, onOpenChange }) {
           <div className="border-t border-border/70 bg-card/60 p-5">
             <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground"><span>Itens no carrinho</span><span>{itemCount}</span></div>
             <div className="mb-4 flex items-center justify-between"><span className="font-semibold">Subtotal</span><strong className="text-xl font-black">{money(total)}</strong></div>
-            <Button nativeButton={items.length === 0} render={items.length > 0 ? <Link href="/cinema/carrinho" onClick={() => onOpenChange(false)} /> : undefined} className="mb-2 w-full" size="lg" disabled={items.length === 0}>Ver carrinho completo <ArrowRight className="size-4" /></Button>
+            <Link href="/cinema/carrinho" prefetch={false} onClick={() => onOpenChange(false)} className={buttonVariants({ size: "lg", className: "mb-2 w-full" })}>Ver carrinho completo <ArrowRight className="size-4" /></Link>
             <p className="text-center text-[10px] text-muted-foreground">Você poderá revisar seu pedido antes de finalizar.</p>
           </div>
         </div>

@@ -1,9 +1,10 @@
+import LoadingImage from "@/components/ui/loading-image";
 import { CheckCircle2, ChevronRight, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { U } from "./data"
 import styles from "../ticket.module.css"
 
-export default function ExperienceHero({ showExperiences }) {
+export default function ExperienceHero() {
   return (
       <section className="mx-auto max-w-[1600px] px-5 py-6 md:px-10 md:py-10">
         <div className={`${styles.ticket} overflow-hidden`}>
@@ -20,13 +21,13 @@ export default function ExperienceHero({ showExperiences }) {
                 Escolha o formato e vamos planejar uma experiência que tem tudo a ver com seu evento.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" onClick={showExperiences}>
+                <a className={buttonVariants({ size: "lg", className: "min-h-11" })} href="#experiencias">
                   Conhecer as opções <ChevronRight className="size-4" />
-                </Button>
+                </a>
               </div>
             </div>
             <div className="relative h-44 sm:h-56 lg:h-auto lg:border-s lg:border-dashed lg:border-border">
-              <img
+              <LoadingImage
                 src={U("photo-1485846234645-a62644f84728", 1200, 850)}
                 alt="Claquete de filmagem em uma paisagem ao ar livre"
                 className="absolute inset-0 h-full w-full object-cover"

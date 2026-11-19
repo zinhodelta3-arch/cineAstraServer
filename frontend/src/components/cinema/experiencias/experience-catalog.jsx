@@ -1,10 +1,11 @@
+import LoadingImage from "@/components/ui/loading-image";
 import { ArrowRight, CheckCircle2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { venueTypes, eventSeatingLabels } from "@/lib/api/cinema-locations.mjs"
 import styles from "../ticket.module.css"
 
-export default function ExperienceCatalog({ chooseExperience, experiences, list }) {
+export default function ExperienceCatalog({ experiences, list }) {
   return (
       <section id="experiencias" className="mx-auto max-w-[1600px] scroll-mt-24 px-5 py-14 md:px-10 md:py-20">
         <div className="mb-9 flex flex-col justify-between gap-5 md:flex-row md:items-end">
@@ -23,7 +24,7 @@ export default function ExperienceCatalog({ chooseExperience, experiences, list 
             return (
               <article key={experience.id} id={`experiencia-${experience.id}`} tabIndex={-1} className={`${styles.ticket} group flex h-full scroll-mt-28 flex-col overflow-hidden motion-safe:transition-colors hover:border-primary/50 target:border-primary`}>
                 {experience.imageUrl && <div className="relative aspect-[5/3] overflow-hidden bg-muted">
-                  <img src={experience.imageUrl} alt={experience.imageAlt ?? ""} loading="lazy" className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-105" />
+                  <LoadingImage src={experience.imageUrl} alt={experience.imageAlt ?? ""} loading="lazy" className="h-full w-full object-cover object-[center_65%] motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-105" />
                 </div>}
                 <div className="flex flex-1 flex-col p-5 md:p-6">
                   {experience.tag && <div className="text-xs font-bold text-primary">{experience.tag}</div>}
@@ -44,11 +45,11 @@ export default function ExperienceCatalog({ chooseExperience, experiences, list 
                   <div className="my-5 space-y-2">
                     {experience.details.map((detail) => <div key={detail} className="flex items-start gap-2 text-xs text-foreground/80"><CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-primary" /><span>{detail}</span></div>)}
                   </div>
-                  {experience.description && <details className="text-sm"><summary className="cursor-pointer font-semibold">Saber mais</summary><p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground">{experience.description}</p></details>}
                 </div>
                 <div className={styles.tear} aria-hidden="true" />
                 <div className={`${styles.stub} grid gap-2 px-5 py-4 md:px-6`}>
-                  <Button onClick={() => chooseExperience(experience.id)}>Solicitar orçamento <ArrowRight className="size-4" /></Button>
+                  <Link className={buttonVariants({ variant: "outline", className: "min-h-11" })} href={`/cinema/experiencias/${experience.id}`} aria-label={`Ver detalhes de ${experience.title}`}>Ver detalhes</Link>
+                  <Link className={buttonVariants({ className: "min-h-11" })} href={`/cinema/experiencias/solicitar?experiencia=${experience.id}`} aria-label={`Solicitar orçamento para ${experience.title}`}>Solicitar orçamento <ArrowRight className="size-4" aria-hidden="true" /></Link>
                   {experience.targetUrl && <Button variant="outline" nativeButton={false} render={<Link href={experience.targetUrl} />}>{experience.ctaLabel ?? "Ver página da experiência"}</Button>}
                 </div>
               </article>
@@ -56,6 +57,13 @@ export default function ExperienceCatalog({ chooseExperience, experiences, list 
           })}
         </div>
         {list.cursor && <Button className="mt-5" variant="outline" disabled={list.loading} onClick={list.loadMore}>Carregar mais experiências</Button>}
+        <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-dashed border-border pt-6 sm:flex-row sm:items-center">
+          <div>
+            <h3 className={`${styles.title} text-3xl font-bold`}>Espaço personalizado</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Descreva o espaço e a estrutura que você tem em mente para o evento.</p>
+          </div>
+          <Link className={buttonVariants({ className: "min-h-11" })} href="/cinema/experiencias/solicitar?experiencia=personalizado">Solicitar espaço personalizado <ArrowRight className="size-4" aria-hidden="true" /></Link>
+        </div>
       </section>
   )
 }

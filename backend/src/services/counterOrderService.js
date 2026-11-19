@@ -32,9 +32,9 @@ export function createCounterOrderService({ identity, ticketModel, orderModel, s
             ensureSellable(session);
             const seats = (await sessionModel.seatAvailability(sessionId, c)).filter(row => row.disponibilidade === 'DISPONIVEL');
             const snacks = await select(c, `SELECT id_insumo AS id, nome, 'INPUT' AS kind FROM insumos
-                WHERE id_local=? AND venda_avulsa=TRUE AND status='DISPONIVEL' AND quantidade>quantidade_reservada
+                WHERE id_local=? AND oferta_local=TRUE AND venda_avulsa=TRUE AND status='DISPONIVEL' AND quantidade>quantidade_reservada
                 UNION ALL SELECT id_combo AS id, nome, 'COMBO' AS kind FROM combos
-                WHERE id_local=? AND ativo=TRUE AND (id_sessao_evento IS NULL OR id_sessao_evento=?) ORDER BY nome,id`,
+                WHERE id_local=? AND oferta_local=TRUE AND ativo=TRUE AND (id_sessao_evento IS NULL OR id_sessao_evento=?) ORDER BY nome,id`,
                 [session.id_local, session.id_local, sessionId]);
             return {
                 classification: session.classificacao,

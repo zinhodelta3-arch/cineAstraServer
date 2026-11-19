@@ -13,7 +13,7 @@ export function createFilmGalleryController(service) {
         async remove(req, res) { await service.remove(req.params.id, req.params.imageId, context(req)); res.sendStatus(204); },
         async content(req, res) {
             const bytes = await service.content(req.params.key);
-            res.set({ 'Content-Type': 'image/webp', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox" });
+            res.set({ 'Content-Type': 'image/webp', 'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'cross-origin', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox" });
             res.send(bytes);
         },
         async reconcile(req, res) { success(res, await service.reconcile(req.params.id, context(req))); }

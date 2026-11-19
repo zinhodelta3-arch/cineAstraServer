@@ -14,6 +14,7 @@ const publish = z.object({
 }).strict();
 const proof = z.object({ proofUrl }).strict();
 const paging = z.object({ limit: z.coerce.number().int().min(1).max(100).default(20), cursor: id.optional() }).strict();
+const publicPaging = paging.extend({ period: z.enum(['current', 'other']).optional() });
 const input = (schema, body) => {
     const result = schema.safeParse(body);
     if (!result.success) throw ApiError.validacao('Confira os dados da iniciativa.');
@@ -30,7 +31,7 @@ export function socialProgramRoutes(service, { auth }) {
     const router = Router();
     const context = req => ({ actor: req.usuario, signal: req.signal, requestId: req.res.locals.requestId });
     const noStore = (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); };
-    router.get('/api/social-destinations', noStore, async (req, res) => success(res, await service.list(input(paging, req.query))));
+    router.get('/api/social-destinations', noStore, async (req, res) => success(res, await service.list(input(publicPaging, req.query))));
     router.get('/api/admin/reports/social-initiatives', noStore, auth, allowRoles('ADMIN'), async (req, res) =>
         success(res, await service.list(input(paging, req.query), true)));
     router.post('/api/admin/reports/social-initiatives', noStore, auth, allowRoles('ADMIN'), async (req, res) =>

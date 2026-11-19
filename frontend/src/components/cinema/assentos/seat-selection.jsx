@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useSessionSeatData } from "@/hooks/cinema/sessao/use-session-seat-data";
 import { useSeatSelection } from "@/hooks/cinema/sessao/use-seat-selection";
+import { useSession } from "@/hooks/auth/use-session";
 import SeatMap from "./seat-map";
 import styles from "./seat-selection.module.css";
 
@@ -36,7 +37,8 @@ function Selection({ session }) {
 
 export default function SeatSelection({ sessionId }) {
   const { session, loading, error } = useSessionSeatData(sessionId);
-  if (loading) return <main className={styles.page} role="status">Carregando assentos da sessão…</main>;
+  const account = useSession();
+  if (loading || account.loading) return <main className={styles.page} role="status">Carregando assentos da sessão…</main>;
   if (error || !session) return <main className={styles.page} role="alert">{error || "Sessão indisponível."} <Link href="/cinema/filmes">Voltar aos filmes</Link></main>;
-  return <Selection key={session.id} session={session} />;
+  return <Selection key={`${account.user?.id ?? "guest"}:${session.id}`} session={session} />;
 }

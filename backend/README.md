@@ -69,3 +69,14 @@ Com 2FA desligado, ADMIN, SUPERVISOR e contas com fatores cadastrados recebem ac
 Para reativar, defina `CAPTCHA_ENABLED=true` e/ou `TWO_FACTOR_ENABLED=true` no ambiente do processo e reinicie o backend. CAPTCHA também precisa de um provedor real injetado em `createApp`/`startServer` (o padrão continua indisponível). Para 2FA APP, configure a chave persistente `TWO_FACTOR_ENCRYPTION_KEY` e preserve a chave usada nos fatores já cadastrados. Ao reativar, sessões emitidas sem 2FA de ADMIN/SUPERVISOR ou de usuários com fator ativo são recusadas; é necessário novo login com 2FA.
 
 Este modo não simula comprovação de idade, vínculo de responsável, consentimentos ou envio de e-mail. Cadastro público ainda depende dessas configurações/provedores e recuperação ainda depende de e-mail. Não há alteração nas migrations, dados, arquivos Docker ou YAML.
+
+## Newsletter CineAstraNews com a Brevo
+
+Cadastre e verifique o remetente na Brevo. Injete as quatro variáveis abaixo no ambiente do backend e reinicie o serviço.
+
+- `NEWSLETTER_BREVO_API_KEY` é a chave da API da Brevo.
+- `NEWSLETTER_BREVO_SENDER` é o endereço de e-mail verificado usado como remetente.
+- `NEWSLETTER_SITE_ORIGIN` é a origem do frontend, por exemplo `https://cineastra.example`. Em testes locais, `http://localhost:3000` também funciona para quem está usando a mesma máquina.
+- `NEWSLETTER_BREVO_WEBHOOK_TOKEN` é um segredo aleatório de pelo menos 32 caracteres, distinto da chave da API. Use a mesma credencial Bearer ao configurar o webhook transacional, sem agrupamento de eventos, em `/api/newsletter/webhooks/brevo` na origem pública da API. Selecione os eventos `hardBounce` e `spam`.
+
+O worker do CineAstra processa campanhas agendadas quando o provedor é ativado. Confira os agendamentos e a base de destinatários do ambiente antes da ativação. A fila só inclui quem confirmou o e-mail e aceitou a categoria. A entrega revalida essas condições antes do envio.

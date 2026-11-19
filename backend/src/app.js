@@ -238,7 +238,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     const notifications = createNotificationService({ model: createNotificationModel(database), identity });
     const billing=createSubscriptionBillingService({model:createSubscriptionBillingModel(database),identity,notifications,ipca:ipcaProvider});
     app.locals.billing=billing;
-    const content=createContentService({model:createContentModel(),identity,simulated:paymentProvider.name==='simulado'});
+    const content=createContentService({model:createContentModel(),identity,checkoutSigningKey:config.jwt.secret,simulated:paymentProvider.name==='simulado'});
     const plans=createPlanService({model:createPlanModel(),identity,billing,contracts:content,agePolicy});
     const participation=createParticipationService({model:createParticipationModel(),identity,notifications,agePolicy});
     const checkout=createCheckoutService({model:orderModel,orders,identity,pricing,inventory,seats:createSeatOccupancyService(),tickets,streaming,contracts:content});
@@ -268,7 +268,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(dashboardRoutes(createDashboardController(createDashboardService({model:createDashboardModel(),identity})),dependencies));
     const promotional = createPromotionalModel(database);
     app.use(promotionalRoutes(createPromotionalController(createPromotionalService({model:promotional,identity})),dependencies));
-    app.use(experienceRequestRoutes(createExperienceRequestService({identity,promotional}),dependencies));
+    app.use(experienceRequestRoutes(createExperienceRequestService({identity,promotional,notifications}),dependencies));
     app.use(adminDirectoryRoutes(createAdminDirectoryController(createAdminDirectoryService({model:createAdminDirectoryModel(),identity})),dependencies));
     app.use(snackCatalogRoutes(createSnackCatalogController(createSnackCatalogService({model:createSnackCatalogModel(database)}))));
     app.use(identityRoutes(createIdentityController(identity, profile), dependencies));

@@ -32,7 +32,7 @@ export function VenuePicker({ label, value, list, idKey, onChange, placeholder, 
     <label>{label}<select value={value ?? ""} onChange={(event) => onChange(list.items.find((item) => item[idKey] === event.target.value) ?? (selected?.[idKey] === event.target.value ? selected : null))} disabled={list.loading || (!list.items.length && !selected)}>
       <option value="">{placeholder}</option>{selected && !list.items.some((item) => item[idKey] === selected[idKey]) && <option value={selected[idKey]}>{selected.nome}</option>}{list.items.map((item) => <option key={item[idKey]} value={item[idKey]}>{item.nome}</option>)}
     </select></label>
-    {list.nextCursor && <button type="button" className={styles.secondary} onClick={list.loadMore} disabled={list.loadingMore}>{list.loadingMore ? "Carregando…" : `Mais ${label.toLowerCase()}`}</button>}
+    {list.nextCursor && <button type="button" className={styles.secondary} onClick={list.loadMore} disabled={list.loadingMore}>{list.loadingMore ? "Carregando…" : label === "Cinema" ? "Mais cinemas" : `Mais ${label.toLowerCase()}`}</button>}
     {list.error && <span className={styles.error} role="alert">{list.error}</span>}
   </div>;
 }

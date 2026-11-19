@@ -9,6 +9,7 @@ import styles from '@/components/admin/catalog/catalog.module.css';
 export default function SupplierTransports() {
   const transport=useSupplierTransports();
   const {list,action,dialog,item}=transport;
+  const types=list.data?.types ?? [];
   return <SupplierLayout title="Transportes" description="Cadastre e acompanhe os meios de transporte próprios da sua empresa." action={<button type="button" className={styles.primary} onClick={()=>transport.open('form')}><Plus size={16} aria-hidden="true"/>Novo transporte</button>}>
     {action.notice&&<p className={styles.notice} role="status">{action.notice}</p>}
     <section className={styles.panel} aria-labelledby="supplier-transports-title">
@@ -42,13 +43,18 @@ export default function SupplierTransports() {
       </dl>}
       {dialog?.type==='form'&&<form key={item?.id_transporte??'new'} className={styles.form} onSubmit={transport.save}>
         <label className={styles.wide}>Nome<input name="nome" required maxLength={120} defaultValue={item?.nome??''}/></label>
-        <label>Tipo<input name="tipo" required maxLength={60} placeholder="Caminhão, van, moto…" defaultValue={item?.tipo??''}/></label>
+        <label>Tipo<select name="tipo" required defaultValue={item?.tipo??''} disabled={!types.length}>
+          <option value="">{list.loading ? 'Carregando tipos…' : 'Selecione um tipo'}</option>
+          {item?.tipo && !types.includes(item.tipo) && <option value={item.tipo}>{item.tipo}</option>}
+          {types.map(type => <option key={type} value={type}>{type}</option>)}
+        </select></label>
+        {list.error && !types.length && <div className={styles.wide}><p role="alert" className={styles.error}>{list.error}</p><button type="button" className={styles.secondary} onClick={list.reload}>Recarregar tipos</button></div>}
         <label>Identificação / placa<input name="identificacao" maxLength={40} defaultValue={item?.identificacao??''}/></label>
         {item&&<label>Cadastro<select name="status" defaultValue={item.status}><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select></label>}
         {item?.em_uso&&<p className={`${styles.hint} ${styles.wide}`}>A entrega #{item.id_entrega_ativa} ocupa o transporte até o recebimento. Alterar o cadastro não encerra a entrega.</p>}
         <label className={styles.wide}>Observações<textarea name="observacao" maxLength={2000} defaultValue={item?.observacao??''}/></label>
         {action.error&&<p className={`${styles.error} ${styles.wide}`} role="alert">{action.error}</p>}
-        <div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} disabled={action.pending} onClick={transport.close}>Cancelar</button><button type="submit" className={styles.primary} disabled={action.pending}>{action.pending?'Salvando…':'Salvar transporte'}</button></div>
+        <div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} disabled={action.pending} onClick={transport.close}>Cancelar</button><button type="submit" className={styles.primary} disabled={action.pending || !types.length}>{action.pending?'Salvando…':'Salvar transporte'}</button></div>
       </form>}
       {dialog?.type!=='form'&&<>{action.error&&<p className={styles.error} role="alert">{action.error}</p>}<div className={styles.dialogActions}><button type="button" className={styles.secondary} disabled={action.pending} onClick={transport.close}>{dialog?.type==='view'?'Fechar':'Cancelar'}</button>{dialog?.type==='status'&&<button type="button" className={styles.primary} disabled={action.pending} onClick={transport.changeStatus}>{action.pending?'Salvando…':'Confirmar'}</button>}</div></>}
     </DialogContent></Dialog>

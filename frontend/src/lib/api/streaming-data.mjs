@@ -32,22 +32,53 @@ async function fetchStreamingFilms(signal, genreId) {
     return { ...film, generos: genres.map((item) => ({ id: item.id_genero, nome: item.nome })) };
   }));
 }
-let cachedFilms=null;
-let pendingFilms=null;
-export async function loadStreamingFilms(signal,genreId){
-  if(genreId||typeof window==='undefined')return fetchStreamingFilms(signal,genreId);
-  signal?.throwIfAborted();
-  if(!cachedFilms||cachedFilms.expires<=Date.now()){
-    pendingFilms??=fetchStreamingFilms().then(items=>{
-      cachedFilms={items,expires:Date.now()+30000};
-      return items;
-    }).finally(()=>{pendingFilms=null;});
-    await pendingFilms;
-  }
-  signal?.throwIfAborted();
-  return cachedFilms.items;
+const CATALOG_TTL_MS = 120_000;
+const CATALOG_CHANGE_KEY = "cineastra:streaming-catalog-change";
+const catalogCache = new Map();
+let localRevision = 0;
+
+function catalogVersion() {
+  try { return `${localRevision}:${window.localStorage.getItem(CATALOG_CHANGE_KEY) ?? ""}`; }
+  catch { return String(localRevision); }
 }
-export const loadStreamingGenres = (signal) => allPages("/genres", { signal });
+
+export function invalidateStreamingCatalog() {
+  localRevision++;
+  catalogCache.clear();
+  try { window.localStorage.setItem(CATALOG_CHANGE_KEY, `${Date.now()}:${Math.random()}`); }
+  catch { /* O cache da aba atual já foi limpo. */ }
+}
+
+async function loadCachedCatalog(key, load, signal) {
+  if (typeof window === "undefined") return load(signal);
+  for (;;) {
+    signal?.throwIfAborted();
+    const version = catalogVersion();
+    let entry = catalogCache.get(key);
+    if (entry?.version !== version || entry.expires <= Date.now()) {
+      entry = { version, expires: Infinity };
+      entry.promise = load().then(items => {
+        entry.expires = Date.now() + CATALOG_TTL_MS;
+        return items;
+      }).catch(error => {
+        if (catalogCache.get(key) === entry) catalogCache.delete(key);
+        throw error;
+      });
+      catalogCache.set(key, entry);
+    }
+    const items = await entry.promise;
+    signal?.throwIfAborted();
+    if (catalogVersion() === version) return items;
+  }
+}
+
+export function loadStreamingFilms(signal, genreId) {
+  return genreId ? fetchStreamingFilms(signal, genreId) : loadCachedCatalog("films", fetchStreamingFilms, signal);
+}
+
+export function loadStreamingGenres(signal) {
+  return loadCachedCatalog("genres", requestSignal => allPages("/genres", { signal: requestSignal }), signal);
+}
 export const loadProfileItems = (profileId, kind, signal) => allPages(`/profiles/${profileId}/${kind}`, { privateRoute: true, signal });
 export const loadMyAccesses = (signal) => allPages("/my-accesses", { privateRoute: true, signal });
 

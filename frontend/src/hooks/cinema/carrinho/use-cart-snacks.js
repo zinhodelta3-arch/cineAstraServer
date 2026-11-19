@@ -63,6 +63,6 @@ export function useCartSnacks(session, coupon, enabled) {
     localId, products, catalog:{ inputs, combos:comboProducts, themed:eventProducts }, add, snacks, combos, themed, tickets, selectedSession:ticket?.sourceId, setSelectedSession,
     pending: state?.contextKey === contextKey ? state.pending : null,
     error: state?.contextKey === contextKey ? state.error : null,
-    notice: state?.localId === localId ? state.notice : null
+    notice: state && state.localId === localId ? state.notice : null
   };
 }

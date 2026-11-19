@@ -11,7 +11,7 @@ spec.components.schemas.SupplierTransport=object({id_transporte:id,id_fornecedor
     id_entrega_ativa:{type:'string',pattern:'^[1-9][0-9]{0,19}$',nullable:true},
     status_entrega_ativa:{type:'string',enum:['ENVIADO','EM_TRANSITO',null],nullable:true},
     criado_em:{type:'string'},atualizado_em:{type:'string'}});
-spec.components.schemas.SupplierTransportPage=object({items:{type:'array',items:reference('SupplierTransport')},pagination:object({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...id,nullable:true}})});
+spec.components.schemas.SupplierTransportPage=object({items:{type:'array',items:reference('SupplierTransport')},types:{type:'array',items:text(60)},pagination:object({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...id,nullable:true}})});
 for(const {method,path,operationId,action} of supplierTransportOperations){
     const op={operationId,tags:['Fornecedores'],summary:operationId.replaceAll('_',' '),description:'FORNECEDOR ativo autenticado. A empresa é obtida pela sessão; consultas e alterações são limitadas aos seus transportes. DELETE inativa, preservando o cadastro. Identificação é opcional e única dentro do fornecedor; PATCH pode reativar o registro.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
     if(path.includes('{id}'))op.parameters.push({name:'id',in:'path',required:true,schema:id});

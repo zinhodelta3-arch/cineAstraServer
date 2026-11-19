@@ -1,10 +1,11 @@
+import LoadingImage from "@/components/ui/loading-image";
 import Icon from "./icon";
 import Coupon from "./coupon";
 
 export default function BenefitCard({ benefit }) {
   return <article id={`parceria-${benefit.id}`} className={`ca-offer-card ca-partner-${benefit.id} bg-card border-border`} aria-labelledby={`title-${benefit.id}`}>
     <div className="ca-partner-photo">
-      <img src={benefit.image} alt={benefit.imageAlt} width="1100" height="733" loading="lazy" />
+      <LoadingImage src={benefit.image} alt={benefit.imageAlt} width="1100" height="733" loading="lazy" />
       <div className="ca-photo-shade" />
       <div className="ca-photo-meta"><span>{benefit.reference}</span><span>{benefit.category}</span></div>
       <div className="ca-photo-caption"><span className="ca-brand-name" data-brand={benefit.id}>{benefit.brand}</span><p>{benefit.title}</p></div>

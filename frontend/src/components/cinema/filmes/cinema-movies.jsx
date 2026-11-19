@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import TablePagination from "@/components/ui/table-pagination";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useCinemaMovies } from "@/hooks/cinema/filmes/use-cinema-movies";
+import { moviePageSizes } from "@/lib/api/cinema-movies.mjs";
 import ListStatus from "@/components/cinema/home/list-status";
 import SessionListModal from "@/components/cinema/home/session-list-modal";
 import { SECTIONS } from "./movie-utils";
@@ -81,7 +82,7 @@ export default function CinemaMoviesPage() {
               <ListStatus list={{ loading: films.loading || searching, error: searching ? null : films.error, items: [], retry: films.reload }} empty="" />
               {(visibleMovies.length > 0 || films.page > 1) && (
                 <div className={`${styles.sectionDivider} mt-8`}>
-                  <TablePagination list={pagination} noun="filmes" pageSizes={[10, 20, 50]} />
+                  <TablePagination list={pagination} noun="filmes" pageSizes={moviePageSizes} />
                 </div>
               )}
             </TabsContent>

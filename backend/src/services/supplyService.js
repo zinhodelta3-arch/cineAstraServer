@@ -64,6 +64,7 @@ export function createSupplyService({model,identity,notifications}) {
         if(own.status!=='ATIVO'||!same(own.id_fornecedor,id))throw ApiError.acessoNegado();
     }
     async function grant(c,supplierId,localId) {
+        if (localId == null) throw conflict('Este item ainda está no estoque do fornecedor, sem vínculo com um cinema.');
         const g=found(await model.grant(supplierId,localId,c));
         if(g.supplier_status!=='ATIVO'||g.user_status!=='ATIVO'||g.tipo_usuario!=='FORNECEDOR'||g.grant_status!=='ATIVO'||g.local_status!=='ATIVO')throw conflict('Fornecedor ou local indisponível');
     }

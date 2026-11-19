@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
-import { createNotificationService } from '../src/services/notificationService.js';
+import { createNotificationService, experienceRequestNotice } from '../src/services/notificationService.js';
 import { createNotificationModel } from '../src/models/notificationModel.js';
 import { createNotificationController } from '../src/controllers/notificationController.js';
 import { notificationRoutes } from '../src/routes/notificationRoutes.js';
@@ -73,4 +73,17 @@ test('SQL vincula leitura e marcação ao ator; dedupe tem chave estável', asyn
     await model.markRead(db, '7', '9');
     assert.deepEqual(calls[1].args, ['7', '9']);
     assert.deepEqual(calls[2].args, ['7', '9']);
+    await model.list('7', { limit: 20, cursor: '9007199254740993', order: 'recent' });
+    assert.match(calls[3].sql, /id_notificacao < \? ORDER BY id_notificacao DESC/);
+    assert.deepEqual(calls[3].args, ['7', '9007199254740993']);
+});
+
+test('notificação de experiência conserva a referência ao marcar como lida', async () => {
+    const f = fixture();
+    const notice = await f.service.emit({ execute() {} }, experienceRequestNotice('1', '42'));
+    assert.equal(notice.solicitacao_experiencia_id, '42');
+    assert.ok(!('dedupe_key' in notice));
+    const updated = await f.api('patch', '/api/notifications/me/1/read').expect(200);
+    assert.equal(updated.body.data.solicitacao_experiencia_id, '42');
+    assert.equal(updated.body.data.lida, true);
 });

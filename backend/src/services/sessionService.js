@@ -3,6 +3,7 @@ import { unitReadLocation } from './unitReadScope.js';
 import { idString, moneyString } from '../utils/dto.js';
 
 const HOUR = 3_600_000, DAY = 24 * HOUR;
+const TRAILER_MINUTES = 30;
 const found = value => { if (!value) throw ApiError.naoEncontrado(); return value; };
 const conflict = message => new ApiError(message, 409, null, 'SESSION_CONFLICT');
 const dateMs = date => Date.parse(`${date}T00:00:00Z`);
@@ -53,11 +54,16 @@ export function createSessionService({ model, identity }) {
         if (idString(room.id_local) !== idString(local.id_local)) throw conflict('Sala mudou de local');
         return { local, room };
     }
-    async function playable(c, row, local, room) {
+    async function playable(c, row, local, room, autoEnd = false) {
         if (local.status !== 'ATIVO' || room.sala_status !== 'ATIVA') throw conflict('Local ou sala indisponível');
         if (Number((await model.activeSeats(room.id_sala, c))?.total ?? 0) !== room.capacidade) throw conflict('Capacidade da sala inconsistente');
         const film = found(await model.film(row.id_filme, c, true));
         if (film.status !== 'ATIVO' || !film.disponivel_cinema || !Number.isInteger(film.duracao) || film.duracao <= 0) throw conflict('Filme indisponível para cinema');
+        if (autoEnd) {
+            const runtime = (film.duracao + TRAILER_MINUTES) * 60_000;
+            if (runtime >= DAY) throw conflict('A sessão com trailers deve durar menos de 24 horas');
+            row.horario_fim = new Date(timeMs(row.horario_inicio) + runtime).toISOString().slice(11, 19);
+        }
         const span = interval(row);
         if (span.end - span.start < Number(film.duracao) * 60_000) throw ApiError.validacao('Sessão menor que a duração do filme');
         return span;
@@ -95,7 +101,8 @@ export function createSessionService({ model, identity }) {
                 const localId = await unitReadLocation(c, await identity.activeActor(c, context), q.localId);
                 if (q.localId && idString(q.localId) !== localId) throw ApiError.acessoNegado();
                 const scoped = { ...q, localId }, rows = await model.list(scoped, true, c), items = rows.slice(0, scoped.limit);
-                return { items: items.map(sessionDto), pagination: { limit: scoped.limit, nextCursor: rows.length > scoped.limit ? idString(items.at(-1).id_sessao) : null } };
+                return { items: items.map(row => ({ ...sessionDto(row), duracao_filme: row.duracao_filme })), trailerMinutes: TRAILER_MINUTES,
+                    pagination: { limit: scoped.limit, nextCursor: rows.length > scoped.limit ? idString(items.at(-1).id_sessao) : null } };
             }, context);
         },
         async unitGet(id, context) {
@@ -118,7 +125,7 @@ export function createSessionService({ model, identity }) {
             return mutate(async c => {
                 const { local, room } = await lockedRoom(c, input.id_sala, initial.id_local);
                 const row = { ...input, status: 'AGENDADA' };
-                await playable(c, row, local, room);
+                await playable(c, row, local, room, unit);
                 await noOverlap(c, local.id_local, row);
                 const id = await model.insert(c, row);
                 await identity.audit(c, 'SESSION.CREATED', id, context);
@@ -142,7 +149,9 @@ export function createSessionService({ model, identity }) {
                     if (previous.status !== 'AGENDADA') throw conflict('Somente sessão agendada pode ser editada');
                     if (items) throw conflict('Sessão com itens de pedido não pode alterar direitos');
                     const proposed = { ...previous, ...input };
-                    await playable(c, proposed, local, room);
+                    const autoEnd = unit && ['id_filme', 'horario_inicio', 'horario_fim'].some(key => Object.hasOwn(input, key));
+                    await playable(c, proposed, local, room, autoEnd);
+                    if (autoEnd) input = { ...input, horario_fim: proposed.horario_fim };
                     if (['data','horario_inicio','horario_fim'].some(k => Object.hasOwn(input, k))) await noOverlap(c, local.id_local, proposed, id);
                 }
                 await model.update(c, id, input);

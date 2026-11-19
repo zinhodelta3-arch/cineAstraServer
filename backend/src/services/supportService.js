@@ -18,7 +18,7 @@ export function createSupportService({model,identity,notifications}){
         ownList:(query,context)=>tx(context,async c=>{const a=await actor(c,context);if(a.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();return page(await model.ownerList(c,a.id_usuario,query.limit,query.cursor),query.limit,dto,'id_suporte');}),
         adminQueue:(query,context)=>tx(context,async c=>{const a=await actor(c,context);if(a.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();return page(await model.queue(c,query.limit,query.cursor,query.status,query.q),query.limit,dto,'id_suporte');}),
         get:(id,context)=>tx(context,async c=>dto((await access(c,id,context)).row)),
-        messages:(id,query,context)=>tx(context,async c=>{await access(c,id,context);return page(await model.messages(c,id,query.limit,query.cursor),query.limit,messageDto,'id_mensagem');}),
+        messages:(id,query,context)=>tx(context,async c=>{await access(c,id,context);return page(await model.messages(c,id,query.limit,query.cursor,query.order),query.limit,messageDto,'id_mensagem');}),
         async message(id,input,context){const result=await tx(context,async c=>{
             const {a,row}=await access(c,id,context,true);
             if(row.status==='FECHADO')throw conflict('Solicitação fechada');

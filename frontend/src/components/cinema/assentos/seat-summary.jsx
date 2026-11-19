@@ -9,7 +9,7 @@ export default function SeatSummary({ session, selection }) {
     seatsDisabled={selection.continuing}
     totalLabel="PRÓXIMA ETAPA"
     totalNote="Escolha os tipos de ingresso e confira os valores na próxima etapa."
-    action={<button type="button" disabled={!selection.selected.length || selection.continuing} onClick={selection.continueToTickets}>{selection.continuing ? "Abrindo ingressos…" : "Continuar"}<ArrowRight size={18} aria-hidden="true" /></button>}
+    action={<button type="button" disabled={!selection.selected.length || selection.continuing || selection.checkingSession} onClick={selection.continueToTickets}>{selection.continuing ? "Abrindo ingressos…" : "Revisar ingressos"}<ArrowRight size={18} aria-hidden="true" /></button>}
     footerContent={selection.error && <p className="mt-3 text-xs" role="alert">{selection.error}</p>}
   />;
 }

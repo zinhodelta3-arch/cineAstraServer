@@ -1,0 +1,1024 @@
+{
+  "sections": [
+    {
+      "id": "secao-1",
+      "title": "1. Aceite e natureza do contrato",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "1.1. A CineAstra é uma plataforma digital operada por [RAZÃO SOCIAL], inscrita no CNPJ sob o nº [00.000.000/0000-00], com sede em [ENDEREÇO COMPLETO] (\"CineAstra\", \"nós\"). A Plataforma reúne, em um único ambiente: (a) venda de ingressos para sessões em locais de exibição; (b) aluguel e compra de filmes para streaming; (c) venda de insumos e combos de alimentos e bebidas; (d) assinatura de planos, inclusive compartilháveis; e (e) a gestão operacional de estoque, equipamentos e logística com fornecedores, que viabiliza as sessões."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.2. Estes Termos de Uso (\"Termos\") regulam o acesso e a utilização do site, dos aplicativos móveis e de todos os canais digitais da CineAstra (\"Plataforma\"). Ao criar uma conta, realizar uma compra, aceitar um convite para plano ou simplesmente navegar, você declara que leu, compreendeu e concorda com estes Termos. Se não concordar, não utilize a Plataforma."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.3. Documentos que integram o contrato: (i) estes Termos; (ii) a Política de Privacidade; (iii) o regulamento de cada plano; (iv) as regras de cada promoção ou cupom; e (v) as regras de funcionamento de cada Local, informadas na Plataforma e na unidade. Havendo conflito, prevalece a regra mais específica, desde que não seja menos favorável ao consumidor do que a lei."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.4. Legislação aplicável: Código de Defesa do Consumidor (Lei nº 8.078/1990); Decreto nº 7.962/2013 (comércio eletrônico); Marco Civil da Internet (Lei nº 12.965/2014); Lei Geral de Proteção de Dados (Lei nº 13.709/2018); Lei nº 12.933/2013 e Decreto nº 8.537/2015 (meia-entrada); Estatuto da Pessoa com Deficiência (Lei nº 13.146/2015); Estatuto da Criança e do Adolescente (Lei nº 8.069/1990) e Lei nº 15.211/2025 (proteção de crianças e adolescentes em ambientes digitais); e as normas de classificação indicativa do Ministério da Justiça e Segurança Pública."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.5. Aceite eletrônico e registro. O aceite é dado de forma eletrônica, por meio de caixa de seleção ou botão específico. A CineAstra registra a data, a hora, o endereço IP e a versão dos Termos aceita, para fins de comprovação. Estes Termos ficam disponíveis a qualquer momento na Plataforma, em formato que permite armazenamento e impressão."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.6. Idioma. O contrato é redigido em português do Brasil."
+        }
+      ]
+    },
+    {
+      "id": "secao-2",
+      "title": "2. Definições",
+      "blocks": [
+        {
+          "kind": "list",
+          "items": [
+            "Administração: equipe da CineAstra responsável pela gestão geral da Plataforma, incluindo catálogo, preços, planos, usuários, fornecedores e relatórios.",
+            "Cliente: pessoa física que compra ingressos, produtos, filmes ou planos para uso próprio.",
+            "Colaborador: pessoa que atua em um Local ou na operação da CineAstra (atendimento, bilheteria, bomboniere, projeção, limpeza, logística), com acesso restrito às funções do seu cargo.",
+            "Supervisor: Colaborador responsável por uma equipe ou por um Local, com permissões ampliadas de gestão operacional.",
+            "Fornecedor: empresa parceira que fornece insumos, equipamentos ou serviços de transporte e logística.",
+            "Local: unidade física onde ocorrem as sessões, com uma ou mais salas.",
+            "Sala: ambiente de exibição dentro de um Local, com lotação, formato e recursos de acessibilidade próprios.",
+            "Sessão: exibição de um filme em determinada sala, data e horário.",
+            "Ingresso: título digital que dá direito a assistir a uma sessão.",
+            "Título digital: filme disponibilizado para streaming, por aluguel ou compra.",
+            "Plano: assinatura recorrente com benefícios definidos em regulamento.",
+            "Titular: Cliente responsável contratual por um Plano.",
+            "Membro: pessoa incluída pelo Titular em um Plano compartilhável.",
+            "Insumos: alimentos, bebidas, descartáveis e demais itens usados na operação ou vendidos nos Locais.",
+            "Equipamentos: itens necessários à realização de uma sessão (projetores, caixas de som, telas, móveis, acessórios), quando fornecidos por Fornecedores.",
+            "Chamado: registro de solicitação, dúvida, reclamação ou ocorrência aberto na Plataforma, com número de protocolo.",
+            "Cupom: código promocional que concede desconto ou vantagem, conforme regras próprias."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "secao-3",
+      "title": "3. Cadastro e conta",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "3.1. Um usuário por CPF. Cada pessoa física pode manter uma única conta ativa, vinculada ao seu CPF. É vedado criar contas duplicadas, usar CPF de terceiros, ceder, vender ou emprestar a conta. A CineAstra pode validar o CPF junto a bases de dados oficiais ou de verificação de identidade e recusar cadastros com dados inconsistentes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3.2. Capacidade para contratar."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Maiores de 18 anos e emancipados: podem criar conta e contratar livremente.",
+            "Adolescentes de 16 e 17 anos: podem se cadastrar assistidos por responsável legal, que consente com estes Termos e com o tratamento dos dados. A conta fica vinculada à do responsável e sujeita a configurações protetivas.",
+            "Menores de 16 anos: não possuem conta própria. Podem ser beneficiários de ingressos e do Plano do responsável, que responde pelo uso.",
+            "Para menores, a CineAstra aplica privacidade reforçada, bloqueio de conteúdo acima da classificação indicativa, ausência de publicidade direcionada baseada em perfilamento e limites de compra definidos pelo responsável."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "3.3. Dados obrigatórios. Para o cadastro, são necessários nome completo, CPF, data de nascimento, e-mail, telefone celular e senha. Você deve manter esses dados verdadeiros, completos e atualizados. Dados falsos ou desatualizados podem levar à suspensão da conta e ao cancelamento de pedidos, sem prejuízo das medidas legais."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3.4. Confirmação de e-mail e telefone. A conta só é ativada após a confirmação do e-mail e do telefone por código de verificação."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3.5. Verificação em duas etapas (2FA)."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Obrigatória para os perfis de Administração, Supervisores, Colaboradores e Fornecedores, em todos os acessos.",
+            "Recomendada para Clientes, que podem ativá-la nas configurações de segurança.",
+            "Exigida para Clientes em operações sensíveis: troca de e-mail, telefone ou senha; alteração de forma de pagamento; transferência de ingressos; inclusão ou remoção de Membros; solicitação de reembolso de valor elevado; e login em novo dispositivo."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "3.6. Senha e credenciais. Você é responsável por manter senha e dispositivos de verificação em sigilo. Recomendamos senhas fortes, únicas e com no mínimo [10 caracteres]. A CineAstra nunca solicitará sua senha ou código de verificação por telefone, e-mail ou mensagem. Tentativas repetidas de acesso falho podem bloquear a conta temporariamente."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3.7. Acesso indevido. Atividades realizadas com suas credenciais presumem-se feitas por você, salvo se comunicar a perda, o roubo ou o acesso indevido ao atendimento. Após a comunicação, a CineAstra bloqueará a conta com a maior brevidade e orientará sobre a recuperação, sem prejudicar o direito do Cliente de contestar transações fraudulentas."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3.8. Inatividade. Contas sem uso por [24 meses], sem plano ativo, créditos ou pendências, poderão ser encerradas, mediante aviso prévio de [30 dias] por e-mail. Créditos e saldos não serão perdidos sem aviso e oportunidade de utilização ou resgate."
+        },
+        {
+          "kind": "paragraph",
+          "text": "3.9. Exclusão pelo próprio Cliente. O Cliente pode solicitar o encerramento da conta a qualquer momento, observados o cumprimento de pendências financeiras e a guarda de dados exigida por lei (item 21)."
+        }
+      ]
+    },
+    {
+      "id": "secao-4",
+      "title": "4. Perfis de usuário e permissões",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "A Plataforma possui perfis com permissões distintas. O acesso é concedido pelo mínimo necessário à função."
+        },
+        {
+          "kind": "table",
+          "columns": [
+            "Perfil",
+            "Principais funções",
+            "Exigências"
+          ],
+          "rows": [
+            [
+              "Cliente",
+              "Comprar ingressos, filmes, combos e planos; gerenciar conta, Membros e pedidos; abrir chamados",
+              "CPF único; 2FA recomendado"
+            ],
+            [
+              "Colaborador",
+              "Operar bilheteria, bomboniere, validação de ingressos, atendimento e tarefas do Local",
+              "Cadastro pela CineAstra; 2FA obrigatório; sigilo"
+            ],
+            [
+              "Supervisor",
+              "Gerir equipe e operação do Local; aprovar ocorrências, trocas e reembolsos até alçada definida",
+              "2FA obrigatório; auditoria de ações"
+            ],
+            [
+              "Fornecedor",
+              "Receber pedidos, informar estoque, prazos e entregas",
+              "Contrato comercial; 2FA obrigatório"
+            ],
+            [
+              "Administração",
+              "Gerir catálogo, preços, planos, usuários, fornecedores, relatórios e configurações",
+              "2FA obrigatório; registro de todas as ações"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "4.1. É proibido tentar acessar funções ou dados de outro perfil, ainda que tecnicamente possível. Tentativas de elevação indevida de privilégios são registradas e tratadas como uso indevido."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4.2. As ações dos perfis operacionais (Colaborador, Supervisor, Fornecedor e Administração) são registradas em logs de auditoria, que podem ser usados para apuração de irregularidades."
+        }
+      ]
+    },
+    {
+      "id": "secao-5",
+      "title": "5. Locais, salas e sessões",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "5.1. Informações exibidas. Cada sessão apresenta: Local e endereço; sala; data e horário; filme; idioma (dublado ou legendado); formato (2D, 3D, sala especial); duração; classificação indicativa e seus descritores; preços por tipo de ingresso; lotação e assentos disponíveis; e recursos de acessibilidade."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.2. Alterações. Horários, salas e formatos podem ser alterados por motivo técnico, operacional, de segurança ou de força maior. Quando houver alteração ou cancelamento, o Cliente será avisado pelos canais cadastrados (e-mail, push, SMS ou WhatsApp, conforme as preferências) e poderá escolher entre as opções do item 6.9."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.3. Classificação indicativa. As sessões seguem a classificação indicativa oficial. A entrada de menores obedece às regras: filmes livres, sem restrição; filmes para maiores de 10, 12, 14 ou 16 anos, com acompanhamento de pai, mãe ou responsável legal quando o menor for mais jovem do que a faixa indicada, nos limites permitidos pela regulamentação vigente; e filmes para maiores de 18 anos, somente para maiores de idade. O Local pode exigir documento oficial com foto, e a recusa de entrada por descumprimento dessas regras não gera reembolso."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.4. Horário de entrada. A sala abre aproximadamente [15 minutos] antes do início. A entrada após o início da sessão é permitida até [15 minutos] depois do início dos trailers, a critério do Local, sem reembolso por perda de parte da exibição causada pelo atraso do Cliente."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.5. Lotação e assentos. A lotação é definida por sala. Quando a sessão tiver assentos marcados, o Cliente escolhe o assento na compra; os assentos preferenciais e para pessoas com mobilidade reduzida, obesas ou com deficiência são reservados nos termos da lei e liberados para venda geral somente conforme a regra do Local. Quando a sessão for de assentos livres, vale a ordem de chegada."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.6. Salas especiais e formatos. Salas com tecnologia, conforto ou serviço diferenciados (3D, grande formato, poltronas premium) podem ter preços, políticas de idade e regras próprios, informados antes da compra. Óculos 3D e outros itens podem ser vendidos ou emprestados; o extravio ou dano pode ser cobrado pelo valor informado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.7. Acessibilidade. A CineAstra busca oferecer: salas e assentos acessíveis; acompanhante com preço regulamentar; legendagem; audiodescrição; Libras e legendas descritivas em sessões indicadas; e informações sobre recursos por Local. A Plataforma segue boas práticas de acessibilidade digital (WCAG), com compatibilidade com leitores de tela, navegação por teclado, contraste adequado, textos alternativos e opção de aumento de fonte. Para solicitar um recurso ou informar uma barreira, escreva para [acessibilidade@cineastra.com.br] ou abra um Chamado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.8. Regras de comportamento nos Locais. Durante as sessões, o Cliente deve: manter celulares em silêncio e sem uso de tela brilhante; não filmar, fotografar ou gravar a tela; não fazer barulho excessivo; respeitar a lotação e as orientações de segurança; e não entrar com itens proibidos (armas, objetos perigosos, substâncias ilícitas e produtos que os Locais vedarem por segurança). Alimentos e bebidas externos podem ser restringidos conforme a regra do Local, respeitados os direitos do consumidor, inclusive em casos de necessidades médicas e alimentação de bebês."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.9. Retirada de pessoas. O Local pode solicitar a retirada de quem descumprir as regras ou colocar em risco a segurança de terceiros, sem reembolso, ressalvados os casos em que a retirada decorrer de falha da CineAstra."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.10. Pertences. O Local não se responsabiliza por objetos deixados nas salas, mas manterá um serviço de achados e perdidos, com registro, por [30 dias]."
+        }
+      ]
+    },
+    {
+      "id": "secao-6",
+      "title": "6. Ingressos",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "6.1. Compra. O Ingresso pode ser comprado pelo site, aplicativo ou nos Locais. Antes de finalizar, o Cliente confere um resumo com filme, sessão, assentos, tipos de ingresso, taxas e valor total. O pedido só é confirmado após a aprovação do pagamento, quando o Ingresso é enviado por e-mail e fica disponível na conta."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.2. Limites de compra. Para coibir revenda abusiva e fraudes, a CineAstra pode limitar o número de ingressos por compra, por CPF e por sessão (como referência, [até 10 ingressos por compra]), com exceções para grupos e eventos mediante solicitação."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.3. Reserva temporária. Os assentos escolhidos ficam reservados por [10 minutos] durante o pagamento. Passado o prazo, a reserva expira."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.4. Ingresso digital e validação. O Ingresso é entregue em QR Code, válido para uma única entrada, na sessão, sala e assento indicados. Capturas de tela duplicadas, cópias e falsificações resultam em recusa de acesso. O Cliente é responsável por não divulgar o QR Code."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.5. Taxa de conveniência. Se cobrada, será informada de forma clara e destacada antes do pagamento, com seu valor discriminado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.6. Tipos de ingresso. Os tipos disponíveis (inteira, meia-entrada, acompanhante, promoção, plano) são indicados na compra, cada um com suas regras."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.7. Meia-entrada."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Beneficiários: estudantes regularmente matriculados; pessoas com deficiência e, quando necessário, um acompanhante; jovens de 15 a 29 anos de baixa renda inscritos no CadÚnico (ID Jovem); e demais beneficiários previstos em lei.",
+            "Valor: 50% do preço do ingresso inteiro, conforme a lei.",
+            "Comprovação: o Cliente informa o tipo de benefício na compra e apresenta, na entrada do Local, o documento comprobatório original (físico ou digital oficial) e um documento de identificação com foto. A CineAstra poderá solicitar o envio prévio do documento para pré-validação, o que não dispensa a conferência na entrada. Veja o Anexo III.",
+            "Falta de comprovação: sem o documento válido na entrada, o Cliente pode (a) pagar a diferença até o valor do ingresso inteiro, ou (b) pedir o cancelamento e o reembolso integral do ingresso de meia-entrada não utilizado.",
+            "Cota de 40%: a quantidade de ingressos com meia-entrada não poderá exceder 40% do total de ingressos disponíveis para cada sessão, não contando nesse limite os benefícios de pessoas com deficiência e seus acompanhantes. Esgotada a cota, a Plataforma exibe apenas ingressos inteiros.",
+            "Cumulatividade: a meia-entrada não é cumulativa com outras promoções, descontos ou cupons, salvo se a oferta disser expressamente o contrário.",
+            "Pessoalidade: a meia-entrada é pessoal e intransferível.",
+            "Fraude: a utilização fraudulenta do benefício sujeita o infrator às penalidades legais e à suspensão da conta.",
+            "Política de preços: a CineAstra define seus preços considerando a incidência de descontos legais e promocionais, o que não afeta o direito do Cliente ao benefício."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.8. Cancelamento pelo Cliente. O Cliente pode cancelar o ingresso pela Plataforma, observados os prazos abaixo:"
+        },
+        {
+          "kind": "table",
+          "columns": [
+            "Situação",
+            "Prazo",
+            "Resultado"
+          ],
+          "rows": [
+            [
+              "Arrependimento (compra online)",
+              "Até 7 dias da compra e com antecedência mínima de [48 horas] da sessão",
+              "Reembolso integral, inclusive taxa de conveniência"
+            ],
+            [
+              "Cancelamento comum",
+              "Até [2 horas] antes do início da sessão",
+              "Reembolso integral do valor do ingresso; taxa de conveniência não reembolsável, salvo na hipótese acima"
+            ],
+            [
+              "Após o prazo de cancelamento",
+              "Menos de [2 horas] do início",
+              "Sem reembolso, salvo falha da CineAstra"
+            ],
+            [
+              "Após o início da sessão",
+              "—",
+              "Sem reembolso, salvo falha da CineAstra"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.9. Cancelamento ou alteração pela CineAstra. Se a sessão for cancelada, tiver o horário ou o formato alterado de modo relevante, ou se houver falha grave na exibição (som, imagem, interrupção prolongada, problema de segurança), o Cliente poderá escolher, sem ônus: (a) reembolso integral, inclusive taxas; (b) remarcação para outra sessão; ou (c) crédito na Plataforma pelo valor pago, com validade de [12 meses]. Se a falha ocorrer durante a exibição, a CineAstra poderá oferecer ingresso de cortesia, sem prejuízo das outras opções."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.10. Prazos de reembolso. O reembolso será aprovado em até [5 dias úteis] e creditado no mesmo meio de pagamento. No cartão de crédito, o estorno pode aparecer na fatura em até duas faturas, conforme a operadora; no Pix, em até [5 dias úteis]. Se o Cliente preferir, poderá receber o valor como crédito na Plataforma."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.11. Transferência. O Cliente pode transferir o Ingresso a terceiro, pela Plataforma, até [1 hora] antes da sessão, desde que o ingresso: não seja meia-entrada (que é pessoal) nem de promoção intransferível; não tenha sido utilizado; e a transferência seja confirmada com 2FA. A transferência não autoriza a revenda com ágio."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.12. Perda ou não recebimento. Se não receber o Ingresso, o Cliente deve conferir o spam e a conta, e solicitar o reenvio. A CineAstra reemitirá o ingresso sem custo, invalidando o anterior."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.13. Ingresso não utilizado. O Cliente que não comparecer e não cancelar no prazo não terá reembolso, ressalvados os direitos legais."
+        }
+      ]
+    },
+    {
+      "id": "secao-7",
+      "title": "7. Filmes para streaming (aluguel e compra)",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "7.1. Catálogo. O catálogo, os preços e as condições de cada Título digital são exibidos antes da contratação, com indicação de classificação indicativa, idiomas, legendas, qualidade (SD, HD, 4K, quando houver) e recursos de acessibilidade. A disponibilidade depende de licenças de terceiros e pode variar."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.2. Aluguel. Dá direito a assistir ao Título digital por tempo limitado. Como referência: [30 dias para iniciar a reprodução] e [48 horas para concluí-la, contadas do início]. Dentro desse prazo, o Cliente pode pausar e retomar. Após os prazos, o Título digital deixa de estar disponível, e novo aluguel exige nova compra."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.3. Compra. A \"compra\" concede licença de uso pessoal, não exclusiva, intransferível e por prazo indeterminado, para acessar o Título digital pela Plataforma, enquanto ele estiver licenciado à CineAstra. Se o Título for retirado por término de licença de terceiros, a CineAstra comunicará com antecedência mínima de [30 dias] e, quando tecnicamente e contratualmente possível, permitirá o acesso até o fim do prazo; caso não seja possível manter o acesso, oferecerá título equivalente, crédito ou reembolso proporcional."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.4. Dispositivos, qualidade e simultaneidade. O número de dispositivos autorizados e de transmissões simultâneas é definido na compra ou no Plano. A qualidade da imagem depende da conexão e do aparelho."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.5. Download offline. Quando disponível, o download será limitado ao período e ao número de dispositivos informados, e o conteúdo baixado é protegido por criptografia, não podendo ser copiado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.6. Direito de arrependimento. Nas contratações à distância, o Cliente pode desistir em até 7 dias corridos do pagamento, com reembolso integral, desde que não tenha iniciado a reprodução do Título digital. Ao iniciar a reprodução, o Cliente reconhece que o serviço começou a ser prestado, e o direito de arrependimento deixa de se aplicar quanto àquele título. Essa informação é exibida de forma clara antes da compra e no momento de iniciar a reprodução."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.7. Falha técnica. Se uma falha da Plataforma impedir a reprodução, o prazo será prorrogado, o título será recuperado ou o valor será reembolsado, conforme a preferência do Cliente."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.8. Proteção do conteúdo. É proibido copiar, gravar a tela, retransmitir, exibir publicamente, extrair, burlar medidas de proteção ou usar o conteúdo para fins comerciais. Exibições públicas, em locais de acesso coletivo ou comerciais exigem autorização específica da CineAstra e dos titulares dos direitos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.9. Controle parental. A Plataforma oferece perfis infantis, bloqueio por classificação indicativa e PIN para compras e reproduções, que o responsável pode ativar nas configurações."
+        }
+      ]
+    },
+    {
+      "id": "secao-8",
+      "title": "8. Insumos, alimentos e combos",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "8.1. Venda. Alimentos, bebidas e combos podem ser comprados junto com o Ingresso ou separadamente, para retirada no Local indicado, mediante QR Code ou código do pedido. Os preços, tamanhos, composição e informações nutricionais são exibidos antes da compra."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.2. Alergias e restrições. As informações sobre ingredientes e alérgenos estão disponíveis no produto ou no balcão, e é sua responsabilidade consultá-las antes do consumo. Os produtos são preparados em ambiente que pode manipular alérgenos, e a CineAstra não garante a ausência de contaminação cruzada, salvo se expressamente informado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.3. Bebidas alcoólicas, quando oferecidas, só são vendidas a maiores de 18 anos, com possibilidade de exigência de documento, e não são entregues a quem aparentar embriaguez."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.4. Retirada e prazo. O pedido deve ser retirado no Local até o fim da sessão ou no prazo indicado. Pedidos antecipados podem ser preparados no horário escolhido."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.5. Cancelamento e troca."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Pedido não retirado e cancelado até [2 horas] antes do horário agendado: reembolso integral.",
+            "Pedido não retirado e não cancelado até o fim do prazo: sem reembolso.",
+            "Produto com defeito, erro de preparo, corpo estranho ou impróprio para consumo: troca imediata ou reembolso integral, a critério do Cliente.",
+            "Alimentos preparados e produtos perecíveis não têm devolução após a retirada, salvo nas hipóteses acima."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.6. Indisponibilidade. Se um item ficar indisponível (falha de estoque ou de entrega de Fornecedor), a CineAstra oferecerá substituição equivalente ou reembolso, sempre com a escolha do Cliente."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.7. Segurança alimentar. Os produtos seguem as normas sanitárias aplicáveis. Reclamações sobre qualidade ou suspeita de intoxicação devem ser comunicadas imediatamente ao Local e registradas em Chamado, para apuração e eventual comunicação às autoridades sanitárias."
+        }
+      ]
+    },
+    {
+      "id": "secao-9",
+      "title": "9. Planos e assinaturas",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "9.1. Contratação e regulamento. Cada Plano tem regulamento próprio, com benefícios (por exemplo, descontos em ingressos, créditos de streaming, descontos em combos), preço, periodicidade (mensal, trimestral ou anual), número máximo de Membros, regras de uso e de renovação. Essas informações são exibidas de forma clara antes da contratação e ficam disponíveis na conta."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.2. Renovação automática. Salvo indicação em contrário, a assinatura renova-se automaticamente ao fim de cada período, com cobrança no meio de pagamento escolhido. A CineAstra enviará aviso com antecedência mínima de [30 dias] antes de renovações anuais e de qualquer reajuste. Os reajustes seguirão critério objetivo informado ao Cliente e não alcançarão o período já pago."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.3. Plano individual e plano compartilhável. O Plano individual é de uso exclusivo do Titular. O Plano compartilhável permite que o Titular inclua Membros, até o limite do regulamento, os quais usufruem dos benefícios conforme as regras do Plano."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.4. Responsabilidades do Titular. O Titular é o responsável perante a CineAstra pela contratação, pelo pagamento e pela gestão dos Membros. Ao incluir um Membro, o Titular declara ter a autorização dele para fornecer seus dados à CineAstra e ter informado as regras do Plano."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.5. Inclusão de Membros."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "O Titular indica o Membro pelo CPF e e-mail. O Membro precisa ter conta própria (um usuário por CPF) e aceitar o convite, concordando com estes Termos e com a modalidade de pagamento escolhida.",
+            "Cada pessoa pode participar de [um] Plano compartilhado por vez como Membro, salvo regra diferente no regulamento.",
+            "A inclusão de menores de 16 anos depende de aceite do responsável legal.",
+            "A inclusão, a troca e a retirada de Membros exigem 2FA do Titular e estão sujeitas a limite de [1 troca por ciclo], para evitar compartilhamento rotativo.",
+            "A retirada de um Membro produz efeitos no próximo ciclo, salvo em caso de inadimplência ou violação."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.6. Forma de pagamento do Plano compartilhado. No momento da contratação, o Titular e os Membros acordam, entre as modalidades:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Modalidade A — Pagamento integral pelo Titular. O Titular paga o valor total da assinatura. Os Membros não têm obrigação financeira perante a CineAstra.",
+            "Modalidade B — Divisão igual entre todos os incluídos. O valor da assinatura é dividido em partes iguais entre o Titular e os Membros, com cobrança individual no meio de pagamento de cada um. Havendo arredondamento, a diferença de centavos é absorvida pelo Titular.",
+            "A modalidade escolhida consta do resumo do pedido e do aceite de cada Membro. Quando um Membro é incluído ou retirado na Modalidade B, o valor de cada parte é recalculado a partir do ciclo seguinte, com aviso prévio e possibilidade de cancelamento sem ônus por quem não concordar com o novo valor.",
+            "A mudança de modalidade só vale a partir do próximo ciclo, com aceite de todos os envolvidos."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.7. Responsabilidade pelo valor total. Na Modalidade A, o Titular responde pelo valor total. Na Modalidade B, cada integrante responde pela sua parte; se um Membro não pagar, o Titular poderá optar por quitar a parte inadimplente para manter os benefícios de todos, e passa a ter direito de cobrar o Membro. A CineAstra não cobra do Titular a parte de outro integrante sem que ele tenha se obrigado expressamente a isso no aceite do Plano."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.8. Atraso e inadimplência. Em caso de não pagamento no vencimento, aplicam-se, cumulativamente, as medidas abaixo (valores resumidos no Anexo II):"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Multa moratória de 2% sobre o valor em atraso, juros de mora de 1% ao mês (calculados pro rata die) e correção monetária pelo IPCA, observado o limite do art. 52, § 1º, do CDC. Não há cobrança de outras penalidades pelo mesmo fato.",
+            "Notificação por e-mail e na Plataforma no primeiro dia de atraso, com opções de pagamento.",
+            "Suspensão dos benefícios do Plano a partir do [5º dia] de atraso.",
+            "Cancelamento do Plano a partir do [30º dia] de atraso, com possibilidade de cobrança por meios legais do valor devido e de seus acessórios.",
+            "Negativação: a inclusão em cadastros de proteção ao crédito só ocorrerá após notificação prévia por escrito, com prazo para regularização, e dentro das regras legais.",
+            "Na Modalidade B, a suspensão e as penalidades alcançam apenas o integrante inadimplente, mantendo os demais seus benefícios, salvo se o Titular optar por quitar a parte em atraso. A reativação ocorre após a quitação.",
+            "Os valores quitados antes da suspensão e os benefícios já usufruídos não são devolvidos."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.9. Cancelamento pelo Titular. O Plano pode ser cancelado a qualquer momento, de forma tão simples quanto a contratação, pela própria Plataforma, sem multa de fidelidade, com efeitos ao fim do período já pago. Planos promocionais com fidelidade (por exemplo, desconto condicionado a [12 meses]) terão essa condição informada de modo destacado antes da contratação. Nesse caso, a multa por rescisão antecipada será proporcional ao período restante e limitada ao valor do desconto efetivamente recebido, nunca superior a esse benefício."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.10. Cancelamento por Membro. O Membro pode sair do Plano a qualquer momento. Na Modalidade B, a saída vale a partir do próximo ciclo; os valores já pagos no ciclo em curso não são devolvidos, e o Membro mantém os benefícios até o fim dele."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.11. Arrependimento. Nas contratações à distância, o Titular tem 7 dias corridos para desistir, com reembolso integral, desde que não tenha usufruído de benefícios relevantes. Se houver uso, os benefícios consumidos poderão ser descontados proporcionalmente, com demonstrativo."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.12. Suspensão ou cancelamento pela CineAstra. A CineAstra poderá suspender ou cancelar o Plano por fraude, compartilhamento fora das regras, uso comercial, descumprimento destes Termos ou inadimplência, com aviso prévio, motivo e oportunidade de manifestação, exceto em situações urgentes de segurança. Havendo cancelamento sem culpa do Cliente, o valor do período não usufruído será reembolsado proporcionalmente."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.13. Mudanças no Plano. Alterações de benefícios ou de preço dependem de aviso prévio mínimo de [30 dias]. Se a mudança for desfavorável, o Titular pode cancelar sem ônus antes de ela entrar em vigor, e o valor proporcional será reembolsado quando já pago."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.14. Benefícios não utilizados. Créditos, cortesias e vantagens mensais não são acumuláveis para ciclos seguintes, salvo se o regulamento do Plano permitir. Essa regra consta do regulamento, em destaque."
+        }
+      ]
+    },
+    {
+      "id": "secao-10",
+      "title": "10. Preços, pagamentos, cupons e promoções",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "10.1. Preços. São exibidos em reais (R$), com todos os tributos incluídos. O valor total do pedido, com taxas, descontos e eventual frete ou taxa de entrega, é informado antes do pagamento."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.2. Meios de pagamento. [Cartão de crédito, cartão de débito, Pix e outros meios exibidos no checkout.] O parcelamento, quando oferecido, é informado com valor das parcelas e eventuais juros. Os pagamentos são processados por instituições de pagamento parceiras. A CineAstra não armazena o número completo do cartão nem o código de segurança."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.3. Aprovação e análise. A confirmação do pedido depende da aprovação do pagamento. Pedidos podem passar por análise antifraude e, quando necessário, exigir confirmação de identidade adicional. Se a compra for recusada, o Cliente é informado, e os assentos ou itens reservados são liberados."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.4. Pix. Os pedidos pagos por Pix devem ser quitados dentro do prazo de validade do QR Code de pagamento, informado no checkout, sob pena de cancelamento automático e liberação da reserva."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.5. Cupons e promoções. Cada cupom ou promoção possui regras próprias (validade, quantidade, público, produtos, cumulatividade). Cupons são pessoais e intransferíveis, salvo indicação em contrário, e não são conversíveis em dinheiro. O uso fraudulento resulta na invalidação do cupom e em outras medidas cabíveis."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.6. Erro evidente de preço. Em caso de erro grosseiro de precificação, evidente para o consumidor médio, a CineAstra poderá cancelar o pedido, com aviso e reembolso integral e imediato, e poderá oferecer o produto pelo preço correto."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.7. Créditos na Plataforma. Créditos por cancelamentos, devoluções ou cortesias ficam na conta do Cliente, têm validade de [12 meses] contada da emissão e podem ser convertidos em reembolso no meio de pagamento original, a pedido do Cliente, nos casos em que o cancelamento decorreu de falha da CineAstra."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.8. Contestação (chargeback). Se o Cliente contestar uma cobrança junto à operadora, a CineAstra poderá suspender o benefício relacionado até a conclusão da análise. Recomendamos que, antes, o Cliente procure o atendimento para resolução mais rápida."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.9. Documentos fiscais. A nota fiscal ou o comprovante é emitido conforme a legislação e enviado ao e-mail cadastrado, ficando também disponível na conta. O Cliente pode solicitar CPF ou CNPJ na nota, informando-o antes da conclusão da compra."
+        }
+      ]
+    },
+    {
+      "id": "secao-11",
+      "title": "11. Fornecedores, estoque, equipamentos e logística",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "11.1. Papel dos Fornecedores. Os Fornecedores utilizam a Plataforma para receber pedidos de insumos e equipamentos, informar disponibilidade de estoque, prazos e status de entrega, e emitir os documentos fiscais correspondentes. O acesso ocorre com perfil próprio e 2FA obrigatório, e cada Fornecedor acessa apenas os dados de seus próprios pedidos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.2. Pedidos e estoque. A CineAstra gera pedidos de reposição com base no estoque mínimo de cada Local e nas sessões programadas. O Fornecedor deve confirmar a disponibilidade em até [24 horas] e manter o estoque informado atualizado na Plataforma."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.3. Entrega. A entrega de insumos e equipamentos ocorre do local físico do estoque do Fornecedor até o Local ou a Sessão que requisitou os recursos, no prazo, nas quantidades e nas condições do pedido. O Fornecedor deve informar o código de rastreio, a previsão de entrega e eventuais atrasos assim que identificados."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.4. Recebimento e conferência. O Colaborador ou Supervisor do Local confere o pedido no recebimento, registra quantidades, estado, validade e conformidade, e abre Chamado em caso de divergência, avaria, atraso ou falta, com fotos e descrição."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.5. Equipamentos para sessões. Para sessões que dependem de equipamentos fornecidos (por exemplo, exibições especiais, eventos ou locais temporários), o Fornecedor deve entregar os itens com antecedência mínima de [24 horas] da sessão, testados e em bom estado, com a retirada após o término, conforme combinado. Danos por mau uso no Local podem ser cobrados do responsável, conforme o contrato."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.6. Qualidade, validade e conformidade. Os Insumos devem estar dentro do prazo de validade e atender às normas sanitárias, com rastreabilidade de lote. Itens fora do padrão serão recusados e substituídos às expensas do Fornecedor."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.7. Falhas e penalidades. Atrasos, faltas e avarias seguem as penalidades do contrato comercial entre a CineAstra e o Fornecedor. Perante o Cliente, a CineAstra responde pela adequada prestação do serviço, com direito de regresso contra o Fornecedor."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.8. Sigilo e segurança. Os Fornecedores devem manter sigilo sobre informações comerciais e pessoais a que tiverem acesso, e usar os dados apenas para a finalidade do fornecimento. O descumprimento pode levar à suspensão do acesso e à rescisão contratual."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.9. Contratos específicos. O contrato comercial prevalece sobre estes Termos nas matérias de preços, prazos, qualidade, multas e responsabilidades entre a CineAstra e o Fornecedor."
+        }
+      ]
+    },
+    {
+      "id": "secao-12",
+      "title": "12. Colaboradores e supervisores",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "12.1. Acesso mínimo. Colaboradores e Supervisores acessam dados somente na medida necessária para suas funções, vedada a consulta por curiosidade ou para fins pessoais."
+        },
+        {
+          "kind": "paragraph",
+          "text": "12.2. Dever de sigilo. Todos assumem compromisso de confidencialidade sobre dados de Clientes e informações internas, que subsiste mesmo após o fim do vínculo."
+        },
+        {
+          "kind": "paragraph",
+          "text": "12.3. Credenciais pessoais. As credenciais são pessoais e intransferíveis, com 2FA obrigatório. O compartilhamento de login é infração grave."
+        },
+        {
+          "kind": "paragraph",
+          "text": "12.4. Alçadas. Reembolsos, trocas, cortesias e cancelamentos manuais seguem alçadas por valor e por perfil: o Colaborador atua até [R$ 100,00]; acima disso, é necessária a aprovação do Supervisor; acima da alçada do Supervisor, a aprovação da Administração. Todas as ações são registradas em log de auditoria."
+        },
+        {
+          "kind": "paragraph",
+          "text": "12.5. Conduta com Clientes. O atendimento deve ser cortês, não discriminatório e acessível, com especial atenção a pessoas com deficiência, idosos, gestantes, crianças e adolescentes."
+        },
+        {
+          "kind": "paragraph",
+          "text": "12.6. Responsabilização. O uso indevido de dados ou de permissões sujeita o infrator às medidas disciplinares previstas no vínculo (advertência, suspensão, desligamento) e à responsabilidade civil, administrativa e penal cabível."
+        }
+      ]
+    },
+    {
+      "id": "secao-13",
+      "title": "13. Atendimento, chamados e notificações",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "13.1. Canais. O atendimento está disponível por [e-mail: atendimento@cineastra.com.br], [telefone/WhatsApp: (00) 0000-0000], chat na Plataforma e abertura de Chamados na área logada, em horário informado no site. Pessoas com deficiência auditiva ou da fala podem solicitar atendimento por canal escrito ou Libras, quando disponível."
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.2. Chamados. Cada Chamado recebe um número de protocolo e pode ser acompanhado na Plataforma. Pode ser aberto para dúvidas, solicitações, reclamações, ocorrências em Locais, problemas de pagamento, acessibilidade, privacidade e denúncias. Informe o máximo de detalhes e anexe fotos ou comprovantes, quando possível."
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.3. Prazos de resposta. Respondemos em até [24 horas úteis] para solicitações simples e em até [5 dias úteis] para reclamações, e nos casos urgentes (por exemplo, sessão em andamento, fraude, problema de segurança) com prioridade. Se o prazo for menor por lei ou regulamento, ele prevalece. Atendimento por telefone, quando oferecido, observa o Decreto nº 11.034/2022 (SAC)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.4. Notificações. Podemos enviar por e-mail, push, SMS ou WhatsApp: confirmações de compra, alterações ou cancelamentos de sessão, lembretes, avisos de cobrança e vencimento, alertas de segurança e atualizações destes Termos. Mensagens promocionais só serão enviadas com o seu consentimento e podem ser desativadas a qualquer momento."
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.5. Solução de conflitos. Persistindo a insatisfação após o atendimento, o Cliente pode recorrer ao Procon, ao consumidor.gov.br, aos Juizados Especiais e ao Poder Judiciário."
+        }
+      ]
+    },
+    {
+      "id": "secao-14",
+      "title": "14. Regras de conduta e usos proibidos",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "14.1. É proibido, em qualquer perfil:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "usar a Plataforma para fins ilícitos, fraudulentos ou contrários à moral e aos bons costumes;",
+            "criar contas duplicadas, usar CPF ou dados de terceiros sem autorização, ou fornecer dados falsos;",
+            "revender Ingressos ou Títulos digitais com ágio, ou comercializar benefícios de Planos;",
+            "utilizar robôs, scripts, bots ou meios automatizados para compras em massa, reservas de assentos ou coleta de dados;",
+            "tentar acessar áreas restritas, testar vulnerabilidades sem autorização expressa, contornar mecanismos de segurança ou comprometer a estabilidade da Plataforma;",
+            "inserir vírus, códigos maliciosos ou links de phishing;",
+            "violar direitos de propriedade intelectual, imagem, honra ou privacidade de terceiros;",
+            "publicar conteúdo ofensivo, discriminatório, ameaçador, difamatório, ilegal, sexualmente explícito ou enganoso;",
+            "coletar, extrair ou usar dados de outros usuários sem base legal;",
+            "usar a conta de Plano para fins comerciais ou para beneficiar pessoas fora das regras do regulamento;",
+            "fraudar meia-entrada, cupons, promoções ou reembolsos."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "14.2. Conteúdo do usuário. Avaliações, comentários e demais conteúdos publicados são de responsabilidade de quem os publica. O usuário mantém os direitos sobre o seu conteúdo, mas concede à CineAstra licença gratuita, não exclusiva, mundial e pelo prazo de existência do conteúdo para exibí-lo na Plataforma. A CineAstra pode moderar e remover conteúdos que violem a lei ou estes Termos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "14.3. Denúncias. Conteúdos ou condutas irregulares podem ser denunciados pelo canal de Chamados. A CineAstra analisará e adotará as medidas cabíveis, preservando o sigilo do denunciante, quando possível."
+        }
+      ]
+    },
+    {
+      "id": "secao-15",
+      "title": "15. Sanções e medidas contra irregularidades",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "15.1. Constatada violação a estes Termos ou à lei, a CineAstra poderá adotar, de forma proporcional à gravidade, uma ou mais das medidas: (a) advertência; (b) remoção de conteúdo; (c) limitação de funcionalidades; (d) cancelamento de pedidos suspeitos; (e) suspensão temporária da conta; (f) encerramento da conta; (g) comunicação às autoridades; e (h) cobrança de perdas e danos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "15.2. Contraditório. Salvo em situações urgentes de segurança ou fraude evidente, o usuário será notificado do motivo e terá prazo de [5 dias úteis] para se manifestar antes de medidas definitivas."
+        },
+        {
+          "kind": "paragraph",
+          "text": "15.3. Reembolso em caso de encerramento. Se a CineAstra encerrar a conta sem culpa do Cliente, os valores pagos por serviços não utilizados serão reembolsados. Quando houver fraude ou grave violação, pode haver retenção do que for necessário para cobrir prejuízos comprovados."
+        }
+      ]
+    },
+    {
+      "id": "secao-16",
+      "title": "16. Propriedade intelectual",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "16.1. A marca CineAstra, o logotipo, o nome de domínio, o design, o código-fonte, as interfaces, as bases de dados e os textos da Plataforma pertencem à CineAstra ou a seus licenciantes e são protegidos pela legislação aplicável. Filmes, cartazes, trailers e imagens pertencem a seus respectivos titulares."
+        },
+        {
+          "kind": "paragraph",
+          "text": "16.2. Nada nestes Termos transfere ao usuário direitos de propriedade intelectual, exceto a licença limitada, revogável, não exclusiva e intransferível de uso da Plataforma e dos Títulos adquiridos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "16.3. Notificação de violação. Titulares de direitos que identifiquem conteúdo indevido na Plataforma podem notificar [direitos@cineastra.com.br] com identificação, descrição da obra e do conteúdo, e comprovação de titularidade, para análise e eventual remoção."
+        }
+      ]
+    },
+    {
+      "id": "secao-17",
+      "title": "17. Disponibilidade, desempenho e manutenção",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "17.1. A CineAstra busca manter a Plataforma disponível em, no mínimo, 99,5% do tempo mensal, excluídas: manutenções programadas (comunicadas com antecedência mínima de [48 horas], preferencialmente em horários de menor uso); casos fortuitos e força maior; ataques maliciosos de terceiros que tenham sido tratados com as medidas de segurança adequadas; e falhas de provedores de internet, de operadoras de pagamento e de outros terceiros fora do controle razoável da CineAstra."
+        },
+        {
+          "kind": "paragraph",
+          "text": "17.2. Desempenho. Buscamos que as páginas principais carreguem em até 2 segundos em condições normais de conexão. A Plataforma é projetada com prioridade para dispositivos móveis (mobile-first)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "17.3. Compatibilidade. A Plataforma funciona nas versões atuais dos principais navegadores e sistemas operacionais móveis, e pode deixar de ser compatível com versões obsoletas, com aviso prévio."
+        },
+        {
+          "kind": "paragraph",
+          "text": "17.4. Efeitos de indisponibilidade. Se uma indisponibilidade impedir a compra ou o uso de serviço já contratado (por exemplo, acesso a ingresso ou filme), a CineAstra adotará medidas de correção, como prorrogação de prazo, reemissão, crédito ou reembolso. Em indisponibilidade próxima ao horário de uma sessão, o Cliente poderá validar o ingresso pelo e-mail ou pelo atendimento do Local."
+        },
+        {
+          "kind": "paragraph",
+          "text": "17.5. Segurança. A CineAstra adota medidas técnicas e administrativas para proteger a Plataforma, conforme descrito na Política de Privacidade."
+        }
+      ]
+    },
+    {
+      "id": "secao-18",
+      "title": "18. Responsabilidades",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "18.1. A CineAstra responde pelos serviços que presta nos termos do CDC, inclusive pelos danos decorrentes de falhas na prestação. Nada nestes Termos exclui ou limita direitos do consumidor garantidos por lei."
+        },
+        {
+          "kind": "paragraph",
+          "text": "18.2. A CineAstra não se responsabiliza por: (a) uso indevido de credenciais por culpa exclusiva do usuário; (b) falhas de conexão, equipamentos ou provedores de internet do usuário; (c) casos fortuitos e força maior; (d) conteúdo de sites de terceiros acessados por links; (e) ingressos ou títulos adquiridos fora dos canais oficiais; (f) atos de terceiros fora do controle da CineAstra, quando comprovado que adotou as medidas de segurança cabíveis."
+        },
+        {
+          "kind": "paragraph",
+          "text": "18.3. Conteúdo exibido. O conteúdo dos filmes e as classificações indicativas são de responsabilidade de seus titulares e dos órgãos de classificação. A CineAstra informa a classificação oficial e seus descritores."
+        },
+        {
+          "kind": "paragraph",
+          "text": "18.4. Responsabilidade solidária. Em relações de consumo, a CineAstra responde solidariamente com os Fornecedores e demais parceiros da cadeia de fornecimento, nos termos do CDC, com direito de regresso."
+        }
+      ]
+    },
+    {
+      "id": "secao-19",
+      "title": "19. Privacidade e proteção de dados",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "19.1. O tratamento de dados pessoais é regido pela Política de Privacidade da CineAstra, publicada em documento próprio, que explica quais dados são coletados, para que, com quem são compartilhados, por quanto tempo são guardados e como exercer seus direitos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "19.2. Ao aceitar estes Termos, o usuário declara ter lido a Política de Privacidade. O consentimento para finalidades que dependem dele (marketing, localização precisa, cookies não essenciais) é coletado de forma separada e pode ser revogado a qualquer momento."
+        },
+        {
+          "kind": "paragraph",
+          "text": "19.3. Contato do Encarregado (DPO): [privacidade@cineastra.com.br]."
+        }
+      ]
+    },
+    {
+      "id": "secao-20",
+      "title": "20. Alterações dos Termos",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "20.1. A CineAstra pode atualizar estes Termos para refletir mudanças legais, regulatórias, operacionais ou de serviços. Alterações relevantes serão comunicadas por e-mail e na Plataforma, com antecedência mínima de [15 dias], exceto quando exigidas imediatamente por lei."
+        },
+        {
+          "kind": "paragraph",
+          "text": "20.2. As alterações não retroagem a compras já concluídas. Em contratos de trato sucessivo (Planos), se a mudança for desfavorável ao Cliente, ele poderá cancelar sem ônus antes de ela entrar em vigor. A continuidade de uso após a vigência indica concordância com a nova versão."
+        },
+        {
+          "kind": "paragraph",
+          "text": "20.3. Versões anteriores ficam disponíveis para consulta mediante solicitação ao atendimento."
+        }
+      ]
+    },
+    {
+      "id": "secao-21",
+      "title": "21. Encerramento da conta e do contrato",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "21.1. Pelo Cliente. O Cliente pode encerrar a conta a qualquer momento nas configurações ou por Chamado. Planos ativos serão cancelados conforme o item 9, e pendências financeiras permanecem exigíveis."
+        },
+        {
+          "kind": "paragraph",
+          "text": "21.2. Efeitos. Com o encerramento: (a) Títulos digitais comprados deixam de ser acessíveis, salvo se o Cliente optar por manter a conta de acesso; (b) Ingressos futuros podem ser cancelados e reembolsados conforme o item 6, ou utilizados até a sessão, a critério do Cliente; (c) créditos devem ser usados ou resgatados antes do encerramento, ou serão reembolsados quando devidos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "21.3. Dados. Os dados pessoais serão eliminados ou anonimizados conforme a Política de Privacidade, exceto os que a lei exige guardar (como registros fiscais e logs de acesso) ou que sejam necessários à defesa de direitos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "21.4. Pela CineAstra. Nos casos do item 15 ou por encerramento do serviço. Se a CineAstra encerrar a Plataforma ou algum serviço, avisará com antecedência mínima de [60 dias], reembolsará proporcionalmente valores pagos por serviços não prestados e permitirá, quando possível, a exportação dos dados da conta."
+        }
+      ]
+    },
+    {
+      "id": "secao-22",
+      "title": "22. Disposições gerais, lei aplicável e foro",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "22.1. Independência das cláusulas. Se alguma cláusula for considerada inválida ou ineficaz, as demais permanecem em vigor."
+        },
+        {
+          "kind": "paragraph",
+          "text": "22.2. Tolerância. A tolerância da CineAstra quanto ao descumprimento de qualquer regra não implica renúncia ou alteração do contrato."
+        },
+        {
+          "kind": "paragraph",
+          "text": "22.3. Cessão. O usuário não pode ceder a conta ou direitos decorrentes destes Termos. A CineAstra pode ceder o contrato em operações societárias, mantidos os direitos do Cliente."
+        },
+        {
+          "kind": "paragraph",
+          "text": "22.4. Comunicações. As comunicações são feitas pelos dados de contato cadastrados. É dever do Cliente mantê-los atualizados."
+        },
+        {
+          "kind": "paragraph",
+          "text": "22.5. Lei e foro. Estes Termos são regidos pelas leis da República Federativa do Brasil. Fica eleito o foro do domicílio do consumidor para dirimir qualquer controvérsia, nos termos do CDC. Para relações com Fornecedores e demais pessoas jurídicas, aplica-se o foro eleito no contrato específico ou, na falta dele, o foro da comarca da sede da CineAstra."
+        },
+        {
+          "kind": "paragraph",
+          "text": "22.6. Contato. Dúvidas sobre estes Termos: [atendimento@cineastra.com.br] · [(00) 0000-0000] · [ENDEREÇO COMPLETO]."
+        }
+      ]
+    },
+    {
+      "id": "anexo-i",
+      "title": "Anexo I — Quadro-resumo de prazos e valores",
+      "blocks": [
+        {
+          "kind": "table",
+          "columns": [
+            "Tema",
+            "Regra de referência"
+          ],
+          "rows": [
+            [
+              "Idade para conta própria",
+              "18 anos (16 e 17 assistidos; menores de 16 sem conta própria)"
+            ],
+            [
+              "2FA",
+              "Obrigatório para Administração, Supervisores, Colaboradores e Fornecedores"
+            ],
+            [
+              "Reserva de assentos no checkout",
+              "[10 minutos]"
+            ],
+            [
+              "Limite por compra",
+              "[10 ingressos]"
+            ],
+            [
+              "Meia-entrada",
+              "50% do valor; cota de 40% por sessão (exceto pessoas com deficiência e acompanhantes)"
+            ],
+            [
+              "Cancelamento de ingresso",
+              "Até [2 horas] antes da sessão"
+            ],
+            [
+              "Arrependimento (ingresso online)",
+              "7 dias da compra e [48 horas] de antecedência da sessão"
+            ],
+            [
+              "Transferência de ingresso",
+              "Até [1 hora] antes da sessão (não vale para meia-entrada)"
+            ],
+            [
+              "Aluguel de filme",
+              "[30 dias] para iniciar; [48 horas] para concluir"
+            ],
+            [
+              "Arrependimento (streaming)",
+              "7 dias, se a reprodução não tiver sido iniciada"
+            ],
+            [
+              "Cancelamento de combo",
+              "Até [2 horas] antes do horário agendado"
+            ],
+            [
+              "Arrependimento (plano)",
+              "7 dias"
+            ],
+            [
+              "Cancelamento de plano",
+              "A qualquer momento, sem fidelidade, efeitos ao fim do período pago"
+            ],
+            [
+              "Aviso de reajuste ou renovação anual",
+              "[30 dias]"
+            ],
+            [
+              "Validade de créditos",
+              "[12 meses]"
+            ],
+            [
+              "Reembolso",
+              "Aprovação em até [5 dias úteis]; crédito no mesmo meio de pagamento"
+            ],
+            [
+              "Disponibilidade da Plataforma",
+              "99,5% ao mês"
+            ],
+            [
+              "Carregamento de páginas",
+              "Até 2 segundos"
+            ],
+            [
+              "Resposta a reclamações",
+              "Até [5 dias úteis]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "anexo-ii",
+      "title": "Anexo II — Penalidades por inadimplência de planos",
+      "blocks": [
+        {
+          "kind": "table",
+          "columns": [
+            "Dias de atraso",
+            "Medida",
+            "Valor ou efeito"
+          ],
+          "rows": [
+            [
+              "1 dia",
+              "Notificação e prazo para pagamento",
+              "Multa de 2% + juros de 1% ao mês + IPCA, sobre o valor em atraso"
+            ],
+            [
+              "A partir do [5º dia]",
+              "Suspensão dos benefícios",
+              "Benefícios bloqueados até a quitação"
+            ],
+            [
+              "A partir do [30º dia]",
+              "Cancelamento do plano",
+              "Cobrança do débito por meios legais"
+            ],
+            [
+              "Após notificação prévia",
+              "Inclusão em cadastro de proteção ao crédito",
+              "Somente com notificação escrita e prazo para regularização"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Exemplo de cálculo: assinatura de R$ 100,00 paga com 10 dias de atraso: multa de 2% = R$ 2,00; juros de 1% ao mês pro rata (10/30 de 1%) = aproximadamente R$ 0,33; mais correção pelo IPCA do período. Total aproximado, antes da correção: R$ 102,33."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Plano dividido (Modalidade B): as penalidades incidem apenas sobre a parte do integrante inadimplente."
+        }
+      ]
+    },
+    {
+      "id": "anexo-iii",
+      "title": "Anexo III — Documentos para comprovação de meia-entrada",
+      "blocks": [
+        {
+          "kind": "table",
+          "columns": [
+            "Beneficiário",
+            "Documento aceito",
+            "Observações"
+          ],
+          "rows": [
+            [
+              "Estudante",
+              "Carteira de Identificação Estudantil padronizada, nacional, emitida por entidades representativas, ou documento digital oficial equivalente",
+              "Com foto, válida no ano; acompanha documento de identificação com foto"
+            ],
+            [
+              "Pessoa com deficiência",
+              "Cartão ou documento que ateste a deficiência, conforme a lei (ex.: BPC, carteira de benefício, laudo ou outro documento oficial)",
+              "Acompanhante tem direito quando necessário"
+            ],
+            [
+              "Jovem de baixa renda (15 a 29 anos)",
+              "Identidade Jovem (ID Jovem), com o NIS e a inscrição no CadÚnico",
+              "Dentro da validade"
+            ],
+            [
+              "Outros beneficiários",
+              "Documento previsto em lei ou em norma aplicável",
+              "Conforme legislação vigente"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Última atualização: 06 de outubro de 2026."
+        }
+      ]
+    }
+  ],
+  "title": "CineAstra — Termos de Uso",
+  "versionLine": "Versão 2.0 · Vigência a partir de 06 de outubro de 2026 · Minuta para revisão jurídica",
+  "note": "Nota de preenchimento: os trechos entre colchetes [ ] (razão social, CNPJ, endereço, e-mails, prazos e valores sugeridos) devem ser confirmados pela CineAstra e revisados por advogado antes da publicação. Este documento deve ser lido junto com a Política de Privacidade da CineAstra, publicada em arquivo separado."
+}

@@ -33,10 +33,17 @@ spec.components.schemas.CatalogInput_film.example = { titulo: 'Filme de demonstr
 spec.components.schemas.CatalogInput_filmPatch.example = { titulo: 'Título atualizado' };
 spec.components.schemas.CatalogInput_genre.example = { nome: 'Aventura' };
 spec.components.schemas.CatalogInput_link.example = { genreId: '1' };
+spec.components.schemas.CatalogFilmPagination = object({
+    limit: { type:'integer', minimum:1, maximum:100 },
+    nextCursor: nullable({ type:'string' }),
+    page: { type:'integer', minimum:1 },
+    total: { type:'integer', minimum:0 },
+    totalPages: { type:'integer', minimum:1 }
+}, ['limit','nextCursor']);
 for (const r of catalogOperations) {
     const [action, kind] = r.action;
     const entity = kind === 'films' ? ref(r.admin ? 'CatalogAdminFilm' : 'CatalogFilm') : ref('CatalogGenre');
-    const data = action === 'list' ? object({ items: { type: 'array', maxItems: 100, items: entity }, pagination: ref('Pagination') }) : action === 'link' ? object({ id_filme: ref('Id'), id_genero: ref('Id') }) : entity;
+    const data = action === 'list' ? object({ items: { type: 'array', maxItems: 100, items: entity }, pagination: ref(r.operationId === 'list_films' ? 'CatalogFilmPagination' : 'Pagination') }) : action === 'link' ? object({ id_filme: ref('Id'), id_genero: ref('Id') }) : entity;
     const operation = { operationId: r.operationId, tags: ['Catálogo'], summary: `${action} ${kind ?? 'associação filme/gênero'}${r.admin ? ' (ADMIN)' : ' (público)'}`,
         description: `${r.admin ? 'ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.' : 'Público: somente registros ATIVO; nenhum url_reproducao ou informação privada.'} ${action === 'archive' ? 'DELETE arquiva como INATIVO, inclusive sem referências; preserva vínculos, sessões e histórico. Pode reativar com PATCH status.' : ''} ${action === 'save' ? 'Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Streaming exige preço de aluguel ou compra; aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.' : ''} ${action === 'link' ? 'Associação idempotente exige filme e gênero ativos. Relação não permite campos adicionais.' : ''} ${r.query ? 'Ordenação fixa por ID crescente; limit 1–100 (padrão20), cursor último ID. Título é busca literal parcial; gênero público ignora associações arquivadas.' : ''} Cache-Control no-store.`,
         security: r.admin ? [{ bearerAuth: [] }] : [], parameters: [...r.path.matchAll(/\{(\w+)\}/g)].map(m => ({ name: m[1], in: 'path', required: true, schema: { type: 'string', pattern: '^[1-9][0-9]{0,9}$', description: 'INT unsigned decimal string, máximo4294967295.' } })), responses: {} };
@@ -44,6 +51,7 @@ for (const r of catalogOperations) {
         const props = spec.components.schemas[`CatalogInput_${r.query}`].properties;
         for (const [name, schema] of Object.entries(props)) operation.parameters.push({ name, in: 'query', schema, description: name === 'limit' ? '1–100' : name });
     }
+    if (r.operationId === 'list_films') operation.description += ' Envie page sem cursor para obter page, total e totalPages dos filtros aplicados. Página acima do total retorna a última página; uma lista vazia retorna página 1.';
     if (r.schema) operation.requestBody = { required: true, content: { 'application/json': { schema: ref(`CatalogInput_${r.schema}`) } } };
     operation.responses[r.status] = { description: r.status === 204 ? 'Concluído sem corpo; DELETE de entidade arquiva' : 'Sucesso', ...(r.status === 201 && { headers: { Location: { schema: { type: 'string' }, description: 'Detalhe administrativo do recurso criado' } } }), ...(r.status !== 204 && { content: { 'application/json': { schema: object({ success: { type: 'boolean', enum: [true] }, data, requestId: { type: 'string', format: 'uuid' } }) } } }) };
     for (const [code, name] of Object.entries({ 400: 'BadRequest', 401: 'Unauthorized', 403: 'Forbidden', 404: 'NotFound', 409: 'Conflict', 413: 'PayloadTooLarge', 415: 'UnsupportedMedia', 422: 'ValidationError', 429: 'RateLimited', 500: 'InternalError', 503: 'Unavailable' })) operation.responses[code] = { $ref: `#/components/responses/${name}` };

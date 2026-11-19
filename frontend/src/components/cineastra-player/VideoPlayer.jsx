@@ -41,7 +41,7 @@ export default function VideoPlayer(props) {
           {embed && mode !== "mini" && <IconButton label={full || mode === "expanded" ? "Sair da tela cheia do player" : "Tela cheia do player"} icon={full || mode === "expanded" ? Minimize : Maximize} onClick={fullscreen} />}
           {media.type !== "trailer" && mode !== "mini" && <IconButton label="Miniplayer do site" text="Miniplayer" icon={PanelBottom} onClick={() => changeMode("mini")} />}
           {!embed && pipSupported && <IconButton label={pip ? "Fechar Picture-in-Picture" : "Picture-in-Picture do navegador"} icon={PictureInPicture2} active={pip} onClick={togglePip} />}
-          {mode === "mini" && <IconButton label="Restaurar player" icon={ArrowUpRight} onClick={async () => { if (pip) await togglePip(); onRestore(); }} />}
+          {mode === "mini" && <IconButton label="Restaurar player" icon={ArrowUpRight} onClick={onRestore} />}
           <IconButton label="Fechar player" icon={X} onClick={close} />
         </div>
       </header>

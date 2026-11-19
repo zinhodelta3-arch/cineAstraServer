@@ -6,7 +6,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import {
-  ArrowUpRight, CircleHelp, Crown, Film, House, MapPin, Menu,
+  ArrowUpRight, Building2, CircleHelp, Crown, Film, House, MapPin, Menu,
   Popcorn, Sparkles, TvMinimalPlay, UserRound, UserPlus,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ const navigation = [
   { label: "Experiências", href: "/cinema/experiencias", icon: Sparkles },
   { label: "Planos", href: "/cinema/planos", icon: Crown },
   { label: "Streaming", href: "/streaming", icon: TvMinimalPlay, mobileOnly: true },
-  { label: "Sobre nós", href: "/cinema/sobre-nos", icon: CircleHelp },
+  { label: "Sobre nós", href: "/cinema/sobre-nos", icon: Building2 },
   { label: "Suporte", href: "/cinema/suporte", icon: CircleHelp },
 ]
 

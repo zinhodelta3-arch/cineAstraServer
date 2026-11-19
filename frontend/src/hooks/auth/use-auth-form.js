@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import { sessionFetch, readSessionResponse } from '@/lib/auth/session-response.mjs';
-import { loginDestination, passwordValid } from '@/lib/auth/destination.mjs';
+import { clientLoginDestination, loginDestination, passwordValid } from '@/lib/auth/destination.mjs';
 import { notifySessionChange } from '@/lib/auth/session-events.mjs';
+import { rememberGuestCart } from '@/lib/api/local-cart.mjs';
+import { rememberGuestSeats } from '@/lib/api/checkout-storage.mjs';
 export async function sessionRequest(action,body,signal) {
  const response=await sessionFetch(`/api/session/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body),signal});
  return readSessionResponse(response);
 }
-export function useAuthForm({resetToken}={}) {
+export function useAuthForm({resetToken,next,profile}={}) {
  const [form,setForm]=useState({login:'',password:'',confirmation:''});
  const [resetOpen,setResetOpen]=useState(false),[message,setMessage]=useState(''),[pending,setPending]=useState(false),[user,setUser]=useState(null),[success,setSuccess]=useState(false);
  const active=useRef(null),busy=useRef(false);
@@ -20,11 +22,18 @@ export function useAuthForm({resetToken}={}) {
   busy.current=true;setPending(true);setMessage('');setSuccess(false);const abort=new AbortController();active.current=abort;
   try{
    const action=resetToken!==undefined?'reset':resetOpen?'forgot':'login';
-   const body=action==='reset'?{token:resetToken,password:form.password,passwordConfirmation:form.confirmation}:action==='forgot'?{email:form.login.trim()}:{email:form.login.trim(),password:form.password};
+   const body=action==='reset'?{token:resetToken,password:form.password,passwordConfirmation:form.confirmation}:action==='forgot'?{email:form.login.trim()}:{email:form.login.trim(),password:form.password,profile};
    const result=await sessionRequest(action,body,abort.signal);setForm(f=>({...f,password:'',confirmation:''}));
    if(action==='login'){
     setUser(result.user);
-    const destination = loginDestination(result.user?.role) ?? result.destination;
+    const clientDestination = result.user?.role === 'CLIENTE' ? clientLoginDestination(next) : null;
+    if(result.user?.role === 'CLIENTE'){
+     await rememberGuestCart(result.user.id);
+     if(clientDestination === '/cinema/sessao/ingressos'){
+      try { rememberGuestSeats(result.user.id); } catch { /* A página permite escolher os assentos novamente. */ }
+     }
+    }
+    const destination = clientDestination ?? loginDestination(result.user?.role) ?? result.destination;
     notifySessionChange({local:!destination});
     if(destination){window.location.replace(destination);}
     else {setMessage('Login realizado.');}

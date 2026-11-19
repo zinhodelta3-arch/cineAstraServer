@@ -14,3 +14,11 @@ test('unknown notification type and invalid dates remain safe',()=>{
  const item=notificationItem({id_notificacao:'1',titulo:'Aviso',tipo:'NEW_EVENT',lida:false,data_envio:'invalid'});
  assert.equal(item.type,'notice');assert.equal(item.createdAt,null);assert.equal(item.read,false);
 });
+test('abre somente detalhes de solicitações com identificador válido, inclusive quando lidas', () => {
+ const row = { tipo: 'EXPERIENCE_REQUEST_CREATED', solicitacao_experiencia_id: '42' };
+ assert.equal(notificationItem({ ...row, lida: true }).href, '/cinema/experiencias/solicitacoes?pedido=42');
+ for (const invalid of ['42&next=/admin', '4294967296', '0']) {
+  assert.equal(notificationItem({ ...row, solicitacao_experiencia_id: invalid }).href, null);
+ }
+ assert.equal(notificationItem({ ...row, tipo: 'SUPPORT_REPLY' }).href, null);
+});

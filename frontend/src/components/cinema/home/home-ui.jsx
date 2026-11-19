@@ -1,5 +1,7 @@
 "use client";
 
+import LoadingImage from "@/components/ui/loading-image";
+
 import { Film } from "lucide-react";
 import { useImageFallback } from "@/hooks/cinema/home/use-image-fallback";
 
@@ -31,7 +33,7 @@ export function SmartImg({ src, alt = "", title = "", icon: Icon, className = "w
       </div>
     );
   }
-  return <img src={src} alt={alt} loading="lazy" decoding="async" onError={onError} className={className} />;
+  return <LoadingImage src={src} alt={alt} loading="lazy" decoding="async" onError={onError} className={className} />;
 }
 
 export function Button({ children, variant = "default", size = "default", className = "", type = "button", ...props }) {

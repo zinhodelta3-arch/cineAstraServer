@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { ACCENT } from "@/components/streaming/home/data";
+import StreamingAvatar from "@/components/streaming/profiles/streaming-avatar";
 import Barcode from "./barcode";
 
 export default function ProfileHeader({ profile, favorites, history }) {
-  const photo = profile.photoUrl ? `/api/streaming/profiles/${profile.id}/photo` : `/streaming/avatars/${profile.avatar}.svg`;
   const completed = history.filter((item) => item.completed).length;
   const hours = (history.reduce((total, item) => total + item.positionSeconds, 0) / 3600).toFixed(1).replace(".", ",");
   return (
     <section aria-label="Meu perfil" className="ticket grid md:grid-cols-[1fr_240px] bg-card border border-border rounded-xl shadow-2xl">
       <div className="p-6 md:p-8 flex flex-col sm:flex-row sm:items-center gap-6">
-        <img src={photo} alt={`Foto de ${profile.name}`} className="size-28 md:size-32 shrink-0 rounded-full object-cover border-2 border-primary" />
+        <StreamingAvatar avatar={profile.avatar} alt={`Avatar de ${profile.name}`} className="size-28 md:size-32 shrink-0 rounded-full object-cover border-2 border-primary" />
         <div className="min-w-0">
           <p className={`text-sm font-semibold ${ACCENT}`}>Perfil CineAstra</p>
           <h1 className="f-display text-5xl md:text-6xl font-black text-card-foreground leading-[0.95] truncate">{profile.name}</h1>

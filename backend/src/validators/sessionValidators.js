@@ -12,8 +12,10 @@ const language = z.enum(['DUBLADO', 'LEGENDADO', 'ORIGINAL']);
 const state = z.enum(['AGENDADA', 'EM_CARTAZ', 'ENCERRADA', 'CANCELADA']);
 const fields = { id_filme: catalogId, id_sala: catalogId, data: date, horario_inicio: time, horario_fim: time,
     idioma: language, preco_inteira: price };
+const create = z.object({ ...fields, idioma: language.default('DUBLADO') }).strict();
 export const sessionSchemas = {
-    create: z.object({ ...fields, idioma: language.default('DUBLADO') }).strict(),
+    create,
+    unitCreate: create.extend({ horario_fim: time.optional() }),
     patch: z.object({ id_filme: catalogId, data: date, horario_inicio: time, horario_fim: time,
         idioma: language, preco_inteira: price, status: state }).partial().strict().refine(v => Object.keys(v).length > 0),
     query: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),

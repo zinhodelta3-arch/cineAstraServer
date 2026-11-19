@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Bell, BellOff, MessageCircle, Ticket, X } from "lucide-react";
+import { ArrowRight, Bell, BellOff, Clapperboard, MessageCircle, Ticket, X } from "lucide-react";
 import { useNotifications } from "./notification-store";
 import NotificationDialog from "./notification-dialog";
 import styles from "./notification-dropdown.module.css";
@@ -95,7 +95,7 @@ export function NotificationButton({ userId }) {
         <div className={styles.feed}>
           {error ? <div role="alert" className={styles.empty}><p>{error}</p><button type="button" onClick={retry}>Tentar novamente</button></div> : !ready ? <p className={styles.empty}>Carregando notificações…</p> : recent.length ? <ul className={styles.list}>
             {recent.map((item) => {
-              const Icon = item.type === "support" ? MessageCircle : item.type === "ticket" ? Ticket : Bell;
+              const Icon = item.type === "experience" ? Clapperboard : item.type === "support" ? MessageCircle : item.type === "ticket" ? Ticket : Bell;
               return <li key={item.id}><button type="button" data-recent-notification className={`${styles.item} ${!item.read ? styles.unread : ""}`}
                 onClick={() => openDetails(item)} aria-label={`${item.subject}. ${item.label}.${!item.read ? " Não lida." : ""} Ver detalhes.`}>
                 <span className={styles.icon}><Icon size={21} strokeWidth={1.5} aria-hidden="true" /></span>

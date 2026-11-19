@@ -6,7 +6,7 @@ import {usePublicList} from '@/hooks/cinema/home/use-public-list';
 import {publicGet} from '@/lib/api/public-api.mjs';
 export function useFilmPage(id){
  const details=useMovieDetails(id);
- const locations=usePublicList('/locations?limit=100');
+ const locations=usePublicList('/locations?limit=20');
  const [chosenLocalId,setLocalId]=useState('');
  const availability=useFilmAvailability(id);
  const firstOpen=availability.items.find(item=>item.openSessions>0);

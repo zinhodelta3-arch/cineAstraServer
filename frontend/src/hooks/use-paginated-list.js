@@ -14,7 +14,7 @@ function pagePath(path, limit, cursor) {
 }
 
 // As tabelas mantêm só a página atual. loadMore é reservado aos seletores de opções.
-export function usePaginatedList(path, request, { mode = 'list', refreshKey = 0 } = {}) {
+export function usePaginatedList(path, request, { mode = 'list', refreshKey = 0, itemKey } = {}) {
   const initialSize = Number(queryFor(path).get('limit')) || 20;
   const [navigation, setNavigation] = useState({ path, initialized: path != null, pageSize: initialSize, index: 0, cursors: [null], revision: 0 });
   const current = navigation.path === path ? navigation : { ...navigation, path, initialized: navigation.initialized || path != null, index: 0, cursors: [null], pageSize: navigation.initialized ? navigation.pageSize : initialSize };
@@ -58,8 +58,10 @@ export function usePaginatedList(path, request, { mode = 'list', refreshKey = 0 
       setNavigation({ ...current, index: page - 1 });
       return;
     }
-    if (page > current.index + 2 || (page === current.index + 2 && !hasNext) || (page <= current.index + 1 && page > current.cursors.length)) return;
-    const cursors = page === current.index + 2 ? [...current.cursors.slice(0, current.index + 1), visible.nextCursor] : current.cursors;
+    const nextPage = page === current.index + 2;
+    if (nextPage && !hasNext || page > current.cursors.length && !nextPage) return;
+    const cursors = nextPage && current.cursors[page - 1] !== visible.nextCursor
+      ? [...current.cursors.slice(0, current.index + 1), visible.nextCursor] : current.cursors;
     setNavigation({ ...current, index: page - 1, cursors });
   }
   function setPageSize(size) {
@@ -77,7 +79,11 @@ export function usePaginatedList(path, request, { mode = 'list', refreshKey = 0 
     try {
       const data = await request(pagePath(path, current.pageSize, nextCursor), { signal: abort.signal });
       if (!Array.isArray(data?.items) || data.pagination?.nextCursor === nextCursor) throw new Error('Não foi possível carregar as próximas opções.');
-      if (!abort.signal.aborted && version === generation.current) setState(value => ({ ...value, items: [...value.items, ...data.items], data, nextCursor: data.pagination?.nextCursor ?? null, loadingMore: false }));
+      if (!abort.signal.aborted && version === generation.current) setState(value => {
+        const combined = [...value.items, ...data.items];
+        const items = itemKey ? [...new Map(combined.map(item => [item[itemKey], item])).values()] : combined;
+        return { ...value, items, data, nextCursor: data.pagination?.nextCursor ?? null, loadingMore: false };
+      });
     } catch (error) {
       if (!abort.signal.aborted && version === generation.current) setState(value => ({ ...value, loadingMore: false, error: error.message }));
     } finally { if (version === generation.current) busy.current = false; }

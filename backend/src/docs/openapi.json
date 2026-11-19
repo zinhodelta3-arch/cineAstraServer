@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "CineAstra API",
-    "version": "1.1.0",
+    "version": "1.5.0",
     "description": "Fundação e Prompt 02: identidade, sessões revogáveis, TOTP, perfil e privacidade. /api preservado. Bearer JWT; cookies não usados. Banco/migrations e provedores reais são dependências de implantação. CAPTCHA e 2FA ficam em standby por padrão (CAPTCHA_ENABLED=false, TWO_FACTOR_ENABLED=false). Cadastro requer termos aprovados; sem ageProof, ALLOW_SELF_DECLARED_AGE=true permite idade não verificada; recuperação exige e-mail real. Sem integrações configuradas, 503. Não certifica conformidade legal nem prontidão produtiva."
   },
   "servers": [
@@ -36,6 +36,18 @@
     {
       "name": "Fornecedor locais",
       "description": "Autorização operacional explícita por fornecedor e local."
+    },
+    {
+      "name": "Solicitações de experiências",
+      "description": "Orçamento, triagem e acompanhamento por unidade."
+    },
+    {
+      "name": "Locais",
+      "description": "Locais, salas e assentos; estrutura de sessões presenciais."
+    },
+    {
+      "name": "Notificações",
+      "description": "Consulta e leitura de notificações próprias; emissão somente por serviço interno."
     }
   ],
   "security": [
@@ -4282,7 +4294,7 @@
           "Catálogo"
         ],
         "summary": "list films (público)",
-        "description": "Público: somente registros ATIVO; nenhum url_reproducao ou informação privada.    Ordenação fixa por ID crescente; limit 1–100 (padrão20), cursor último ID. Título é busca literal parcial; gênero público ignora associações arquivadas. Cache-Control no-store.",
+        "description": "Público: somente registros ATIVO; nenhum url_reproducao ou informação privada.    Ordenação fixa por ID crescente; limit 1–100 (padrão20), cursor último ID. Título é busca literal parcial; gênero público ignora associações arquivadas. Cache-Control no-store. Envie page sem cursor para obter page, total e totalPages dos filtros aplicados. Página acima do total retorna a última página; uma lista vazia retorna página 1.",
         "security": [],
         "parameters": [
           {
@@ -4362,6 +4374,15 @@
               ]
             },
             "description": "streaming"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,9}$"
+            },
+            "description": "Página numerada. Incompatível com cursor."
           }
         ],
         "responses": {
@@ -4391,7 +4412,7 @@
                           }
                         },
                         "pagination": {
-                          "$ref": "#/components/schemas/Pagination"
+                          "$ref": "#/components/schemas/CatalogFilmPagination"
                         }
                       },
                       "required": [
@@ -7496,6 +7517,16 @@
               "pattern": "^[1-9][0-9]{0,9}$",
               "description": "INT UNSIGNED decimal, máximo 4294967295."
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Nome, cidade ou estado do local.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            }
           }
         ],
         "responses": {
@@ -7696,6 +7727,16 @@
               "type": "string",
               "pattern": "^[1-9][0-9]{0,9}$",
               "description": "INT UNSIGNED decimal, máximo 4294967295."
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Nome, cidade ou estado do local.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
             }
           },
           {
@@ -13132,6 +13173,17 @@
             }
           },
           {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recent"
+              ]
+            },
+            "description": "Ordena do mais recente ao mais antigo. Repita o valor ao usar o próximo cursor."
+          },
+          {
             "name": "unread",
             "in": "query",
             "schema": {
@@ -14057,7 +14109,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados."
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
       },
       "post": {
         "operationId": "create_inputs",
@@ -14134,7 +14186,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos. ADMIN pode selecionar priceMode=RULE e usar o markup de INPUT para calcular e salvar o preço oficial.",
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos. ADMIN pode selecionar priceMode=RULE e usar o markup de INPUT para calcular e salvar o preço oficial.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14169,7 +14221,8 @@
                       "localId": {
                         "type": "string",
                         "pattern": "^[1-9][0-9]{0,9}$",
-                        "description": "INT UNSIGNED decimal."
+                        "description": "INT UNSIGNED decimal.",
+                        "nullable": true
                       },
                       "quantidade_minima": {
                         "type": "integer",
@@ -14198,7 +14251,6 @@
                     },
                     "required": [
                       "nome",
-                      "localId",
                       "preco"
                     ]
                   },
@@ -14230,7 +14282,8 @@
                       "localId": {
                         "type": "string",
                         "pattern": "^[1-9][0-9]{0,9}$",
-                        "description": "INT UNSIGNED decimal."
+                        "description": "INT UNSIGNED decimal.",
+                        "nullable": true
                       },
                       "quantidade_minima": {
                         "type": "integer",
@@ -14263,7 +14316,6 @@
                     "required": [
                       "nome",
                       "supplierId",
-                      "localId",
                       "priceMode",
                       "venda_avulsa",
                       "custo_receita",
@@ -14364,7 +14416,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados."
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
       },
       "patch": {
         "operationId": "update_inputs",
@@ -14452,7 +14504,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados.",
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14572,7 +14624,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados."
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
       }
     },
     "/api/equipment": {
@@ -14718,7 +14770,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados."
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro."
       },
       "post": {
         "operationId": "create_equipment",
@@ -14795,7 +14847,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados.",
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro.",
         "requestBody": {
           "required": true,
           "content": {
@@ -14828,7 +14880,8 @@
                   "localId": {
                     "type": "string",
                     "pattern": "^[1-9][0-9]{0,9}$",
-                    "description": "INT UNSIGNED decimal."
+                    "description": "INT UNSIGNED decimal.",
+                    "nullable": true
                   },
                   "numero_patrimonio": {
                     "type": "string",
@@ -14839,8 +14892,7 @@
                   }
                 },
                 "required": [
-                  "nome",
-                  "localId"
+                  "nome"
                 ]
               }
             }
@@ -14935,7 +14987,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados."
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro."
       },
       "patch": {
         "operationId": "update_equipment",
@@ -15023,7 +15075,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados.",
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro.",
         "requestBody": {
           "required": true,
           "content": {
@@ -15128,7 +15180,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados."
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro."
       }
     },
     "/api/admin/suppliers/{supplierId}/locations": {
@@ -31957,6 +32009,19 @@
               "type": "string",
               "default": "0"
             }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Use desc para começar pelas mensagens mais recentes e continue com nextCursor na mesma ordem.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
           }
         ],
         "description": "CLIENTE acessa apenas solicitação própria; ADMIN acessa para atendimento."
@@ -39715,155 +39780,18 @@
       }
     },
     "/api/streaming/profiles/{id}/photo": {
-      "put": {
-        "operationId": "upload_streaming_profile_photo",
-        "tags": [
-          "Perfis de streaming"
-        ],
-        "summary": "Enviar ou substituir foto própria",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "description": "Somente CLIENTE ativo, dono da conta/perfil; perfil alheio retorna 404. Foto privada, sem URL pública; leitura exige Bearer. Upload multipart no campo image, um JPEG/PNG/WebP estático até 5 MiB, até 16 milhões de pixels e 8192 pixels por lado. Reencoda sem metadados para WebP de até 512 pixels e 256 KiB. Substitui a foto anterior; remoção idempotente. Avatar padrão permanece e é usado quando photoUrl é null. Sem alteração de direitos de acesso. Escritas auditadas na transação; proprietário revalidado após processamento. Cache-Control private, no-store. Upload concluído pode persistir se a conexão cair após commit; consultar novamente.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[1-9][0-9]{0,9}$"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Foto substituída",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ]
-                    },
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "photoUrl": {
-                          "type": "string"
-                        },
-                        "width": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 512
-                        },
-                        "height": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 512
-                        },
-                        "bytes": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 262144
-                        }
-                      },
-                      "required": [
-                        "photoUrl",
-                        "width",
-                        "height",
-                        "bytes"
-                      ]
-                    },
-                    "requestId": {
-                      "type": "string",
-                      "format": "uuid"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data",
-                    "requestId"
-                  ]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "408": {
-            "description": "Upload interrompido"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLarge"
-          },
-          "415": {
-            "description": "Mídia inválida, animada ou não suportada"
-          },
-          "422": {
-            "$ref": "#/components/responses/ValidationError"
-          },
-          "429": {
-            "$ref": "#/components/responses/RateLimited"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          },
-          "503": {
-            "$ref": "#/components/responses/Unavailable"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "image": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                },
-                "required": [
-                  "image"
-                ]
-              }
-            }
-          }
-        }
-      },
       "get": {
         "operationId": "read_streaming_profile_photo",
         "tags": [
           "Perfis de streaming"
         ],
-        "summary": "Ler foto privada do perfil",
+        "summary": "Ler foto legada do perfil",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "description": "Somente CLIENTE ativo, dono da conta/perfil; perfil alheio retorna 404. Foto privada, sem URL pública; leitura exige Bearer. Upload multipart no campo image, um JPEG/PNG/WebP estático até 5 MiB, até 16 milhões de pixels e 8192 pixels por lado. Reencoda sem metadados para WebP de até 512 pixels e 256 KiB. Substitui a foto anterior; remoção idempotente. Avatar padrão permanece e é usado quando photoUrl é null. Sem alteração de direitos de acesso. Escritas auditadas na transação; proprietário revalidado após processamento. Cache-Control private, no-store. Upload concluído pode persistir se a conexão cair após commit; consultar novamente.",
+        "description": "Somente CLIENTE ativo, dono da conta e do perfil. Operação legada; o streaming usa apenas avatares oficiais. Envio de foto retorna 405. Cache-Control private, no-store.",
         "parameters": [
           {
             "name": "id",
@@ -39887,9 +39815,6 @@
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -39898,15 +39823,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
-          },
-          "408": {
-            "description": "Upload interrompido"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLarge"
-          },
-          "415": {
-            "description": "Mídia inválida, animada ou não suportada"
           },
           "422": {
             "$ref": "#/components/responses/ValidationError"
@@ -39927,13 +39843,13 @@
         "tags": [
           "Perfis de streaming"
         ],
-        "summary": "Remover foto e usar avatar padrão",
+        "summary": "Remover foto legada do perfil",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "description": "Somente CLIENTE ativo, dono da conta/perfil; perfil alheio retorna 404. Foto privada, sem URL pública; leitura exige Bearer. Upload multipart no campo image, um JPEG/PNG/WebP estático até 5 MiB, até 16 milhões de pixels e 8192 pixels por lado. Reencoda sem metadados para WebP de até 512 pixels e 256 KiB. Substitui a foto anterior; remoção idempotente. Avatar padrão permanece e é usado quando photoUrl é null. Sem alteração de direitos de acesso. Escritas auditadas na transação; proprietário revalidado após processamento. Cache-Control private, no-store. Upload concluído pode persistir se a conexão cair após commit; consultar novamente.",
+        "description": "Somente CLIENTE ativo, dono da conta e do perfil. Operação legada; o streaming usa apenas avatares oficiais. Envio de foto retorna 405. Cache-Control private, no-store.",
         "parameters": [
           {
             "name": "id",
@@ -39949,9 +39865,6 @@
           "204": {
             "description": "Foto ausente; perfil e avatar preservados"
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -39960,15 +39873,6 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
-          },
-          "408": {
-            "description": "Upload interrompido"
-          },
-          "413": {
-            "$ref": "#/components/responses/PayloadTooLarge"
-          },
-          "415": {
-            "description": "Mídia inválida, animada ou não suportada"
           },
           "422": {
             "$ref": "#/components/responses/ValidationError"
@@ -41421,7 +41325,59 @@
                       ]
                     },
                     "data": {
-                      "$ref": "#/components/schemas/InputProduct"
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 150
+                              }
+                            },
+                            "required": [
+                              "name"
+                            ]
+                          }
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 150
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "limit": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 100
+                            },
+                            "nextCursor": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "limit",
+                            "nextCursor"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "options",
+                        "pagination"
+                      ]
                     },
                     "requestId": {
                       "type": "string",
@@ -41468,7 +41424,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados."
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro. A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos."
       }
     },
     "/api/equipment/categories": {
@@ -41500,7 +41456,59 @@
                       ]
                     },
                     "data": {
-                      "$ref": "#/components/schemas/EquipmentProduct"
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 150
+                              }
+                            },
+                            "required": [
+                              "name"
+                            ]
+                          }
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 150
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "limit": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 100
+                            },
+                            "nextCursor": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "limit",
+                            "nextCursor"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "items",
+                        "options",
+                        "pagination"
+                      ]
                     },
                     "requestId": {
                       "type": "string",
@@ -41547,7 +41555,7 @@
             "$ref": "#/components/responses/Unavailable"
           }
         },
-        "description": "FORNECEDOR consulta os próprios locais autorizados."
+        "description": "FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro."
       }
     },
     "/api/admin/logistics/input-links": {
@@ -42743,6 +42751,17 @@
             }
           },
           {
+            "name": "customerName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "Trecho do nome do cliente."
+            }
+          },
+          {
             "name": "status",
             "in": "query",
             "required": false,
@@ -42915,6 +42934,17 @@
             "schema": {
               "type": "string",
               "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          },
+          {
+            "name": "customerName",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "Trecho do nome do cliente."
             }
           },
           {
@@ -46190,6 +46220,14 @@
                                 "maxLength": 1000,
                                 "nullable": true
                               },
+                              "requirements": {
+                                "type": "string",
+                                "maxLength": 1000,
+                                "nullable": true
+                              },
+                              "custom": {
+                                "type": "boolean"
+                              },
                               "updatedAt": {
                                 "type": "string",
                                 "maxLength": 40
@@ -46207,6 +46245,8 @@
                               "guests",
                               "details",
                               "preferences",
+                              "requirements",
+                              "custom",
                               "updatedAt"
                             ]
                           }
@@ -46280,6 +46320,15 @@
                     "type": "string",
                     "pattern": "^[1-9][0-9]{0,9}$"
                   },
+                  "customSpace": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "minLength": 3
+                  },
+                  "locationId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,9}$"
+                  },
                   "date": {
                     "type": "string",
                     "format": "date"
@@ -46295,18 +46344,34 @@
                   },
                   "details": {
                     "type": "string",
-                    "maxLength": 4000
+                    "maxLength": 4000,
+                    "minLength": 10
                   },
                   "preferences": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "requirements": {
                     "type": "string",
                     "maxLength": 1000
                   }
                 },
                 "required": [
-                  "experienceId",
                   "date",
                   "guests",
                   "details"
+                ],
+                "oneOf": [
+                  {
+                    "required": [
+                      "experienceId"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "customSpace"
+                    ]
+                  }
                 ]
               }
             }
@@ -46386,6 +46451,14 @@
                           "maxLength": 1000,
                           "nullable": true
                         },
+                        "requirements": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "nullable": true
+                        },
+                        "custom": {
+                          "type": "boolean"
+                        },
                         "updatedAt": {
                           "type": "string",
                           "maxLength": 40
@@ -46403,6 +46476,8 @@
                         "guests",
                         "details",
                         "preferences",
+                        "requirements",
+                        "custom",
                         "updatedAt"
                       ]
                     },
@@ -46546,6 +46621,14 @@
                           "maxLength": 1000,
                           "nullable": true
                         },
+                        "requirements": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "nullable": true
+                        },
+                        "custom": {
+                          "type": "boolean"
+                        },
                         "updatedAt": {
                           "type": "string",
                           "maxLength": 40
@@ -46614,6 +46697,8 @@
                         "guests",
                         "details",
                         "preferences",
+                        "requirements",
+                        "custom",
                         "updatedAt",
                         "canClaim",
                         "events",
@@ -46782,6 +46867,14 @@
                           "maxLength": 1000,
                           "nullable": true
                         },
+                        "requirements": {
+                          "type": "string",
+                          "maxLength": 1000,
+                          "nullable": true
+                        },
+                        "custom": {
+                          "type": "boolean"
+                        },
                         "updatedAt": {
                           "type": "string",
                           "maxLength": 40
@@ -46799,6 +46892,8 @@
                         "guests",
                         "details",
                         "preferences",
+                        "requirements",
+                        "custom",
                         "updatedAt"
                       ]
                     },
@@ -47072,6 +47167,18 @@
               "type": "string",
               "pattern": "^[1-9][0-9]{0,19}$"
             }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "current",
+                "other"
+              ]
+            },
+            "description": "Filtra pelo mês atual do CineAstra ou pelos demais meses."
           }
         ],
         "responses": {
@@ -47950,6 +48057,14 @@
             "minLength": 1,
             "maxLength": 4096,
             "description": "Obrigatório somente quando CAPTCHA_ENABLED=true; omitido em standby."
+          },
+          "profile": {
+            "type": "string",
+            "enum": [
+              "CLIENTE",
+              "FORNECEDOR"
+            ],
+            "description": "Seleção opcional do formulário. FORNECEDOR exige conta de fornecedor; CLIENTE admite cliente e equipe interna. Com credenciais válidas, escolha incompatível retorna 403 antes da emissão de sessão."
           }
         },
         "required": [
@@ -49433,6 +49548,10 @@
               "true",
               "false"
             ]
+          },
+          "page": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$"
           }
         },
         "additionalProperties": false
@@ -50255,7 +50374,8 @@
           "status",
           "tipo_local",
           "lotacao_eventos",
-          "acesso_eventos"
+          "acesso_eventos",
+          "imagem_url"
         ],
         "example": {
           "id_local": "1",
@@ -51123,6 +51243,11 @@
           },
           "data_envio": {
             "type": "string"
+          },
+          "solicitacao_experiencia_id": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,9}$",
+            "description": "Identificador da solicitação em notificações de confirmação de experiência."
           }
         },
         "required": [
@@ -51242,7 +51367,8 @@
           "id_local": {
             "type": "string",
             "pattern": "^[1-9][0-9]{0,9}$",
-            "description": "INT UNSIGNED decimal."
+            "description": "INT UNSIGNED decimal.",
+            "nullable": true
           },
           "nome": {
             "type": "string",
@@ -51333,7 +51459,8 @@
           "id_local": {
             "type": "string",
             "pattern": "^[1-9][0-9]{0,9}$",
-            "description": "INT UNSIGNED decimal."
+            "description": "INT UNSIGNED decimal.",
+            "nullable": true
           },
           "nome": {
             "type": "string",
@@ -51511,6 +51638,15 @@
               "customerLimit"
             ],
             "nullable": true
+          },
+          "imagem": {
+            "type": "string",
+            "nullable": true
+          },
+          "imagem_alternativa": {
+            "type": "string",
+            "nullable": true,
+            "description": "Primeira imagem alternativa por ordem de exibição."
           }
         },
         "required": [
@@ -51521,7 +51657,9 @@
           "preco",
           "ativo",
           "data_cadastro",
-          "items"
+          "items",
+          "imagem",
+          "imagem_alternativa"
         ]
       },
       "InputImage": {
@@ -51630,7 +51768,8 @@
           },
           "id_local": {
             "type": "string",
-            "pattern": "^[1-9][0-9]{0,9}$"
+            "pattern": "^[1-9][0-9]{0,9}$",
+            "nullable": true
           },
           "quantidade": {
             "type": "integer",
@@ -54947,7 +55086,7 @@
           "photoUrl": {
             "type": "string",
             "nullable": true,
-            "description": "Foto privada; buscar com Bearer. null usa avatar padrão."
+            "description": "Campo legado sempre nulo. A interface usa o avatar oficial indicado em avatar."
           }
         },
         "required": [
@@ -55199,6 +55338,11 @@
             "enum": [
               "INPUT"
             ]
+          },
+          "alternateImageUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Primeira imagem alternativa por ordem de exibição."
           }
         },
         "required": [
@@ -55211,7 +55355,8 @@
           "currency",
           "inStock",
           "imageUrl",
-          "purchaseKind"
+          "purchaseKind",
+          "alternateImageUrl"
         ]
       },
       "partnersCreate": {
@@ -56370,6 +56515,14 @@
               "$ref": "#/components/schemas/SupplierTransport"
             }
           },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 60,
+              "minLength": 1
+            }
+          },
           "pagination": {
             "type": "object",
             "additionalProperties": false,
@@ -56393,6 +56546,7 @@
         },
         "required": [
           "items",
+          "types",
           "pagination"
         ]
       },
@@ -56539,6 +56693,15 @@
               "customerLimit"
             ],
             "nullable": true
+          },
+          "imagem": {
+            "type": "string",
+            "nullable": true
+          },
+          "imagem_alternativa": {
+            "type": "string",
+            "nullable": true,
+            "description": "Primeira imagem alternativa por ordem de exibição."
           }
         },
         "required": [
@@ -56550,7 +56713,9 @@
           "ativo",
           "data_cadastro",
           "items",
-          "custo_operacional"
+          "custo_operacional",
+          "imagem",
+          "imagem_alternativa"
         ]
       },
       "ReplenishmentInputLink": {
@@ -57064,6 +57229,37 @@
           "reason"
         ],
         "additionalProperties": false
+      },
+      "CatalogFilmPagination": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "limit",
+          "nextCursor"
+        ],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
       }
     },
     "responses": {

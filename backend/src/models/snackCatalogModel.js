@@ -1,10 +1,11 @@
 const projection=`i.id_insumo,i.id_local,i.nome,i.descricao,i.categoria,i.preco,
     (i.quantidade-i.quantidade_reservada>0) AS em_estoque,
-    (SELECT im.url FROM insumos_imagens im WHERE im.id_insumo=i.id_insumo AND im.tipo='PRINCIPAL' ORDER BY im.ordem,im.id_imagem LIMIT 1) AS imagem`;
+    (SELECT im.url FROM insumos_imagens im WHERE im.id_insumo=i.id_insumo AND im.tipo='PRINCIPAL' ORDER BY im.ordem,im.id_imagem LIMIT 1) AS imagem,
+    (SELECT im.url FROM insumos_imagens im WHERE im.id_insumo=i.id_insumo AND im.tipo='ALTERNATIVA' ORDER BY im.ordem,im.id_imagem LIMIT 1) AS imagem_alternativa`;
 const from=` FROM insumos i JOIN locais l ON l.id_local=i.id_local
     JOIN fornecedores f ON f.id_fornecedor=i.id_fornecedor JOIN usuarios u ON u.id_usuario=f.id_usuario
     JOIN fornecedor_locais fl ON fl.id_fornecedor=i.id_fornecedor AND fl.id_local=i.id_local`;
-const visible="i.id_local=? AND i.status='DISPONIVEL' AND i.venda_avulsa=TRUE AND l.status='ATIVO' AND f.status='ATIVO' AND u.status='ATIVO' AND u.tipo_usuario='FORNECEDOR' AND fl.status='ATIVO'";
+const visible="i.id_local=? AND i.status='DISPONIVEL' AND i.venda_avulsa=TRUE AND i.oferta_local=TRUE AND l.status='ATIVO' AND f.status='ATIVO' AND u.status='ATIVO' AND u.tipo_usuario='FORNECEDOR' AND fl.status='ATIVO'";
 export function createSnackCatalogModel(database){return {
     async list(localId,q){
         const where=[visible],args=[localId];

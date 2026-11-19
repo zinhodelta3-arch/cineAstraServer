@@ -71,6 +71,7 @@ export function Header({ showAssistant = false }) {
   const logoSrc = getLogoByTheme(appearance)
   const [cartOpen, setCartOpen] = useState(false)
   const { itemCount: visibleItemCount } = useCart()
+  const canOpenCart = !session.loading && (session.user?.role === "CLIENTE" || (!session.user && visibleItemCount > 0))
 
   return (
     <>
@@ -111,7 +112,7 @@ export function Header({ showAssistant = false }) {
 
               <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                 {session.user && <NotificationButton key={session.user.id} userId={session.user.id} />}
-                {session.user && <button
+                {canOpenCart && <button
                   type="button"
                   onClick={() => setCartOpen(true)}
                   aria-label={`Abrir carrinho, ${visibleItemCount} ${visibleItemCount === 1 ? "item" : "itens"}`}
@@ -134,7 +135,7 @@ export function Header({ showAssistant = false }) {
         </div>
       </header>
 
-      {session.user && <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />}
+      {canOpenCart && <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />}
       {showAssistant && !session.loading && session.user?.role === "CLIENTE" && (
         <FloatingAssistant key={session.user.id} signedIn />
       )}

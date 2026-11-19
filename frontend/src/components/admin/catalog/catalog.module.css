@@ -20,6 +20,10 @@
 .lookupFilter .filter { min-width: min(100%, 190px); }
 .lookupFilter select { max-width: 240px; }
 .lookupMore { min-height: 40px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; }
+.salesFilters { align-items: flex-end; }
+.salesFilters > label { display: grid; gap: 0; width: min(100%, 224px); padding-block: 6px 0; }
+.salesFilters > label :is(input, select) { width: 100%; min-width: 0; }
+.salesFilters > [role="alert"] { flex-basis: 100%; }
 .tableWrap { margin: 0 24px; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; scrollbar-color: var(--border) transparent; }
 .table { width: 100%; min-width: 650px; border-collapse: collapse; font-size: 12px; text-align: left; }
 .table thead { background: var(--muted); }
@@ -78,7 +82,15 @@
 .filmPicker h2 { font-size: 15px; font-weight: 650; }
 .pickerControl { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; }
 .pickerControl label { display: grid; width: min(100%, 340px); gap: 7px; font-size: 12px; font-weight: 600; }
-.pickerControl .costItemPicker { width: min(100%, 480px); }
+.costPicker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; max-width: 56rem; }
+.costPicker > label { width: 100%; min-width: 0; }
+.costPicker select { width: 100%; min-width: 0; text-overflow: ellipsis; }
+.costPicker .costItemPicker { grid-column: 1 / -1; }
+.costPicker > button { justify-self: start; }
+.costSelection { grid-column: 1 / -1; font-size: 12px; color: var(--muted-foreground); overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .costPicker { grid-template-columns: minmax(0, 1fr); }
+}
 .pickerControl :is(select, input) { min-height: 40px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); font-size: 12px; }
 .summaryGrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: 18px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
 .summaryGrid > div { display: grid; gap: 8px; min-width: 0; padding: 18px; }

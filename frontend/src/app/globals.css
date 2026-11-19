@@ -85,6 +85,35 @@
   body {
     @apply bg-background text-foreground min-h-screen antialiased;
   }
+
+  :where(input:not([type="hidden"], [type="checkbox"], [type="radio"]), select, textarea):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  :where(input, select, textarea):disabled {
+    cursor: not-allowed;
+    opacity: .6;
+  }
+}
+
+[data-money-field] { font-variant-numeric: tabular-nums; }
+[data-money-field][aria-invalid="true"] { border-color: var(--destructive); }
+
+[data-image-loading="true"] {
+  background-color: var(--muted);
+  background-image: linear-gradient(105deg, transparent 32%, color-mix(in srgb, var(--foreground) 10%, transparent) 48%, transparent 64%);
+  background-size: 250% 100%;
+  animation: cineastra-image-loading 1.8s linear infinite;
+}
+
+@keyframes cineastra-image-loading {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-image-loading="true"] { animation: none; background-image: none; }
 }
 
 /* ============================================================

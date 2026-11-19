@@ -367,7 +367,7 @@ SET @filme_100 = (SELECT id_filme FROM filmes WHERE titulo = 'Indiana Jones e a 
 UPDATE filmes SET disponivel_cinema = TRUE, disponivel_streaming = TRUE WHERE id_filme = @filme_100;
 
 -- conteudos_promocionais · 3 registros
-INSERT INTO `conteudos_promocionais` (`id_conteudo`, `tipo`, `slug`, `ativo`, `dados`) VALUES (900001, 'experiences', 'sala-vip', TRUE, CAST('{"title":"Sala VIP","name":"Sala VIP","description":"Poltronas confortáveis e uma experiência especial de cinema.","image":"/astrasnack/cineastra-combo.webp"}' AS JSON));
+INSERT INTO `conteudos_promocionais` (`id_conteudo`, `tipo`, `slug`, `ativo`, `dados`) VALUES (900001, 'experiences', 'sala-vip', TRUE, CAST('{"title":"Sala VIP","name":"Sala VIP","description":"Poltronas confortáveis e uma experiência especial de cinema.","image":"/parcerias/sala-cinema.jpg","imageUrl":"/parcerias/sala-cinema.jpg","imageAlt":"Poltronas vermelhas em uma sala de cinema"}' AS JSON));
 INSERT INTO `conteudos_promocionais` (`id_conteudo`, `tipo`, `slug`, `ativo`, `dados`) VALUES (900002, 'partners', 'aurora-alimentos', TRUE, CAST('{"name":"Aurora Alimentos","title":"Aurora Alimentos","description":"Qualidade e variedade na bomboniere."}' AS JSON));
 INSERT INTO `conteudos_promocionais` (`id_conteudo`, `tipo`, `slug`, `ativo`, `dados`) VALUES (900003, 'banners', 'programacao-semanal', TRUE, CAST('{"title":"Sua próxima sessão está aqui","description":"Confira a programação e reserve seu lugar.","href":"/cinema/filmes"}' AS JSON));
 

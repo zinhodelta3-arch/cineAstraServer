@@ -23,18 +23,18 @@ const costs = { custo_receita: cost, custo_parceria: cost };
 const count = { type: 'integer', minimum: 0, maximum: 2147483647 };
 const patrimony = nullable({ type: 'string', minLength: 1, maxLength: 100, description: 'Único após trim/uppercase; null é permitido.' });
 const common = { nome: name, descricao: nullable({ type: 'string', maxLength: 10000 }), categoria: nullable({ type: 'string', minLength: 1, maxLength: 100 }) };
-const base = { id_fornecedor: id, id_local: id, ...common, quantidade: count, status: inputStatus, data_cadastro: { type: 'string' } };
+const base = { id_fornecedor: id, id_local: nullable(id), ...common, quantidade: count, status: inputStatus, data_cadastro: { type: 'string' } };
 const inputProduct = { id_insumo: id, ...base, quantidade_minima: count, preco: money, venda_avulsa: {type:'boolean'} };
 spec.components.schemas.InputProduct = obj({ ...inputProduct, custo_receita: nullable(cost), custo_parceria: nullable(cost) }, Object.keys(inputProduct));
 spec.components.schemas.EquipmentProduct = obj({ id_equipamento: id, ...base, numero_patrimonio: patrimony, status: equipmentStatus });
 spec.components.schemas.SupplierLocationGrant = obj({ id_fornecedor: id, id_local: id, status: grantStatus, criado_em: { type: 'string' } });
 spec.components.schemas.SupplierLocationGrant.properties.nome_local = { type: 'string' };
-const inputFields = { ...common, supplierId: id, localId: id, quantidade_minima: count, ...costs, venda_avulsa: {type:'boolean',default:false} };
+const inputFields = { ...common, supplierId: id, localId: nullable(id), quantidade_minima: count, ...costs, venda_avulsa: {type:'boolean',default:false} };
 const inputCreate = { oneOf: [
-    obj({ ...inputFields, preco: money }, ['nome','localId','preco']),
-    obj({ ...inputFields, priceMode:{type:'string',enum:['RULE']}, venda_avulsa:{type:'boolean',enum:[true]} }, ['nome','supplierId','localId','priceMode','venda_avulsa','custo_receita','custo_parceria'])
+    obj({ ...inputFields, preco: money }, ['nome','preco']),
+    obj({ ...inputFields, priceMode:{type:'string',enum:['RULE']}, venda_avulsa:{type:'boolean',enum:[true]} }, ['nome','supplierId','priceMode','venda_avulsa','custo_receita','custo_parceria'])
 ] };
-const equipmentCreate = obj({ ...common, supplierId: id, localId: id, numero_patrimonio: patrimony }, ['nome','localId']);
+const equipmentCreate = obj({ ...common, supplierId: id, localId: nullable(id), numero_patrimonio: patrimony }, ['nome']);
 const inputPatch = { ...obj({ ...common, quantidade_minima: count, preco: money, ...costs, venda_avulsa: {type:'boolean'}, status: inputStatus }, []), minProperties: 1 };
 const equipmentPatch = { ...obj({ ...common, numero_patrimonio: patrimony, status: equipmentStatus }, []), minProperties: 1 };
 const bodies = { inputs: { create: inputCreate, patch: inputPatch }, equipment: { create: equipmentCreate, patch: equipmentPatch } };
@@ -44,10 +44,10 @@ for (const r of productOperations) {
     const tag = r.type === 'inputs' ? 'Insumos' : r.type === 'equipment' ? 'Equipamentos' : 'Fornecedor locais';
     const productSchema = r.type === 'inputs' ? ref('InputProduct') : ref('EquipmentProduct');
     const op = { operationId: r.operationId, tags: [tag], summary: `${r.action} ${r.type ?? 'fornecedor-local'}`, security: [{ bearerAuth: [] }], parameters: [], responses: {} };
-    if (r.type) op.description = 'ADMIN acessa todos; FORNECEDOR acessa apenas itens próprios. Escrita exige vínculo fornecedor-local ativo. Quantidade inicia em zero e não é editável nesta API; estoque usa movimentos. DELETE arquiva sem apagar referências.';
+    if (r.type) op.description = 'FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro.';
     if (r.type === 'inputs') op.description += ' A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos.';
     if (r.type === 'inputs' && r.action === 'create') op.description += ' ADMIN pode selecionar priceMode=RULE e usar o markup de INPUT para calcular e salvar o preço oficial.';
-    else op.description = r.admin ? 'Somente ADMIN gerencia o vínculo operacional fornecedor-local.' : 'FORNECEDOR consulta os próprios locais autorizados.';
+    if (!r.type) op.description = r.admin ? 'Somente ADMIN gerencia o vínculo operacional fornecedor-local.' : 'FORNECEDOR consulta os próprios locais autorizados.';
     for (const param of ['id','supplierId','localId']) if (r.path.includes(`{${param}}`)) op.parameters.push({ name: param, in: 'path', required: true, schema: id });
     if (['list','grants','myGrants'].includes(r.action)) {
         op.parameters.push({ name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: id });
@@ -58,6 +58,11 @@ for (const r of productOperations) {
     if (body) op.requestBody = { required: true, content: { 'application/json': { schema: body } } };
     if (r.action === 'archive' || r.action === 'revokeGrant') op.responses['204'] = { description: 'Arquivado logicamente.' };
     else if (r.action === 'list') op.responses['200'] = response(paging(productSchema));
+    else if (r.action === 'categories') op.responses['200'] = response(obj({
+        items: { type: 'array', items: obj({ name }) },
+        options: { type: 'array', items: name },
+        pagination: obj({ limit: { type: 'integer', minimum: 1, maximum: 100 }, nextCursor: nullable({ type: 'string' }) })
+    }));
     else if (r.action === 'grants' || r.action === 'myGrants') op.responses['200'] = response(paging(ref('SupplierLocationGrant')));
     else op.responses[r.action === 'create' || r.action === 'grant' ? '201' : '200'] = response(r.type ? productSchema : ref('SupplierLocationGrant'));
     for (const [code, name] of Object.entries(errors)) op.responses[code] = { $ref: `#/components/responses/${name}` };

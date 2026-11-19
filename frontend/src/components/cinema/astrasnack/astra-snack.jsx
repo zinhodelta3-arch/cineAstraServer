@@ -13,12 +13,13 @@ import { useAstraSnack } from "@/hooks/cinema/astrasnack/use-astra-snack";
 export default function AstraSnackPage() {
   const snack = useAstraSnack();
   const {cartOpen,setCartOpen,cartCount}=snack;
+  const canOpenCart = snack.guest || snack.session.user?.role === "CLIENTE";
 
   return (
     <main className="astra-grain min-h-screen bg-background text-foreground selection:bg-[#691528] selection:text-[#FAD241]">
       <CinemaStyles />
 
-      <SnackHeader cartCount={cartCount} loggedIn={Boolean(snack.session.user)} />
+      <SnackHeader cartCount={cartCount} showCart={canOpenCart} />
 
       <section className="mx-auto max-w-[1600px] bg-background px-5 py-6 md:px-8">
         <label className="mb-4 block text-sm font-semibold">Cinema<select aria-label="Cinema" value={snack.localId} onChange={e=>snack.changeLocation(e.target.value)} className="mt-2 block w-full rounded-lg border border-border bg-card p-3">{snack.locations.items.map(l=><option key={l.id_local} value={l.id_local}>{l.nome} — {l.cidade}</option>)}</select></label>
@@ -29,7 +30,7 @@ export default function AstraSnackPage() {
         <ProductCatalog snack={snack} />
       </section>
 
-      {snack.session.user && <button
+      {canOpenCart && <button
         type="button"
         onClick={() => setCartOpen(true)}
         className="fixed right-5 bottom-20 z-30 flex items-center gap-2 rounded-full border border-primary/40 bg-primary px-4 py-3 text-sm font-black text-primary-foreground shadow-xl transition-transform hover:-translate-y-1"
@@ -43,7 +44,7 @@ export default function AstraSnackPage() {
         )}
       </button>}
 
-      {snack.session.user&&<CartDrawer open={cartOpen} onOpenChange={setCartOpen} />}
+      {canOpenCart && <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />}
 
       <ProductDrawer snack={snack} />
     </main>

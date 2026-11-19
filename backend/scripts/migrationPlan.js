@@ -52,7 +52,10 @@ export async function migrationPlan() {
         '20261115_52_subscription_changes.sql',
         '20261115_53_experience_requests.sql',
         '20261115_54_account_preferences.sql',
-        '20261115_55_monthly_social_program.sql'
+        '20261115_55_monthly_social_program.sql',
+        '20261118_56_unit_snack_offers.sql',
+        '20261118_57_supplier_owned_stock.sql',
+        '20261118_58_experience_spaces.sql'
     ]);
     const sources = [
         ['20261001_02_create_tables.sql', sql => /^(CREATE TABLE|CREATE INDEX)\b/i.test(sql)],
@@ -114,7 +117,10 @@ export async function migrationPlan() {
         ['20261115_52_subscription_changes.sql', () => true],
         ['20261115_53_experience_requests.sql', () => true],
         ['20261115_54_account_preferences.sql', () => true],
-        ['20261115_55_monthly_social_program.sql', () => true]
+        ['20261115_55_monthly_social_program.sql', () => true],
+        ['20261118_56_unit_snack_offers.sql', () => true],
+        ['20261118_57_supplier_owned_stock.sql', () => true],
+        ['20261118_58_experience_spaces.sql', () => true]
     ];
     const plan = [];
     for (const [file, filter] of sources) {

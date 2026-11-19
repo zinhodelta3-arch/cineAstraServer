@@ -12,6 +12,6 @@ export async function scheduleRequest(path, { method = "GET", body, signal } = {
   return readSessionResponse(response);
 }
 
-export function useAdminSchedule(path) {
-  return usePaginatedList(path, scheduleRequest);
+export function useAdminSchedule(path, options) {
+  return usePaginatedList(path, scheduleRequest, options);
 }

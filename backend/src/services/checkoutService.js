@@ -47,7 +47,7 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
             if(quote.lines.some(line=>line.catalogOutOfSync))throw new ApiError('O preço publicado precisa ser atualizado pelo cinema',409,null,'CATALOG_PRICE_OUT_OF_SYNC');
             if(!quote.finalizable)throw conflict('Cotação não finalizável; confira idade, meia e preço');
             if(quote.total==='0.00')throw conflict('Total deve ser positivo');
-            const contract=contracts?await contracts.contract(c,input,quote):null;
+            const contract=contracts?await contracts.contract(c,input,quote,actor.id_usuario):null;
             if(contracts&&(!acceptance?.accepted||acceptance.offerHash!==contract.offerHash))throw conflict('Aceite da oferta atual necessário');
             if(streaming)await streaming.ensureSellable(c,input.lines);
             return reserveCheckout(c,{input,key,hash,context,actorId:actor.id_usuario,quote,contract,draftOrderId});

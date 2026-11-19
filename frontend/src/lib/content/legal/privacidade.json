@@ -1,0 +1,1296 @@
+{
+  "sections": [
+    {
+      "id": "secao-1",
+      "title": "1. Introdução, controlador e encarregado",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "1.1. A CineAstra respeita a sua privacidade e trata dados pessoais com transparência e responsabilidade, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD), o Marco Civil da Internet (Lei nº 12.965/2014), o Código de Defesa do Consumidor (Lei nº 8.078/1990), o Estatuto da Criança e do Adolescente, a Lei nº 15.211/2025 e as normas da Autoridade Nacional de Proteção de Dados (ANPD)."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.2. Esta Política explica, em linguagem clara, quais dados pessoais coletamos, por que os usamos, com quem os compartilhamos, por quanto tempo os guardamos, como os protegemos e como você pode exercer seus direitos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.3. A quem se aplica. A Clientes, Membros de planos compartilhados, visitantes do site e do aplicativo, e, com as particularidades indicadas no item 4, a Colaboradores, Supervisores, Administradores e representantes de Fornecedores."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.4. Controlador. [RAZÃO SOCIAL], inscrita no CNPJ sob o nº [00.000.000/0000-00], com sede em [ENDEREÇO COMPLETO], responsável pelas decisões sobre o tratamento dos dados pessoais na plataforma CineAstra."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.5. Encarregado pelo Tratamento de Dados Pessoais (DPO). [NOME], contato em [privacidade@cineastra.com.br]. O Encarregado atua como canal entre você, a CineAstra e a ANPD."
+        },
+        {
+          "kind": "paragraph",
+          "text": "1.6. Relação com os Termos de Uso. Termos como \"Cliente\", \"Titular\", \"Membro\", \"Local\", \"Sessão\" e \"Plano\" têm o mesmo significado dos Termos de Uso. O Anexo II reúne o significado de termos da LGPD."
+        }
+      ]
+    },
+    {
+      "id": "secao-2",
+      "title": "2. Princípios que seguimos",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "O tratamento de dados na CineAstra observa os princípios do art. 6º da LGPD:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Finalidade: usamos os dados para propósitos legítimos, específicos e informados.",
+            "Adequação: o uso é compatível com o que você espera ao usar a plataforma.",
+            "Necessidade: coletamos o mínimo indispensável para cada finalidade.",
+            "Livre acesso: você pode consultar, de forma fácil e gratuita, como tratamos seus dados.",
+            "Qualidade dos dados: buscamos manter os dados exatos, claros e atualizados.",
+            "Transparência: informamos de modo claro quem somos e o que fazemos com os dados.",
+            "Segurança: adotamos medidas técnicas e administrativas de proteção.",
+            "Prevenção: agimos para evitar danos decorrentes do tratamento.",
+            "Não discriminação: não tratamos dados para fins discriminatórios, ilícitos ou abusivos.",
+            "Responsabilização e prestação de contas: mantemos registros e evidências de conformidade."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "secao-3",
+      "title": "3. Dados pessoais que coletamos",
+      "blocks": [
+        {
+          "kind": "heading",
+          "text": "3.1. Dados que você nos fornece"
+        },
+        {
+          "kind": "table",
+          "columns": [
+            "Categoria",
+            "Exemplos",
+            "Quando coletamos"
+          ],
+          "rows": [
+            [
+              "Identificação e cadastro",
+              "Nome completo, CPF, data de nascimento, e-mail, telefone celular, senha (armazenada de forma criptografada), foto de perfil opcional",
+              "Criação e atualização da conta"
+            ],
+            [
+              "Compras de ingressos",
+              "Sessão, Local, assentos, tipo de ingresso (inteira, meia-entrada), histórico de pedidos",
+              "Compra e uso do ingresso"
+            ],
+            [
+              "Filmes para streaming",
+              "Títulos alugados ou comprados, status de reprodução, preferências de idioma e legenda",
+              "Compra e uso dos títulos digitais"
+            ],
+            [
+              "Combos e insumos",
+              "Itens comprados, local e horário de retirada, observações do pedido (ex.: restrições alimentares, se você informar)",
+              "Pedido de produtos"
+            ],
+            [
+              "Pagamento e cobrança",
+              "Meio de pagamento, bandeira, quatro últimos dígitos do cartão, token da transação, status, endereço de cobrança, dados para nota fiscal (CPF ou CNPJ)",
+              "Pagamento e emissão fiscal"
+            ],
+            [
+              "Comprovação de meia-entrada",
+              "Tipo de benefício e documento comprobatório (ex.: carteira estudantil, ID Jovem, documento de pessoa com deficiência)",
+              "Compra com benefício e conferência na entrada"
+            ],
+            [
+              "Planos",
+              "Plano contratado, modalidade de pagamento, Membros indicados (nome, CPF, e-mail), histórico de cobranças e inadimplência",
+              "Contratação e gestão do plano"
+            ],
+            [
+              "Atendimento e Chamados",
+              "Mensagens, protocolos, anexos (fotos e comprovantes), avaliações, gravações de chamadas (com aviso prévio)",
+              "Contato com o suporte"
+            ],
+            [
+              "Acessibilidade",
+              "Necessidades informadas (assento acessível, audiodescrição, Libras, acompanhante)",
+              "Quando você solicita o recurso"
+            ],
+            [
+              "Preferências de comunicação",
+              "Consentimentos, canais escolhidos, descadastros",
+              "Configurações da conta"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "text": "3.2. Dados coletados automaticamente"
+        },
+        {
+          "kind": "table",
+          "columns": [
+            "Categoria",
+            "Exemplos",
+            "Finalidade principal"
+          ],
+          "rows": [
+            [
+              "Dados de acesso (logs)",
+              "Endereço IP, data e hora, porta de origem, páginas e ações realizadas",
+              "Segurança e obrigação legal (Marco Civil)"
+            ],
+            [
+              "Dados do dispositivo",
+              "Modelo, sistema operacional, navegador, idioma, identificadores do aparelho e do aplicativo",
+              "Funcionamento, segurança e compatibilidade"
+            ],
+            [
+              "Dados de navegação e uso",
+              "Filmes e sessões pesquisados, cliques, tempo de uso, erros",
+              "Melhoria do serviço e recomendações"
+            ],
+            [
+              "Histórico de reprodução",
+              "Títulos assistidos, progresso, horários",
+              "Retomada da reprodução e cumprimento de regras do aluguel"
+            ],
+            [
+              "Localização",
+              "Aproximada (por IP) ou precisa (GPS), somente com a sua permissão",
+              "Sugestão de Locais e sessões próximos"
+            ],
+            [
+              "Cookies e identificadores",
+              "Veja o item 7",
+              "Funcionamento, análise e publicidade"
+            ],
+            [
+              "Dados de segurança",
+              "Tentativas de login, alterações sensíveis, eventos de 2FA, sinais de fraude",
+              "Proteção da conta e da plataforma"
+            ]
+          ]
+        },
+        {
+          "kind": "heading",
+          "text": "3.3. Dados recebidos de terceiros"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Instituições de pagamento: confirmação, recusa, estorno, contestação de transações.",
+            "Ferramentas antifraude e de verificação de identidade: sinais de risco e validação de CPF e documentos.",
+            "Titulares de planos: dados dos Membros por eles indicados, quando o Titular inclui alguém no plano.",
+            "Entidades emissoras de benefícios: confirmação de validade de carteira estudantil ou ID Jovem, quando o serviço permitir.",
+            "Fornecedores e transportadoras: status de entrega e recebimento de insumos e equipamentos, sem dados pessoais de Clientes."
+          ]
+        },
+        {
+          "kind": "heading",
+          "text": "3.4. O que não coletamos"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Não armazenamos o número completo do cartão nem o código de segurança (CVV).",
+            "Não usamos reconhecimento facial ou outros dados biométricos para identificar Clientes nos Locais.",
+            "Não coletamos conteúdo de suas mensagens pessoais, contatos do telefone ou fotos do seu aparelho.",
+            "Não vendemos dados pessoais a terceiros."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "secao-4",
+      "title": "4. Dados tratados por perfil de usuário",
+      "blocks": [
+        {
+          "kind": "table",
+          "columns": [
+            "Perfil",
+            "Dados tratados",
+            "Particularidades"
+          ],
+          "rows": [
+            [
+              "Cliente",
+              "Todos os dados dos itens 3.1 a 3.3 que se aplicam ao seu uso",
+              "Um usuário por CPF; 2FA recomendado"
+            ],
+            [
+              "Membro de plano",
+              "Nome, CPF, e-mail, status no plano, modalidade e valor da sua parte, histórico de pagamento da sua parte",
+              "Aceita o convite e a modalidade de pagamento; o Titular não vê o histórico de filmes do Membro"
+            ],
+            [
+              "Menor de 18 anos",
+              "Dados mínimos, vinculados à conta do responsável ou assistida por ele",
+              "Veja o item 6"
+            ],
+            [
+              "Colaborador",
+              "Nome, CPF, função, Local de atuação, credenciais, 2FA, escalas, logs de ações, dados necessários à relação de trabalho",
+              "2FA obrigatório; acesso restrito à função"
+            ],
+            [
+              "Supervisor",
+              "Os mesmos dados do Colaborador, além de registros de aprovações (reembolsos, cortesias, ocorrências)",
+              "2FA obrigatório; auditoria de ações"
+            ],
+            [
+              "Administração",
+              "Dados de identificação, credenciais, 2FA, logs de todas as ações administrativas",
+              "2FA obrigatório; acesso a dados mediante necessidade e registro"
+            ],
+            [
+              "Fornecedor",
+              "Dados cadastrais da empresa, dados de contato e identificação dos representantes, credenciais, 2FA, pedidos, entregas e documentos fiscais",
+              "Não acessa dados pessoais de Clientes, salvo se indispensável à entrega, e apenas o mínimo"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "4.1. Colaboradores e Supervisores também têm seus dados tratados para fins de gestão do vínculo (folha, benefícios, segurança do trabalho), conforme política interna de privacidade do trabalhador, a ser fornecida pelo empregador."
+        },
+        {
+          "kind": "paragraph",
+          "text": "4.2. Segurança e auditoria. As ações dos perfis operacionais são registradas em logs de auditoria, com data, hora, usuário, ação e registro afetado, para prevenir uso indevido e apurar irregularidades."
+        }
+      ]
+    },
+    {
+      "id": "secao-5",
+      "title": "5. Finalidades e bases legais",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "Sempre associamos cada uso de dados a uma finalidade e a uma base legal da LGPD (arts. 7º e 11)."
+        },
+        {
+          "kind": "table",
+          "columns": [
+            "Finalidade",
+            "Exemplos de dados e atividades",
+            "Base legal"
+          ],
+          "rows": [
+            [
+              "Criar e gerenciar a conta",
+              "Cadastro, login, 2FA, recuperação de senha, perfis",
+              "Execução de contrato"
+            ],
+            [
+              "Verificar identidade e garantir um usuário por CPF",
+              "Validação de CPF, detecção de contas duplicadas",
+              "Execução de contrato; legítimo interesse; prevenção à fraude"
+            ],
+            [
+              "Processar compras de ingressos, filmes e combos",
+              "Pedido, pagamento, entrega do ingresso, retirada",
+              "Execução de contrato"
+            ],
+            [
+              "Gerir planos e assinaturas",
+              "Cobrança recorrente, convites, Membros, divisão de valores",
+              "Execução de contrato"
+            ],
+            [
+              "Cobrança e tratamento de inadimplência",
+              "Notificações, multa e juros, negativação após notificação",
+              "Execução de contrato; exercício regular de direitos; proteção do crédito"
+            ],
+            [
+              "Validar meia-entrada",
+              "Conferência do documento comprobatório",
+              "Cumprimento de obrigação legal"
+            ],
+            [
+              "Emitir notas fiscais e cumprir obrigações tributárias",
+              "Dados fiscais, registros contábeis",
+              "Cumprimento de obrigação legal"
+            ],
+            [
+              "Atendimento, Chamados e notificações de serviço",
+              "Suporte, alteração de sessão, reembolsos, avisos de cobrança",
+              "Execução de contrato"
+            ],
+            [
+              "Gestão de estoque, equipamentos e logística",
+              "Pedidos a Fornecedores, entregas por Local e sessão",
+              "Execução de contrato; legítimo interesse"
+            ],
+            [
+              "Segurança da plataforma e prevenção a fraudes",
+              "Análise de risco, bloqueios, auditoria, revenda abusiva, uso de bots",
+              "Legítimo interesse; prevenção à fraude e segurança do titular (art. 11, II, g, quando aplicável)"
+            ],
+            [
+              "Guarda de registros de acesso",
+              "Logs de aplicação",
+              "Cumprimento de obrigação legal (Marco Civil, art. 15)"
+            ],
+            [
+              "Acessibilidade",
+              "Atender recursos solicitados",
+              "Execução de contrato; cumprimento de obrigação legal; consentimento, quando o dado for sensível"
+            ],
+            [
+              "Melhoria do serviço e estatísticas",
+              "Análise de uso agregada, testes, correção de erros",
+              "Legítimo interesse"
+            ],
+            [
+              "Recomendações de filmes e sessões",
+              "Sugestões com base em histórico e preferências",
+              "Legítimo interesse (você pode se opor)"
+            ],
+            [
+              "Marketing e ofertas",
+              "E-mails, push, SMS e WhatsApp promocionais",
+              "Consentimento"
+            ],
+            [
+              "Localização precisa",
+              "Sugestão de Locais e sessões próximos",
+              "Consentimento"
+            ],
+            [
+              "Cookies não essenciais",
+              "Análise e publicidade",
+              "Consentimento"
+            ],
+            [
+              "Defesa em processos e atendimento a autoridades",
+              "Guarda de provas, resposta a ordens judiciais",
+              "Exercício regular de direitos; obrigação legal"
+            ],
+            [
+              "Pesquisa de satisfação",
+              "NPS e avaliações",
+              "Legítimo interesse"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.1. Legítimo interesse. Quando usamos essa base, avaliamos o equilíbrio entre nosso interesse e seus direitos e liberdades, usamos o mínimo de dados e disponibilizamos meios de oposição. Você pode pedir o relatório dessa avaliação ao Encarregado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.2. Consentimento. Quando a base é o consentimento, ele é livre, informado, inequívoco e separado dos Termos de Uso. Você pode revogá-lo a qualquer momento, de forma simples e gratuita, sem prejudicar o uso de serviços que não dependam dele."
+        },
+        {
+          "kind": "paragraph",
+          "text": "5.3. Novas finalidades. Se quisermos usar seus dados para finalidade não compatível com a original, informaremos e, se necessário, pediremos novo consentimento."
+        }
+      ]
+    },
+    {
+      "id": "secao-6",
+      "title": "6. Dados sensíveis, crianças e adolescentes",
+      "blocks": [
+        {
+          "kind": "heading",
+          "text": "6.1. Dados pessoais sensíveis"
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.1.1. Regra geral. Não coletamos dados sensíveis (origem racial ou étnica, convicção religiosa, opinião política, filiação sindical, dados de saúde ou vida sexual, genéticos ou biométricos) como parte do funcionamento comum da plataforma."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.1.2. Deficiência e acessibilidade. Quando você solicita meia-entrada de pessoa com deficiência, acompanhante ou recursos de acessibilidade, informações sobre deficiência podem ser tratadas como dado de saúde. Nesses casos: (a) coletamos o mínimo necessário, sem exigir diagnóstico detalhado, bastando o documento que comprove o direito; (b) usamos apenas para validar o benefício ou atender o recurso; (c) restringimos o acesso a pessoal autorizado; (d) usamos como base legal o cumprimento de obrigação legal, a tutela da saúde ou o consentimento específico e destacado, conforme o caso; e (e) guardamos pelo menor tempo possível, conforme o item 10."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.1.3. Alergias e restrições alimentares. Se você as informar em um pedido, usaremos o dado apenas para preparar e atender aquele pedido, sem criar perfil de saúde."
+        },
+        {
+          "kind": "heading",
+          "text": "6.2. Crianças e adolescentes"
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.2.1. Melhor interesse. O tratamento de dados de crianças (até 12 anos incompletos) e adolescentes (de 12 a 18 anos) ocorre em seu melhor interesse, conforme o art. 14 da LGPD, o ECA e a Lei nº 15.211/2025."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.2.2. Quem pode ter conta."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Maiores de 18 anos e emancipados: conta própria.",
+            "16 e 17 anos: conta assistida, vinculada ao responsável legal, que consente com o tratamento.",
+            "Menores de 16 anos: sem conta própria; os dados são tratados a partir da conta do responsável, com consentimento específico e em destaque dado por pelo menos um dos pais ou responsável legal."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.2.3. Verificação de idade. Usamos meios proporcionais ao risco (declaração com conferimento, documento do responsável, validação de CPF) para identificar menores, sem coletar dados além do necessário."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.2.4. Proteções adotadas para menores."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Sem publicidade direcionada baseada em perfilamento e sem uso de dados de menores para marketing comportamental.",
+            "Configurações de privacidade no nível mais protetivo por padrão.",
+            "Bloqueio de conteúdo acima da classificação indicativa, controle parental e PIN para compras e reproduções.",
+            "Sem técnicas que estimulem uso excessivo ou compras por impulso (por exemplo, contadores de urgência enganosos).",
+            "Coleta de localização precisa desativada por padrão.",
+            "Sem compartilhamento de dados com terceiros para fins comerciais."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.2.5. Direitos do responsável. O pai, mãe ou responsável pode, a qualquer momento, pedir acesso, correção, exclusão ou revogação do consentimento sobre os dados do menor, pelo contato do Encarregado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "6.2.6. Dados coletados indevidamente. Se identificarmos dados de menor de 16 anos coletados sem o consentimento do responsável, eliminaremos esses dados, salvo obrigação legal em contrário."
+        }
+      ]
+    },
+    {
+      "id": "secao-7",
+      "title": "7. Cookies e tecnologias semelhantes",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "7.1. O que são. Cookies são pequenos arquivos gravados no seu navegador ou aparelho. Tecnologias semelhantes incluem SDKs em aplicativos, pixels, tags e armazenamento local."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.2. Categorias que usamos."
+        },
+        {
+          "kind": "table",
+          "columns": [
+            "Categoria",
+            "Para que serve",
+            "Exemplos",
+            "Consentimento",
+            "Prazo de referência"
+          ],
+          "rows": [
+            [
+              "Estritamente necessários",
+              "Login, sessão, carrinho, reserva de assentos, 2FA, segurança e antifraude",
+              "Cookie de sessão, token de segurança",
+              "Não exigido",
+              "Sessão ou até [30 dias]"
+            ],
+            [
+              "Funcionalidade",
+              "Preferências de idioma, acessibilidade, último Local escolhido",
+              "Preferências salvas",
+              "Exigido",
+              "[12 meses]"
+            ],
+            [
+              "Desempenho e análise",
+              "Medir uso, detectar erros, melhorar páginas",
+              "Ferramentas de análise [nome do provedor]",
+              "Exigido",
+              "[13 meses]"
+            ],
+            [
+              "Publicidade e marketing",
+              "Medir campanhas e mostrar ofertas relevantes",
+              "Pixels de campanha [nome do provedor]",
+              "Exigido",
+              "[90 dias a 13 meses]"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.3. Banner e painel de cookies. No primeiro acesso, você escolhe quais categorias aceitar, com opções equivalentes de aceitar, recusar e personalizar, sem desenho que induza a aceitar tudo. Você pode alterar a escolha a qualquer momento no painel \"Preferências de cookies\", no rodapé do site e nas configurações do aplicativo."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.4. Navegador. Também é possível gerenciar cookies nas configurações do navegador. Bloquear cookies essenciais pode impedir login, compra e outras funções."
+        },
+        {
+          "kind": "paragraph",
+          "text": "7.5. Menores. Cookies de publicidade e perfilamento não são usados em contas de menores de 18 anos."
+        }
+      ]
+    },
+    {
+      "id": "secao-8",
+      "title": "8. Com quem compartilhamos os dados",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "8.1. Não vendemos seus dados pessoais. Compartilhamos apenas o necessário, com base legal, para a finalidade informada, e exigimos dos destinatários o dever de proteção."
+        },
+        {
+          "kind": "table",
+          "columns": [
+            "Destinatário",
+            "O que compartilhamos",
+            "Por quê",
+            "Papel"
+          ],
+          "rows": [
+            [
+              "Instituições de pagamento e subadquirentes [nomes]",
+              "Dados de pagamento, valor, identificação do pagador",
+              "Processar pagamentos, estornos e conciliar",
+              "Operador ou controlador, conforme o caso"
+            ],
+            [
+              "Antifraude e validação de identidade [nomes]",
+              "CPF, e-mail, telefone, IP, dispositivo, histórico de transações",
+              "Prevenir fraude e confirmar identidade",
+              "Operador"
+            ],
+            [
+              "Locais de exibição, Supervisores e Colaboradores",
+              "Dados de ingresso, assento, meia-entrada e retirada de pedidos",
+              "Validar entrada e atender no Local",
+              "Controlador (equipe)"
+            ],
+            [
+              "Fornecedores e transportadoras",
+              "Dados logísticos: Local, sessão, horário, itens e quantidades; contato do responsável pelo recebimento",
+              "Entregar insumos e equipamentos",
+              "Operador ou controlador independente"
+            ],
+            [
+              "Titular e Membros de planos",
+              "Ver item 15",
+              "Gestão do plano",
+              "Controlador"
+            ],
+            [
+              "Provedores de tecnologia [hospedagem em nuvem, e-mail, SMS, WhatsApp, push, análise, atendimento]",
+              "Dados necessários ao serviço contratado",
+              "Operar a plataforma",
+              "Operador"
+            ],
+            [
+              "Contabilidade, auditoria e consultoria jurídica",
+              "Dados fiscais e de transações",
+              "Cumprir obrigações e defender direitos",
+              "Operador ou controlador independente"
+            ],
+            [
+              "Parceiros de promoções",
+              "Somente dados indicados por você",
+              "Ofertas conjuntas, mediante consentimento específico",
+              "Controlador conjunto ou independente"
+            ],
+            [
+              "Autoridades públicas e Poder Judiciário",
+              "Dados exigidos por lei ou ordem judicial",
+              "Cumprir obrigação legal",
+              "Controlador independente"
+            ],
+            [
+              "Sucessores empresariais",
+              "Dados necessários à continuidade do serviço",
+              "Fusão, aquisição ou reorganização, com aviso a você",
+              "Controlador"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.2. Contratos com operadores. Todos os operadores assinam contrato com cláusulas de proteção de dados: uso apenas conforme nossas instruções, confidencialidade, medidas de segurança, apoio no atendimento de direitos de titulares, comunicação de incidentes e eliminação ou devolução dos dados ao fim do contrato."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.3. Fornecedores e dados de Clientes. Por regra, os Fornecedores recebem apenas informações de pedidos agregadas por Local e sessão. Dados pessoais de Clientes só são enviados quando indispensáveis à entrega (por exemplo, retirada identificada) e limitados ao mínimo."
+        },
+        {
+          "kind": "paragraph",
+          "text": "8.4. Lista de operadores. A lista atualizada de categorias e nomes de operadores relevantes pode ser solicitada ao Encarregado."
+        }
+      ]
+    },
+    {
+      "id": "secao-9",
+      "title": "9. Transferência internacional de dados",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "9.1. Alguns provedores de tecnologia (como hospedagem em nuvem, e-mail e análise) podem armazenar ou processar dados fora do Brasil. Nesses casos, a transferência ocorre somente para países ou organismos com grau de proteção adequado ou com garantias previstas no art. 33 da LGPD e no Regulamento de Transferência Internacional de Dados da ANPD (Resolução CD/ANPD nº 19/2024), como cláusulas-padrão contratuais, normas corporativas globais ou outro mecanismo reconhecido."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.2. Você pode pedir ao Encarregado informações sobre os países de destino e as garantias adotadas."
+        },
+        {
+          "kind": "paragraph",
+          "text": "9.3. Sempre que possível, priorizamos regiões de armazenamento no Brasil."
+        }
+      ]
+    },
+    {
+      "id": "secao-10",
+      "title": "10. Por quanto tempo guardamos os dados",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "10.1. Guardamos os dados apenas pelo tempo necessário para cumprir as finalidades, atender obrigações legais e regulatórias e exercer direitos em processos. Depois, eliminamos ou anonimizamos."
+        },
+        {
+          "kind": "table",
+          "columns": [
+            "Tipo de dado",
+            "Prazo de referência",
+            "Fundamento"
+          ],
+          "rows": [
+            [
+              "Dados de cadastro e conta",
+              "Enquanto a conta estiver ativa e, depois do encerramento, por até [5 anos]",
+              "Defesa em processos (prescrição do CDC)"
+            ],
+            [
+              "Compras, pedidos, notas fiscais e registros contábeis",
+              "[5 anos], ou prazo legal maior",
+              "Obrigação tributária e contábil"
+            ],
+            [
+              "Registros de acesso à aplicação (logs)",
+              "Mínimo de 6 meses",
+              "Marco Civil da Internet, art. 15"
+            ],
+            [
+              "Histórico de reprodução de filmes",
+              "Enquanto durar o direito de acesso e até [12 meses] depois, em forma reduzida",
+              "Execução de contrato; legítimo interesse"
+            ],
+            [
+              "Documentos de meia-entrada",
+              "Até [90 dias] após a validação, mantendo apenas o registro de que a validação ocorreu",
+              "Obrigação legal; minimização"
+            ],
+            [
+              "Informações sobre deficiência e acessibilidade",
+              "Pelo tempo necessário ao atendimento ou ao benefício, e até [90 dias] depois",
+              "Minimização; proteção de dado sensível"
+            ],
+            [
+              "Dados de planos, cobranças e inadimplência",
+              "Durante o plano e por até [5 anos] depois",
+              "Execução de contrato; exercício regular de direitos"
+            ],
+            [
+              "Chamados, protocolos e gravações de atendimento",
+              "[5 anos] (gravações: [12 meses], salvo disputa)",
+              "Comprovação e defesa"
+            ],
+            [
+              "Dados de segurança e antifraude",
+              "Até [5 anos] após o evento, ou enquanto durar investigação",
+              "Legítimo interesse; prevenção à fraude"
+            ],
+            [
+              "Marketing e preferências de comunicação",
+              "Até a revogação do consentimento; registro de consentimento por [5 anos]",
+              "Consentimento; defesa"
+            ],
+            [
+              "Localização precisa",
+              "Não armazenada de forma permanente; usada apenas no momento da consulta",
+              "Consentimento; minimização"
+            ],
+            [
+              "Imagens de câmeras de segurança",
+              "[30 a 90 dias]",
+              "Legítimo interesse; segurança"
+            ],
+            [
+              "Logs de auditoria de perfis operacionais",
+              "[5 anos]",
+              "Segurança e prova"
+            ],
+            [
+              "Dados de Colaboradores",
+              "Durante o vínculo e pelos prazos trabalhistas, previdenciários e legais",
+              "Obrigação legal"
+            ],
+            [
+              "Dados de Fornecedores",
+              "Durante o contrato e por [5 anos] após o término",
+              "Execução de contrato; obrigação legal"
+            ],
+            [
+              "Dados de menores",
+              "Pelo menor tempo necessário; excluídos a pedido do responsável, salvo obrigação legal",
+              "Melhor interesse"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.2. Retenção prolongada. Os dados poderão ser mantidos por prazo maior para cumprir ordem judicial, atender à fiscalização ou defender direitos em processo em andamento."
+        },
+        {
+          "kind": "paragraph",
+          "text": "10.3. Eliminação e anonimização. Terminado o prazo, os dados são eliminados de forma segura (inclusive de backups, no ciclo regular de substituição) ou anonimizados de modo irreversível para uso estatístico."
+        }
+      ]
+    },
+    {
+      "id": "secao-11",
+      "title": "11. Segurança da informação",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "11.1. Adotamos medidas técnicas e administrativas compatíveis com o risco e com o estado da técnica, entre elas:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Controles técnicos"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "criptografia dos dados em trânsito (TLS) e em repouso;",
+            "senhas armazenadas com algoritmo de hash seguro, com sal, sem possibilidade de leitura;",
+            "autenticação em duas etapas (2FA) obrigatória para Administração, Supervisores, Colaboradores e Fornecedores, e exigida para Clientes em operações sensíveis;",
+            "controle de acesso por perfil e princípio do menor privilégio;",
+            "tokenização de dados de pagamento, com processamento por instituições certificadas (padrão PCI DSS);",
+            "registros de auditoria de ações administrativas e operacionais;",
+            "segregação de ambientes (produção, testes e desenvolvimento), sem uso de dados reais de Clientes em testes, ou com mascaramento;",
+            "backups periódicos, com testes de restauração e plano de continuidade;",
+            "monitoramento de segurança, detecção de anomalias e proteção contra bots e ataques de negação de serviço;",
+            "testes de segurança e correção de vulnerabilidades em ciclos regulares."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Controles administrativos"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "política de segurança da informação e de privacidade, revisada periodicamente;",
+            "acordos de confidencialidade com Colaboradores, Supervisores, Fornecedores e operadores;",
+            "treinamento recorrente de equipes em proteção de dados e segurança;",
+            "revisão periódica de acessos e desativação imediata de contas de quem deixou o vínculo;",
+            "avaliação de segurança de provedores antes da contratação;",
+            "privacidade desde a concepção e por padrão (privacy by design and by default) em novas funcionalidades."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.2. Sua parte. Nenhum sistema é totalmente imune a riscos. Você nos ajuda a proteger sua conta usando senha forte e exclusiva, ativando o 2FA, não compartilhando credenciais ou códigos, mantendo o aparelho atualizado e desconfiando de mensagens que peçam dados. A CineAstra nunca pede sua senha nem seu código de 2FA por telefone, e-mail ou mensagem."
+        },
+        {
+          "kind": "paragraph",
+          "text": "11.3. Pagamentos. Os dados completos do cartão são processados diretamente pela instituição de pagamento. A CineAstra guarda apenas token, bandeira, últimos quatro dígitos e status."
+        }
+      ]
+    },
+    {
+      "id": "secao-12",
+      "title": "12. Incidentes de segurança",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "12.1. Plano de resposta. Mantemos um plano de resposta a incidentes, com equipe responsável, procedimentos de contenção, investigação, correção e registro."
+        },
+        {
+          "kind": "paragraph",
+          "text": "12.2. Comunicação. Quando um incidente puder acarretar risco ou dano relevante aos titulares, comunicaremos a ANPD e os titulares afetados nos termos do art. 48 da LGPD e do Regulamento de Comunicação de Incidentes de Segurança (Resolução CD/ANPD nº 15/2024), em até 3 (três) dias úteis contados do conhecimento de que o incidente afetou dados pessoais, com possibilidade de complementação posterior."
+        },
+        {
+          "kind": "paragraph",
+          "text": "12.3. Conteúdo da comunicação. Informaremos: natureza do incidente e dos dados afetados; titulares envolvidos; medidas técnicas e de segurança adotadas; riscos relacionados; motivos de eventual demora; e medidas que você pode tomar para se proteger. A comunicação será feita por e-mail, pela Plataforma ou outro meio adequado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "12.4. Registro. Todos os incidentes, mesmo os que não exijam comunicação à ANPD, são registrados e mantidos por no mínimo [5 anos]."
+        }
+      ]
+    },
+    {
+      "id": "secao-13",
+      "title": "13. Seus direitos e como exercê-los",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "13.1. Seus direitos (art. 18 da LGPD). Você pode, a qualquer momento e gratuitamente, solicitar:"
+        },
+        {
+          "kind": "paragraph",
+          "text": "1. Confirmação de que tratamos seus dados;"
+        },
+        {
+          "kind": "paragraph",
+          "text": "2. Acesso aos dados que temos sobre você;"
+        },
+        {
+          "kind": "paragraph",
+          "text": "3. Correção de dados incompletos, inexatos ou desatualizados;"
+        },
+        {
+          "kind": "paragraph",
+          "text": "4. Anonimização, bloqueio ou eliminação de dados desnecessários, excessivos ou"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "tratados em desconformidade com a lei;"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "5. Portabilidade dos dados a outro fornecedor, mediante requisição expressa e nos"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "termos da regulamentação da ANPD;"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "6. Eliminação dos dados tratados com base no consentimento;"
+        },
+        {
+          "kind": "paragraph",
+          "text": "7. Informação sobre as entidades públicas e privadas com as quais compartilhamos seus"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "dados;"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "8. Informação sobre a possibilidade de não fornecer consentimento e sobre as"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "consequências da recusa;"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "9. Revogação do consentimento, a qualquer momento;"
+        },
+        {
+          "kind": "paragraph",
+          "text": "10. Oposição a tratamento realizado com fundamento em outra base legal, se houver"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "descumprimento da lei;"
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "11. Revisão de decisões tomadas exclusivamente com base em tratamento automatizado"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "que afetem seus interesses (art. 20)."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.2. Como solicitar."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Pela área \"Privacidade\" da sua conta (acesso, correção, exportação e exclusão de dados, e gerenciamento de consentimentos);",
+            "Pelo e-mail do Encarregado: [privacidade@cineastra.com.br];",
+            "Por Chamado, escolhendo a categoria \"Privacidade e dados\"."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.3. Identificação. Para sua segurança, podemos pedir a confirmação da sua identidade (por exemplo, por 2FA ou envio de documento) antes de atender, usando apenas o necessário para essa verificação. Pedidos de terceiros em seu nome exigem procuração ou autorização válida; pais e responsáveis podem agir por menores."
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.4. Prazos. Confirmaremos o recebimento imediatamente e responderemos:"
+        },
+        {
+          "kind": "list",
+          "items": [
+            "em formato simplificado, imediatamente, quando o pedido for de confirmação de existência ou acesso aos dados;",
+            "por declaração completa e clara, em até 15 dias contados do requerimento (art. 19, II, da LGPD);",
+            "para os demais direitos, no prazo mais curto possível e, no máximo, em [15 dias], salvo prazo menor fixado pela ANPD. Se o pedido for complexo, informaremos o motivo e a nova previsão."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.5. Formato. Os dados serão entregues em formato estruturado, de uso comum e leitura por máquina (por exemplo, CSV ou JSON), por meio seguro. Você pode escolher receber por meio eletrônico ou impresso."
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.6. Limites e recusas. Em alguns casos, não poderemos atender integralmente: quando a lei exigir a guarda do dado (fiscal, logs de acesso, dados necessários à defesa em processo), quando houver direito de terceiros ou segredo comercial ou industrial (que será informado), ou quando o pedido for manifestamente infundado ou repetitivo. Sempre explicaremos o motivo, o que podemos fazer e por quanto tempo o dado será mantido."
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.7. Efeitos da exclusão. A eliminação de dados necessários ao serviço pode encerrar sua conta e impedir o uso de ingressos futuros, planos e títulos digitais. Informaremos as consequências e os valores a reembolsar, conforme os Termos de Uso."
+        },
+        {
+          "kind": "paragraph",
+          "text": "13.8. Reclamação à ANPD. Você tem o direito de apresentar reclamação à Autoridade Nacional de Proteção de Dados (gov.br/anpd), sem prejuízo de recorrer ao Procon, ao consumidor.gov.br ou ao Poder Judiciário."
+        }
+      ]
+    },
+    {
+      "id": "secao-14",
+      "title": "14. Decisões automatizadas, perfis e recomendações",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "14.1. Onde usamos decisões automatizadas."
+        },
+        {
+          "kind": "list",
+          "items": [
+            "Antifraude: análise de risco que pode bloquear, pedir confirmação adicional ou recusar uma compra suspeita.",
+            "Limites de compra: detecção de padrões de compra em massa ou por bots.",
+            "Recomendações: sugestão de filmes e sessões com base no seu histórico e preferências."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "14.2. Seus direitos. Você pode solicitar informações claras e adequadas sobre os critérios e procedimentos utilizados e a revisão por uma pessoa de decisões que afetem seus interesses, como a recusa de uma compra ou o bloqueio de conta. Resguardamos segredos comerciais e de segurança, mas nunca de forma a impedir o exercício dos seus direitos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "14.3. Recomendações. Você pode desativar as recomendações personalizadas nas configurações de privacidade, passando a ver sugestões genéricas, baseadas apenas em popularidade e no Local."
+        },
+        {
+          "kind": "paragraph",
+          "text": "14.4. Sem discriminação. Não usamos dados sensíveis nem critérios discriminatórios para decisões automatizadas, e revisamos periodicamente os modelos para reduzir vieses."
+        }
+      ]
+    },
+    {
+      "id": "secao-15",
+      "title": "15. Planos compartilhados e privacidade entre Titular e Membros",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "15.1. O que o Titular vê. O Titular pode ver: nome e e-mail dos Membros; status de cada um (convite pendente, ativo, suspenso); a modalidade de pagamento e o status do pagamento da parte de cada Membro (em dia ou em atraso); e a quantidade de benefícios do plano utilizados no total."
+        },
+        {
+          "kind": "paragraph",
+          "text": "15.2. O que o Titular não vê. O Titular não tem acesso ao histórico de filmes assistidos, aos ingressos individuais, aos locais frequentados, a dados de pagamento do Membro (como cartão), nem a comunicações pessoais do Membro com a CineAstra. Quando um benefício é usado, o Titular vê apenas o consumo agregado do plano."
+        },
+        {
+          "kind": "paragraph",
+          "text": "15.3. O que os Membros veem. Os Membros veem o nome do Titular, as regras do plano, o valor e a data de cobrança da sua parte (na Modalidade B) e a lista de pessoas no plano apenas pelo primeiro nome e inicial do sobrenome, salvo se todos concordarem em exibir mais."
+        },
+        {
+          "kind": "paragraph",
+          "text": "15.4. Dados do Membro fornecidos pelo Titular. O Titular declara ter autorização para informar nome, CPF e e-mail do Membro. Antes de qualquer cobrança ou uso, o Membro recebe um convite e só integra o plano com seu aceite. Se não aceitar, os dados informados são eliminados em até [30 dias]."
+        },
+        {
+          "kind": "paragraph",
+          "text": "15.5. Inadimplência. Quando um integrante está inadimplente, a CineAstra informa ao Titular apenas o necessário para a gestão do plano (status de atraso e consequências), sem detalhes das transações."
+        },
+        {
+          "kind": "paragraph",
+          "text": "15.6. Saída do plano. Ao sair do plano, o Membro deixa de ser visível ao Titular no ciclo seguinte. Dados necessários à cobrança, à prova de pagamento e à defesa de direitos são mantidos conforme o item 10."
+        }
+      ]
+    },
+    {
+      "id": "secao-16",
+      "title": "16. Sessões, Locais e câmeras de segurança",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "16.1. Câmeras. Os Locais podem usar câmeras de videomonitoramento em áreas comuns (entrada, bilheteria, bomboniere, corredores, estacionamento), para a segurança de pessoas e do patrimônio, com aviso visual. Não há câmeras em banheiros, trocadores ou locais análogos e não há gravação de imagem dentro das salas durante as exibições, salvo por exigência de segurança divulgada no Local."
+        },
+        {
+          "kind": "paragraph",
+          "text": "16.2. Uso e acesso. As imagens são acessadas apenas por pessoal autorizado e usadas para segurança, apuração de ocorrências e atendimento a autoridades. São guardadas por [30 a 90 dias], salvo se forem necessárias para apuração de ocorrência, caso em que serão mantidas até o término do procedimento."
+        },
+        {
+          "kind": "paragraph",
+          "text": "16.3. Solicitação de imagens. Você pode pedir acesso a imagens em que aparece, por Chamado, informando data, horário e local. O fornecimento pode ser limitado para proteger a privacidade de terceiros."
+        },
+        {
+          "kind": "paragraph",
+          "text": "16.4. Validação de ingressos. A validação de ingressos por QR Code e a conferência de documentos são feitas por Colaboradores. Os documentos são apenas visualizados, sem cópia ou foto, salvo se você concordar com o envio prévio, nos termos do item 6."
+        },
+        {
+          "kind": "paragraph",
+          "text": "16.5. Ocorrências. Registros de ocorrências (acidentes, conflitos, achados e perdidos) contêm apenas os dados necessários e são acessados por Supervisores e Administração."
+        }
+      ]
+    },
+    {
+      "id": "secao-17",
+      "title": "17. Comunicações e marketing",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "17.1. Mensagens de serviço. Enviamos mensagens essenciais, como confirmação de compra, alteração ou cancelamento de sessão, lembretes, avisos de cobrança e segurança. Elas decorrem do contrato e não dependem de consentimento de marketing."
+        },
+        {
+          "kind": "paragraph",
+          "text": "17.2. Marketing. Ofertas, novidades, estreias, promoções e pesquisas só são enviadas se você tiver dado consentimento, por canal (e-mail, push, SMS, WhatsApp) e podem ser desativadas a qualquer momento pelo link de descadastro na mensagem ou nas configurações da conta. O descadastro é processado em até [48 horas] e não afeta mensagens de serviço."
+        },
+        {
+          "kind": "paragraph",
+          "text": "17.3. Horários. Evitamos comunicações promocionais fora do horário comercial."
+        },
+        {
+          "kind": "paragraph",
+          "text": "17.4. Sem compartilhamento para marketing de terceiros. Não fornecemos suas informações de contato a terceiros para marketing sem o seu consentimento específico."
+        }
+      ]
+    },
+    {
+      "id": "secao-18",
+      "title": "18. Links e serviços de terceiros",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "A Plataforma pode conter links para sites, redes sociais e serviços de terceiros (como páginas de filmes, trailers, mapas e instituições de pagamento). Esses terceiros têm suas próprias políticas de privacidade, pelas quais a CineAstra não responde. Recomendamos a leitura antes de fornecer dados a eles."
+        }
+      ]
+    },
+    {
+      "id": "secao-19",
+      "title": "19. Governança de privacidade",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "19.1. Programa de governança. A CineAstra mantém programa de governança em privacidade, com políticas internas, Encarregado designado e publicado, treinamento, gestão de riscos e monitoramento."
+        },
+        {
+          "kind": "paragraph",
+          "text": "19.2. Registro das operações. Mantemos o registro das operações de tratamento de dados pessoais (art. 37 da LGPD), com finalidade, base legal, categorias de dados, compartilhamentos, prazos e medidas de segurança."
+        },
+        {
+          "kind": "paragraph",
+          "text": "19.3. Relatório de Impacto (RIPD). Elaboramos o Relatório de Impacto à Proteção de Dados Pessoais para tratamentos de maior risco, como o tratamento de dados de menores, de dados sensíveis em larga escala, o monitoramento por câmeras e o perfilamento para recomendações."
+        },
+        {
+          "kind": "paragraph",
+          "text": "19.4. Privacidade desde a concepção. Novos recursos passam por análise de privacidade antes do lançamento, aplicando minimização, configurações protetivas por padrão e controles de acesso."
+        },
+        {
+          "kind": "paragraph",
+          "text": "19.5. Treinamento. Colaboradores, Supervisores e Administradores são treinados na admissão e periodicamente. Fornecedores com acesso a dados devem seguir as regras do contrato e desta Política."
+        },
+        {
+          "kind": "paragraph",
+          "text": "19.6. Auditoria. Revisamos periodicamente acessos, logs, operadores e processos para garantir conformidade."
+        }
+      ]
+    },
+    {
+      "id": "secao-20",
+      "title": "20. Alterações desta Política",
+      "blocks": [
+        {
+          "kind": "paragraph",
+          "text": "20.1. Podemos atualizar esta Política para refletir mudanças legais, regulatórias, técnicas ou de serviços. A data de vigência no topo identifica a versão atual."
+        },
+        {
+          "kind": "paragraph",
+          "text": "20.2. Avisos. Mudanças relevantes, especialmente as que alterem finalidades, compartilhamentos ou bases legais, serão comunicadas com antecedência mínima de [15 dias], por e-mail e na Plataforma. Quando uma mudança exigir novo consentimento, ele será solicitado novamente, e você poderá recusar sem perder o acesso a serviços que não dependam dele."
+        },
+        {
+          "kind": "paragraph",
+          "text": "20.3. Histórico. As versões anteriores ficam disponíveis para consulta mediante solicitação ao Encarregado."
+        }
+      ]
+    },
+    {
+      "id": "secao-21",
+      "title": "21. Contato, Encarregado e ANPD",
+      "blocks": [
+        {
+          "kind": "list",
+          "items": [
+            "Encarregado de Dados (DPO): [NOME] — [privacidade@cineastra.com.br]",
+            "Atendimento ao Cliente: [atendimento@cineastra.com.br] · [(00) 0000-0000]",
+            "Endereço: [ENDEREÇO COMPLETO]",
+            "Autoridade Nacional de Proteção de Dados (ANPD): gov.br/anpd"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "anexo-i",
+      "title": "Anexo I — Mapa resumido de dados",
+      "blocks": [
+        {
+          "kind": "table",
+          "columns": [
+            "Dado",
+            "Para que usamos",
+            "Base legal",
+            "Compartilhado com",
+            "Prazo de referência"
+          ],
+          "rows": [
+            [
+              "Nome, CPF, data de nascimento",
+              "Conta, um usuário por CPF, nota fiscal, validação de classificação",
+              "Contrato; obrigação legal",
+              "Pagamento, antifraude, contabilidade",
+              "[5 anos] após encerramento"
+            ],
+            [
+              "E-mail e telefone",
+              "Login, 2FA, avisos, atendimento",
+              "Contrato",
+              "Provedores de e-mail, SMS e WhatsApp",
+              "[5 anos] após encerramento"
+            ],
+            [
+              "Senha",
+              "Autenticação",
+              "Contrato",
+              "Ninguém (armazenada com hash)",
+              "Enquanto a conta existir"
+            ],
+            [
+              "Dados de pagamento (token, bandeira, últimos dígitos)",
+              "Cobrança, estorno, conciliação",
+              "Contrato; obrigação legal",
+              "Instituições de pagamento",
+              "[5 anos]"
+            ],
+            [
+              "Ingressos e assentos",
+              "Entrada na sessão",
+              "Contrato",
+              "Local, Colaboradores",
+              "[5 anos]"
+            ],
+            [
+              "Histórico de reprodução",
+              "Retomada, regras do aluguel, recomendações",
+              "Contrato; legítimo interesse",
+              "Provedores de streaming e nuvem",
+              "Até [12 meses] após fim do acesso"
+            ],
+            [
+              "Documento de meia-entrada",
+              "Validação de benefício",
+              "Obrigação legal",
+              "Local (visualização)",
+              "Até [90 dias]"
+            ],
+            [
+              "Dados de acessibilidade",
+              "Atender recurso solicitado",
+              "Contrato; obrigação legal; consentimento",
+              "Local",
+              "Até [90 dias] após o uso"
+            ],
+            [
+              "IP e logs de acesso",
+              "Segurança, obrigação legal",
+              "Obrigação legal; legítimo interesse",
+              "Autoridades, mediante ordem",
+              "Mínimo de 6 meses"
+            ],
+            [
+              "Dados de dispositivo e navegação",
+              "Funcionamento e melhoria",
+              "Legítimo interesse; consentimento (não essenciais)",
+              "Provedores de análise",
+              "[13 meses]"
+            ],
+            [
+              "Localização precisa",
+              "Locais e sessões próximos",
+              "Consentimento",
+              "Nenhum (uso no próprio aparelho ou no momento da consulta)",
+              "Não armazenada"
+            ],
+            [
+              "Dados de Membros de plano",
+              "Gestão do plano",
+              "Contrato",
+              "Titular (limitado)",
+              "Durante o plano + [5 anos]"
+            ],
+            [
+              "Chamados e atendimento",
+              "Suporte e prova",
+              "Contrato; defesa de direitos",
+              "Provedor de atendimento",
+              "[5 anos]"
+            ],
+            [
+              "Imagens de câmeras",
+              "Segurança",
+              "Legítimo interesse",
+              "Autoridades, mediante ordem",
+              "[30 a 90 dias]"
+            ],
+            [
+              "Dados de Colaboradores e Supervisores",
+              "Gestão do vínculo e acesso",
+              "Contrato de trabalho; obrigação legal",
+              "Contabilidade, órgãos públicos",
+              "Prazos legais"
+            ],
+            [
+              "Dados de Fornecedores",
+              "Pedidos, entregas, pagamentos",
+              "Contrato",
+              "Contabilidade",
+              "[5 anos] após o contrato"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "anexo-ii",
+      "title": "Anexo II — Glossário",
+      "blocks": [
+        {
+          "kind": "list",
+          "items": [
+            "ANPD: Autoridade Nacional de Proteção de Dados, órgão federal que fiscaliza o cumprimento da LGPD.",
+            "Anonimização: processo que impede a identificação da pessoa a que o dado se refere.",
+            "Base legal: hipótese autorizada pela LGPD para o tratamento de dados pessoais.",
+            "Consentimento: manifestação livre, informada e inequívoca para uma finalidade determinada.",
+            "Controlador: quem decide como e por que os dados são tratados.",
+            "Operador: quem trata dados em nome do controlador.",
+            "Dado pessoal: informação relacionada a pessoa natural identificada ou identificável.",
+            "Dado pessoal sensível: dado sobre origem racial ou étnica, convicção religiosa, opinião política, filiação sindical, saúde ou vida sexual, genético ou biométrico.",
+            "Encarregado (DPO): pessoa indicada para atuar como canal entre controlador, titulares e ANPD.",
+            "Legítimo interesse: base legal para finalidades legítimas do controlador ou de terceiros, respeitados os direitos do titular.",
+            "Logs de acesso: registros de data, hora e IP de acesso a uma aplicação.",
+            "Titular: pessoa a quem os dados se referem.",
+            "Tratamento: qualquer operação com dados, como coleta, uso, armazenamento, compartilhamento e eliminação.",
+            "2FA: verificação em duas etapas, que exige um segundo fator além da senha."
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "Última atualização: 06 de outubro de 2026."
+        }
+      ]
+    }
+  ],
+  "title": "CineAstra — Política de Privacidade",
+  "versionLine": "Versão 2.0 · Vigência a partir de 06 de outubro de 2026 · Minuta para revisão jurídica",
+  "note": "Nota de preenchimento: os trechos entre colchetes [ ] (razão social, CNPJ, endereço, e-mails, prazos e nomes de provedores) devem ser confirmados pela CineAstra e revisados por advogado ou especialista em proteção de dados antes da publicação. Este documento deve ser lido junto com os Termos de Uso da CineAstra, publicados em arquivo separado."
+}

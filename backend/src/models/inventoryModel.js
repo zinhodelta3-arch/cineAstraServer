@@ -5,7 +5,33 @@ const spec = kind => { if (!config[kind]) throw new TypeError('Item inválido');
 export function createInventoryModel(database) {
     const rows = async (c, sql, args = []) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args = []) => (await rows(c, sql, args))[0] ?? null;
+    const source = {
+        inputs: { table: 'insumos', id: 'id_insumo', eligible: "venda_avulsa=TRUE AND preco>0 AND status='DISPONIVEL'", stock: ',quantidade,quantidade_reservada' },
+        combos: { table: 'combos', id: 'id_combo', eligible: 'ativo=TRUE AND custo_operacional IS NOT NULL AND EXISTS (SELECT 1 FROM combo_itens ci WHERE ci.id_combo=combos.id_combo)', stock: '' }
+    };
     return {
+        snackOffers(c, kind, localId, query) {
+            const { table, id, eligible, stock } = source[kind];
+            const nameFilter = query.q ? "AND nome LIKE ? ESCAPE '!'" : '';
+            const search = query.q ? [`%${query.q.replace(/[!%_]/g, char => `!${char}`)}%`] : [];
+            return rows(c, `SELECT ${id} AS id,nome,preco,oferta_local${stock} FROM ${table}
+                WHERE id_local=? AND ${eligible} AND oferta_local=? AND ${id}>? ${nameFilter}
+                ORDER BY ${id} LIMIT ?`, [localId, query.offered, query.cursor ?? '0', ...search, query.limit + 1]);
+        },
+        snackOffer(c, kind, idValue, localId, lock = false) {
+            const { table, id, eligible, stock } = source[kind];
+            return one(c, `SELECT ${id} AS id,nome,preco,oferta_local${stock} FROM ${table}
+                WHERE id_local=? AND ${id}=? AND ${eligible}${lock ? ' FOR UPDATE' : ''}`, [localId, idValue]);
+        },
+        setSnackOffer(c, kind, localId, idValue, offered) {
+            const { table, id } = source[kind];
+            return c.execute(`UPDATE ${table} SET oferta_local=? WHERE id_local=? AND ${id}=?`, [offered, localId, idValue]);
+        },
+        snackComponents(c, comboId, localId) {
+            return rows(c, `SELECT i.id_insumo AS id,i.nome,i.quantidade,i.quantidade_reservada,i.status,ci.quantidade AS por_combo
+              FROM combo_itens ci JOIN insumos i ON i.id_insumo=ci.id_insumo
+              WHERE ci.id_combo=? AND i.id_local=? ORDER BY i.nome,i.id_insumo`, [comboId, localId]);
+        },
         supervisorLocation: (id, c = database) => one(c, 'SELECT id_local FROM supervisor_locais WHERE id_supervisor = ?', [id]),
         item(kind, id, c = database, lock = false) { const s = spec(kind); return one(c, `SELECT ${s.id},id_fornecedor,id_local,nome,quantidade${kind === 'inputs' ? ',quantidade_reservada,quantidade_minima' : ''},status FROM ${s.table} WHERE ${s.id} = ?${lock ? ' FOR UPDATE' : ''}`, [id]); },
         equipmentCommitment: (id, c = database, lock = false) => one(c, `SELECT id_logistica FROM logistica
@@ -13,13 +39,13 @@ export function createInventoryModel(database) {
             LIMIT 1${lock ? ' FOR SHARE' : ''}`, [id]),
         operational: (supplierId, localId, c = database) => one(c, 'SELECT f.id_fornecedor,f.id_usuario,f.status AS fornecedor_status,u.status AS usuario_status,u.tipo_usuario,l.status AS local_status,fl.status AS vinculo_status FROM fornecedores f JOIN usuarios u ON u.id_usuario = f.id_usuario JOIN locais l ON l.id_local = ? LEFT JOIN fornecedor_locais fl ON fl.id_fornecedor = f.id_fornecedor AND fl.id_local = l.id_local WHERE f.id_fornecedor = ?', [localId,supplierId]),
         supplierByUser: (userId, c = database) => one(c, 'SELECT id_fornecedor,status FROM fornecedores WHERE id_usuario = ?', [userId]),
-        combo: (id, c, lock = false) => one(c, `SELECT id_combo,id_local,ativo FROM combos WHERE id_combo = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
+        combo: (id, c, lock = false) => one(c, `SELECT id_combo,id_local,ativo,oferta_local FROM combos WHERE id_combo = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
         comboItems: (id, c) => rows(c, 'SELECT id_insumo,quantidade FROM combo_itens WHERE id_combo = ? ORDER BY id_insumo', [id]),
         order: (id, c, lock = false) => one(c, `SELECT id_pedido,status FROM pedidos WHERE id_pedido = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
         async inputs(ids, c) {
             const result = [];
             for (const id of [...ids].sort((a,b) => BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0)) {
-                const row = await one(c, 'SELECT id_insumo,id_fornecedor,id_local,quantidade,quantidade_reservada,quantidade_minima,status FROM insumos WHERE id_insumo = ? FOR UPDATE', [id]);
+                const row = await one(c, 'SELECT id_insumo,id_fornecedor,id_local,quantidade,quantidade_reservada,quantidade_minima,status,oferta_local FROM insumos WHERE id_insumo = ? FOR UPDATE', [id]);
                 if (row) result.push(row);
             }
             return result;

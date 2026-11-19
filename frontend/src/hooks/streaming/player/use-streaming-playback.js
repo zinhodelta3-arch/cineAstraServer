@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { streamingRequest } from "@/lib/api/streaming-data.mjs";
 
+const SAVE_INTERVAL_MS = 15000;
+
 export default function useStreamingPlayback({ movie, profileId, access, onProgress }) {
   const [playback, setPlayback] = useState(null);
   const [error, setError] = useState("");
@@ -12,7 +14,7 @@ export default function useStreamingPlayback({ movie, profileId, access, onProgr
   const progress = useRef({ positionSeconds: 0, version: 0 });
   const saving = useRef(false);
   const pending = useRef(null);
-  const lastSaved = useRef(0);
+  const lastAttempt = useRef(0);
   const filmId = movie.id;
   const accessId = access?.id;
 
@@ -31,7 +33,7 @@ export default function useStreamingPlayback({ movie, profileId, access, onProgr
         if (controller.signal.aborted) return;
         if (!source?.url || !source?.expiresAt) throw new Error("Resposta inválida ao iniciar a reprodução.");
         progress.current = { positionSeconds: saved?.positionSeconds || 0, durationSeconds: saved?.durationSeconds, version: saved?.version || 0 };
-        lastSaved.current = 0;
+        lastAttempt.current = 0;
         setPlayback({ ...source, requestedFilmId: filmId, initialPosition: saved?.completed ? 0 : progress.current.positionSeconds });
       } catch (cause) {
         if (!controller.signal.aborted) {
@@ -51,7 +53,7 @@ export default function useStreamingPlayback({ movie, profileId, access, onProgr
     if (!Number.isSafeInteger(duration) || duration <= 0 || duration > movie.durationSeconds) return;
     const seconds = Math.max(0, Math.min(duration, Math.floor(position)));
     if (!seconds && !progress.current.version) return;
-    if (!force && Date.now() - lastSaved.current < 15000) return;
+    if (!force && Date.now() - lastAttempt.current < SAVE_INTERVAL_MS) return;
     pending.current = { seconds, duration };
     if (saving.current) return;
     saving.current = true;
@@ -60,6 +62,8 @@ export default function useStreamingPlayback({ movie, profileId, access, onProgr
         const next = pending.current;
         pending.current = null;
         if (next.seconds === progress.current.positionSeconds && next.duration === progress.current.durationSeconds) continue;
+        // A próxima atualização do player respeita o intervalo mesmo se a gravação falhar.
+        lastAttempt.current = Date.now();
         try {
           const saved = await streamingRequest(`/profiles/${profileId}/progress/${movie.id}`, {
             method: "PUT", keepalive: true,
@@ -67,7 +71,6 @@ export default function useStreamingPlayback({ movie, profileId, access, onProgr
               ...(youtube ? { playbackDurationSeconds: next.duration } : {}) },
           });
           progress.current = { positionSeconds: saved.positionSeconds, durationSeconds: saved.durationSeconds, version: saved.version };
-          lastSaved.current = Date.now();
           setSaveError("");
           onProgress?.(saved);
         } catch (cause) {

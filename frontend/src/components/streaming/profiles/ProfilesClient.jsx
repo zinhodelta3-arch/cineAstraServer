@@ -2,7 +2,8 @@
 
 import useStreamingProfiles from "@/hooks/streaming/profiles/use-streaming-profiles";
 import { Button } from "@/components/ui/button";
-import { MAX_PROFILES, avatarSource } from "./profile-data";
+import { MAX_PROFILES } from "./profile-data";
+import StreamingAvatar from "./streaming-avatar";
 import ProfileIcon from "./profile-icon";
 import Modal from "./profile-modal";
 import ProfileEditor from "./profile-editor";
@@ -27,8 +28,8 @@ export default function ProfilesClient({ onSelectProfile, showHeader = true }) {
     <footer className="sp-footer"><span>CINEASTRA <span className="sp-footer-star">✦</span> ALÉM DA TELA</span><div className="sp-footer-perf" aria-hidden="true" /><span>SUA HISTÓRIA. SEU PLAY.</span></footer>
     <div className={`sp-toast ${notice ? "is-visible" : ""}`} role="status" aria-live="polite">{notice && <><ProfileIcon name="film" /><span>{notice}</span><button className="sp-icon-button" aria-label="Fechar aviso" onClick={dismissNotice}><ProfileIcon name="close" /></button></>}</div>
     {editor && <ProfileEditor key={editor === "new" ? "new" : editor.id} profile={editor === "new" ? null : editor} profiles={profiles} onClose={closeEditor} onSave={save} returnFocus={returnFocus} onDelete={requestDelete} />}
-    {deleting && <Modal open small title="Fim dessa história?" description={`Deseja excluir o perfil ${deleting.name}? A foto e as preferências deste perfil serão removidas. Essa ação não pode ser desfeita.`} returnFocus={manageRef} onClose={cancelDelete}>
-      <div className="sp-delete-profile"><img src={avatarSource(deleting)} alt="" /><div><strong>{deleting.name}</strong><span>Perfil do streaming</span></div><ProfileIcon name="trash" /></div><p className="sp-error" role="alert">{deleteError}</p><div className="sp-dialog-actions"><Button type="button" className="sp-btn sp-btn-outline" variant="outline" onClick={cancelDelete}>Manter perfil</Button><Button type="button" className="sp-btn sp-btn-destructive" variant="destructive" onClick={remove}><ProfileIcon name="trash" /> Sim, excluir perfil</Button></div>
+    {deleting && <Modal open small title="Fim dessa história?" description={`Deseja excluir o perfil ${deleting.name}? As preferências e o histórico deste perfil serão removidos. Essa ação não pode ser desfeita.`} returnFocus={manageRef} onClose={cancelDelete}>
+      <div className="sp-delete-profile"><StreamingAvatar avatar={deleting.avatar} /><div><strong>{deleting.name}</strong><span>Perfil do streaming</span></div><ProfileIcon name="trash" /></div><p className="sp-error" role="alert">{deleteError}</p><div className="sp-dialog-actions"><Button type="button" className="sp-btn sp-btn-outline" variant="outline" onClick={cancelDelete}>Manter perfil</Button><Button type="button" className="sp-btn sp-btn-destructive" variant="destructive" onClick={remove}><ProfileIcon name="trash" /> Sim, excluir perfil</Button></div>
     </Modal>}
   </main>;
 }
