@@ -12,7 +12,8 @@ function target(method, parts, search) {
   if (method === 'POST' && parts.length === 1 && parts[0] === 'orders') return '/admin/sales/orders';
   if (method === 'PATCH' && parts.length === 2 && parts[0] === 'orders' && id(parts[1])) return `/admin/sales/orders/${parts[1]}`;
   if (parts.length === 3 && id(parts[1])) {
-    if (parts[0] === 'orders' && ['cancel','refunds'].includes(parts[2]) && method === 'POST') return `/admin/sales/orders/${parts[1]}/${parts[2]}`;
+    if (['orders','payments','refunds'].includes(parts[0]) && parts[2]==='archive' && method==='POST') return `/admin/sales/${parts[0]}/${parts[1]}/archive`;
+    if (parts[0] === 'orders' && ['cancel','refunds','simulated-pix'].includes(parts[2]) && method === 'POST') return `/admin/sales/orders/${parts[1]}/${parts[2]}`;
     if (parts[0] === 'payments' && (parts[2] === 'notes' && ['GET','POST'].includes(method) || parts[2] === 'reconcile' && method === 'POST')) return `/admin/sales/payments/${parts[1]}/${parts[2]}`;
   }
   if (parts[0] !== 'refunds') return null;
@@ -37,9 +38,10 @@ async function handle(request, { params }) {
       try { body = JSON.parse(raw); } catch { return json({ message: 'Dados inválidos.' }, 400); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
     }
-    const createsRecord = method === 'POST' && (path === '/admin/sales/orders' || path.endsWith('/notes'));
+    const simulatedPix=method==='POST'&&path.endsWith('/simulated-pix');
+    const createsRecord = method === 'POST' && (path === '/admin/sales/orders' || path.endsWith('/notes') || simulatedPix);
     const refundCreation=method==='POST'&&path.endsWith('/refunds');
-    const idempotencyKey=refundCreation?request.headers.get('Idempotency-Key')??undefined:undefined;
+    const idempotencyKey=refundCreation||simulatedPix?request.headers.get('Idempotency-Key')??undefined:undefined;
     return json(await backendAuth(path, { token, method, body, idempotencyKey }), refundCreation ? 202 : createsRecord ? 201 : 200);
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;

@@ -17,7 +17,6 @@ export function useSeatSelection(session) {
     } catch { /* Uma seleção inválida começa vazia. */ }
     return [];
   });
-  const [zoom, setZoom] = useState(100);
   const [error, setError] = useState("");
   const [continuing, setContinuing] = useState(false);
 
@@ -47,9 +46,5 @@ export function useSeatSelection(session) {
     router.push(user ? "/cinema/sessao/ingressos" : "/auth/login?next=%2Fcinema%2Fsessao%2Fingressos");
   }
 
-  const zoomOut = () => setZoom((value) => Math.max(80, value - 10));
-  const zoomIn = () => setZoom((value) => Math.min(150, value + 10));
-  const changeZoom = (event) => setZoom(Number(event.target.value));
-
-  return { selected, zoom, setZoom, zoomOut, zoomIn, changeZoom, error, continuing, checkingSession: loading, selectSeat, continueToTickets };
+  return { selected, error, continuing, checkingSession: loading, selectSeat, continueToTickets };
 }

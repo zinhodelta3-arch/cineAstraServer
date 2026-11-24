@@ -15,10 +15,26 @@ export const PASSWORD = 'Fixture!Password123';
 const same = (a, b) => Buffer.from(a).equals(Buffer.from(b));
 export async function identityFixture(overrides = {}) {
     const config = validateEnv(testEnvironment({ BCRYPT_COST: '10', TWO_FACTOR_ENCRYPTION_KEY: randomBytes(32).toString('base64'), TERMS_VERSION: 'fixture-v1', PRIVACY_VERSION: 'fixture-v1', IDENTITY_LEGAL_BASIS: 'Fixture isolada', RATE_LIMIT_MAX: '1000', ...overrides.env }));
-    let state = { users: [], sessions: [], factors: [], challenges: [], recoveries: [], addresses: [], contacts: [], preferences: {}, consents: [], ages: [], guardians: [], controls: {}, authorizations: [], privacy: [], events: [] };
+    let state = { users: [], sessions: [], factors: [], challenges: [], recoveries: [], addresses: [], contacts: [], preferences: {}, consents: [], ages: [], guardians: [], controls: {}, authorizations: [], privacy: [], events: [], notifications: [] };
     let sequence = 100, chain = Promise.resolve();
     const next = () => String(++sequence);
-    const connection = { async execute(sql, params) { state.events.push({ sql, params }); return [{ affectedRows: 1 }]; } };
+    const connection = {
+        async execute(sql, params) {
+            state.events.push({ sql, params });
+            if(sql.startsWith('INSERT INTO notificacoes')) {
+                const [userId,title,message,type,key,destination]=params;
+                if(!state.notifications.some(row=>row.id_usuario===userId&&row.dedupe_key===key)) {
+                    state.notifications.push({id_notificacao:String(state.notifications.length+1),id_usuario:userId,titulo:title,
+                        mensagem:message,tipo:type,dedupe_key:key,destino:destination,lida:false,data_envio:'2026-10-08 00:00:00'});
+                }
+            }
+            if(sql.includes('FROM notificacoes n WHERE')) {
+                const [userId,key]=params;
+                return [state.notifications.filter(row=>row.id_usuario===userId&&row.dedupe_key===key)];
+            }
+            return [{ affectedRows: 1 }];
+        }
+    };
     const database = {
         async execute(sql, values) {
             if (sql.includes('FROM usuarios')) { const u = state.users.find(u => u.id_usuario === String(values[0])); return [u ? [u] : []]; }

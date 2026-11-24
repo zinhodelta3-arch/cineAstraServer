@@ -7,6 +7,12 @@ export function createTeamController(service) {
         list: async (req, res) => success(res, await service.listTeams(req.teamQuery, context(req))),
         available: async (req, res) => success(res, await service.available(req.teamQuery, context(req))),
         ownRequests: async (req, res) => success(res, await service.ownRequests(req.teamQuery, context(req))),
+        eligibleSessions: async (req,res) => success(res,await service.eligibleSessions(req.teamQuery,context(req))),
+        ownInvitations: async (req,res) => success(res,await service.ownInvitations(req.teamQuery,context(req))),
+        localCollaborators:async(req,res)=>success(res,await service.localCollaborators(req.teamQuery,context(req))),
+        createCollaborator:async(req,res)=>success(res,await service.createCollaborator(req.params.id,req.input,context(req)),201),
+        editCollaborator:async(req,res)=>success(res,await service.editCollaborator(req.params.id,req.input,context(req))),
+        deactivateCollaborator:async(req,res)=>{await service.deactivateCollaborator(req.params.id,context(req));res.sendStatus(204);},
         get: async (req, res) => success(res, await service.team(req.params.id, context(req))),
         create: async (req, res) => { const data = await service.create(req.input, context(req)); res.location(`/api/teams/${data.id_equipe}`); success(res, data, 201); },
         patch: async (req, res) => success(res, await service.patch(req.params.id, req.input, context(req))),
@@ -18,6 +24,7 @@ export function createTeamController(service) {
         request: async (req, res) => { const data = await service.propose(req.params.id, req.input, 'SOLICITACAO', context(req)); success(res, data, 201); },
         invitation: async (req, res) => { const data = await service.propose(req.params.id, req.input, 'CONVITE', context(req)); success(res, data, 201); },
         decision: async (req, res) => success(res, await service.decide(req.params.id, req.params.entryId, req.input, context(req))),
+        editEntry: async (req,res) => success(res,await service.editEntry(req.params.id,req.params.entryId,req.input,context(req))),
         cancelEntry: async (req, res) => { await service.cancelEntry(req.params.id, req.params.entryId, context(req)); res.sendStatus(204); }
     };
 }

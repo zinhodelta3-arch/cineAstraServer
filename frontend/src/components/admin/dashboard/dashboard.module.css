@@ -97,7 +97,7 @@
 .bottom { display: grid; gap: 16px; }
 .movieTablePanel { padding: 0; overflow: hidden; }
 .movieTablePanel .panelHeader { margin: 0; padding: 22px 24px 0; }
-.tableToolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 24px 18px; }
+.tableToolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 24px 18px; }
 .tableSearch { display: flex; align-items: center; gap: 9px; width: min(100%, 290px); min-height: 38px; padding: 0 11px; border: 1px solid var(--border); border-radius: 7px; color: var(--muted-foreground); }
 .tableSearch:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
 .tableSearch input { width: 100%; min-width: 0; background: transparent; color: var(--foreground); font-size: 12px; outline: none; }

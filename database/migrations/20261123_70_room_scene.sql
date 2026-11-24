@@ -1,0 +1,1 @@
+ALTER TABLE salas ADD COLUMN cena_3d JSON NULL;

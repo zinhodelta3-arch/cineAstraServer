@@ -40,11 +40,11 @@ export function createTaskService({ model, identity }) {
         await model.event(c, { taskId, actorId: actor.id, action, before, after, responsibleId });
         await identity.audit(c, `TASK.${action}`, taskId, context);
     }
-    async function mutate(teamId, context, operation) {
+    async function mutate(teamId, context, operation, allowAdminMaintenance=false) {
         return identity.transaction(async c => {
             const actor = asActor(await identity.activeActor(c, context));
             const team = await access(c, teamId, actor, true);
-            if (!active(team)) throw conflict('Equipe ou sessão não admite alteração de chamados');
+            if (!active(team) && !(allowAdminMaintenance && actor.tipo==='ADMIN')) throw conflict('Equipe ou sessão não admite alteração de chamados');
             return operation(c, actor, team);
         }, context);
     }
@@ -69,11 +69,11 @@ export function createTaskService({ model, identity }) {
             return mutate(teamId, context, async (c, actor, team) => {
                 const task = await taskInTeam(c, team, id, true);
                 if (!manager(actor, team) && actor.id !== idString(task.id_criador)) throw ApiError.acessoNegado();
-                if (task.status !== 'ABERTO') throw conflict('Só chamado aberto pode ser editado');
+                if (!(actor.tipo==='ADMIN'?['ABERTO','EM_ANDAMENTO']:['ABERTO']).includes(task.status)) throw conflict('Este chamado já foi concluído ou cancelado');
                 await model.update(c, teamId, id, input);
                 await record(c, id, actor, 'EDITADO', task.status, task.status, task.id_responsavel, context);
                 return taskDto(await taskInTeam(c, team, id));
-            });
+            },true);
         },
         async assign(teamId, id, input, context) {
             return mutate(teamId, context, async (c, actor, team) => {
@@ -122,10 +122,11 @@ export function createTaskService({ model, identity }) {
             return mutate(teamId, context, async (c, actor, team) => {
                 const task = await taskInTeam(c, team, id, true);
                 if (!manager(actor, team) && actor.id !== idString(task.id_criador)) throw ApiError.acessoNegado();
-                if (task.status !== 'ABERTO' || task.id_responsavel != null) throw conflict('Só chamado aberto e não atribuído pode ser cancelado');
+                if (actor.tipo==='ADMIN' ? !['ABERTO','EM_ANDAMENTO'].includes(task.status)
+                    : task.status !== 'ABERTO' || task.id_responsavel != null) throw conflict('O chamado não pode ser cancelado neste estado');
                 await model.update(c, teamId, id, { status: 'CANCELADO', data_fechamento: new Date() });
-                await record(c, id, actor, 'CANCELADO', 'ABERTO', 'CANCELADO', null, context);
-            });
+                await record(c, id, actor, 'CANCELADO', task.status, 'CANCELADO', task.id_responsavel, context);
+            },true);
         },
         async history(teamId, id, q, context) {
             const team = await access(undefined, teamId, readActor(context));

@@ -41,9 +41,11 @@ export function createPricingService({model,identity,simulated=false}){
     async function admin(c,context){const a=await identity.activeActor(c,context);if(a.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();return a;}
     const tx=(context,fn)=>identity.transaction(c=>fn(c),context);
     const publicQuote=publicPricingQuote;
-    async function quoteWithConnection(c,input,context,{trustedHalf=false,allowDeclaredHalf=false,lockCoupon=false}={}){
-        const actor=await identity.activeActor(c,context);
-        const plan=await model.activePlan(actor.id_usuario,c);
+    async function quoteWithConnection(c,input,context,{trustedHalf=false,allowDeclaredHalf=false,lockCoupon=false,guest=false}={}){
+        const actor=guest?null:await identity.activeActor(c,context);
+        const accountPricing=actor?.tipo_usuario==='CLIENTE'||actor?.tipo_usuario==='ADMIN';
+        const plan=accountPricing?await model.activePlan(actor.id_usuario,c):null;
+        const terms=plan?.contrato_snapshot?(typeof plan.contrato_snapshot==='string'?JSON.parse(plan.contrato_snapshot):plan.contrato_snapshot):null;
         let coupon=null,couponBps=0;
         if(input.couponCode){
             coupon=await model.coupon(input.couponCode,c,lockCoupon);
@@ -55,43 +57,58 @@ export function createPricingService({model,identity,simulated=false}){
             couponBps=Number(cents(coupon.desconto));
         }
         const lines=[];let total=0n;
+        const categoryRules=new Map();
         for(const line of input.lines){
-            if(line.category==='PURCHASE')throw new ApiError('Novas compras de filmes estão desativadas; consulte o aluguel',409,null,'STREAMING_PURCHASE_DISABLED');
-            const p=found(await model.parameter(line.category,c));
-            const row=found(await model.product(line.category,line.id,c,lockCoupon));
-            if(actor.tipo_usuario!=='ADMIN'&&(row.oferta_local===0||row.oferta_local===false))throw conflict('Item retirado da oferta local');
-            if(!available(line.category,row)||(line.category==='INPUT'&&actor.tipo_usuario!=='ADMIN'&&!row.venda_avulsa))throw conflict('Item indisponível');
-            const parts=line.category==='COMBO'?await model.comboParts(line.id,c):null;
-            if(parts?.some(x=>x.status!=='DISPONIVEL'))throw conflict('Componente indisponível');
-            const publishedSessionFallback=simulated&&line.category==='SESSION'&&(row.custo_local_dia==null||row.custo_exibicao==null)&&row.published!=null;
-            const cost=publishedSessionFallback?0n:costFor(line.category,row,parts,p,line.period);
-            const suggested=publishedSessionFallback?cents(String(row.published)):basePrice(cost,p.markup_bps);
-            const base=catalogPriced(line.category)?catalogBase(row,cost):suggested;
-            const promotions=await model.activePromotions(line.category,c);
-            const publicBps=promotions.filter(x=>x.publico_geral).reduce((n,x)=>n+x.desconto_bps,0);
-            const privatePromoBps=promotions.filter(x=>!x.publico_geral).reduce((n,x)=>n+x.desconto_bps,0);
-            const terms=plan?.contrato_snapshot?(typeof plan.contrato_snapshot==='string'?JSON.parse(plan.contrato_snapshot):plan.contrato_snapshot):null;
-            const planBps=plan&&line.category!=='PLAN'?(terms?Number(terms.discounts?.[line.category]??0):Number((await model.planBenefit(plan.id_plano,line.category,c))?.desconto_bps??cents(plan.desconto??'0.00'))):0;
-            const comboBps=line.category==='COMBO'?Math.min(Math.max(parts.reduce((n,x)=>n+x.quantidade,0)-1,0)*p.combo_passo_bps,p.teto_desconto_bps):0;
-            const extraBps=privatePromoBps+planBps+couponBps+comboBps;
-            const quoted=line.category==='SESSION'?ticketQuote({cost,base,publicDiscountBps:publicBps,privateDiscountBps:extraBps,halfEligible:Boolean(line.halfPreview),capBps:p.teto_desconto_bps,minMarginBps:p.margem_alerta_bps,halfProjectionBps:p.meia_projecao_bps}):ordinaryQuote({cost,base,discountBps:publicBps+extraBps,capBps:p.teto_desconto_bps,minMarginBps:p.margem_alerta_bps});
-            const subtotal=quoted.price*BigInt(line.quantity);total+=subtotal;
-            const published=line.category==='PLAN'?(line.period==='ANNUAL'?row.valor_anual:row.valor_mensal):row.published;
-            if(published==null)throw conflict('Preço público não configurado');
-            // Sugestão administrativa; não altera a base cadastrada nem é exposta na cotação pública.
-            const suggestion=catalogPriced(line.category)?{suggestedPrice:money(suggested)}:{};
-            if(catalogPriced(line.category))suggestion.discountSources=quoted.price<base?[
-                ...(publicBps+privatePromoBps>0?['PROMOTION']:[]),...(planBps>0?['SUBSCRIPTION']:[]),
-                ...(couponBps>0?['COUPON']:[]),...(comboBps>0?['COMBO']:[])
-            ]:[];
-            lines.push({...suggestion,category:line.category,id:idString(line.id),quantity:line.quantity,period:line.category==='PLAN'?line.period??'MONTHLY':null,cost:money(cost),base:money(base),publishedPrice:published??null,catalogOutOfSync:!publishedSessionFallback&&published!=null&&published!==money(base),publicPrice:line.category==='SESSION'?money(quoted.publicPrice):null,halfPrice:line.category==='SESSION'?money(quoted.halfPrice):null,benefit:line.category==='SESSION'?quoted.benefit:quoted.discountBps?'DESCONTO':'INTEIRA',unitPrice:money(quoted.price),subtotal:money(subtotal),discountBps:quoted.discountBps,discountCapped:quoted.discountCapped,belowCost:line.category==='SESSION'?quoted.belowCost:false,belowMargin:quoted.belowMargin,projectedBelowMargin:line.category==='SESSION'?quoted.projectedBelowMargin:false,referenceOccupancy:line.category==='SESSION'?Math.min(p.ocupacao_referencia,row.capacidade):null,halfEligibilityUnverified:line.category==='SESSION'&&Boolean(line.halfPreview)&&!trustedHalf&&!(allowDeclaredHalf&&line.halfDeclaration),promotionIds:promotions.map(x=>idString(x.id_promocao)),planId:plan?idString(plan.id_plano):null,parameters:paramDto(p)});
+            try {
+                if(line.category==='PURCHASE')throw new ApiError('Novas compras de filmes estão desativadas; consulte o aluguel',409,null,'STREAMING_PURCHASE_DISABLED');
+                const row=found(await model.product(line.category,line.id,c,lockCoupon));
+                if(input.localId&&String(row.id_local)!==input.localId)throw ApiError.naoEncontrado();
+                if(actor?.tipo_usuario!=='ADMIN'&&(row.oferta_local===0||row.oferta_local===false))throw conflict('Item retirado da oferta local');
+                if(!available(line.category,row)||(line.category==='INPUT'&&actor?.tipo_usuario!=='ADMIN'&&!row.venda_avulsa))throw conflict('Item indisponível');
+                const parts=line.category==='COMBO'?await model.comboParts(line.id,c):null;
+                if(parts?.some(x=>x.status!=='DISPONIVEL'))throw conflict('Componente indisponível');
+                if(input.localId){
+                    const stock=await model.snackStock(line.category,line.id,c);
+                    if(!stock.length||stock.length!==(parts?.length??1)||stock.some(item=>String(item.id_local)!==input.localId||item.status!=='DISPONIVEL'))throw ApiError.naoEncontrado();
+                    if(stock.some(item=>BigInt(item.saldo)<BigInt(item.units)*BigInt(line.quantity)))throw new ApiError('Estoque insuficiente neste cinema para a quantidade selecionada.',409,null,'INSUFFICIENT_STOCK');
+                }
+                if(!categoryRules.has(line.category)){
+                    const parameter=found(await model.parameter(line.category,c));
+                    const promotions=(await model.activePromotions(line.category,c)).filter(promotion=>accountPricing||Boolean(promotion.publico_geral));
+                    const planBps=plan&&line.category!=='PLAN'?(terms?Number(terms.discounts?.[line.category]??0):Number((await model.planBenefit(plan.id_plano,line.category,c))?.desconto_bps??cents(plan.desconto??'0.00'))):0;
+                    categoryRules.set(line.category,{parameter,promotions,planBps});
+                }
+                const {parameter:p,promotions,planBps}=categoryRules.get(line.category);
+                const publishedSessionFallback=simulated&&line.category==='SESSION'&&(row.custo_local_dia==null||row.custo_exibicao==null)&&row.published!=null;
+                const cost=publishedSessionFallback?0n:costFor(line.category,row,parts,p,line.period);
+                const suggested=publishedSessionFallback?cents(String(row.published)):basePrice(cost,p.markup_bps);
+                const base=catalogPriced(line.category)?catalogBase(row,cost):suggested;
+                const publicBps=promotions.filter(x=>x.publico_geral).reduce((n,x)=>n+x.desconto_bps,0);
+                const privatePromoBps=promotions.filter(x=>!x.publico_geral).reduce((n,x)=>n+x.desconto_bps,0);
+                const comboBps=line.category==='COMBO'?Math.min(Math.max(parts.reduce((n,x)=>n+x.quantidade,0)-1,0)*p.combo_passo_bps,p.teto_desconto_bps):0;
+                const extraBps=privatePromoBps+planBps+couponBps+comboBps;
+                const quoted=line.category==='SESSION'?ticketQuote({cost,base,publicDiscountBps:publicBps,privateDiscountBps:extraBps,halfEligible:Boolean(line.halfPreview),capBps:p.teto_desconto_bps,minMarginBps:p.margem_alerta_bps,halfProjectionBps:p.meia_projecao_bps}):ordinaryQuote({cost,base,discountBps:publicBps+extraBps,capBps:p.teto_desconto_bps,minMarginBps:p.margem_alerta_bps});
+                const subtotal=quoted.price*BigInt(line.quantity);total+=subtotal;
+                const published=line.category==='PLAN'?(line.period==='ANNUAL'?row.valor_anual:row.valor_mensal):row.published;
+                if(published==null)throw conflict('Preço público não configurado');
+                // Sugestão administrativa; não altera a base cadastrada nem é exposta na cotação pública.
+                const suggestion=catalogPriced(line.category)?{suggestedPrice:money(suggested)}:{};
+                if(catalogPriced(line.category))suggestion.discountSources=quoted.price<base?[
+                    ...(publicBps+privatePromoBps>0?['PROMOTION']:[]),...(planBps>0?['SUBSCRIPTION']:[]),
+                    ...(couponBps>0?['COUPON']:[]),...(comboBps>0?['COMBO']:[])
+                ]:[];
+                lines.push({...suggestion,category:line.category,id:idString(line.id),quantity:line.quantity,period:line.category==='PLAN'?line.period??'MONTHLY':null,cost:money(cost),base:money(base),publishedPrice:published??null,catalogOutOfSync:!publishedSessionFallback&&published!=null&&published!==money(base),publicPrice:line.category==='SESSION'?money(quoted.publicPrice):null,halfPrice:line.category==='SESSION'?money(quoted.halfPrice):null,benefit:line.category==='SESSION'?quoted.benefit:quoted.discountBps?'DESCONTO':'INTEIRA',unitPrice:money(quoted.price),subtotal:money(subtotal),discountBps:quoted.discountBps,discountCapped:quoted.discountCapped,belowCost:line.category==='SESSION'?quoted.belowCost:false,belowMargin:quoted.belowMargin,projectedBelowMargin:line.category==='SESSION'?quoted.projectedBelowMargin:false,referenceOccupancy:line.category==='SESSION'?Math.min(p.ocupacao_referencia,row.capacidade):null,halfEligibilityUnverified:line.category==='SESSION'&&Boolean(line.halfPreview)&&!trustedHalf&&!(allowDeclaredHalf&&line.halfDeclaration),promotionIds:promotions.map(x=>idString(x.id_promocao)),planId:plan?idString(plan.id_plano):null,parameters:paramDto(p)});
+            }catch(error){
+                if(!input.localId||!(error instanceof ApiError)||![404,409].includes(error.statusCode))throw error;
+                lines.push({category:line.category,id:idString(line.id),quantity:line.quantity,issue:error.code});
+            }
         }
-        return {lines,total:money(total),couponId:coupon?idString(coupon.id_cupom):null,couponCode:coupon?.codigo??null,couponDiscountBps:couponBps,finalizable:!lines.some(x=>x.halfEligibilityUnverified||x.catalogOutOfSync),quotedAt:new Date().toISOString()};
+        return {lines,total:money(total),couponId:coupon?idString(coupon.id_cupom):null,couponCode:coupon?.codigo??null,couponDiscountBps:couponBps,finalizable:!lines.some(x=>x.issue||x.halfEligibilityUnverified||x.catalogOutOfSync),quotedAt:new Date().toISOString()};
     }
     return {
-        async catalogPriceForCreate(c,category,row,parts=null){
+        async catalogPriceFromRule(c,category,row,parts=null){
             if(!catalogPriced(category))throw ApiError.validacao('Categoria sem precificação de cadastro.');
-            const parameter=found(await model.parameter(category,c,true));
+            const parameter=found(await model.parameter(category,c));
             const cost=costFor(category,row,parts,parameter,'MONTHLY');
             const price=basePrice(cost,parameter.markup_bps);
             if(price===0n)throw conflict('O custo total precisa ser positivo para calcular o preço pela regra.');
@@ -100,12 +117,13 @@ export function createPricingService({model,identity,simulated=false}){
         },
         async quoteOnConnection(c,input,context,options){if(!c?.execute)throw new TypeError('Conexão transacional obrigatória');return publicQuote(await quoteWithConnection(c,input,context,options));},
         async quote(input,context){return tx(context,async c=>publicQuote(await quoteWithConnection(c,input,context)));},
+        async guestSnackQuote(input,context){return tx(context,async c=>publicQuote(await quoteWithConnection(c,input,context,{guest:true})));},
         async adminQuote(input,context){return tx(context,async c=>{await admin(c,context);return quoteWithConnection(c,input,context);});},
         // Checkout consumer must create the order and call this on its SAME connection.
-        async commit(c,{orderId,input,context,verifiedHalf=false,allowDeclaredHalf=false}){
+        async commit(c,{orderId,input,context,ownerId=context.actor.id,verifiedHalf=false,allowDeclaredHalf=false}){
             if(!c?.execute)throw new TypeError('Conexão transacional obrigatória');
             const order=found(await model.order(orderId,c,true));
-            if(idString(order.id_usuario)!==idString(context.actor.id)||!['EM_ANDAMENTO','AGUARDANDO_PAGAMENTO'].includes(order.status))throw ApiError.acessoNegado();
+            if(idString(order.id_usuario)!==idString(ownerId)||!['EM_ANDAMENTO','AGUARDANDO_PAGAMENTO'].includes(order.status))throw ApiError.acessoNegado();
             const previous=await model.snapshot(orderId,c);
             if(previous)return typeof previous.snapshot==='string'?JSON.parse(previous.snapshot):previous.snapshot;
             if(!verifiedHalf&&input.lines.some(x=>x.halfPreview&&!(allowDeclaredHalf&&x.halfDeclaration)))throw ApiError.acessoNegado();

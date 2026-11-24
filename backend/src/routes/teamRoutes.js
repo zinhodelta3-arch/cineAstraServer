@@ -8,7 +8,10 @@ export const teamLookupOperations = [
     { method: 'get', path: '/api/teams/context', operationId: 'get_team_context' },
     { method: 'get', path: '/api/teams/collaborator', operationId: 'find_team_collaborator' },
     { method: 'get', path: '/api/teams/available', operationId: 'list_available_teams' },
-    { method: 'get', path: '/api/teams/my-requests', operationId: 'list_my_team_requests' }
+    { method: 'get', path: '/api/teams/my-requests', operationId: 'list_my_team_requests' },
+    { method: 'get', path: '/api/teams/eligible-sessions', operationId: 'list_team_eligible_sessions' },
+    { method: 'get', path: '/api/teams/my-invitations', operationId:'list_my_team_invitations' },
+    { method:'get',path:'/api/teams/collaborators',operationId:'list_local_collaborators' },
 ];
 
 export const teamOperations = [
@@ -24,15 +27,22 @@ export const teamOperations = [
     ['post','/api/teams/{id}/entries/requests','request_team_entry','request'],
     ['post','/api/teams/{id}/entries/invitations','invite_team_member','invitation'],
     ['post','/api/teams/{id}/entries/{entryId}/decision','decide_team_entry','decision'],
+    ['patch','/api/teams/{id}/entries/{entryId}','edit_team_entry','editEntry'],
+    ['post','/api/teams/{id}/collaborators','create_team_collaborator','createCollaborator'],
+    ['patch','/api/teams/collaborators/{id}','update_local_collaborator','editCollaborator'],
+    ['delete','/api/teams/collaborators/{id}','deactivate_local_collaborator','deactivateCollaborator'],
     ['delete','/api/teams/{id}/entries/{entryId}','cancel_team_entry','cancelEntry']
 ].map(([method,path,operationId,action]) => ({ method,path,operationId,action }));
-export function teamRoutes(controller, { auth }) {
+export function teamRoutes(controller, { auth, limits }) {
     const router = Router(), access = [auth, allowRoles('ADMIN','SUPERVISOR','COLABORADOR')];
-    const [context, collaborator, available, ownRequests] = teamLookupOperations;
+    const [context, collaborator, available, ownRequests, eligibleSessions, ownInvitations, collaborators] = teamLookupOperations;
     const noStore = (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); };
     router.get(context.path, noStore, auth, allowRoles('SUPERVISOR','COLABORADOR'), controller.context);
     router.get(available.path, noStore, auth, allowRoles('COLABORADOR'), teamQuery(teamSchemas.teamsQuery), controller.available);
     router.get(ownRequests.path, noStore, auth, allowRoles('COLABORADOR'), teamQuery(teamSchemas.entriesQuery), controller.ownRequests);
+    router.get(eligibleSessions.path, noStore, auth, allowRoles('SUPERVISOR'),teamQuery(teamSchemas.teamsQuery),controller.eligibleSessions);
+    router.get(ownInvitations.path,noStore,auth,allowRoles('COLABORADOR'),teamQuery(teamSchemas.entriesQuery),controller.ownInvitations);
+    router.get(collaborators.path,noStore,auth,allowRoles('SUPERVISOR'),teamQuery(teamSchemas.collaboratorsQuery),controller.localCollaborators);
     router.get(collaborator.path, auth, allowRoles('SUPERVISOR'), (req, res, next) => {
         if (Object.keys(req.query).length !== 1 || typeof req.query.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.query.email) || req.query.email.length > 150) {
             throw ApiError.validacao('Informe um e-mail válido.', [{ field: 'query.email', code: 'INVALID_VALUE' }]);
@@ -42,7 +52,10 @@ export function teamRoutes(controller, { auth }) {
     for (const r of teamOperations) {
         const middleware = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }, ...access, teamParams];
         if (['list','members','entries'].includes(r.action)) middleware.push(teamQuery(teamSchemas[r.action === 'list' ? 'teamsQuery' : r.action === 'members' ? 'membersQuery' : 'entriesQuery']));
-        const body = { create: 'create', patch: 'patch', changeMember: 'memberPatch', request: 'request', invitation: 'invitation', decision: 'decision' }[r.action];
+        if(r.action==='editEntry')middleware.push(allowRoles('ADMIN'));
+        if(['createCollaborator','editCollaborator','deactivateCollaborator'].includes(r.action))middleware.push(allowRoles('SUPERVISOR'),...(limits?.checkout??[]));
+        const body = { create: 'create', patch: 'patch', changeMember: 'memberPatch', request: 'request', invitation: 'invitation', decision: 'decision', editEntry:'entryPatch',
+            createCollaborator:'collaboratorCreate',editCollaborator:'collaboratorPatch' }[r.action];
         if (body) middleware.push(validateBody(teamSchemas[body]));
         router[r.method](r.path.replace(/\{(\w+)\}/g, ':$1'), ...middleware, controller[r.action]);
     }

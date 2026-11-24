@@ -49,8 +49,8 @@ SELECT 'Básico', 'Sua experiência no cinema com 5% de desconto em ingressos. P
 WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Básico');
 
 INSERT INTO planos (nome, descricao, valor_mensal, valor_anual, limite_membros, acesso_catalogo, custo_beneficios_mensal, custo_beneficios_anual, combo_gratis_mes, ativo)
-SELECT 'Família', 'Compartilhe o cinema com até 4 membros, 10% de desconto em ingressos e 5% em combos.', 39.90, 399.00, 4, FALSE, 20.00, 200.00, 0, TRUE
-WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Família');
+SELECT 'Essencial', 'Benefícios em ingressos e no AstraSnack.', 39.90, 399.00, 4, FALSE, 20.00, 200.00, 0, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome IN ('Essencial','Família'));
 
 INSERT INTO planos (nome, descricao, valor_mensal, valor_anual, limite_membros, acesso_catalogo, custo_beneficios_mensal, custo_beneficios_anual, combo_gratis_mes, ativo)
 SELECT 'Plus', 'Cinema e streaming para até 4 membros, com acesso ao catálogo, 15% de desconto em ingressos e 10% em combos.', 59.90, 599.00, 4, TRUE, 30.00, 300.00, 0, TRUE
@@ -61,8 +61,8 @@ SELECT p.id_plano, b.categoria, b.desconto_bps
 FROM planos p
 JOIN (
     SELECT 'Básico' AS nome, 'SESSION' AS categoria, 500 AS desconto_bps
-    UNION ALL SELECT 'Família', 'SESSION', 1000
-    UNION ALL SELECT 'Família', 'COMBO', 500
+    UNION ALL SELECT 'Essencial', 'SESSION', 1000
+    UNION ALL SELECT 'Essencial', 'COMBO', 500
     UNION ALL SELECT 'Plus', 'SESSION', 1500
     UNION ALL SELECT 'Plus', 'COMBO', 1000
 ) b ON b.nome = p.nome

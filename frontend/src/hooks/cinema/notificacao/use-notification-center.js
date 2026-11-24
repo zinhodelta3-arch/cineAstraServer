@@ -2,9 +2,9 @@
 import {useRef,useState} from 'react';
 import {useNotifications} from './use-notifications';
 import {experienceNotificationType} from '@/lib/api/notifications.mjs';
-export default function useNotificationCenter(userId){
+export default function useNotificationCenter(userId,role){
  const [filter,setFilter]=useState('all'),[selected,setSelected]=useState(null),[announcement,setAnnouncement]=useState('');
- const list=useNotifications(userId,filter==='experience'?experienceNotificationType:null);
+ const list=useNotifications(userId,filter==='experience'?experienceNotificationType:null,role);
  const headingRef=useRef(null),returnFocusRef=useRef(null);
  const unread=list.items.filter(item=>!item.read),read=list.items.filter(item=>item.read);
  const markRead=async item=>{if(await list.markRead(item.id))setAnnouncement('Notificação marcada como lida.');};

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createCheckoutService} from '../src/services/checkoutService.js';
 import {createPaymentService} from '../src/services/paymentService.js';
 
-function fixture(contracts){
+function fixture(contracts, snapshotUnitPrice='20.00'){
     const state={order:null,items:[],events:[],inventory:[],seats:[],coupons:[],calls:0,cancelKeys:new Map()};
     const identity={transaction:async fn=>fn({execute:async()=>[[{seats_expected:0,seats_reserved:0,stock_expected:0,stock_reserved:0,stock_invalid:0,coupon_reserved:0,coupon_expected:0}]]}),activeActor:async()=>({id_usuario:'9',tipo_usuario:'CLIENTE'}),audit:async()=>{}};
     const model={checkoutByKey:async(c,u,key)=>state.order?.key===key?state.order:null,
@@ -17,13 +17,22 @@ function fixture(contracts){
         recordCancelKey:async(c,owner,id,key)=>state.cancelKeys.set(key,id),
         hasTicket:async()=>false,orderIntentions:async()=>[],cancelPreparedIntentions:async()=>{},
         cancelPending:async()=>{state.order.status='CANCELADO';return true;}};
-    const orders={quoteOnConnection:async(c,input)=>({lines:input.lines.map(()=>({catalogOutOfSync:false})),total:'20.00',finalizable:true}),confirmEventLimits:async()=>{}};
-    const pricing={commit:async(c,{input})=>({total:'20.00',couponId:'5',lines:input.lines.map(()=>({unitPrice:'20.00',subtotal:'20.00'}))}),settleCoupon:async(c,input)=>state.coupons.push(input.action)};
+    const orders={quoteOnConnection:async(c,input)=>({lines:input.lines.map(()=>({unitPrice:'20.00',catalogOutOfSync:false})),total:'20.00',finalizable:true}),confirmEventLimits:async()=>{}};
+    const pricing={commit:async(c,{input})=>({total:'20.00',couponId:'5',lines:input.lines.map(()=>({unitPrice:snapshotUnitPrice,subtotal:snapshotUnitPrice}))}),settleCoupon:async(c,input)=>state.coupons.push(input.action)};
     const inventory={reserve:async()=>state.inventory.push('reserved'),transition:async(c,{action})=>state.inventory.push(action)};
     const seats={reserve:async()=>state.seats.push('reserved'),confirm:async()=>state.seats.push('confirmed'),releaseCancelled:async()=>state.seats.push('released')};
     const service=createCheckoutService({model,orders,identity,pricing,inventory,seats,contracts});
     return {service,state,identity};
 }
+
+test('checkout rejeita mudança no preço unitário antes de reservar estoque ou assento',async()=>{
+    const {service,state}=fixture(undefined,'19.00');
+    const input={lines:[{kind:'SESSION',id:'3',seatId:'4',quantity:1}]};
+    await assert.rejects(service.checkout(input,'order:price-change',{actor:{id:'9'}}),{code:'CHECKOUT_CONFLICT'});
+    assert.deepEqual(state.items,[]);
+    assert.deepEqual(state.inventory,[]);
+    assert.deepEqual(state.seats,[]);
+});
 
 test('checkout exige hash da oferta e grava contrato na mesma transação',async()=>{
     const saved=[],contracts={contract:async()=>({offerHash:'a'.repeat(64),terms:{version:'v1'}}),save:async(c,id,hash,snapshot)=>saved.push({id,hash,snapshot})};

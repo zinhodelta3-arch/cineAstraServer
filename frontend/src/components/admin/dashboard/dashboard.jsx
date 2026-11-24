@@ -1,7 +1,8 @@
 "use client";
 
 import { useDashboard } from "@/hooks/use-dashboard";
-import { CalendarDays, ChevronDown } from "lucide-react";
+import { CalendarDays, ChevronDown, Download } from "lucide-react";
+import { downloadReportChart } from "@/lib/report-chart-svg.mjs";
 import MoviePerformanceTable from "./movie-performance-table";
 import styles from "./dashboard.module.css";
 
@@ -30,9 +31,14 @@ function chartSeries(daily, period) {
   return grouped;
 }
 
-function Panel({ title, subtitle, className = "", children }) {
+function Panel({ title, subtitle, className = "", children, report, exportRows }) {
   return <section className={`${styles.panel} ${className}`}>
-    <header className={styles.panelHeader}><h2>{title}</h2><p>{subtitle}</p></header>
+    <header className={styles.panelHeader}><div className="flex flex-wrap items-start justify-between gap-2">
+      <div><h2>{title}</h2><p>{subtitle}</p></div>
+      {!!exportRows?.length && <button type="button" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-semibold hover:text-primary focus-visible:outline-ring" aria-label={`Exportar ${title} em SVG`} onClick={() => downloadReportChart(title, report, subtitle, exportRows)}>
+        <Download size={14} aria-hidden="true" /> Exportar SVG
+      </button>}
+    </div></header>
     {children}
   </section>;
 }
@@ -59,8 +65,10 @@ function TicketBars({ series }) {
   </div>;
 }
 
+const visibleRooms = rooms => [...rooms].sort((left, right) => Number(right.sessionCount) - Number(left.sessionCount)).slice(0, 4);
+
 function RoomOccupancy({ rooms }) {
-  const visible = [...rooms].sort((left, right) => Number(right.sessionCount) - Number(left.sessionCount)).slice(0, 4);
+  const visible = visibleRooms(rooms);
   if (!visible.length) return <p className={styles.panelState}>Nenhuma sala com sessões neste período.</p>;
   return <>
     <div className={styles.roomList} role="img" aria-label={visible.map((room) => `${room.locationName}, ${room.name}: ${room.occupancyPercent == null ? "sem capacidade registrada" : `${room.occupancyPercent}% de ocupação`}`).join("; ")}>
@@ -91,6 +99,12 @@ export default function Dashboard() {
   const { period, setPeriod, report, loading, error, retry } = useDashboard();
   const label = period === "week" ? "Últimos 7 dias" : "Últimos 30 dias";
   const series = report ? chartSeries(report.daily, period) : [];
+  const hasRevenue = series.some(day => day.revenue > 0);
+  const hasTickets = series.some(day => day.tickets > 0);
+  const revenueRows = hasRevenue ? series.map(day => ({ label: day.label, value: day.revenue, formatted: money(day.revenue) })) : null;
+  const ticketRows = hasTickets ? series.map(day => ({ label: day.label, value: day.tickets, formatted: integer(day.tickets) })) : null;
+  const roomRows = report && visibleRooms(report.rooms).map(room => ({ label: room.name, detail: room.locationName, value: room.occupancyPercent, formatted: room.occupancyPercent == null ? 'Sem capacidade' : `${room.occupancyPercent}%` }));
+  const typeRows = report && report.ticketTypes.map((item, colorIndex) => ({ label: typeNames[item.type] ?? item.type, value: Number(item.tickets), formatted: `${item.sharePercent ?? 0}%`, colorIndex })).filter(item => item.value > 0);
   const chartState = <p className={styles.panelState}>{loading ? "Carregando indicadores…" : error ? "Indicadores indisponíveis no momento." : "Nenhuma venda neste período."}</p>;
   const metrics = [
     { label: "Receita de bilheteria", value: report ? money(report.sales.ticketSalesValue) : "—", note: "Vendas de ingressos" },
@@ -105,10 +119,10 @@ export default function Dashboard() {
     <section className={styles.metrics} aria-label={`Indicadores: ${label}`} aria-live="polite">{metrics.map(({ label: metricLabel, value, note }) => <article className={styles.metric} key={metricLabel}><span>{metricLabel}</span><strong>{value}</strong><p>{note}</p></article>)}</section>
     <Panel title="Próximas sessões" subtitle="Programação futura" className={styles.sessionsPanel}><UpcomingSessions sessions={report?.upcomingSessions ?? []} loading={loading} error={error} /></Panel>
     <div className={styles.charts}>
-      <Panel title="Receita de ingressos" subtitle={`Evolução da bilheteria · ${label.toLowerCase()}`} className={styles.revenuePanel}>{series.some((day) => day.revenue > 0) ? <RevenueChart series={series} total={report.sales.ticketSalesValue} /> : chartState}</Panel>
-      <Panel title="Ingressos vendidos" subtitle={period === "week" ? "Volume por dia da semana" : "Volume por intervalo de 5 dias"} className={styles.ticketsPanel}>{series.some((day) => day.tickets > 0) ? <TicketBars series={series} /> : chartState}</Panel>
-      <Panel title="Ocupação por sala" subtitle="Salas com mais sessões no período">{report ? <RoomOccupancy rooms={report.rooms} /> : chartState}</Panel>
-      <Panel title="Tipos de ingresso" subtitle="Distribuição dos ingressos vendidos">{report ? <TicketTypes types={report.ticketTypes} /> : chartState}</Panel>
+      <Panel title="Receita de ingressos" subtitle={`Evolução da bilheteria · ${label.toLowerCase()}`} className={styles.revenuePanel} report={report} exportRows={revenueRows}>{hasRevenue ? <RevenueChart series={series} total={report.sales.ticketSalesValue} /> : chartState}</Panel>
+      <Panel title="Ingressos vendidos" subtitle={period === "week" ? "Volume por dia da semana" : "Volume por intervalo de 5 dias"} className={styles.ticketsPanel} report={report} exportRows={ticketRows}>{hasTickets ? <TicketBars series={series} /> : chartState}</Panel>
+      <Panel title="Ocupação por sala" subtitle="Salas com mais sessões no período" report={report} exportRows={roomRows}>{report ? <RoomOccupancy rooms={report.rooms} /> : chartState}</Panel>
+      <Panel title="Tipos de ingresso" subtitle="Distribuição dos ingressos vendidos" report={report} exportRows={typeRows}>{report ? <TicketTypes types={report.ticketTypes} /> : chartState}</Panel>
     </div>
     <div className={styles.sectionHeading}><h2>Desempenho dos filmes</h2><span>Ranking por ingressos vendidos</span></div>
     <div className={styles.bottom}><Panel title="Filmes mais vendidos" subtitle={`Ingressos e receita · ${label.toLowerCase()}`} className={styles.movieTablePanel}><MoviePerformanceTable key={period} items={report?.topMovies ?? []} loading={loading} error={error} retry={retry} /></Panel></div>

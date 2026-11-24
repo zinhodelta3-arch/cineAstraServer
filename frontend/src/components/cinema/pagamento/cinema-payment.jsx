@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CreditCard, QrCode } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import usePayment from "@/hooks/cinema/pagamento/use-payment";
 import { useSession } from "@/hooks/auth/use-session";
+import { Button } from "@/components/ui/button";
 import PaymentDetails from "./payment-details";
 import PaymentSummary from "./payment-summary";
 import styles from "./payment.module.css";
@@ -28,15 +28,28 @@ function CardFields({ card, changeCard }) {
   </section>;
 }
 
+function SavedPaymentPicker({ payment, pix = false }) {
+  if (!payment.savedMethods.length) return null;
+  return <label className={styles.field}>
+    <span>{pix ? "Método Pix" : "Cartão para esta compra"}</span>
+    <select value={payment.selectedMethodId} onChange={event => payment.selectMethod(event.target.value)} disabled={!payment.canChangeMethod}>
+      {payment.savedMethods.map(item => <option key={item.id} value={item.id}>
+        {item.identification || (pix ? "Pix salvo" : "Cartão salvo")}{item.principal ? " · Principal" : ""}
+      </option>)}
+      <option value="">{pix ? "Usar um novo Pix" : "Usar outro cartão"}</option>
+    </select>
+  </label>;
+}
+
 function PixPanel({ payment }) {
   return <section className={styles.pixPanel} aria-labelledby="pix-title">
     <h2 id="pix-title" className={styles.sectionTitle}>Pagamento via Pix</h2>
-    <p className={styles.hint}>Aponte a câmera para o QR code.</p>
-    <div className={styles.qrFrame}><QRCodeSVG value="https://www.pudim.com.br/" size={208} marginSize={0} bgColor="#ffffff" fgColor="#151515" title="QR code para Pix" /></div>
-    {payment.ready && !payment.result?.paymentId && <p className={styles.pixTimer} role="status">{payment.pending ? "Confirmando pagamento…" : payment.remaining > 0 ? `Aprovação automática em ${payment.remaining} s` : "Preparando aprovação…"}</p>}
-    {!payment.ready && !payment.result?.paymentId && <p role="alert" className={styles.error}>Volte à seleção, confira a oferta e aceite os termos para iniciar a contagem.</p>}
+    <p className={styles.hint}>A aprovação do Pix é simulada após sua confirmação.</p>
+    <SavedPaymentPicker payment={payment} pix />
+    {!payment.result?.paymentId && <Button type="button" className="mt-5" onClick={payment.confirmPix} disabled={!payment.ready || payment.pending}>
+      {payment.pending ? "Confirmando…" : payment.error ? "Tentar novamente" : "Confirmar Pix"}
+    </Button>}
     {payment.error && <p role="alert" className={styles.error}>{payment.error}</p>}
-    {payment.error && payment.remaining === 0 && !payment.result?.paymentId && <button type="button" className={styles.retryButton} onClick={payment.retryPix} disabled={payment.pending}>Tentar novamente</button>}
     {payment.result && <div role="status" className={styles.paymentResult}>
       <strong>Pedido #{payment.result.orderId}</strong><span>Pagamento: {payment.result.status}</span><span>Pedido: {payment.result.orderStatus}</span>
       {["PAGO", "FINALIZADO"].includes(payment.result.orderStatus) ? <><Link href="/cinema/minhascompras">Ver meus pedidos e ingressos <ArrowRight size={15} /></Link><Link href="/cinema/astrasnack">Começar outro pedido AstraSnack <ArrowRight size={15} /></Link></> :
@@ -50,7 +63,7 @@ export default function CinemaPayment(props) {
   const { user, loading } = useSession();
   if (loading) return <main className="mx-auto w-full max-w-6xl p-8" role="status">Verificando sua conta…</main>;
   if (user?.role !== "CLIENTE") return <main className="mx-auto w-full max-w-6xl p-8">Entre com uma conta de cliente para pagar.{" "}<Link href={user ? "/cinema/carrinho" : "/auth/login?next=%2Fcinema%2Fcarrinho"} className="text-primary underline">{user ? "Voltar ao carrinho" : "Entrar"}</Link></main>;
-  return <AccountPayment key={user.id} {...props} />;
+  return <AccountPayment key={`${user.id}:${props.method ?? ""}:${props.draftId ?? ""}`} {...props} />;
 }
 
 function AccountPayment({ method = null, draftId = null }) {
@@ -63,35 +76,36 @@ function AccountPayment({ method = null, draftId = null }) {
   const sortedMethods = priority ? [priority, ...methods.filter(item => item !== priority)] : methods;
   return <main className={styles.page}>
     <div className={styles.container}>
-      <Link href={method ? `/cinema/pagamento${draftQuery}` : returnHref} className={styles.back}><ArrowLeft size={16} />{method ? "Voltar aos métodos" : draftId ? "Voltar às compras" : "Voltar ao carrinho"}</Link>
+      {(!method || payment.canChangeMethod) && <Link prefetch={false} href={method ? `/cinema/pagamento${draftQuery}` : returnHref} className={styles.back}><ArrowLeft size={16} aria-hidden="true" />{method ? "Trocar método de pagamento" : draftId ? "Voltar às compras" : "Voltar ao carrinho"}</Link>}
       <div className={styles.layout}>
         <div className={styles.primaryPanel}>
+          {payment.walletError && <div role="alert" className={styles.error}>
+            <p>{payment.walletError}</p>
+            <Button type="button" variant="outline" className="mt-2" onClick={payment.retryWallet}>Tentar novamente</Button>
+          </div>}
+          {payment.walletLoading && <p className={styles.selectionHint} role="status">Consultando métodos salvos…</p>}
           {!method ? <>
             <h1 className={styles.pageTitle}>Selecione um método <span>de pagamento.</span></h1>
             <p className={styles.lead}>Escolha como deseja concluir sua compra.</p>
             <div className={styles.methodGrid}>
-              {sortedMethods.map(({ slug, label, icon: Icon, type }) => <Link key={slug} href={payment.ready ? `/cinema/pagamento/${slug}${draftQuery}` : "#payment-consent"} aria-disabled={!payment.ready} onClick={event => { if (!payment.ready) event.preventDefault(); }} className={`${styles.methodTicket} ${!payment.ready ? styles.methodDisabled : ""}`}>
+              {sortedMethods.map(({ slug, label, icon: Icon, type }) => <Link key={slug} prefetch={false} href={payment.ready ? `/cinema/pagamento/${slug}${draftQuery}` : "#payment-consent"} aria-disabled={!payment.ready} onClick={event => { if (!payment.ready) event.preventDefault(); }} className={`${styles.methodTicket} ${!payment.ready ? styles.methodDisabled : ""}`}>
                 <Icon size={25} aria-hidden="true" /><strong>{label}</strong>
-                {type === principalType && <span className="text-xs font-semibold text-primary">Principal do perfil</span>}
+                {type === principalType && <span className="text-left text-xs font-semibold text-primary">Principal do perfil{type !== "PIX" && payment.principalMethod?.identification && <small className="mt-1 block text-muted-foreground">{payment.principalMethod.identification}</small>}</span>}
               </Link>)}
             </div>
-            {payment.walletLoading ? <p className={styles.selectionHint} role="status">Consultando métodos salvos…</p> : !payment.ready && <p className={styles.selectionHint}>Revise o resumo e aceite a oferta para escolher um método.</p>}
+            {!payment.walletLoading && !payment.walletError && !payment.ready && <p className={styles.selectionHint}>Revise o resumo e aceite a oferta para escolher um método.</p>}
           </> : isCard ? <>
             <h1 className={styles.pageTitle}>Cartão de <span>{method === "debito" ? "débito" : "crédito"}.</span></h1>
-            <p className={styles.lead}>{payment.savedMethod ? "Confira o cartão salvo antes de pagar." : "Informe os dados do cartão para continuar."}</p>
+            <p className={styles.lead}>{payment.savedMethod ? "Confira o cartão selecionado antes de pagar." : "Confira os dados do cartão e do titular antes de pagar."}</p>
             <form id="payment-card-form" onSubmit={payment.confirmCard} className={styles.cardForm}>
-              {payment.walletLoading ? <p role="status">Consultando métodos salvos…</p> : payment.savedMethod ? (
-                <p className={styles.hint}>Método principal do perfil · {payment.savedMethod.identification}</p>
-              ) : <>
+              <SavedPaymentPicker payment={payment} />
+              {payment.newCard && <fieldset className={styles.cardFields} disabled={!payment.canChangeMethod}>
                 <CardFields card={payment.card} changeCard={payment.changeCard} />
                 <div className={styles.formDivider} />
+                {payment.profileLoading && <p className={styles.hint} role="status">Consultando dados do perfil…</p>}
+                {payment.profileIncomplete && <p className={styles.hint}>Preencha os campos que ficaram em branco.</p>}
                 <PaymentDetails details={payment.details} onChange={payment.changeDetail} cepStatus={payment.cepStatus} />
-              </>}
-              {principalType === (method === "debito" ? "DEBITO" : "CREDITO") && (
-                <button type="button" className={styles.retryButton} disabled={payment.pending || Boolean(payment.result?.methodId)} onClick={() => payment.setNewCard(!payment.newCard)}>
-                  {payment.newCard ? "Usar cartão principal" : "Usar outro cartão"}
-                </button>
-              )}
+              </fieldset>}
             </form>
           </> : <>
             <h1 className={styles.pageTitle}>Pague com <span>Pix.</span></h1>

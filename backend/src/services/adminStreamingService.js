@@ -12,10 +12,11 @@ export function createAdminStreamingService({ model, identity }) {
       const rows = await model[kind](c, q), page = rows.slice(0, q.limit);
       const items = page.map(row => kind === 'subscriptions' ? {
         id: idString(row.id_assinatura), userId: idString(row.id_usuario), customer: row.cliente,
-        planId: idString(row.id_plano), plan: row.plano, startsOn: row.proposta_admin ? null : day(row.inicio), endsOn: day(row.fim),
+        planId: idString(row.id_plano), plan: row.plano, startsOn: Number(row.proposta_admin)===1 ? null : day(row.inicio), endsOn: day(row.fim),
         period: row.periodicidade, divisionMode: row.tipo_divisao, status: row.status,
         autoRenew: Boolean(row.renovacao_automatica), contractPrice: row.preco_contratado == null ? null : String(row.preco_contratado),
-        administrativeDraft: Boolean(row.proposta_admin)
+        administrativeDraft: Number(row.proposta_admin)===1, modality: row.modalidade ?? null,
+        renewalConsent: Number(row.renovacao_autorizada)===1, endingOn: day(row.encerramento_admin_em)
       } : {
         id: idString(row.id_acesso), userId: idString(row.id_usuario), customer: row.cliente,
         filmId: idString(row.id_filme), film: row.filme, itemId: idString(row.id_item),
@@ -24,5 +25,15 @@ export function createAdminStreamingService({ model, identity }) {
       return { items, pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(page.at(-1)[kind === 'subscriptions' ? 'id_assinatura' : 'id_acesso']) : null } };
     }, context);
   }
-  return { list };
+  async function revoke(id, context) {
+    return identity.transaction(async c => {
+      if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
+      const access = await model.accessForUpdate(c, id);
+      if (!access) throw ApiError.naoEncontrado();
+      if (access.status === 'REVOGADO') return;
+      await model.revokeAccess(c, id);
+      await identity.audit(c, 'STREAMING.ACCESS_REVOKED', id, context);
+    }, context);
+  }
+  return { list, revoke };
 }

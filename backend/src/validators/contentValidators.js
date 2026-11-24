@@ -10,7 +10,7 @@ export const publication=z.object({slug:z.enum(slugs),version:z.string().regex(/
     const valid=v.slug==='business'?business.safeParse(v.body).success:v.slug==='faq'?faq.safeParse(v.body).success:z.object({text}).strict().safeParse(v.body).success;
     if(!valid)ctx.addIssue({code:'custom',path:['body'],message:'Formato incompatível com o conteúdo'});
 });
-export const assistantMessage=z.object({message:z.string().trim().min(1).max(1000)}).strict();
+export const assistantMessage=z.object({message:z.string().trim().min(1).max(1000),area:z.enum(['cinema','streaming']).optional()}).strict();
 export const assistantHandoff=z.object({message:z.string().trim().min(1).max(4000)}).strict();
 export const body=(schema,key)=>(req,res,next)=>{const result=schema.safeParse(req.body);if(!result.success)throw ApiError.validacao('Conteúdo inválido');req[key]=result.data;next();};
-export const contentSlug=(req,res,next)=>{if(!slugs.includes(req.params.slug))throw ApiError.naoEncontrado();next();};
+export const contentSlug=(req,res,next)=>{if(!slugs.includes(req.params.slug)&&req.params.slug!=='faq-streaming')throw ApiError.naoEncontrado();next();};

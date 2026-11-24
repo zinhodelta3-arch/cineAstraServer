@@ -21,7 +21,7 @@ function target(method, parts, search) {
   if (section === 'entries') {
     if (parts.length === 3 && method === 'GET') return `${base}/entries${search}`;
     if (parts.length === 4 && ['invitations', 'requests'].includes(recordId) && method === 'POST') return `${base}/entries/${recordId}`;
-    if (parts.length === 4 && big(recordId) && method === 'DELETE') return `${base}/entries/${recordId}`;
+    if (parts.length === 4 && big(recordId) && ['PATCH','DELETE'].includes(method)) return `${base}/entries/${recordId}`;
     if (parts.length === 5 && big(recordId) && action === 'decision' && method === 'POST') return `${base}/entries/${recordId}/decision`;
   }
   if (section === 'tasks') {

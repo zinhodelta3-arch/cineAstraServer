@@ -1,4 +1,5 @@
 "use client";
+import { copyText } from "@/lib/copy-text.mjs";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -13,7 +14,7 @@ const brl = (value) => new Intl.NumberFormat("pt-BR", { style: "currency", curre
 const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
 
 function MovieActions({ movie, onCopy }) {
-  const href = `/cinema/filmes/${movie.id}`;
+  const href = `/cinema/filmes/${encodeURIComponent(movie.slug??movie.id)}`;
   return <DropdownMenu>
     <DropdownMenuTrigger render={<button type="button" className={styles.actionTrigger} aria-label={`Ações para ${movie.title}`} title={`Ações para ${movie.title}`} />}>
       <MoreHorizontal size={18} aria-hidden="true" />
@@ -37,7 +38,7 @@ export default function MoviePerformanceTable({ items = [], loading, error, retr
 
   async function copyLink(href) {
     try {
-      await navigator.clipboard.writeText(new URL(href, window.location.origin).href);
+      await copyText(new URL(href, window.location.origin).href);
       setMessage("Link do filme copiado.");
     } catch {
       setMessage("Não foi possível copiar o link.");

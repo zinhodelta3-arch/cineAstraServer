@@ -27,8 +27,27 @@ const response={description:'Cotação informativa',content:{'application/json':
 spec.components.schemas.CheckoutOrder=obj({orderId:id,status:{type:'string',enum:['AGUARDANDO_PAGAMENTO','PAGO','CANCELADO']},total:money,currency:{type:'string',enum:['BRL']},expiresAt:{type:'string',format:'date-time'},paymentPath:{type:'string',enum:['/api/payments']}});
 const checkoutResponse={description:'Pedido reservado por 15 minutos; pague usando POST /api/payments',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data:ref('CheckoutOrder'),requestId:{type:'string',format:'uuid'}}),example:{success:true,data:{orderId:'123',status:'AGUARDANDO_PAGAMENTO',total:'25.00',currency:'BRL',expiresAt:'2026-10-10T15:15:00.000Z',paymentPath:'/api/payments'},requestId:'00000000-0000-4000-8000-000000000001'}}}};
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
+const text={type:'string'},optionalText={...text,nullable:true},timestamp={...optionalText,format:'date-time'};
+const purchaseReference={...text,pattern:'^CA-[1-9][0-9]{0,19}(-[A-F0-9]{6}){4}$'};
+const receiptItem=obj({id,kind:text,name:optionalText,quantity:qty,subtotal:money,venue:optionalText,seat:optionalText,admission:optionalText,
+    session:{...obj({id,status:optionalText,date:optionalText,time:optionalText,room:optionalText,cinema:optionalText,city:optionalText,state:optionalText}),nullable:true}});
+spec.components.schemas.PurchaseDocument=obj({orderId:id,reference:purchaseReference,status:text,total:money,createdAt:timestamp,verifiedAt:timestamp,coupon:optionalText,
+    discounts:{...obj({subtotal:money,discount:money}),nullable:true},
+    payment:{...obj({status:text,type:optionalText,simulated:{type:'boolean'},paidAt:timestamp}),nullable:true},
+    items:{type:'array',items:receiptItem},
+    tickets:{type:'array',items:obj({id,itemId:id,type:text,status:text,expiresAt:timestamp})}});
 for(const r of orderOperations){
     if(r.action==='draft')continue;
+    if(['purchaseDocument','verifyPurchaseDocument'].includes(r.action)){
+        const verify=r.action==='verifyPurchaseDocument';
+        const op={operationId:r.operationId,tags:['Carrinho'],summary:verify?'Verificar comprovante próprio':'Consultar dados para o comprovante próprio',
+            description:'Somente CLIENTE titular do pedido. Informa o estado atual da compra, do pagamento e dos ingressos. A referência é vinculada ao titular e não é um código de acesso ou retirada. Referência desconhecida ou pertencente a outra conta retorna 404.',
+            security:[{bearerAuth:[]}],parameters:[verify?{name:'reference',in:'query',required:true,schema:purchaseReference}:{name:'orderId',in:'path',required:true,schema:id}],
+            responses:{'200':{description:'Dados do comprovante',content:{'application/json':{schema:obj({success:{type:'boolean',enum:[true]},data:ref('PurchaseDocument'),requestId:{type:'string',format:'uuid'}})}}}}};
+        for(const code of [401,403,404,422,429,500,503])op.responses[code]={$ref:`#/components/responses/${errors[code]}`};
+        (spec.paths[r.path]??={})[r.method]=op;
+        continue;
+    }
     if(r.action==='list'){
         const summary=obj({orderId:id,financialStatus:{type:'string',enum:['EM_ANDAMENTO','AGUARDANDO_PAGAMENTO','PAGO','CANCELADO','FINALIZADO']},total:money,currency:kind('BRL'),createdAt:{type:'string',format:'date-time',nullable:true}});
         const page=obj({items:{type:'array',items:summary},pagination:obj({limit:{type:'integer',minimum:1,maximum:100},nextCursor:{...id,nullable:true}})});

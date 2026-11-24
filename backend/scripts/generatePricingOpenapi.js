@@ -21,7 +21,10 @@ delete spec.components.schemas.PricingQuote.properties.couponId;
 spec.components.schemas.PricingQuote.required=spec.components.schemas.PricingQuote.required.filter(x=>x!=='couponId');
 spec.components.schemas.PricingPromotion=obj({id,name:{type:'string'},category,discountBps:bps,publicGeneral:{type:'boolean'},startsAt:{type:'string'},endsAt:{type:'string'},active:{type:'boolean'}});
 spec.components.schemas.PricingCoupon=obj({id,code:{type:'string'},discountPercent:price,expiresOn:{type:'string',format:'date'},usageLimit:{type:'integer'},active:{type:'boolean'}});
-const quoteBody=obj({lines:{type:'array',minItems:1,maxItems:50,items:obj({category,id,quantity:{type:'integer',minimum:1,maximum:100},period:{type:'string',enum:['MONTHLY','ANNUAL']},halfPreview:{type:'boolean'}},['category','id','quantity'])},couponCode:{type:'string'}},['lines']);
+const quoteBody=obj({lines:{type:'array',minItems:1,maxItems:50,items:obj({category,id,quantity:{type:'integer',minimum:1,maximum:100},period:{type:'string',enum:['MONTHLY','ANNUAL']},halfPreview:{type:'boolean'}},['category','id','quantity'])},couponCode:{type:'string'},localId:{...id,description:'Prévia por cinema para linhas INPUT e COMBO, sem cupom. Erros de oferta, estoque ou preço são retornados na linha.'}},['lines']);
+const snackCategory={type:'string',enum:['INPUT','COMBO']};
+const snackBody=obj({localId:id,lines:{type:'array',minItems:1,maxItems:50,items:obj({category:snackCategory,id,quantity:{type:'integer',minimum:1,maximum:100}})}});
+spec.components.schemas.PricingQuote.properties.lines.items={oneOf:[ref('PricingLine'),obj({category:snackCategory,id,quantity:{type:'integer'},issue:{type:'string'}})]};
 const parameterBody=obj({markup_bps:{type:'integer',minimum:0,maximum:30000},margem_alerta_bps:bps,teto_desconto_bps:bps,ocupacao_referencia:{type:'integer',minimum:1},meia_projecao_bps:bps,combo_passo_bps:bps},[]);
 const costBody={oneOf:[obj({custo_receita:price,custo_parceria:price}),obj({custo_local_dia:price,custo_exibicao:price}),{...obj({custo_streaming_dia:price,custo_streaming_compra:price},[]),minProperties:1},obj({custo_operacional:price}),obj({custo_beneficios_mensal:price,custo_beneficios_anual:price,combo_gratis_mes:{type:'integer',minimum:0}})]};
 const promotionBody=obj({nome:{type:'string'},categoria:category,desconto_bps:{...bps,minimum:1},publico_geral:{type:'boolean'},inicio:{type:'string',format:'date-time'},fim:{type:'string',format:'date-time'},ativo:{type:'boolean'}},['nome','categoria','desconto_bps','inicio','fim']);
@@ -31,6 +34,15 @@ delete bodies.patchPromotion.properties.categoria;
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for(const r of pricingOperations){
     const op={operationId:r.operationId,tags:['Precificação'],summary:r.operationId.replaceAll('_',' '),description:r.action==='quote'?'Cotação informativa com custos reais e centavos exatos. Meia é prévia sem comprovação; cupom é confirmado somente na transação do pedido. Catálogo divergente impede finalização.':'ADMIN autenticado com 2FA. Alterações de custos e benefícios não alteram pedidos já cotados.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
+    if(r.action==='guestSnackQuote'){
+        op.security=[];
+        op.description='Prévia pública do AstraSnack por cinema. Considera somente promoções públicas e regras de combo. Em caso de indisponibilidade, retorna o problema na linha sem invalidar as demais.';
+        op.requestBody={required:true,content:{'application/json':{schema:snackBody}}};
+        op.responses['200']=response(ref('PricingQuote'));
+        for(const code of [400,413,422,429,500,503])op.responses[code]={$ref:`#/components/responses/${errors[code]}`};
+        (spec.paths[r.path]??={})[r.method]=op;
+        continue;
+    }
     for(const name of ['id','kind','category','planId'])if(r.path.includes(`{${name}}`))op.parameters.push({name,in:'path',required:true,schema:name==='id'||name==='planId'?id:name==='kind'?{type:'string',enum:['inputs','sessions','films','combos','plans']}:r.action==='setPlanBenefit'?{type:'string',enum:['SESSION','INPUT','COMBO','RENTAL','PURCHASE']}:category});
     if(['promotions','coupons'].includes(r.action))op.parameters.push({name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:id});
     if(bodies[r.action])op.requestBody={required:true,content:{'application/json':{schema:bodies[r.action],...(r.action==='quote'?{example:{lines:[{category:'INPUT',id:'1',quantity:1}],couponCode:'PROMO10'}}:{})}}};

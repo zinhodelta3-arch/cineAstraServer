@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react"
 const FAQS = [
   ["Quais planos incluem streaming?", "Confira a indicação de acesso ao catálogo na lista de benefícios de cada plano."],
   ["Posso pagar mensal ou anualmente?", "Consulte o preço publicado em cada período. O valor e as condições da assinatura aparecem antes do aceite."],
-  ["Quem paga pela assinatura contratada aqui?", "O titular assume o pagamento da assinatura. O limite de membros depende do plano."],
+  ["Como funciona o compartilhamento?", "Dupla e Família permitem convidar pessoas pelo perfil. O titular pode pagar o valor integral ou dividir as cobranças a partir do próximo ciclo."],
   ["Quando os benefícios ficam disponíveis?", "O pagamento precisa ser confirmado para que a assinatura seja ativada. Consulte a situação em Suas assinaturas."]
 ]
 

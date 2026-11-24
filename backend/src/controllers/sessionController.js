@@ -12,8 +12,14 @@ export function createSessionController(service) {
         unitCreate: async (req, res) => success(res, await service.create(req.input, context(req), true), 201),
         unitPatch: async (req, res) => success(res, await service.patch(req.params.id, req.input, context(req), true)),
         unitCancel: async (req, res) => { await service.cancel(req.params.id, context(req), true); res.sendStatus(204); },
+        unitArchive: async (req, res) => { await service.archive(req.params.id, context(req), true); res.sendStatus(204); },
+        unitFilmOffers: async (req, res) => success(res, await service.unitFilmOffers(req.sessionQuery, context(req))),
+        addUnitFilmOffer: async (req, res) => { await service.saveUnitFilmOffer(req.input.id_filme, req.input.observacao, 'add', context(req)); res.sendStatus(204); },
+        editUnitFilmOffer: async (req, res) => { await service.saveUnitFilmOffer(req.params.id, req.input.observacao, 'edit', context(req)); res.sendStatus(204); },
+        removeUnitFilmOffer: async (req, res) => { await service.saveUnitFilmOffer(req.params.id, null, 'remove', context(req)); res.sendStatus(204); },
         async create(req, res) { const data = await service.create(req.input, context(req)); res.location(`/api/admin/sessions/${data.id_sessao}`); success(res, data, 201); },
         async patch(req, res) { success(res, await service.patch(req.params.id, req.input, context(req))); },
-        async cancel(req, res) { await service.cancel(req.params.id, context(req)); res.sendStatus(204); }
+        async cancel(req, res) { await service.cancel(req.params.id, context(req)); res.sendStatus(204); },
+        async archive(req, res) { await service.archive(req.params.id, context(req)); res.sendStatus(204); }
     };
 }

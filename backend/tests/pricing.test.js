@@ -53,8 +53,25 @@ function fixture(published = true, markupBps = 6000){
         async audit(c,action,id){state.audit.push({action,id});}
     };
     const service=createPricingService({model,identity}),context={actor:{id:'3',tipo:'CLIENTE'}};
-    return {service,identity,context,get state(){return state;}};
+    return {model,service,identity,context,get state(){return state;}};
 }
+
+test('prévia do AstraSnack aplica promoções por público, benefícios e estoque da unidade em um lote',async()=>{
+    const f=fixture(),product=f.model.product;
+    f.model.product=async (category,id)=>({...await product(category),id,id_local:id==='12'?'2':'1'});
+    f.model.snackStock=async (category,id)=>[{id_local:'1',status:'DISPONIVEL',saldo:id==='11'?0:4,units:1}];
+    f.model.activePromotions=async()=>[{id_promocao:'1',desconto_bps:500,publico_geral:1},{id_promocao:'2',desconto_bps:500,publico_geral:0}];
+    f.model.activePlan=async()=>({id_plano:'1',contrato_snapshot:{discounts:{INPUT:500}}});
+    const input={localId:'1',lines:['10','11','12'].map(id=>({category:'INPUT',id,quantity:1}))};
+    const guest=await f.service.guestSnackQuote(input,{});
+    const customer=await f.service.quote(input,f.context);
+    assert.equal(guest.lines[0].unitPrice,'152.00');
+    assert.deepEqual(guest.lines[0].discountSources,['PROMOTION']);
+    assert.equal(customer.lines[0].unitPrice,'136.00');
+    assert.deepEqual(customer.lines[0].discountSources,['PROMOTION','SUBSCRIPTION']);
+    assert.deepEqual(customer.lines.slice(1).map(line=>line.issue),['INSUFFICIENT_STOCK','NOT_FOUND']);
+    assert.equal(customer.finalizable,false);
+});
 
 test('cotação não consome cupom; confirmação concorrente confirma só um pedido e snapshot',async()=>{
     const f=fixture(),input={lines:[{category:'INPUT',id:'10',quantity:1}],couponCode:'PROMO25'};

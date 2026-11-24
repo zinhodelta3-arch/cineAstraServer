@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { allowRoles } from '../middlewares/authMiddleware.js';
-import { salesPage,salesId,salesDraft,salesDraftCreate,salesPaymentNote,salesCancellation } from '../validators/salesValidators.js';
+import { salesPage,salesId,salesDraft,salesDraftCreate,salesPaymentNote,salesCancellation,salesSimulatedPix } from '../validators/salesValidators.js';
+import { paymentKey } from '../validators/paymentValidators.js';
 import { validateBody } from '../validators/identityValidators.js';
 
 export const salesOperations = [
@@ -9,6 +10,8 @@ export const salesOperations = [
   { method:'post',path:'/api/admin/sales/orders',operationId:'create_admin_order_draft' },
   { method:'patch',path:'/api/admin/sales/orders/{id}',operationId:'update_admin_order_draft' },
   { method:'post',path:'/api/admin/sales/orders/{id}/cancel',operationId:'cancel_admin_order' },
+  { method:'post',path:'/api/admin/sales/orders/{id}/simulated-pix',operationId:'create_admin_simulated_pix' },
+  ...['orders','payments','refunds'].map(kind=>({method:'post',path:`/api/admin/sales/${kind}/{id}/archive`,operationId:`archive_admin_${kind}`})),
   { method:'post',path:'/api/admin/sales/payments/{id}/reconcile',operationId:'reconcile_admin_payment' },
   { method:'get',path:'/api/admin/sales/payments/{id}/notes',operationId:'list_admin_payment_notes' },
   { method:'post',path:'/api/admin/sales/payments/{id}/notes',operationId:'add_admin_payment_note' }
@@ -22,6 +25,10 @@ export function salesRoutes(controller, { auth, limits }) {
   router.post('/api/admin/sales/orders',...writes,validateBody(salesDraftCreate),controller.createDraft);
   router.patch('/api/admin/sales/orders/:id',...writes,salesId,validateBody(salesDraft),controller.updateDraft);
   router.post('/api/admin/sales/orders/:id/cancel',...writes,salesId,validateBody(salesCancellation),controller.cancel);
+  router.post('/api/admin/sales/orders/:id/simulated-pix',...writes,salesId,paymentKey,validateBody(salesSimulatedPix),controller.simulatePix);
+  for(const kind of ['orders','payments','refunds']){
+    router.post(`/api/admin/sales/${kind}/:id/archive`,...writes,salesId,validateBody(salesSimulatedPix),controller.archive(kind));
+  }
   router.post('/api/admin/sales/payments/:id/reconcile',...writes,salesId,controller.reconcile);
   router.get('/api/admin/sales/payments/:id/notes',...admin,salesId,controller.paymentNotes);
   router.post('/api/admin/sales/payments/:id/notes',...writes,salesId,validateBody(salesPaymentNote),controller.addPaymentNote);

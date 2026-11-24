@@ -49,8 +49,10 @@ function fixture() {
         async updateMember(c, id, memberId, data) { Object.assign(state.members.find(m => m.id_equipe === String(id) && m.id_equipe_membro === String(memberId)), data); },
         async entry(id, entryId) { return entry(id, entryId) ?? null; },
         async pendingEntry(id, userId) { return state.entries.find(e => e.id_equipe === String(id) && e.id_usuario === String(userId) && e.status === 'PENDENTE') ?? null; },
+        async visibleInvitation(id,userId){const pending=await model.pendingEntry(id,userId);return pending?.tipo==='CONVITE'?pending:null;},
+        async updateEntryFunction(c,id,entryId,funcao){entry(id,entryId).funcao_proposta=funcao;},
         async listEntries(id, q, userId) { return state.entries.filter(e => e.id_equipe === String(id) && (!userId || e.id_usuario === userId) && BigInt(e.id_entrada) > BigInt(q.cursor ?? '0')); },
-        async createEntry(c, data) { const id = String(next.entry++); state.entries.push({ id_entrada: id, id_equipe: String(data.teamId), id_usuario: String(data.userId), id_emissor: String(data.actorId), tipo: data.type, funcao_proposta: data.functionName, status: 'PENDENTE', criado_em: '2026-10-08 00:00:00', decidido_em: null }); return id; },
+        async createEntry(c, data) { const id = String(next.entry++); state.entries.push({ id_entrada: id, id_equipe: String(data.teamId), id_usuario: String(data.userId), id_emissor: String(data.actorId), tipo: data.type, funcao_proposta: data.functionName, status: 'PENDENTE', criado_em: new Date().toISOString(), decidido_em: null }); return id; },
         async decideEntry(c, teamId, id, status) { Object.assign(entry(teamId, id), { status, decidido_em: '2026-10-08 00:00:01' }); },
         async cancelPending(c, id) { for (const e of state.entries.filter(e => e.id_equipe === String(id) && e.status === 'PENDENTE')) e.status = 'CANCELADA'; }
     };
@@ -93,6 +95,8 @@ test('solicitação não cria membro; apenas gestor próprio aceita e define fun
     await f.api('post', '/api/teams/1/entries/1/decision', '3').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(403);
     await f.api('post', '/api/teams/1/entries/1/decision', '2').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(403);
     f.supervisorLocations.set('2', '10');
+    await f.api('get', '/api/teams/1', '2').expect(200);
+    await f.api('patch', '/api/teams/1', '2').send({ nome: 'Outro nome' }).expect(403);
     await f.api('post', '/api/teams/1/entries/1/decision', '2').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(403);
     await f.api('post', '/api/teams/1/entries/1/decision').send({ decision: 'ACEITAR' }).expect(422);
     await f.api('post', '/api/teams/1/entries/1/decision').send({ decision: 'ACEITAR', funcao: 'Projeção' }).expect(200);
@@ -149,6 +153,20 @@ test('falha de notificação desfaz convite na mesma transação', async () => {
     await f.api('post', '/api/teams/1/entries/invitations').send({ userId: '4', funcao: 'Apoio' }).expect(201);
     assert.equal(f.state.entries.length, 1);
     assert.equal(f.state.notifications.length, 1);
+});
+
+test('admin edita apenas a função pendente, e o convite vencido é preservado como cancelado',async()=>{
+    const f=fixture();
+    await f.api('post','/api/teams').send({sessionId:'1',nome:'Portaria'}).expect(201);
+    await f.api('post','/api/teams/1/entries/invitations').send({userId:'4',funcao:'Atendimento'}).expect(201);
+    await f.api('patch','/api/teams/1/entries/1','1').send({funcao:'Bilheteria'}).expect(403);
+    await f.api('patch','/api/teams/1/entries/1','6').send({funcao:'Bilheteria'}).expect(200);
+    assert.equal(f.state.entries[0].funcao_proposta,'Bilheteria');
+    f.state.entries[0].criado_em=new Date(Date.now()-8*86400000).toISOString();
+    await f.api('post','/api/teams/1/entries/1/decision','4').send({decision:'ACEITAR'}).expect(409);
+    assert.equal(f.state.entries[0].status,'CANCELADA');
+    assert.equal(f.state.members.length,0);
+    assert.equal(f.state.events.at(-1).type,'TEAM.ENTRY_INVALIDATED');
 });
 
 test('SQL parametrizado, IDs BIGINT e campos de atualização restritos', async () => {

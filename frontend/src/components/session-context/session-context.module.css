@@ -1,0 +1,74 @@
+.context {
+  position: sticky;
+  top: var(--session-context-top, 0.75rem);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1rem;
+  margin-block: .5rem 1rem;
+  padding: .75rem .9rem;
+  border: 1px solid var(--border);
+  border-radius: .65rem;
+  background: var(--card);
+  color: var(--card-foreground);
+}
+
+.identity, .context nav {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.identity svg { flex-shrink: 0; color: var(--primary); }
+.identity { min-width: 0; overflow-wrap: anywhere; }
+.identity strong { display: block; line-height: 1.25; }
+.identity p { margin: .15rem 0 0; color: var(--muted-foreground); font-size: .78rem; }
+.context nav { flex-wrap: wrap; gap: .15rem; }
+.context nav a, .feedback button {
+  padding: .4rem .55rem;
+  border-radius: .35rem;
+  font-size: .82rem;
+  font-weight: 650;
+}
+.context nav a:hover, .feedback button:hover { background: var(--muted); }
+.context nav a[aria-current] { background: var(--primary); color: var(--primary-foreground); }
+.feedback { margin-block: .5rem; }
+
+.panel {
+  min-width: 0;
+  margin-block: 1rem;
+  border: 1px solid var(--border);
+  border-radius: .65rem;
+  background: var(--card);
+  color: var(--card-foreground);
+}
+.panelHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .55rem 1rem;
+  padding: .8rem 1rem;
+  border-bottom: 1px dashed var(--border);
+}
+.panelHeader h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+.field { display: grid; gap: .25rem; font-size: .78rem; font-weight: 650; }
+.panelHeader select {
+  max-width: 100%;
+  padding: .35rem .45rem;
+  border: 1px solid var(--border);
+  border-radius: .35rem;
+  background: var(--background);
+  color: var(--foreground);
+}
+.panelBody { padding: .85rem 1rem; }
+.panelBody p { font-size: .88rem; }
+.tableWrap { max-width: 100%; overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; text-align: start; font-size: .83rem; }
+.table th, .table td { padding: .6rem .5rem; text-align: start; }
+.table thead th { color: var(--muted-foreground); white-space: nowrap; }
+.table tbody tr { border-top: 1px solid var(--border); }
+.table tbody th { white-space: nowrap; }
+.textButton { text-decoration: underline; text-underline-offset: .15rem; }

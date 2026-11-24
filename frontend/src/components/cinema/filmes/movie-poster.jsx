@@ -15,8 +15,8 @@ export default function MoviePoster({ movie, onSelect, index }) {
         <div className="relative aspect-[2/3] overflow-hidden bg-muted">
           <PosterImage movie={movie} eager={index < 4} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />
           <div className={styles.posterScrim} aria-hidden="true" />
-          {movie.status !== "em-cartaz" && <span className={`${styles.titleFont} absolute left-3 top-3 rounded-md border border-primary/30 bg-secondary px-2.5 py-1.5 text-[11px] font-semibold uppercase text-secondary-foreground shadow-sm`}>
-            {movie.status === "pre-venda" ? "Pré-venda" : "Em breve"}
+          {movie.label && <span className={`${styles.titleFont} absolute left-3 top-3 rounded-md border border-primary/30 bg-secondary px-2.5 py-1.5 text-[11px] font-semibold uppercase text-secondary-foreground shadow-sm`}>
+            {movie.label}
           </span>}
           <div className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-background/90 via-background/40 to-transparent p-4 pt-16 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none" aria-hidden="true">
             <span className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground"><Ticket className="size-4" />Ver detalhes</span>

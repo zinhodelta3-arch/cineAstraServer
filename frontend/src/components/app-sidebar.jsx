@@ -39,7 +39,7 @@ function getInitials(user) {
   return (parts[0][0] + (parts.length > 1 ? parts.at(-1)[0] : "")).toUpperCase();
 }
 
-function NavigationItem({ item, pathname, collapsed, searching }) {
+function NavigationItem({ item, pathname, collapsed, searching, hrefFor }) {
   const Icon = item.icon;
   const children = item.children ?? [];
   const hasChildren = children.length > 0;
@@ -50,7 +50,7 @@ function NavigationItem({ item, pathname, collapsed, searching }) {
   if (!hasChildren && !item.href) return null;
 
   if (!hasChildren) return <li>
-    <Link prefetch={false} href={item.href} className={itemClass} aria-current={selected ? "page" : undefined} aria-label={collapsed ? item.label : undefined} title={collapsed ? item.label : undefined}>
+    <Link prefetch={false} href={hrefFor(item.href)} className={itemClass} aria-current={selected ? "page" : undefined} aria-label={collapsed ? item.label : undefined} title={collapsed ? item.label : undefined}>
       {Icon && <Icon size={18} strokeWidth={1.8} aria-hidden="true" />}
       {!collapsed && <span>{item.label}</span>}
     </Link>
@@ -63,37 +63,39 @@ function NavigationItem({ item, pathname, collapsed, searching }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start" className={styles.flyout} aria-label={item.label}>
         <p className={styles.flyoutTitle}>{item.label}</p>
-        <DropdownMenuItem render={<Link prefetch={false} href={item.href} />} className={styles.flyoutLink} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</DropdownMenuItem>
-        {children.map((child) => <DropdownMenuItem key={child.href} render={<Link prefetch={false} href={child.href} />} className={styles.flyoutLink} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</DropdownMenuItem>)}
+        <DropdownMenuItem render={<Link prefetch={false} href={hrefFor(item.href)} />} className={styles.flyoutLink} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</DropdownMenuItem>
+        {children.map((child) => <DropdownMenuItem key={child.href} render={<Link prefetch={false} href={hrefFor(child.href)} />} className={styles.flyoutLink} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</DropdownMenuItem>)}
       </DropdownMenuContent>
     </DropdownMenu>
   </li>;
 
   return <li>
     <div className={styles.navGroup}>
-      <Link prefetch={false} href={item.href} className={itemClass} aria-current={pathname === item.href ? "page" : undefined}>
+      <Link prefetch={false} href={hrefFor(item.href)} className={itemClass} aria-current={pathname === item.href ? "page" : undefined}>
         {Icon && <Icon size={18} strokeWidth={1.8} aria-hidden="true" />}
         <span>{item.label}</span>
       </Link>
       <button type="button" className={styles.groupToggle} onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={`${open ? "Recolher" : "Expandir"} subcategorias de ${item.label}`}><ChevronDown className={styles.groupChevron} size={15} aria-hidden="true" /></button>
     </div>
     {open && <ul className={styles.subnav}>{children.map((child) => <li key={child.href}>
-        <Link prefetch={false} href={child.href} className={`${styles.subnavLink} ${isCurrent(pathname, child.href) ? styles.subnavActive : ""}`} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</Link>
+        <Link prefetch={false} href={hrefFor(child.href)} className={`${styles.subnavLink} ${isCurrent(pathname, child.href) ? styles.subnavActive : ""}`} aria-current={isCurrent(pathname, child.href) ? "page" : undefined}>{child.label}</Link>
       </li>)}</ul>}
   </li>;
 }
 
-export function AppSidebar({ items = [], user, onLogout, loggingOut = false, collapsed = false, onToggle, onNavigate, mobile = false, className = "", homeHref = "/admin/dashboard", areaLabel = "Administração" }) {
+export function AppSidebar({ items = [], hrefFor = href => href, user, onLogout, loggingOut = false, collapsed = false, onToggle, onNavigate, mobile = false, className = "", homeHref = "/admin/dashboard", areaLabel = "Administração" }) {
   const pathname = usePathname();
   const logo = useThemeLogo();
   const [query, setQuery] = useState("");
   const searchRef = useRef(null);
   const focusSearchOnOpen = useRef(false);
   const search = normalize(query.trim());
+  const words=search.split(/\s+/);
+  const matches=(item)=>words.every(word=>normalize(`${item.label} ${item.href??""}`).includes(word));
   const visibleItems = items.map((item) => {
     if (!search) return item;
-    if (normalize(item.label).includes(search)) return item;
-    const children = item.children?.filter((child) => normalize(child.label).includes(search));
+    if (matches(item)) return item;
+    const children = item.children?.filter((child) => matches(child));
     return children?.length ? { ...item, children } : null;
   }).filter(Boolean);
 
@@ -127,7 +129,7 @@ export function AppSidebar({ items = [], user, onLogout, loggingOut = false, col
       {collapsed ? <button type="button" className={styles.searchButton} onClick={expandForSearch} aria-label="Expandir menu e buscar" title="Buscar páginas"><Search size={18} aria-hidden="true" /></button>
         : <label className={styles.searchField}><Search size={17} aria-hidden="true" /><span className="sr-only">Buscar página no menu</span><input ref={searchRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar página" /></label>}
       {!collapsed && <p className={styles.sectionLabel}>Navegação</p>}
-      <ul className={styles.navList}>{visibleItems.map((item) => <NavigationItem key={item.href || item.label} item={item} pathname={pathname} collapsed={collapsed} searching={Boolean(search)} />)}</ul>
+      <ul className={styles.navList}>{visibleItems.map((item) => <NavigationItem key={item.href || item.label} item={item} pathname={pathname} hrefFor={hrefFor} collapsed={collapsed} searching={Boolean(search)} />)}</ul>
       {!collapsed && !visibleItems.length && <p className={styles.noResults}>Nenhuma página encontrada.</p>}
     </nav>
 

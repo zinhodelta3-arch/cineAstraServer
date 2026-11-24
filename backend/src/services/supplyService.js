@@ -1,6 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { unitReadLocation } from './unitReadScope.js';
 import { idString } from '../utils/dto.js';
+import { interval } from './sessionService.js';
 
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message,409,null,'SUPPLY_CONFLICT');
@@ -8,7 +9,8 @@ const same = (a,b) => idString(a) === idString(b);
 const itemKind = r => r.id_insumo ? 'input' : 'equipment';
 const itemId = r => r.id_insumo ?? r.id_equipamento;
 const requestDto = r => ({id_solicitacao:idString(r.id_solicitacao),id_usuario:idString(r.id_usuario),id_local:idString(r.id_local),id_sessao:r.id_sessao===null?null:idString(r.id_sessao),id_insumo:r.id_insumo===null?null:idString(r.id_insumo),id_equipamento:r.id_equipamento===null?null:idString(r.id_equipamento),quantidade:r.quantidade,status:r.status,observacao:r.observacao??null,data_solicitacao:r.data_solicitacao,
-    nome_item:r.nome_item??null,distancia_km:r.distancia_km??null,tempo_estimado_min:r.tempo_estimado_min??null,
+    nome_item:r.nome_item??null,distancia_km:r.distancia_km??null,tempo_estimado_min:r.tempo_estimado_min??null,fornecedor:r.fornecedor??null,
+    entrega:r.id_logistica==null?null:{id_logistica:idString(r.id_logistica),status:r.status_entrega,envio:r.data_envio??null,recebimento:r.data_recebimento??null},
     estoque_origem:r.estoque_origem??null,status_supervisao:r.status_supervisao??null,
     id_supervisor_decisao:r.id_supervisor_decisao==null?null:idString(r.id_supervisor_decisao),data_decisao_supervisao:r.data_decisao_supervisao??null});
 const forwarded = request => request.status_supervisao == null || request.status_supervisao === 'APROVADA';
@@ -23,11 +25,22 @@ const logisticsRouteDto = row => ({
     status:row.status
 });
 const shipmentDto = r => ({id_logistica:idString(r.id_logistica),id_fornecedor:idString(r.id_fornecedor),id_local_origem:r.id_local_origem==null?null:idString(r.id_local_origem),id_local_destino:idString(r.id_local_destino),id_solicitacao:r.id_solicitacao==null?null:idString(r.id_solicitacao),id_insumo_origem:r.id_insumo_origem==null?null:idString(r.id_insumo_origem),id_equipamento_origem:r.id_equipamento_origem==null?null:idString(r.id_equipamento_origem),id_insumo_destino:r.id_insumo_destino==null?null:idString(r.id_insumo_destino),quantidade:r.quantidade,status:r.status,data_envio:r.data_envio??null,data_prevista:r.data_prevista??null,data_recebimento:r.data_recebimento??null,data_devolucao:r.data_devolucao??null,id_usuario_recebimento:r.id_usuario_recebimento==null?null:idString(r.id_usuario_recebimento),id_usuario_devolucao:r.id_usuario_devolucao==null?null:idString(r.id_usuario_devolucao),observacao:r.observacao??null,
-    id_transporte:r.id_transporte==null?null:idString(r.id_transporte),nome_transporte:r.nome_transporte??null,
+    id_transporte:r.id_transporte==null?null:idString(r.id_transporte),nome_transporte:r.nome_transporte??null,nome_item:r.nome_item??null,
     id_rota_referencia:r.id_rota_referencia==null?null:idString(r.id_rota_referencia),
     distancia_rota_km:r.distancia_rota_km??null,tempo_rota_min:r.tempo_rota_min??null,
     devolucao_disponivel:Number(r.devolucao_disponivel)===1});
 const page = (rows,q,dto,key) => { const items=rows.slice(0,q.limit);return {items:items.map(dto),pagination:{limit:q.limit,nextCursor:rows.length>q.limit?idString(items.at(-1)[key]):null}}; };
+const locallyAvailable = row => row.status==='DISPONIVEL';
+const inputStock = row => {
+    const available=locallyAvailable(row)?row.quantidade-row.quantidade_reservada:0;
+    return {id_insumo:idString(row.id),id_fornecedor:idString(row.id_fornecedor),nome:row.nome,quantidade:row.quantidade,
+        disponivel:available,status:available>0?'EM_ESTOQUE':'SEM_ESTOQUE',movimentavel:locallyAvailable(row)};
+};
+const equipmentStock = row => {
+    const movable=locallyAvailable(row)&&Number(row.comprometido)!==1;
+    return {id_equipamento:idString(row.id),id_fornecedor:idString(row.id_fornecedor),nome:row.nome,quantidade:row.quantidade,
+        status:locallyAvailable(row)&&row.quantidade>0?'EM_ESTOQUE':'SEM_ESTOQUE',movimentavel:movable};
+};
 const inputLinkDto = row => ({
     id_vinculo:idString(row.id_vinculo),
     id_insumo_origem:idString(row.id_insumo_origem),
@@ -55,7 +68,8 @@ export function createSupplyService({model,identity,notifications}) {
             if(!sessionId){if(!allowEnded)throw ApiError.acessoNegado();return;}
         }else if(!sessionId)throw ApiError.acessoNegado();
         const session=found(await model.session(sessionId,c));
-        if(!same(session.id_local,localId)||!(allowEnded?['AGENDADA','EM_CARTAZ','ENCERRADA']:['AGENDADA','EM_CARTAZ']).includes(session.status)||session.local_status!=='ATIVO'||a.role==='COLABORADOR'&&!await model.member(a.id,sessionId,c))throw ApiError.acessoNegado();
+        const permitted=allowEnded==='history'||(allowEnded?['AGENDADA','EM_CARTAZ','ENCERRADA']:['AGENDADA','EM_CARTAZ']).includes(session.status);
+        if(!same(session.id_local,localId)||!permitted||session.local_status!=='ATIVO'||a.role==='COLABORADOR'&&!await model.member(a.id,sessionId,c,!allowEnded))throw ApiError.acessoNegado();
     }
     async function supplier(c,a,id) {
         if(a.role==='ADMIN')return;
@@ -74,13 +88,28 @@ export function createSupplyService({model,identity,notifications}) {
             if(!forwarded(r))throw ApiError.naoEncontrado();
             const item=found(await model.item(itemKind(r),itemId(r),c));await supplier(c,a,item.id_fornecedor);return;
         }
-        await staff(c,a,r.id_sessao,r.id_local,true);
+        await staff(c,a,r.id_sessao,r.id_local,'history');
     }
     const tx=(context,work)=>identity.transaction(async c=>work(c,await actor(c,context)),context);
     const adminTx=(context,work)=>tx(context,(c,a)=>{
         if(a.role!=='ADMIN')throw ApiError.acessoNegado();
         return work(c);
     });
+    async function assertDispatchStock(c,request,item,quantity) {
+        if(item.status!=='DISPONIVEL'||item.quantidade-(item.quantidade_reservada??0)<quantity)throw conflict('Saldo insuficiente');
+        if(itemKind(request)==='equipment'&&(item.quantidade!==quantity||await model.equipmentInTransit(itemId(request),c))) {
+            throw conflict('Equipamento exige transferência integral e livre');
+        }
+    }
+    async function prepareShipment(c,a,request,item) {
+        if(await model.shipmentByRequest(request.id_solicitacao,c))throw conflict('Já existe uma entrega para a solicitação.');
+        await assertDispatchStock(c,request,item,request.quantidade);
+        const id=await model.createShipment(c,{supplierId:item.id_fornecedor,originId:item.id_local,destinationId:request.id_local,
+            requestId:request.id_solicitacao,inputId:request.id_insumo,equipmentId:request.id_equipamento,quantity:request.quantidade});
+        await model.shipmentEvent(c,id,a.id,'STATUS','PENDENTE');
+        return id;
+    }
+    const transportDto=row=>({id_transporte:idString(row.id_transporte),nome:row.nome,identificacao:row.identificacao??null});
     return {
         inputLinks:(q,context)=>adminTx(context,async c=>
             page(await model.inputLinks(q,c),q,inputLinkDto,'id_vinculo')),
@@ -132,21 +161,23 @@ export function createSupplyService({model,identity,notifications}) {
             const key=equipment?'id_equipamento':'id_insumo';
             const rows=equipment?await model.availableEquipment(localId,q,c):await model.availableInputs(localId,q,c);
             return page(rows,q,r=>({[key]:idString(r[key]),nome:r.nome,
-                id_local_origem:idString(r.id_local_origem),nome_origem:r.nome_origem,disponivel:r.disponivel}),key);
+                id_local_origem:idString(r.id_local_origem),nome_origem:r.nome_origem,fornecedor:r.fornecedor??null,disponivel:r.disponivel}),key);
         }); },
         async stock(q,context) { return tx(context,async(c,a)=>{
-            if(a.role==='COLABORADOR')await unitReadLocation(c,{id_usuario:a.id,tipo_usuario:a.role},q.localId);
+            const scopedActor={id_usuario:a.id,tipo_usuario:a.role};
+            if(a.role==='COLABORADOR')await unitReadLocation(c,scopedActor,q.localId);
             else if(a.role!=='ADMIN')await staff(c,a,q.sessionId,q.localId,true);
             const local=found(await model.local(q.localId,c));if(local.status!=='ATIVO')throw conflict('Local indisponível');
             const stock=await model.stock(q.localId,c),incoming=await model.incoming(q.localId,c);
-            return {id_local:q.localId,inputs:stock.inputs.map(r=>({id_insumo:idString(r.id),id_fornecedor:idString(r.id_fornecedor),nome:r.nome,quantidade:r.quantidade,disponivel:r.status==='DISPONIVEL'?r.quantidade-r.quantidade_reservada:0,status:r.status==='DISPONIVEL'&&r.quantidade-r.quantidade_reservada>0?'EM_ESTOQUE':'SEM_ESTOQUE'})),equipment:stock.equipment.map(r=>({id_equipamento:idString(r.id),id_fornecedor:idString(r.id_fornecedor),nome:r.nome,quantidade:r.quantidade,status:r.status==='DISPONIVEL'&&r.quantidade>0?'EM_ESTOQUE':'SEM_ESTOQUE'})),a_chegar:incoming.map(r=>({id_logistica:idString(r.id_logistica),id_insumo:r.id_insumo_origem==null?null:idString(r.id_insumo_origem),id_equipamento:r.id_equipamento_origem==null?null:idString(r.id_equipamento_origem),nome:r.nome,quantidade:r.quantidade,status:r.status}))};
+            const canRecord=a.role!=='COLABORADOR'||Boolean(await unitReadLocation(c,scopedActor,q.localId,{activeTeam:true,optional:true}));
+            return {id_local:q.localId,can_record:canRecord,inputs:stock.inputs.map(inputStock),equipment:stock.equipment.map(equipmentStock),a_chegar:incoming.map(r=>({id_logistica:idString(r.id_logistica),id_insumo:r.id_insumo_origem==null?null:idString(r.id_insumo_origem),id_equipamento:r.id_equipamento_origem==null?null:idString(r.id_equipamento_origem),nome:r.nome,quantidade:r.quantidade,status:r.status}))};
         }); },
-        async requests(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','SUPERVISOR','COLABORADOR','FORNECEDOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(a.role==='SUPERVISOR'){const location=await model.supervisorLocation(a.id,c);if(!location||q.localId&&!same(q.localId,location.id_local))throw ApiError.acessoNegado();q.localId=idString(location.id_local);if(q.sessionId)await staff(c,a,q.sessionId,q.localId,true);}if(a.role==='COLABORADOR'){if(!q.sessionId||!q.localId)throw ApiError.validacao('localId e sessionId obrigatórios');await staff(c,a,q.sessionId,q.localId,true);}return page(await model.listRequests(q,c),q,requestDto,'id_solicitacao');}); },
+        async requests(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','SUPERVISOR','COLABORADOR','FORNECEDOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(a.role==='SUPERVISOR'){const location=await model.supervisorLocation(a.id,c);if(!location||q.localId&&!same(q.localId,location.id_local))throw ApiError.acessoNegado();q.localId=idString(location.id_local);if(q.sessionId)await staff(c,a,q.sessionId,q.localId,'history');}if(a.role==='COLABORADOR'){if(!q.sessionId||!q.localId)throw ApiError.validacao('localId e sessionId obrigatórios');await staff(c,a,q.sessionId,q.localId,'history');}return page(await model.listRequests(q,c),q,requestDto,'id_solicitacao');}); },
         async request(id,context) { return tx(context,async(c,a)=>{const r=found(await model.request(id,c));await visibleRequest(c,a,r);return requestDto(r);}); },
         alternatives:(id,context)=>tx(context,async(c,a)=>{
             if(!['SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();
             const request=found(await model.request(id,c));
-            await staff(c,a,request.id_sessao,request.id_local,true);
+            await staff(c,a,request.id_sessao,request.id_local,'history');
             if(request.status!=='RECUSADA'&&(request.status!=='PENDENTE'||request.estoque_origem==='DISPONIVEL')) {
                 return {items:[]};
             }
@@ -162,9 +193,13 @@ export function createSupplyService({model,identity,notifications}) {
             if(!['ADMIN','SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();
             const local=found(await model.local(input.localId,c));if(local.status!=='ATIVO')throw conflict('Local indisponível');
             await staff(c,a,input.sessionId,input.localId,a.role==='SUPERVISOR'&&!input.sessionId);
-            if(input.sessionId){const s=found(await model.session(input.sessionId,c));if(!same(s.id_local,input.localId)||!['AGENDADA','EM_CARTAZ'].includes(s.status))throw conflict('Sessão incompatível');}
+            if(input.sessionId){
+                const s=found(await model.session(input.sessionId,c));
+                if(!same(s.id_local,input.localId)||!['AGENDADA','EM_CARTAZ'].includes(s.status)||s.data&&interval(s).end<=Date.now())throw conflict('Sessão incompatível');
+            }
             const kind=input.inputId?'input':'equipment', item=found(await model.item(kind,input.inputId??input.equipmentId,c,kind==='equipment'));
             if(item.status!=='DISPONIVEL')throw conflict('Item indisponível');
+            if(item.id_local!=null&&same(item.id_local,input.localId))throw conflict('Selecione um item com origem diferente da unidade de destino.');
             if(kind==='equipment'&&(input.quantity!==item.quantidade||await model.equipmentInTransit(input.equipmentId,c))) {
                 throw conflict('Equipamento exige transferência integral e livre');
             }
@@ -182,28 +217,87 @@ export function createSupplyService({model,identity,notifications}) {
             await notifications?.emit(c,{
                 recipientId:idString(request.id_usuario),title:'Decisão sobre reposição',
                 message:status==='APROVADA'?`A solicitação #${id} foi aprovada e encaminhada ao fornecedor.`:`A solicitação #${id} foi rejeitada pela supervisão.`,
-                type:'SUPPLY_SUPERVISOR_REVIEW',dedupeKey:`supply-supervisor-review:${id}`
+                type:'SUPPLY_SUPERVISOR_REVIEW',dedupeKey:`supply-supervisor-review:${id}`,target:{kind:'supply',id}
             });
             await identity.audit(c,`SUPPLY.SUPERVISION_${status}`,id,context);
             return requestDto(found(await model.request(id,c)));
         }); },
-        async decide(id,status,context) { return tx(context,async(c,a)=>{
+        async editRequest(id,input,context) { return tx(context,async(c,a)=>{
+            if(a.role!=='ADMIN')throw ApiError.acessoNegado();
+            const request=found(await model.request(id,c,true));
+            if(request.status!=='PENDENTE'||await model.shipmentByRequest(id,c))throw conflict('A solicitação já foi decidida ou tem uma entrega vinculada.');
+            const quantity=input.quantity??request.quantidade;
+            const changed=quantity!==request.quantidade;
+            if(changed){
+                const item=found(await model.item(itemKind(request),itemId(request),c,true));
+                await grant(c,item.id_fornecedor,item.id_local);
+                await grant(c,item.id_fornecedor,request.id_local);
+                await assertDispatchStock(c,request,item,quantity);
+            }
+            await model.updateRequest(c,id,quantity,Object.hasOwn(input,'note')?input.note:request.observacao,
+                changed&&request.status_supervisao==='APROVADA');
+            await identity.audit(c,'SUPPLY.REQUEST_EDITED',id,context);
+            return requestDto(found(await model.request(id,c)));
+        }); },
+        async cancelRequest(id,context) { return tx(context,async(c,a)=>{
+            if(a.role!=='ADMIN')throw ApiError.acessoNegado();
+            const request=found(await model.request(id,c,true));
+            if(request.status==='CANCELADA')return requestDto(found(await model.request(id,c)));
+            if(request.status!=='PENDENTE'||await model.shipmentByRequest(id,c))throw conflict('Somente solicitações pendentes sem entrega podem ser canceladas.');
+            await model.setRequest(c,id,'CANCELADA');
+            await identity.audit(c,'SUPPLY.REQUEST_CANCELLED',id,context);
+            return requestDto(found(await model.request(id,c)));
+        }); },
+        async decide(id,status,context,{prepareShipment:prepare=true}={}) { return tx(context,async(c,a)=>{
             if(!['ADMIN','FORNECEDOR'].includes(a.role))throw ApiError.acessoNegado();
+            if(!prepare&&a.role!=='ADMIN')throw ApiError.acessoNegado();
             const r=found(await model.request(id,c,true));
             if(!forwarded(r))throw ApiError.naoEncontrado();
             const item=found(await model.item(itemKind(r),itemId(r),c,true));await supplier(c,a,item.id_fornecedor);
             if(r.status!== 'PENDENTE')throw conflict('Solicitação já decidida');
             await grant(c,item.id_fornecedor,item.id_local);await grant(c,item.id_fornecedor,r.id_local);
             if(status==='APROVADA'){
-                if(item.status!=='DISPONIVEL'||item.quantidade-(item.quantidade_reservada??0)<r.quantidade)throw conflict('Saldo insuficiente');
-                if(itemKind(r)==='equipment'&&(item.quantidade!==r.quantidade||await model.equipmentInTransit(itemId(r),c)))throw conflict('Equipamento exige transferência integral e livre');
-                if(await model.shipmentByRequest(id,c))throw conflict('Envio já vinculado');
-                const shipmentId=await model.createShipment(c,{supplierId:item.id_fornecedor,originId:item.id_local,destinationId:r.id_local,requestId:id,inputId:r.id_insumo,equipmentId:r.id_equipamento,quantity:r.quantidade});
-                await model.shipmentEvent(c,shipmentId,a.id,'STATUS','PENDENTE');
+                if(prepare)await prepareShipment(c,a,r,item);
+                else await assertDispatchStock(c,r,item,r.quantidade);
             }
             await model.setRequest(c,id,status);await identity.audit(c,`SUPPLY.${status}`,id,context);return requestDto(found(await model.request(id,c)));
         }); },
-        async shipments(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(a.role==='SUPERVISOR'){const location=await model.supervisorLocation(a.id,c);if(!location||q.localId&&!same(q.localId,location.id_local))throw ApiError.acessoNegado();q.localId=idString(location.id_local);if(q.sessionId)await staff(c,a,q.sessionId,q.localId,true);}if(a.role==='COLABORADOR'){if(!q.localId||!q.sessionId)throw ApiError.validacao('localId e sessionId obrigatórios');await staff(c,a,q.sessionId,q.localId,true);}return page(await model.listShipments(q,c),q,shipmentDto,'id_logistica');}); },
+        createShipment:({requestId},context)=>tx(context,async(c,a)=>{
+            if(a.role!=='ADMIN')throw ApiError.acessoNegado();
+            const request=found(await model.request(requestId,c,true));
+            if(!forwarded(request)||request.status!=='APROVADA')throw conflict('Selecione uma solicitação aprovada.');
+            const item=found(await model.item(itemKind(request),itemId(request),c,true));
+            await grant(c,item.id_fornecedor,item.id_local);
+            await grant(c,item.id_fornecedor,request.id_local);
+            const id=await prepareShipment(c,a,request,item);
+            await identity.audit(c,'LOGISTICS.CREATED_BY_ADMIN',id,context);
+            return shipmentDto(found(await model.shipment(id,c)));
+        }),
+        editShipment:(id,input,context)=>tx(context,async(c,a)=>{
+            if(a.role!=='ADMIN')throw ApiError.acessoNegado();
+            const row=found(await model.shipment(id,c,true));
+            if(row.status!=='PENDENTE')throw conflict('A entrega só pode ser editada antes do envio.');
+            if(input.transportId){
+                if((await model.transport(c,input.transportId,row.id_fornecedor))?.status!=='ATIVO'||await model.transportInUse(c,input.transportId)) {
+                    throw conflict('Selecione um transporte ativo e livre do fornecedor.');
+                }
+            }
+            await model.updateShipmentPlan(c,id,{transportId:Object.hasOwn(input,'transportId')?input.transportId:row.id_transporte,
+                note:Object.hasOwn(input,'note')?input.note:row.observacao});
+            await identity.audit(c,'LOGISTICS.PLAN_CHANGED_BY_ADMIN',id,context);
+            return shipmentDto(found(await model.shipment(id,c)));
+        }),
+        dispatchOptions:(id,q,context)=>tx(context,async(c,a)=>{
+            const row=found(await model.shipment(id,c));
+            await supplier(c,a,row.id_fornecedor);
+            if(row.status!=='PENDENTE')throw conflict('A entrega já saiu ou foi cancelada.');
+            const route=await model.routeForShipment(c,row);
+            const preferred=await model.preferredTransport(c,row);
+            return {...page(await model.dispatchTransports(c,row,q),q,transportDto,'id_transporte'),
+                route:route?{id_rota:idString(route.id_rota),distancia_km:route.distancia_km,tempo_estimado_min:route.tempo_estimado_min}:null,
+                preferred:preferred?transportDto(preferred):null};
+        }),
+        async shipments(q,context) { return tx(context,async(c,a)=>{if(!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(a.role))throw ApiError.acessoNegado();if(a.role==='FORNECEDOR'){const own=found(await model.supplierByUser(a.id,c));if(own.status!=='ATIVO')throw ApiError.acessoNegado();q.supplierId=idString(own.id_fornecedor);}if(a.role==='SUPERVISOR'){const location=await model.supervisorLocation(a.id,c);if(!location||q.localId&&!same(q.localId,location.id_local))throw ApiError.acessoNegado();q.localId=idString(location.id_local);if(q.sessionId)await staff(c,a,q.sessionId,q.localId,'history');}if(a.role==='COLABORADOR'){if(!q.localId||!q.sessionId)throw ApiError.validacao('localId e sessionId obrigatórios');await staff(c,a,q.sessionId,q.localId,'history');}return page(await model.listShipments(q,c),q,shipmentDto,'id_logistica');}); },
         async shipment(id,context) { return tx(context,async(c,a)=>{const r=found(await model.shipment(id,c));await supplierOrStaff(c,a,r);return shipmentDto(r);}); },
         async history(id,q,context) { return tx(context,async(c,a)=>{
             const shipment=found(await model.shipment(id,c));
@@ -243,11 +337,14 @@ export function createSupplyService({model,identity,notifications}) {
         async transitionShipment(id,action,context,input) { return tx(context,async(c,a)=>{
             const initial=found(await model.shipment(id,c));
             const request=found(await model.request(initial.id_solicitacao,c,true));
-            const kind=itemKind(request),source=found(await model.item(kind,itemId(request),c,true));
+            const kind=itemKind(request);
+            const source=action==='cancel'?null:found(await model.item(kind,itemId(request),c,true));
             const r=found(await model.shipment(id,c,true));
             if(request.status!=='APROVADA'||!same(r.id_solicitacao,request.id_solicitacao))throw conflict('Solicitação incompatível');
-            if(!same(source.id_fornecedor,r.id_fornecedor)||!same(source.id_local,r.id_local_origem)||!same(r.id_local_destino,request.id_local)||r.quantidade!==request.quantidade)throw conflict('Origem, destino ou item divergente');
-            await grant(c,r.id_fornecedor,r.id_local_origem);await grant(c,r.id_fornecedor,r.id_local_destino);
+            if(action!=='cancel'){
+                if(!same(source.id_fornecedor,r.id_fornecedor)||!same(source.id_local,r.id_local_origem)||!same(r.id_local_destino,request.id_local)||r.quantidade!==request.quantidade)throw conflict('Origem, destino ou item divergente');
+                await grant(c,r.id_fornecedor,r.id_local_origem);await grant(c,r.id_fornecedor,r.id_local_destino);
+            }
             if(action==='send'){
                 await supplier(c,a,r.id_fornecedor);if(r.status!=='PENDENTE')throw conflict('Envio já iniciado');
                 if(!input?.transportId)throw ApiError.validacao('Selecione um transporte cadastrado.');
@@ -264,12 +361,12 @@ export function createSupplyService({model,identity,notifications}) {
                     title:'Material enviado',
                     message:`O envio #${id} da sua solicitação #${request.id_solicitacao} foi confirmado.`,
                     type:'SUPPLY_SHIPMENT_SENT',
-                    dedupeKey:`supply-shipment-sent:${id}`
+                    dedupeKey:`supply-shipment-sent:${id}`,target:{kind:'supply',id:idString(request.id_solicitacao)}
                 });
             }else if(action==='transit'){
                 await supplier(c,a,r.id_fornecedor);if(r.status!=='ENVIADO')throw conflict('Estado de envio incompatível');await model.setShipment(c,id,'EM_TRANSITO');
             }else if(action==='receive'){
-                if(a.role!=='ADMIN'){if(a.role==='FORNECEDOR')throw ApiError.acessoNegado();await staff(c,a,request.id_sessao,request.id_local,a.role==='SUPERVISOR'&&!request.id_sessao);}
+                if(a.role!=='ADMIN'){if(a.role==='FORNECEDOR')throw ApiError.acessoNegado();await staff(c,a,request.id_sessao,request.id_local,'history');}
                 if(!['ENVIADO','EM_TRANSITO'].includes(r.status))throw conflict('Recebimento exige envio ativo');
                 if(kind==='input'){
                     let targetId=itemId(request);
@@ -292,12 +389,12 @@ export function createSupplyService({model,identity,notifications}) {
                 await model.setShipment(c,id,'RECEBIDO',a.id);await model.setRequest(c,request.id_solicitacao,'FINALIZADA');
             }else if(action==='cancel'){
                 await supplier(c,a,r.id_fornecedor);if(r.status!=='PENDENTE')throw conflict('Somente envio pendente pode ser cancelado');
-                await model.setShipment(c,id,'CANCELADO');await model.setRequest(c,request.id_solicitacao,'RECUSADA');
+                await model.setShipment(c,id,'CANCELADO');await model.setRequest(c,request.id_solicitacao,a.role==='ADMIN'?'CANCELADA':'RECUSADA');
             }
             const shipment=found(await model.shipment(id,c));
             await model.shipmentEvent(c,id,a.id,'STATUS',shipment.status);
             await identity.audit(c,`LOGISTICS.${action.toUpperCase()}`,id,context);return shipmentDto(shipment);
         }); }
     };
-    async function supplierOrStaff(c,a,r){if(a.role==='ADMIN')return;if(a.role==='FORNECEDOR')return supplier(c,a,r.id_fornecedor);const req=found(await model.request(r.id_solicitacao,c));return staff(c,a,req.id_sessao,req.id_local,true);}
+    async function supplierOrStaff(c,a,r){if(a.role==='ADMIN')return;if(a.role==='FORNECEDOR')return supplier(c,a,r.id_fornecedor);const req=found(await model.request(r.id_solicitacao,c));return staff(c,a,req.id_sessao,req.id_local,'history');}
 }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Archive, Pencil, Plus, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useAdminVenues, useVenueActions, venueRequest } from "@/hooks/admin/use-admin-venues";
+import RoomSeatWorkspace from "@/components/cinema/assentos/room-seat-workspace";
 import VenueLayout, { VenuePicker, VenueState } from "./venue-layout";
 import styles from "../catalog/catalog.module.css";
 
@@ -15,6 +16,7 @@ export default function SeatsAdmin() {
   const [local, setLocal] = useState(null);
   const [room, setRoom] = useState(null);
   const [status, setStatus] = useState("Todos");
+  const [layoutRevision,setLayoutRevision]=useState(0);
   const [accessible, setAccessible] = useState("Todos");
   const locals = useAdminVenues("locations?limit=100");
   const rooms = useAdminVenues(local ? `locations/${local.id_local}/rooms?limit=100` : null);
@@ -22,7 +24,7 @@ export default function SeatsAdmin() {
   if (status !== "Todos") params.set("status", status);
   if (accessible !== "Todos") params.set("accessible", accessible);
   const seats = useAdminVenues(local && room ? `locations/${local.id_local}/rooms/${room.id_sala}/seats?${params}` : null);
-  const actions = useVenueActions(seats);
+  const actions = useVenueActions({reload:()=>{seats.reload();setLayoutRevision(value=>value+1);}});
   const item = actions.dialog?.item;
 
   useEffect(() => {
@@ -55,7 +57,8 @@ export default function SeatsAdmin() {
     const fileira = String(form.get("fileira") ?? "").trim().toUpperCase();
     const numero = Number(form.get("numero"));
     if (!/^[A-Z0-9]{1,5}$/.test(fileira) || !Number.isInteger(numero) || numero < 1 || numero > 2147483647) { actions.setError("Informe uma fileira de até 5 letras ou números e um número válido."); return; }
-    let body = { fileira, numero, tipo: String(form.get("tipo")), status: String(form.get("status")) };
+    const position=form.get("posicao_visual");
+    let body = { fileira, numero, tipo: String(form.get("tipo")), status: String(form.get("status")),posicao_visual:position?Number(position):null };
     if (item) {
       body = Object.fromEntries(Object.entries(body).filter(([key, value]) => value !== item[key]));
       if (!Object.keys(body).length) { actions.setError("Nenhuma alteração para salvar."); return; }
@@ -66,6 +69,10 @@ export default function SeatsAdmin() {
   return <VenueLayout title="Assentos" description="Organize os lugares e os recursos de acessibilidade de cada sala." action={<button type="button" className={styles.primary} onClick={() => actions.open("form")} disabled={!room}><Plus size={16} aria-hidden="true" />Novo assento</button>}>
     {actions.notice && <p className={styles.notice} role="status">{actions.notice}</p>}
     <section className={styles.filmPicker} aria-label="Selecionar cinema e sala"><VenuePicker label="Cinema" value={local?.id_local} selected={local} list={locals} idKey="id_local" onChange={selectLocal} placeholder="Selecione um cinema" />{local && <VenuePicker label="Sala" value={room?.id_sala} selected={room} list={rooms} idKey="id_sala" onChange={selectRoom} placeholder="Selecione uma sala" />}</section>
+    {room&&<section className={styles.panel} aria-label="Mapa da sala"><div className="p-4">
+      <RoomSeatWorkspace key={room.id_sala} path={`locations/${local.id_local}/rooms/${room.id_sala}`} request={venueRequest} canManage revision={layoutRevision}
+        onEdit={row=>actions.open('form',row)} onChanged={seats.reload} />
+    </div></section>}
     <section className={styles.panel} aria-labelledby="seats-title"><header className={styles.panelHeader}><div><h2 id="seats-title">{room ? `Assentos · ${room.nome}` : "Assentos da sala"}</h2><p>{room ? `${local.nome} · capacidade de ${room.capacidade} lugares` : "Selecione um cinema e uma sala para visualizar os assentos."}</p></div>{room && <span className={styles.count}>{seats.items.length} carregados</span>}</header>
       {room && <div className={styles.toolbar}><label className={styles.filter}>Status<select value={status} onChange={(event) => setStatus(event.target.value)}><option>Todos</option><option value="ATIVA">Ativos</option><option value="INATIVA">Inativos</option></select></label><label className={styles.filter}>Acessibilidade<select value={accessible} onChange={(event) => setAccessible(event.target.value)}><option>Todos</option><option value="true">Acessíveis</option><option value="false">Demais</option></select></label></div>}
       {!room && <p className={styles.state}>Selecione um cinema e uma sala acima para começar.</p>}
@@ -74,7 +81,7 @@ export default function SeatsAdmin() {
         <TablePagination list={seats} /></>}
     </section>
     <Dialog open={Boolean(actions.dialog)} onOpenChange={(value) => { if (!value) actions.close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{actions.dialog?.type === "status" ? `${item?.status === "ATIVA" ? "Arquivar" : "Reativar"} assento` : item ? "Editar assento" : "Novo assento"}</DialogTitle>
-      {actions.dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>Assento da sala {room?.nome}. A fileira e o número identificam o lugar.</DialogDescription><form key={item?.id_assento ?? "new"} className={styles.form} onSubmit={save}><label>Fileira<input name="fileira" required maxLength={5} pattern="[A-Za-z0-9]{1,5}" defaultValue={item?.fileira ?? ""} placeholder="A" /></label><label>Número<input name="numero" type="number" min="1" max="2147483647" required defaultValue={item?.numero ?? ""} /></label><label>Tipo<select name="tipo" defaultValue={item?.tipo ?? "COMUM"}>{seatTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label><label>Status<select name="status" defaultValue={item?.status ?? "ATIVA"}><option value="ATIVA">Ativo</option><option value="INATIVA">Inativo</option></select></label><p className={`${styles.hint} ${styles.wide}`}>A sala não pode exceder sua capacidade de assentos ativos. Desative a sala antes de arquivar assentos.</p>{actions.error && <p className={`${styles.error} ${styles.wide}`} role="alert">{actions.error}</p>}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="submit" className={styles.primary} disabled={actions.pending}>{actions.pending ? "Salvando…" : item ? "Salvar alterações" : "Cadastrar assento"}</button></div></form></>}
+      {actions.dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>Assento da sala {room?.nome}. A fileira e o número identificam o lugar.</DialogDescription><form key={item?.id_assento ?? "new"} className={styles.form} onSubmit={save}><label>Fileira<input name="fileira" required maxLength={5} pattern="[A-Za-z0-9]{1,5}" defaultValue={item?.fileira ?? ""} placeholder="A" /></label><label>Número<input name="numero" type="number" min="1" max="2147483647" required defaultValue={item?.numero ?? ""} /></label><label>Posição no mapa<input name="posicao_visual" type="number" min="1" max="2147483647" placeholder="Usar o número do assento" defaultValue={item?.posicao_visual ?? ""} /></label><label>Tipo<select name="tipo" defaultValue={item?.tipo ?? "COMUM"}>{seatTypes.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label><label>Status<select name="status" defaultValue={item?.status ?? "ATIVA"}><option value="ATIVA">Ativo</option><option value="INATIVA">Inativo</option></select></label><p className={`${styles.hint} ${styles.wide}`}>A sala não pode exceder sua capacidade de assentos ativos. Desative a sala antes de arquivar assentos.</p>{actions.error && <p className={`${styles.error} ${styles.wide}`} role="alert">{actions.error}</p>}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="submit" className={styles.primary} disabled={actions.pending}>{actions.pending ? "Salvando…" : item ? "Salvar alterações" : "Cadastrar assento"}</button></div></form></>}
       {actions.dialog?.type === "status" && <><DialogDescription className={styles.dialogDescription}>{item?.status === "ATIVA" ? `Arquivar o assento ${item?.fileira}${item?.numero}? A sala deve estar desativada e sem sessões vinculadas.` : `Reativar o assento ${item?.fileira}${item?.numero}? A capacidade da sala não pode ser excedida.`}</DialogDescription>{actions.error && <p className={styles.error} role="alert">{actions.error}</p>}<div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="button" className={item?.status === "ATIVA" ? styles.danger : styles.primary} disabled={actions.pending} onClick={() => actions.run(() => venueRequest(`locations/${local.id_local}/rooms/${room.id_sala}/seats/${item.id_assento}`, { method: item.status === "ATIVA" ? "DELETE" : "PATCH", body: item.status === "ATIVA" ? undefined : { status: "ATIVA" } }), item?.status === "ATIVA" ? "Assento arquivado." : "Assento reativado.")}>{actions.pending ? "Aguarde…" : item?.status === "ATIVA" ? "Arquivar assento" : "Reativar assento"}</button></div></>}
     </DialogContent></Dialog>
   </VenueLayout>;

@@ -18,6 +18,7 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
   const [muted, setMuted] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [caption, setCaption] = useState(-1);
+  const [tracks, setTracks] = useState({ captions: [], audio: [] });
   const [error, setError] = useState("");
   const [waiting, setWaiting] = useState(false);
   const [full, setFull] = useState(false);
@@ -55,6 +56,36 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
     setError("");
     setCaption(-1);
     setWaiting(false);
+  }
+
+  useEffect(() => {
+    const element = video.current;
+    if (!element) return;
+    const lists = [element.textTracks, element.audioTracks].filter(Boolean);
+    function update() {
+      const captions = Array.from(element.textTracks ?? []).flatMap((track,index) =>
+        ['captions','subtitles'].includes(track.kind) ? [{ index, label: track.label || track.language || `Legenda ${index + 1}` }] : []
+      );
+      const audio = Array.from(element.audioTracks ?? []).map((track,index) => ({
+        index,label:track.label || track.language || `Faixa ${index + 1}`,enabled:track.enabled
+      }));
+      setTracks({ captions, audio });
+    }
+    const events = ['addtrack','removetrack','change'];
+    for (const list of lists) for (const event of events) list.addEventListener(event,update);
+    element.addEventListener('loadedmetadata',update);
+    update();
+    return () => {
+      for (const list of lists) for (const event of events) list.removeEventListener(event,update);
+      element.removeEventListener('loadedmetadata',update);
+    };
+  }, [mediaKey]);
+
+  function selectAudio(index) {
+    const audio = Array.from(video.current?.audioTracks ?? []);
+    if (!audio[index]) return;
+    audio.forEach((track,position)=>{track.enabled=position===index;});
+    setTracks(previous=>({...previous,audio:previous.audio.map(track=>({...track,enabled:track.index===index}))}));
   }
 
   useEffect(() => {
@@ -116,7 +147,7 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
   useEffect(() => {
     const el = video.current;
     if (el) Array.from(el.textTracks).forEach((track, i) => { track.mode = i === caption ? "showing" : "disabled"; });
-  }, [caption, episodeId]);
+  }, [caption, mediaKey]);
 
   useEffect(() => { onEpisodeChange?.(episode?.id ?? null); }, [episode?.id, onEpisodeChange]);
 
@@ -224,5 +255,5 @@ export default function useVideoPlayer({ media, options = {}, mode, onModeChange
 
   const paused = () => { setPlaying(false); if (video.current) options.onPause?.(video.current.currentTime); };
   const ended = () => { setPlaying(false); if (video.current) options.onPause?.(video.current.duration); };
-  return { dialog,mode,full,pip,pipSupported,controlError,togglePip,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,startProgressGesture,endProgressGesture,leaveProgress,progressPointer,duration,current,seek,paused,ended };
+  return { tracks,selectAudio,dialog,mode,full,pip,pipSupported,controlError,togglePip,media,keyDown,panel,setPanel,close,shell,showControls,episode,embed,setSeason,season,allEpisodes,content,caption,setCaption,speed,setSpeed,volume,setVolume,muted,setMuted,playing,started,error,setError,waiting,setWaiting,video,loaded,updated,setPlaying,setStarted,visible,surface,toggle,fullscreen,changeMode,onRestore,next,selectEpisode,thumbnail,hoverTime,storyboard,setStoryboard,frames,startProgressGesture,endProgressGesture,leaveProgress,progressPointer,duration,current,seek,paused,ended };
 }

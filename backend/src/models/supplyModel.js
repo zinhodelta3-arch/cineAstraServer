@@ -7,10 +7,16 @@ export function createSupplyModel(database) {
     const requestJoins = `FROM solicitacoes_estoque r
         LEFT JOIN insumos i ON i.id_insumo=r.id_insumo
         LEFT JOIN equipamentos e ON e.id_equipamento=r.id_equipamento
+        LEFT JOIN locais destino ON destino.id_local=r.id_local
+        LEFT JOIN fornecedores f ON f.id_fornecedor=COALESCE(i.id_fornecedor,e.id_fornecedor)
+        LEFT JOIN logistica entrega ON entrega.id_solicitacao=r.id_solicitacao
         LEFT JOIN rotas_logistica rota ON rota.id_local_origem=COALESCE(i.id_local,e.id_local)
             AND rota.id_local_destino=r.id_local AND rota.status='ATIVO'`;
     const outstandingEquipment = "status IN ('PENDENTE','ENVIADO','EM_TRANSITO','RECEBIDO')";
+    const freeTransport = "t.status='ATIVO' AND NOT EXISTS (SELECT 1 FROM logistica busy WHERE busy.transporte_em_uso=t.id_transporte)";
     const requestProjection = `r.*, COALESCE(i.nome,e.nome) AS nome_item, rota.distancia_km, rota.tempo_estimado_min,
+        COALESCE(NULLIF(f.nome_cine,''),f.razao_social) AS fornecedor,
+        entrega.id_logistica, entrega.status AS status_entrega, entrega.data_envio, entrega.data_recebimento,
         CASE
             WHEN r.status <> 'PENDENTE' THEN NULL
             WHEN i.id_insumo IS NOT NULL AND i.status='DISPONIVEL'
@@ -24,8 +30,12 @@ export function createSupplyModel(database) {
     const shipmentJoins = `FROM logistica l
         LEFT JOIN solicitacoes_estoque r ON r.id_solicitacao=l.id_solicitacao
         LEFT JOIN sessoes s ON s.id_sessao=r.id_sessao
+        LEFT JOIN locais destino ON destino.id_local=l.id_local_destino
+        LEFT JOIN locais origem ON origem.id_local=l.id_local_origem
+        LEFT JOIN insumos i ON i.id_insumo=l.id_insumo_origem
+        LEFT JOIN equipamentos e ON e.id_equipamento=l.id_equipamento_origem
         LEFT JOIN fornecedor_transportes t ON t.id_transporte=l.id_transporte`;
-    const shipmentProjection = `l.*, t.nome AS nome_transporte, COALESCE(l.status='RECEBIDO' AND l.id_equipamento_origem IS NOT NULL
+    const shipmentProjection = `l.*, COALESCE(i.nome,e.nome) AS nome_item, t.nome AS nome_transporte, COALESCE(l.status='RECEBIDO' AND l.id_equipamento_origem IS NOT NULL
         AND r.status='FINALIZADA' AND s.status='ENCERRADA', FALSE) AS devolucao_disponivel`;
     const routeProjection = `SELECT rota.*, origem.nome AS nome_origem, destino.nome AS nome_destino
         FROM rotas_logistica rota JOIN locais origem ON origem.id_local=rota.id_local_origem
@@ -66,7 +76,8 @@ export function createSupplyModel(database) {
         supervisorLocation: (userId,c=database) => one(c,'SELECT id_local FROM supervisor_locais WHERE id_supervisor = ?',[userId]),
         availableInputs(localId,q,c=database) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
-            return rows(c,`SELECT i.id_insumo,i.nome,i.id_local AS id_local_origem,l.nome AS nome_origem,i.quantidade-i.quantidade_reservada AS disponivel
+            return rows(c,`SELECT i.id_insumo,i.nome,i.id_local AS id_local_origem,l.nome AS nome_origem,i.quantidade-i.quantidade_reservada AS disponivel,
+                COALESCE(NULLIF(f.nome_cine,''),f.razao_social) AS fornecedor
                 FROM insumos i JOIN locais l ON l.id_local=i.id_local JOIN fornecedores f ON f.id_fornecedor=i.id_fornecedor
                 JOIN usuarios u ON u.id_usuario=f.id_usuario
                 JOIN fornecedor_locais origem ON origem.id_fornecedor=f.id_fornecedor AND origem.id_local=i.id_local
@@ -78,7 +89,7 @@ export function createSupplyModel(database) {
         },
         availableEquipment(localId,q,c=database) {
             return rows(c,`SELECT e.id_equipamento,e.nome,e.id_local AS id_local_origem,
-                    l.nome AS nome_origem,e.quantidade AS disponivel
+                    l.nome AS nome_origem,e.quantidade AS disponivel,COALESCE(NULLIF(f.nome_cine,''),f.razao_social) AS fornecedor
                 FROM equipamentos e
                 JOIN locais l ON l.id_local=e.id_local AND l.status='ATIVO'
                 JOIN locais d ON d.id_local=? AND d.status='ATIVO'
@@ -111,11 +122,13 @@ export function createSupplyModel(database) {
         },
         stock: async (localId,c=database) => ({
             inputs:await rows(c,"SELECT id_insumo AS id,id_fornecedor,nome,quantidade,quantidade_reservada,status FROM insumos WHERE id_local=? ORDER BY id_insumo",[localId]),
-            equipment:await rows(c,"SELECT id_equipamento AS id,id_fornecedor,nome,quantidade,status FROM equipamentos WHERE id_local=? ORDER BY id_equipamento",[localId])
+            equipment:await rows(c,`SELECT e.id_equipamento AS id,e.id_fornecedor,e.nome,e.quantidade,e.status,
+                EXISTS(SELECT 1 FROM logistica WHERE id_equipamento_origem=e.id_equipamento AND ${outstandingEquipment}) AS comprometido
+                FROM equipamentos e WHERE e.id_local=? ORDER BY e.id_equipamento`,[localId])
         }),
         incoming: (localId,c=database) => rows(c,"SELECT l.id_logistica,l.id_insumo_origem,l.id_equipamento_origem,l.quantidade,l.status,COALESCE(i.nome,e.nome) AS nome FROM logistica l LEFT JOIN insumos i ON i.id_insumo=l.id_insumo_origem LEFT JOIN equipamentos e ON e.id_equipamento=l.id_equipamento_origem WHERE l.id_local_destino=? AND l.status IN ('ENVIADO','EM_TRANSITO') AND l.id_solicitacao IS NOT NULL ORDER BY l.id_logistica",[localId]),
-        session: (id,c=database) => one(c,'SELECT s.id_sessao,s.status,l.id_local,l.status AS local_status FROM sessoes s JOIN salas a ON a.id_sala=s.id_sala JOIN locais l ON l.id_local=a.id_local WHERE s.id_sessao = ?',[id]),
-        member: (userId,sessionId,c=database) => one(c,"SELECT e.id_equipe FROM equipes e JOIN equipe_membros m ON m.id_equipe=e.id_equipe AND m.id_usuario=? AND m.status='ATIVO' WHERE e.id_sessao=? AND e.status IN ('ATIVA','FINALIZADA') LIMIT 1",[userId,sessionId]),
+        session: (id,c=database) => one(c,'SELECT s.id_sessao,s.status,s.data,s.horario_inicio,s.horario_fim,l.id_local,l.status AS local_status FROM sessoes s JOIN salas a ON a.id_sala=s.id_sala JOIN locais l ON l.id_local=a.id_local WHERE s.id_sessao = ?',[id]),
+        member: (userId,sessionId,c=database,activeOnly=false) => one(c,`SELECT e.id_equipe FROM equipes e JOIN equipe_membros m ON m.id_equipe=e.id_equipe AND m.id_usuario=? AND m.status='ATIVO' WHERE e.id_sessao=? AND e.status IN (${activeOnly?"'ATIVA'":"'ATIVA','FINALIZADA'"}) LIMIT 1`,[userId,sessionId]),
         supplierByUser: (id,c=database) => one(c,'SELECT id_fornecedor,status FROM fornecedores WHERE id_usuario = ?',[id]),
         grant: (supplierId,localId,c=database) => one(c,"SELECT f.status AS supplier_status,u.status AS user_status,u.tipo_usuario,fl.status AS grant_status,l.status AS local_status FROM fornecedores f JOIN usuarios u ON u.id_usuario=f.id_usuario JOIN locais l ON l.id_local=? LEFT JOIN fornecedor_locais fl ON fl.id_fornecedor=f.id_fornecedor AND fl.id_local=l.id_local WHERE f.id_fornecedor=?",[localId,supplierId]),
         item(kind,id,c=database,lock=false) { const [table,key]=itemSpec(kind); return one(c,`SELECT ${key},id_fornecedor,id_local,nome,descricao,categoria,quantidade,${kind==='input'?'quantidade_reservada,quantidade_minima,preco,':'numero_patrimonio,'}status FROM ${table} WHERE ${key}=?${lock?' FOR UPDATE':''}`,[id]); },
@@ -124,6 +137,9 @@ export function createSupplyModel(database) {
             : one(c,`SELECT ${requestProjection} ${requestJoins} WHERE r.id_solicitacao=?`,[id]),
         listRequests(q, c = database) {
             const where = ['r.id_solicitacao > ?'], args = [q.cursor ?? '0'];
+            if (q.requestId) { where.push('r.id_solicitacao=?'); args.push(q.requestId); }
+            if (q.withoutShipment==='true') where.push('entrega.id_logistica IS NULL');
+            if (q.supervision==='PENDENTE') where.push("r.status_supervisao='PENDENTE' AND r.status='PENDENTE'");
             if (q.localId) { where.push('r.id_local=?'); args.push(q.localId); }
             if (q.sessionId) { where.push('r.id_sessao=?'); args.push(q.sessionId); }
             if (q.userId) { where.push('r.id_usuario=?'); args.push(q.userId); }
@@ -132,6 +148,7 @@ export function createSupplyModel(database) {
                 args.push(q.supplierId);
             }
             if (q.status) { where.push('r.status=?'); args.push(q.status); }
+            if (q.q) { where.push("LOCATE(?,CONCAT_WS(' ',i.nome,e.nome,destino.nome,REPLACE(r.status,'_',' ')))>0"); args.push(q.q); }
             return rows(c, `SELECT ${requestProjection} ${requestJoins} WHERE ${where.join(' AND ')} ORDER BY r.id_solicitacao LIMIT ${q.limit + 1}`, args);
         },
         async createRequest(c,d) { const [r]=await c.execute("INSERT INTO solicitacoes_estoque(id_usuario,id_local,id_sessao,id_insumo,id_equipamento,quantidade,status,observacao,status_supervisao) VALUES(?,?,?,?,?,?,'PENDENTE',?,?)",[d.actorId,d.localId,d.sessionId??null,d.inputId??null,d.equipmentId??null,d.quantity,d.note??null,d.statusSupervisao??null]);return idString(r.insertId); },
@@ -139,6 +156,9 @@ export function createSupplyModel(database) {
             "UPDATE solicitacoes_estoque SET status_supervisao=?,id_supervisor_decisao=?,data_decisao_supervisao=UTC_TIMESTAMP(3),status=IF(?='RECUSADA','RECUSADA',status) WHERE id_solicitacao=? AND status_supervisao='PENDENTE' AND status='PENDENTE'",
             [review,actorId,review,id]),
         setRequest: (c,id,status) => c.execute('UPDATE solicitacoes_estoque SET status=? WHERE id_solicitacao=?',[status,id]),
+        updateRequest:(c,id,quantity,note,reviewAgain)=>c.execute(`UPDATE solicitacoes_estoque SET quantidade=?,observacao=?
+            ${reviewAgain?",status_supervisao='PENDENTE',id_supervisor_decisao=NULL,data_decisao_supervisao=NULL":''}
+            WHERE id_solicitacao=?`,[quantity,note,id]),
         shipment: (id,c=database,lock=false) => lock
             ? one(c,'SELECT * FROM logistica WHERE id_logistica=? FOR UPDATE',[id])
             : one(c,`SELECT ${shipmentProjection} ${shipmentJoins} WHERE l.id_logistica=?`,[id]),
@@ -148,11 +168,26 @@ export function createSupplyModel(database) {
             if(q.supplierId){where.push('l.id_fornecedor=?');args.push(q.supplierId);}
             if(q.localId){where.push('l.id_local_destino=?');args.push(q.localId);}
             if(q.sessionId){where.push('r.id_sessao=?');args.push(q.sessionId);}
+            if(q.requestId){where.push('l.id_solicitacao=?');args.push(q.requestId);}
+            if(q.q){where.push("LOCATE(?,CONCAT_WS(' ',i.nome,e.nome,destino.nome,origem.nome,t.nome,REPLACE(l.status,'_',' ')))>0");args.push(q.q);}
             return rows(c,`SELECT ${shipmentProjection} ${shipmentJoins}
                 WHERE ${where.join(' AND ')} ORDER BY l.id_logistica LIMIT ?`,[...args,q.limit+1]);
         },
         async createShipment(c,d) { const [r]=await c.execute("INSERT INTO logistica(id_fornecedor,id_local_origem,id_local_destino,id_solicitacao,id_insumo_origem,id_equipamento_origem,quantidade,status,observacao) VALUES(?,?,?,?,?,?,?,'PENDENTE',?)",[d.supplierId,d.originId,d.destinationId,d.requestId,d.inputId??null,d.equipmentId??null,d.quantity,d.note??null]);return idString(r.insertId);},
         transport: (c, id, supplierId) => one(c, 'SELECT status FROM fornecedor_transportes WHERE id_transporte=? AND id_fornecedor=? FOR UPDATE', [id,supplierId]),
+        routeForShipment:(c,r)=>one(c,`SELECT id_rota,distancia_km,tempo_estimado_min FROM rotas_logistica
+            WHERE id_local_origem=? AND id_local_destino=? AND status='ATIVO'`,[r.id_local_origem,r.id_local_destino]),
+        dispatchTransports:(c,r,q)=>rows(c,`SELECT t.id_transporte,t.nome,t.identificacao FROM fornecedor_transportes t
+            WHERE t.id_fornecedor=? AND t.id_transporte>? AND ${freeTransport} ORDER BY t.id_transporte LIMIT ?`,
+            [r.id_fornecedor,q.cursor??'0',q.limit+1]),
+        preferredTransport:(c,r)=>one(c,`SELECT t.id_transporte,t.nome,t.identificacao FROM fornecedor_transportes t
+            LEFT JOIN logistica old ON old.id_transporte=t.id_transporte AND old.id_fornecedor=t.id_fornecedor
+                AND old.id_local_origem=? AND old.id_local_destino=? AND old.data_envio IS NOT NULL
+            WHERE t.id_fornecedor=? AND ${freeTransport} AND (t.id_transporte=? OR old.id_logistica IS NOT NULL)
+            ORDER BY (t.id_transporte <=> ?) DESC, old.data_envio DESC, old.id_logistica DESC LIMIT 1`,
+            [r.id_local_origem,r.id_local_destino,r.id_fornecedor,r.id_transporte??null,r.id_transporte??null]),
+        updateShipmentPlan:(c,id,{transportId,note})=>c.execute('UPDATE logistica SET id_transporte=?,observacao=? WHERE id_logistica=?',
+            [transportId,note,id]),
         transportInUse: (c, id) => one(c, 'SELECT id_logistica FROM logistica WHERE transporte_em_uso=? FOR UPDATE', [id]),
         shipmentEvent: (c,id,userId,type,status,description=null) => c.execute(
             'INSERT INTO logistica_eventos(id_logistica,id_usuario,tipo,status,descricao) VALUES(?,?,?,?,?)', [id,userId,type,status,description]),

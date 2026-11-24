@@ -1,15 +1,16 @@
 'use client';
 
-import { useDeferredValue,useState } from 'react';
-import { useSupplierAction,useSupplierList } from './use-supplier-data';
+import { useState } from 'react';
+import { useTablePreference } from '@/hooks/use-table-preference';
+import { useSupplierAction,useSupplierList,useSupplierSearch } from './use-supplier-data';
 
 export function useSupplierTransports() {
-  const [query,setQuery]=useState(''),[status,setStatus]=useState(''),[dialog,setDialog]=useState(null);
-  const search=useDeferredValue(query.trim());
+  const {query,setQuery,search}=useSupplierSearch('transportes');
+  const [status,setStatus]=useTablePreference('fornecedor:transportes:status',''),[dialog,setDialog]=useState(null);
   const params=new URLSearchParams({limit:'20'});
   if(search)params.set('q',search);
   if(status)params.set('status',status);
-  const list=useSupplierList(`transports?${params}`),action=useSupplierAction(list.reload);
+  const list=useSupplierList(`transports?${params}`,'fornecedor:transportes'),action=useSupplierAction(list.reload);
   const item=dialog?.item;
   function open(type,row=null){action.setError('');setDialog({type,item:row});}
   function close(){if(!action.pending)setDialog(null);}

@@ -17,6 +17,7 @@ const emptyCoupon = () => "";
 const reconciliationDelays = [5000, 10000, 20000, 30000, 30000, 30000];
 const canReconcile = (payment, order) => ["PENDENTE", "APROVADO"].includes(payment) && !["PAGO", "FINALIZADO", "CANCELADO"].includes(order);
 const transientKeys = new Map();
+const methodTypes = { pix: "PIX", debito: "DEBITO", credito: "CREDITO" };
 const digits = value => value.replace(/\D/g, "");
 const maskCard = value => digits(value).slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
 const maskExpiry = value => { const d = digits(value).slice(0, 4); return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d; };
@@ -28,6 +29,22 @@ async function request(action, { body, key, signal, query } = {}) {
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   return readSessionResponse(response);
+}
+
+const profileRequest = async (path, signal) => readSessionResponse(await sessionFetch(path, { signal, cache: "no-store" }));
+
+async function primaryAddress(signal) {
+  let cursor = null;
+  do {
+    const path = cursor ? `/api/profile/addresses?cursor=${encodeURIComponent(cursor)}` : "/api/profile/addresses";
+    const page = await profileRequest(path, signal);
+    const principal = page.items.find(item => item.principal);
+    if (principal) return principal;
+    const next = page.pagination?.nextCursor;
+    if (!next || next === cursor) return null;
+    cursor = next;
+  } while (!signal.aborted);
+  return null;
 }
 
 function savedKey(name) {
@@ -56,22 +73,23 @@ export default function usePayment(method = null, draftId = null) {
   const role = session.user?.role;
   const couponKey = checkoutStorageKey("coupon", userId);
   const acceptanceKey = checkoutStorageKey("accepted", userId);
-  const [details, setDetails] = useState(EMPTY_DETAILS);
-  const [card, setCard] = useState(EMPTY_CARD);
+  const [editedDetails, setEditedDetails] = useState({});
+  const [cardFields, setCard] = useState({});
+  const [profile, setProfile] = useState(null);
   const [cepResult, setCepResult] = useState(null);
   const coupon = useSyncExternalStore(noSubscription, () => readCheckoutState(couponKey) || "", emptyCoupon);
   const [offerState, setOfferState] = useState(null);
   const [previousCartKey, setPreviousCartKey] = useState(null);
   const [accepted, setAcceptedState] = useState(false);
   const [result, setResult] = useState(null);
-  const [countdown, setCountdown] = useState(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [pollPausedFor, setPollPausedFor] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [draftState, setDraftState] = useState(null);
   const [wallet, setWallet] = useState(null);
-  const [newCard, setNewCard] = useState(false);
+  const [walletRetry, setWalletRetry] = useState(0);
+  const [methodChoice, setMethodChoice] = useState(null);
   const lock = useRef(false);
   const confirming = useRef(null);
   const reconciliation = useRef(null);
@@ -85,15 +103,30 @@ export default function usePayment(method = null, draftId = null) {
     const controller = new AbortController();
     request("methods", { signal: controller.signal })
       .then(data => {
-        if (!controller.signal.aborted) setWallet(data.items ?? []);
+        if (!controller.signal.aborted) setWallet({ items: data.items });
       })
-      .catch(() => { if (!controller.signal.aborted) setWallet([]); });
+      .catch(() => { if (!controller.signal.aborted) setWallet({ error: "Não foi possível consultar seus métodos de pagamento." }); });
     return () => controller.abort();
-  }, []);
+  }, [walletRetry]);
 
-  const principalMethod = wallet?.find(item => item.principal && item.checkoutAvailable);
-  const methodType = { pix: "PIX", debito: "DEBITO", credito: "CREDITO" }[method];
-  const savedMethod = !newCard && principalMethod?.type === methodType ? principalMethod : null;
+  const principalMethod = wallet?.items?.find(item => item.principal);
+  const methodType = methodTypes[method];
+  const savedMethods = wallet?.items?.filter(item => item.type === methodType && item.checkoutAvailable) ?? [];
+  const selectedMethodId = methodChoice ?? (savedMethods.find(item => item.principal) ?? savedMethods[0])?.id ?? "";
+  const savedMethod = savedMethods.find(item => item.id === selectedMethodId);
+  const newCard = Boolean(wallet?.items && methodType && methodType !== "PIX" && !savedMethod);
+  const needsProfile = newCard && profile === null;
+  useEffect(() => {
+    if (!needsProfile) return;
+    const abort = new AbortController();
+    Promise.allSettled([profileRequest("/api/profile", abort.signal), primaryAddress(abort.signal)])
+      .then(([contact, address]) => {
+        if (abort.signal.aborted) return;
+        setProfile({ contact: contact.value, address: address.value,
+          incomplete: contact.status === "rejected" || address.status === "rejected" });
+      });
+    return () => abort.abort();
+  }, [needsProfile]);
 
   const draftKey = draftId && role === "CLIENTE" ? `${userId}:${draftId}` : null;
   const draft = draftState?.key === draftKey ? draftState : null;
@@ -126,12 +159,20 @@ export default function usePayment(method = null, draftId = null) {
   const offerError = currentOffer?.error ?? "";
   const offerHash = offer?.contract?.offerHash;
   const checkoutKey = `cineastra:order:${userId}:${draftId ? `draft:${draftId}:` : ''}${offerHash}`;
-  const ready = Boolean(wallet && quoteInput && offer?.finalizable && accepted);
-  const pixKey = method === "pix" && ready && !result?.paymentId ? offerHash : null;
-  if (countdown && countdown.key !== pixKey && !result?.paymentId) setCountdown(null);
-  const remaining = countdown?.key === pixKey ? countdown.remaining : 15;
-  const postalCode = digits(details.postalCode);
-  const cep = details.country === "BR" && postalCode.length === 8 ? postalCode : null;
+  const ready = Boolean(wallet?.items && quoteInput && offer?.finalizable && accepted);
+  const canChangeMethod = !pending && !result?.methodId && !result?.paymentId;
+  const name = profile?.contact?.name ?? session.user?.name ?? "";
+  const address = profile?.address;
+  const postalCode = digits(editedDetails.postalCode ?? "");
+  const country = editedDetails.country ?? "BR";
+  const cep = country === "BR" && postalCode.length === 8 ? postalCode : null;
+  const addressDefaults = editedDetails.postalCode !== undefined ? cepResult?.key === cep ? cepResult.address : null : address && {
+    postalCode: maskCep(address.cep), street: address.logradouro ?? "", district: address.bairro ?? "",
+    city: address.cidade ?? "", state: address.estado ?? "", number: address.numero ?? "", complement: address.complemento ?? ""
+  };
+  const details = { ...EMPTY_DETAILS, name, email: profile?.contact?.email ?? "", phone: country === "BR" ? maskPhone(profile?.contact?.phone) : profile?.contact?.phone ?? "",
+    ...addressDefaults, ...editedDetails };
+  const card = { ...EMPTY_CARD, holder: name, ...cardFields };
   const cepStatus = { loading: Boolean(cep && cepResult?.key !== cep), error: cepResult?.key === cep ? cepResult.error : "" };
   const items = draftId ? (input?.lines ?? []).map((line, index) => ({
     id: `${line.kind}:${line.id}:${line.seatId ?? ''}`, name: `${draftLabels[line.kind]} #${line.id}`,
@@ -172,8 +213,7 @@ export default function usePayment(method = null, draftId = null) {
         .then(readSessionResponse)
         .then(data => {
           if (abort.signal.aborted) return;
-          setDetails(current => current.country === "BR" && digits(current.postalCode) === cep ? { ...current, street: data.street, district: data.district, city: data.city, state: data.state } : current);
-          setCepResult({ key: cep, error: "" });
+          setCepResult({ key: cep, error: "", address: { street:data.street, district:data.district, city:data.city, state:data.state } });
         })
         .catch(caught => { if (!abort.signal.aborted) setCepResult({ key: cep, error: caught.message }); });
     }, 300);
@@ -184,15 +224,14 @@ export default function usePayment(method = null, draftId = null) {
     const { name, value } = event.target;
     setError("");
     if (name === "country" || (name === "postalCode" && digits(maskCep(value)) !== postalCode)) setCepResult(null);
-    setDetails(current => {
-      if (name === "postalCode") {
-        const next = current.country === "BR" ? maskCep(value) : value;
-        if (next === current.postalCode) return current;
-        return { ...current, postalCode: next, street: "", district: "", city: "", state: "" };
+    setEditedDetails(current => {
+      if (name === "postalCode" || name === "country") {
+        const next = { ...current };
+        for (const field of ["street", "number", "complement", "district", "city", "state"]) delete next[field];
+        if (name === "country") return { ...next, country: value, postalCode: "" };
+        return { ...next, postalCode: country === "BR" ? maskCep(value) : value };
       }
-      if (name === "country") return { ...current, country: value, postalCode: "", street: "", district: "", city: "", state: "" };
-      if (name === "phone" && current.country === "BR") return { ...current, phone: maskPhone(value) };
-      return { ...current, [name]: value };
+      return { ...current, [name]: name === "phone" && country === "BR" ? maskPhone(value) : value };
     });
   }
 
@@ -288,35 +327,21 @@ export default function usePayment(method = null, draftId = null) {
       if (signal.aborted) return;
       if (!payment.id || !payment.status) throw new Error("Pagamento iniciado sem resposta completa. Consulte o pedido antes de repetir.");
       setResult({ orderId: order.orderId, expiresAt:order.expiresAt, methodId: paymentMethod.id, paymentId: payment.id, status: payment.status, orderStatus: "AGUARDANDO_PAGAMENTO", total: Number(offer.total), items });
-      setCard(EMPTY_CARD);
+      setCard({});
       if (await refreshPayment(payment.id) === "pause") setPollPausedFor(payment.id);
     } catch (caught) { if (!signal.aborted) setError(caught.message); }
     finally { confirming.current = null; lock.current = false; if (!signal.aborted) setPending(false); }
   }
 
   function confirmCard(event) { event.preventDefault(); confirmPayment(method === "debito" ? "DEBITO" : "CREDITO", digits(card.number).slice(-4)); }
-  const confirmPix = useEffectEvent(() => confirmPayment("PIX"));
-
-  useEffect(() => {
-    if (!pixKey) return;
-    let elapsed = 0;
-    let lastTick = Date.now();
-    const timer = setInterval(() => {
-      const now = Date.now();
-      if (document.visibilityState === "visible") elapsed += now - lastTick;
-      lastTick = now;
-      const left = Math.max(0, Math.ceil((15000 - elapsed) / 1000));
-      setCountdown(current => current?.key === pixKey && current.remaining === left ? current : { key: pixKey, remaining: left });
-      if (left === 0) { clearInterval(timer); confirmPix(); }
-    }, 250);
-    const visibility = () => { lastTick = Date.now(); };
-    document.addEventListener("visibilitychange", visibility);
-    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", visibility); };
-  }, [pixKey]);
+  function selectMethod(id) { if (canChangeMethod) { setMethodChoice(id); setError(""); } }
+  function retryWallet() { setWallet(null); setWalletRetry(value => value + 1); }
   const displayItems = paid && result.items ? result.items : items;
   return { items: displayItems, itemCount: paid || draftId ? displayItems.reduce((count,item) => count + item.quantity, 0) : cart.itemCount, total: paid ? result.total : offer ? Number(offer.total) : draftId ? 0 : cart.total, details, changeDetail, cepStatus,
-    principalMethod, savedMethod, newCard, setNewCard, walletLoading: wallet === null,
+    principalMethod, savedMethod, savedMethods, selectedMethodId, selectMethod, newCard, canChangeMethod,
+    profileLoading: needsProfile, profileIncomplete: profile?.incomplete,
+    walletLoading: wallet === null, walletError: wallet?.error, retryWallet,
     card, changeCard, session, issue, offer, offerLoading, offerError, accepted, setAccepted, ready,
-    result, pending, error, remaining, confirmCard, retryPix: () => confirmPayment("PIX"), refreshPayment,
+    result, pending, error, confirmCard, confirmPix: () => confirmPayment("PIX"), refreshPayment,
     checkingPayment, pollingPaused: Boolean(paymentId && pollPausedFor===paymentId && canReconcile(paymentStatus,orderStatus)) };
 }

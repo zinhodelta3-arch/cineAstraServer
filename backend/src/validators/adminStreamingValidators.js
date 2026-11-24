@@ -7,6 +7,11 @@ const base = { limit: z.string().regex(/^[1-9]\d{0,2}$/).transform(Number).pipe(
 const subscriptions = z.object({ ...base, cursor: small.optional(), planId: small.optional(), status: z.enum(['ATIVA', 'CANCELADA', 'EXPIRADA', 'PENDENTE']).optional() }).strict();
 const accesses = z.object({ ...base, cursor: big.optional(), filmId: small.optional(), status: z.enum(['ATIVO', 'EXPIRADO', 'REVOGADO']).optional() }).strict();
 
+export function adminAccessId(req,res,next) {
+  if (!big.safeParse(req.params.accessId).success) throw ApiError.validacao('Acesso inválido');
+  next();
+}
+
 export function adminStreamingPage(kind) {
   return (req, res, next) => {
     const parsed = (kind === 'subscriptions' ? subscriptions : accesses).safeParse(req.query);

@@ -11,11 +11,12 @@ const sections = [
   { href: "/admin/sessoes/presenca", label: "Presença" },
 ];
 
-export default function ScheduleLayout({ title, description, action, children }) {
+export default function ScheduleLayout({ title, description, action, children, sessionSelected = false }) {
   const pathname = usePathname();
   return <main id="admin-content" tabIndex={-1} className={page.page}>
     <header className={page.heading}><div><h1>{title}</h1><p>{description}</p></div>{action}</header>
-    <nav className={styles.tabs} aria-label="Seções de sessões">{sections.map((item) => <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</Link>)}</nav>
+    {!sessionSelected && <nav className={styles.tabs} aria-label="Seções de sessões">{sections.map((item) => <Link key={item.href} href={item.href}
+      prefetch={false} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</Link>)}</nav>}
     {children}
   </main>;
 }

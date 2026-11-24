@@ -9,6 +9,10 @@ const slugs = new Set(['business', 'team', 'history', 'reputation', 'partners', 
 
 function target(method, parts, search) {
   const [group, second, third] = parts;
+  if (group === 'news') {
+    if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/admin/news${method === 'GET' ? search : ''}`;
+    if (parts.length === 2 && id(second) && ['PATCH', 'DELETE'].includes(method)) return `/admin/news/${second}`;
+  }
   if (['banners', 'experiences', 'partners'].includes(group)) {
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/admin/${group}${method === 'GET' ? search : ''}`;
     if (parts.length === 2 && id(second) && ['GET', 'PATCH'].includes(method)) return `/admin/${group}/${second}`;

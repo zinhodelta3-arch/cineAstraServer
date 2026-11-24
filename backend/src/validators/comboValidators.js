@@ -17,7 +17,8 @@ const items = z.array(item).min(1).max(100).superRefine((value, ctx) => {
 export const comboSchemas = {
     create: z.object({ localId: catalogId, nome: name, descricao: z.string().trim().max(10000).nullable().optional(), preco: price.optional(), priceMode: z.literal('RULE').optional(), custo_operacional: price, items, event }).strict()
         .refine(input => input.priceMode === 'RULE' ? input.preco === undefined : input.preco !== undefined, { path: ['preco'] }),
-    patch: z.object({ nome: name.optional(), descricao: z.string().trim().max(10000).nullable().optional(), preco: price.optional(), custo_operacional: price.optional(), event }).strict().refine(v => Object.keys(v).length > 0),
+    patch: z.object({ nome: name.optional(), descricao: z.string().trim().max(10000).nullable().optional(), preco: price.optional(), priceMode: z.literal('RULE').optional(), custo_operacional: price.optional(), event }).strict()
+        .refine(v => Object.keys(v).length > 0 && !(v.priceMode && v.preco !== undefined)),
     composition: z.object({ items }).strict(),
     query: z.object({ localId: catalogId, limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().min(1).max(100)).default(20), cursor: catalogId.optional(),
         inStock: z.enum(['true','false']).transform(value=>value==='true').optional(), sessionId:catalogId.optional() }).strict()

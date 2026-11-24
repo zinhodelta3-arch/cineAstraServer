@@ -29,11 +29,11 @@ export default function ProductCard({ product, onOpen }) {
       <div className="mt-auto w-full">
         <div className={styles.tear} aria-hidden="true" />
         <div className={`${styles.stub} flex flex-wrap items-end justify-between gap-2 p-4`}>
-          {product.inStock===false?<span className="text-sm text-muted-foreground">Indisponível</span>:product.requiresQuote?(
+          {product.inStock===false||['NOT_FOUND','INSUFFICIENT_STOCK'].includes(product.pricing?.issue)?<span className="text-sm text-muted-foreground">Indisponível neste cinema</span>:product.requiresQuote?(
             product.pricing?.error?<span className="text-xs text-muted-foreground">Não foi possível cotar. Abra os detalhes para tentar novamente.</span>:
-            product.pricing?<ProductPrice price={product.pricing.unitPrice} originalPrice={product.pricing.originalPrice} discountSources={product.pricing.discountSources} note="Preço para sua conta, sem cupom"/>:
+            product.pricing?<ProductPrice price={product.pricing.unitPrice} originalPrice={product.pricing.originalPrice} discountSources={product.pricing.discountSources} note={product.guest?"Preço deste cinema":"Preço para sua conta, sem cupom"}/>:
             <span role="status" className="text-xs text-muted-foreground">Consultando preço…</span>
-          ):<ProductPrice price={product.price} note="Preço de catálogo. Entre para consultar descontos."/>}
+          ):<ProductPrice price={product.price} note="Preço de catálogo"/>}
           <span className="text-xs font-semibold text-primary">Ver detalhes →</span>
         </div>
       </div>

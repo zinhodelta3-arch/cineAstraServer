@@ -74,8 +74,8 @@ test('SQL vincula leitura e marcação ao ator; dedupe tem chave estável', asyn
     assert.deepEqual(calls[1].args, ['7', '9']);
     assert.deepEqual(calls[2].args, ['7', '9']);
     await model.list('7', { limit: 20, cursor: '9007199254740993', order: 'recent' });
-    assert.match(calls[3].sql, /id_notificacao < \? ORDER BY id_notificacao DESC/);
-    assert.deepEqual(calls[3].args, ['7', '9007199254740993']);
+    assert.match(calls[3].sql, /anchor_notice\.id_usuario=n\.id_usuario[\s\S]+ORDER BY n\.data_envio DESC,n\.id_notificacao DESC/);
+    assert.deepEqual(calls[3].args, ['9007199254740993', '7']);
 });
 
 test('notificação de experiência conserva a referência ao marcar como lida', async () => {

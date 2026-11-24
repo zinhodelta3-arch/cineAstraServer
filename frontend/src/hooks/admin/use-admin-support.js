@@ -21,11 +21,11 @@ async function request(path = "", body, signal) {
 
 const queueRequest = (path, { signal } = {}) => request(path, undefined, signal);
 
-export function useAdminSupport() {
+export function useAdminSupport(initialId=null) {
   const session = useSession();
 
   const [thread, setThread] = useState(emptyThread);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(initialId);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("Todos");
   const [draft, setDraft] = useState("");

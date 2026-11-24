@@ -130,7 +130,7 @@ export default function CombosAdmin() {
           <label>Limite por cliente<input name="eventCustomerLimit" type="number" min="1" max="100" step="1" defaultValue={item?.event?.customerLimit ?? ""} /></label>
           <p className={`${styles.hint} ${styles.wide}`}>Use uma experiência e uma sessão do mesmo local. Deixe os quatro campos vazios para um combo do catálogo geral.</p>
         </fieldset>
-        <label className={styles.wide}>Nome<input name="nome" required maxLength={150} defaultValue={item?.nome ?? ""} /></label>{!item && <div className={`${styles.checkboxList} ${styles.wide}`}><label><input type="checkbox" name="usePricingRule" checked={usePricingRule} onChange={event => setUsePricingRule(event.target.checked)} /> Calcular preço pela regra cadastrada</label></div>}
+        <label className={styles.wide}>Nome<input name="nome" required maxLength={150} defaultValue={item?.nome ?? ""} /></label><div className={`${styles.checkboxList} ${styles.wide}`}><label><input type="checkbox" name="usePricingRule" checked={usePricingRule} onChange={event => setUsePricingRule(event.target.checked)} /> Calcular preço pela regra cadastrada</label></div>
         {!usePricingRule && <label>Preço (R$)<MoneyInput name="preco" required defaultValue={item?.preco ?? ""} /></label>}
         {usePricingRule && <p className={`${styles.hint} ${styles.wide}`}>O preço será calculado com os custos informados e o markup da categoria, no momento de salvar.</p>}<label className={styles.wide}>Descrição<textarea name="descricao" maxLength={10000} defaultValue={item?.descricao ?? ""} /></label>
         <label>Custo operacional (R$)<MoneyInput name="custo_operacional" required defaultValue={item?.custo_operacional ?? ""} /></label>

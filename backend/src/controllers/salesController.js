@@ -4,6 +4,8 @@ export function createSalesController(service) {
   const context=(req,res)=>({actor:req.usuario,signal:req.signal,requestId:res.locals.requestId});
   return {
     list:kind=>async(req,res)=>success(res,await service.list(kind,req.salesQuery,context(req,res))),
+    archive:kind=>async(req,res)=>success(res,await service.archive(kind,req.params.id,context(req,res))),
+    simulatePix:async(req,res)=>success(res,await service.simulatePix(req.params.id,req.paymentKey,context(req,res)),201),
     createDraft:async(req,res)=>success(res,await service.createDraft(req.input,context(req,res)),201),
     updateDraft:async(req,res)=>success(res,await service.updateDraft(req.params.id,req.input,context(req,res))),
     cancel:async(req,res)=>success(res,await service.cancel(req.params.id,req.input.reason,context(req,res))),

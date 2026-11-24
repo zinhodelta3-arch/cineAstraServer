@@ -34,6 +34,14 @@ a.card:hover { border-color: var(--primary); transform: translateY(-2px); }
 .form label, .field { display: grid; min-width: min(100%, 180px); flex: 1; gap: 7px; font-size: 12px; font-weight: 650; }
 .form :is(input, select, textarea), .field select { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); font: inherit; font-size: 12px; }
 .form textarea { min-height: 88px; resize: vertical; }
+.customerLookup { display: grid; gap: 12px; margin: 16px 0; padding: 14px; border: 1px dashed var(--border); border-radius: 8px; }
+.customerLookup h3 { margin: 0; font-size: 13px; font-weight: 700; }
+.customerLookup small { overflow-wrap: anywhere; }
+.customerLookup button[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); }
+.accountPanel > summary { cursor: pointer; font-size: 16px; font-weight: 750; }
+.accountPanel[open] > summary svg { transform: rotate(180deg); }
+.accountPanel .list > li > div { min-width: 0; overflow-wrap: anywhere; }
+.accountDialog { max-height: calc(100dvh - 2rem); overflow-y: auto; }
 .full { flex-basis: 100%!important; }
 .button, .secondary, .iconButton { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 13px; border: 1px solid var(--border); border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; }
 .button { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
@@ -68,6 +76,7 @@ a.card:hover { border-color: var(--primary); transform: translateY(-2px); }
 .table tbody tr:last-child > * { border-bottom: 0; }
 .table td small { display: block; margin-top: 4px; color: var(--muted-foreground); }
 .dialog { max-height: min(90vh, 760px); overflow-y: auto; color: var(--foreground); }
+.trackingDialog { grid-template-columns: minmax(0, 1fr); }
 .dialog .form { margin-top: 14px; }
 .dialog .row { margin-top: 10px; }
 .seatGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 9px; }
@@ -78,3 +87,7 @@ a.card:hover { border-color: var(--primary); transform: translateY(-2px); }
 .filmGrid .list li { min-height: 42px; }
 .filmGrid small { display: inline-flex; align-items: center; gap: 4px; }
 @media (max-width: 760px) { .page { width: min(100% - 28px, 650px); } .grid { grid-template-columns: 1fr; } .heading { align-items: start; flex-direction: column; } .panelHeader, .body { padding-inline: 16px; } }
+.offerNote {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
-import LoadingImage from '@/components/ui/loading-image';
+import ExperienceImage from './experience-image';
 import { useExperienceDetails } from '@/hooks/cinema/experiencias/use-cinema-experiences';
 import { venueTypes, eventSeatingLabels } from '@/lib/api/cinema-locations.mjs';
 import styles from '../ticket.module.css';
@@ -18,7 +18,7 @@ export default function ExperienceDetails({ id }) {
       {loading && <p role="status">Carregando experiência…</p>}
       {error && <div role="alert"><p>{error}</p><Button variant="outline" onClick={retry} className="mt-3">Tentar novamente</Button></div>}
       {item && <article className={`${styles.ticket} overflow-hidden`}>
-        {item.imageUrl && <LoadingImage src={item.imageUrl} alt={item.imageAlt} fetchPriority="high" className="block aspect-[16/9] max-h-[30rem] w-full bg-muted object-cover object-[center_65%] sm:aspect-[2/1]" />}
+        <ExperienceImage key={item.imageUrl} src={item.imageUrl} alt={item.imageAlt} priority className="aspect-[16/9] max-h-[30rem] w-full object-[center_55%] sm:aspect-[2/1]" />
         <header className="px-5 py-7 sm:px-9 sm:py-9">
           <h1 className={`${styles.title} text-4xl font-bold leading-none sm:text-6xl`}>{item.title}</h1>
           {item.summary && <p className="mt-3 max-w-[65ch] leading-relaxed text-muted-foreground">{item.summary}</p>}

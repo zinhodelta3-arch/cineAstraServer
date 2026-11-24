@@ -6,7 +6,7 @@ const shared={slug:{...text(100),pattern:'^[a-z0-9]+(?:-[a-z0-9]+)*$'},title:tex
 const obj=(properties,required=Object.keys(properties))=>({type:'object',additionalProperties:false,properties,...(required.length?{required}:{})});
 const tag='Conteúdo promocional';spec.tags=[...spec.tags.filter(t=>t.name!==tag),{name:tag}];
 for(const kind of ['partners','experiences','banners']){
- const properties={...shared,...(kind==='experiences'?{locationId:{...id,nullable:true},priceLabel:optional(100),unit:optional(150),details:{type:'array',maxItems:20,items:text(250)}}:{}),...(kind==='banners'?{placement}:{})};
+ const properties={...shared,...(kind==='experiences'?{locationId:{...id,nullable:true},priceLabel:optional(100),unit:optional(150),details:{type:'array',maxItems:20,items:text(250)}}:{}),...(kind==='banners'?{placement,promotionId:{...id,nullable:true,description:'Promoção pública compatível vinculada ao banner. A validade e a categoria são as da precificação.'}}:{})};
  const required=['slug','title','summary',...(kind==='banners'?['placement']:[])];
  spec.components.schemas[kind+'Create']=obj(properties,required);
  spec.components.schemas[kind+'Patch']={...obj({...properties,active:{type:'boolean'}},[]),minProperties:1};

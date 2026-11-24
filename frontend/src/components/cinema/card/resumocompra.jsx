@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { Armchair, CalendarDays, Clock3, Film, MapPin, ShoppingBag, Ticket } from "lucide-react";
 import Barcode from "@/components/checkout/barcode";
+import { seatLabel, sessionSeat } from "@/components/cinema/assentos/seat-state.mjs";
 import styles from "./resumocompra.module.css";
 
 const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -47,7 +48,11 @@ export default function ResumoCompra({
           </section>
           <section className={styles.section} aria-labelledby={`${id}-seats`}>
             <div className={styles.sectionLine}><h3 id={`${id}-seats`}><Armchair size={16} aria-hidden="true" /> Seus assentos</h3><span className={styles.smallLabel}>{selectedSeats.length} {selectedSeats.length === 1 ? "LUGAR" : "LUGARES"}</span></div>
-            {selectedSeats.length ? <ul className={styles.seatTags}>{selectedSeats.map(seat => <li key={seat}>{onRemoveSeat ? <button type="button" disabled={seatsDisabled} onClick={() => onRemoveSeat(seat)} aria-label={`Remover assento ${seat}`}><Armchair size={15} aria-hidden="true" /> {seat} <span aria-hidden="true">×</span></button> : <span><Armchair size={15} aria-hidden="true" /> {seat}</span>}</li>)}</ul> : <p>Escolha no mapa os lugares para a sua sessão.</p>}
+            {selectedSeats.length ? <ul className={styles.seatTags}>{selectedSeats.map(seat => {
+              const record = sessionSeat(session.seatMap, seat);
+              const label = record ? seatLabel(record) : seat;
+              return <li key={seat}>{onRemoveSeat ? <button type="button" disabled={seatsDisabled} onClick={() => onRemoveSeat(seat)} aria-label={`Remover assento ${label}`}><Armchair size={15} aria-hidden="true" /> {label} <span aria-hidden="true">×</span></button> : <span><Armchair size={15} aria-hidden="true" /> {label}</span>}</li>;
+            })}</ul> : <p>Escolha no mapa os lugares para a sua sessão.</p>}
           </section>
         </>}
 

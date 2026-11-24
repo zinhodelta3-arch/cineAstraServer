@@ -106,3 +106,7 @@ export function useSession() {
  const standalone=useSessionState(undefined,!session);
  return session??standalone;
 }
+
+export function useSessionSnapshot() {
+ return useContext(SessionContext);
+}

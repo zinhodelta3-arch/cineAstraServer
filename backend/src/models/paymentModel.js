@@ -7,10 +7,10 @@ export function createPaymentModel(database){
     const projection='i.id_intencao,i.id_usuario,i.chave_idempotencia,i.id_pedido,i.id_cobranca,i.id_metodo,i.valor,i.estado,i.provider,i.provider_ref,i.moeda,i.ultimo_evento_em,m.provider AS metodo_provider,m.provider_token,m.ativo AS metodo_ativo,p.id_pagamento,p.status AS pagamento_status,p.transacao_id';
     const joins=' FROM pagamento_intencoes i JOIN metodos_pagamento m ON m.id_metodo=i.id_metodo LEFT JOIN pagamentos p ON p.id_intencao=i.id_intencao';
     return {
-        async prepareCounterPix(c,{orderId,amount,owner,key}){
+        async prepareCounterPix(c,{orderId,amount,owner,key,label='Pix balcão'}){
             const [method]=await c.execute(
-                "INSERT INTO metodos_pagamento(id_usuario,tipo,identificacao,principal,provider,provider_token,ativo) VALUES(?,'PIX','Pix balcão',FALSE,'simulado',?,FALSE)",
-                [owner,`sim_${randomUUID()}`]);
+                "INSERT INTO metodos_pagamento(id_usuario,tipo,identificacao,principal,provider,provider_token,ativo) VALUES(?,'PIX',?,FALSE,'simulado',?,FALSE)",
+                [owner,label,`sim_${randomUUID()}`]);
             const methodId=idString(method.insertId);
             const [intention]=await c.execute(
                 'INSERT INTO pagamento_intencoes(id_usuario,chave_idempotencia,id_pedido,id_metodo,valor) VALUES(?,?,?,?,?)',
@@ -18,6 +18,11 @@ export function createPaymentModel(database){
             return {id_intencao:idString(intention.insertId),id_pedido:orderId,id_cobranca:null,id_metodo:methodId,valor:amount};
         },
         lockOrder:(c,id)=>one(c,'SELECT id_pedido FROM pedidos WHERE id_pedido=? FOR UPDATE',[id]),
+        lockOrderSessions:(c,id)=>rows(c,`SELECT s.id_sessao,s.status FROM sessoes s JOIN (
+            SELECT id_sessao FROM itens_pedido WHERE id_pedido=? AND id_sessao IS NOT NULL
+            UNION SELECT id_sessao_retirada FROM itens_pedido WHERE id_pedido=? AND id_sessao_retirada IS NOT NULL
+            UNION SELECT id_sessao FROM pedidos_presenciais WHERE id_pedido=?
+        ) linked ON linked.id_sessao=s.id_sessao ORDER BY s.id_sessao FOR UPDATE OF s`,[id,id,id]),
         async intent(id,c=database,lock=false){
             if(lock&&!await one(c,'SELECT id_intencao FROM pagamento_intencoes WHERE id_intencao=? FOR UPDATE',[id]))return null;
             return one(c,`SELECT ${projection}${joins} WHERE i.id_intencao=?`,[id]);

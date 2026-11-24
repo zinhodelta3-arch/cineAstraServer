@@ -2,7 +2,7 @@
 
 import TablePagination from '@/components/ui/table-pagination';
 import { useState } from 'react';
-import { Check, Eye, Plus, X } from 'lucide-react';
+import { Check, Eye, Pencil, Plus, X, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useAdminSchedule } from '@/hooks/admin/use-admin-schedule';
 import { useAdminSnacks } from '@/hooks/admin/use-admin-snacks';
@@ -55,17 +55,47 @@ export default function RequestsAdmin() {
     const body = { localId: destination, ...(sessionId ? { sessionId } : {}), [kind === 'input' ? 'inputId' : 'equipmentId']: id, quantity, ...(note ? { note } : {}) };
     actions.run(() => supplyRequest('requests', { method: 'POST', body }), 'Solicitação registrada.');
   }
-  const decision = actions.dialog?.type === 'approve' ? 'approve' : 'refuse';
+  const decision = actions.dialog?.type;
+  const verb = { approve: 'Aprovar', refuse: 'Recusar', edit: 'Editar', cancel: 'Cancelar' };
+  const details = {
+    approve: 'Você pode preparar a entrega agora ou deixar a solicitação disponível para a Logística.',
+    refuse: 'A solicitação será recusada.',
+    edit: 'Uma alteração na quantidade pode exigir uma nova revisão da supervisão.',
+    cancel: 'A solicitação será cancelada e ficará no histórico.',
+  };
+
+  function edit(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const body = { note: form.get('note').trim() || null };
+    if (item.id_insumo) body.quantity = Number(form.get('quantity'));
+    actions.run(() => supplyRequest(`requests/${item.id_solicitacao}`, { method: 'PATCH', body }), 'Solicitação atualizada.');
+  }
+
+  function decide(event) {
+    event.preventDefault();
+    const prepareShipment = new FormData(event.currentTarget).has('prepareShipment');
+    const path = `requests/${item.id_solicitacao}`;
+    const messages = { approve: 'Solicitação aprovada.', refuse: 'Solicitação recusada.', cancel: 'Solicitação cancelada.' };
+    actions.run(() => decision === 'cancel' ? supplyRequest(path, { method: 'DELETE' }) :
+      supplyRequest(`${path}/${decision}`, { method: 'POST', ...(decision === 'approve' && { body: { prepareShipment } }) }), messages[decision]);
+  }
 
   return <SupplyLayout title="Solicitações" description="Acompanhe pedidos de insumos e equipamentos para os cinemas." action={<button type="button" className={styles.primary} onClick={openForm}><Plus size={16} aria-hidden="true" />Nova solicitação</button>}>
     {actions.notice && <p className={styles.notice} role="status">{actions.notice}</p>}
-    <section className={styles.panel} aria-labelledby="requests-title"><header className={styles.panelHeader}><div><h2 id="requests-title">Pedidos de estoque</h2><p>A aprovação cria um envio para a logística.</p></div><span className={styles.count}>{list.items.length} carregados</span></header>
+    <section className={styles.panel} aria-labelledby="requests-title"><header className={styles.panelHeader}><div><h2 id="requests-title">Pedidos de estoque</h2><p>Os pedidos aprovados podem seguir para a logística.</p></div><span className={styles.count}>{list.items.length} carregados</span></header>
       <div className={styles.toolbar}><label className={styles.filter}>Cinema<select value={localId} onChange={event => setLocalId(event.target.value)}><option value="">Todos</option>{locals.items.map(row => <option key={row.id_local} value={row.id_local}>{row.nome}</option>)}</select></label>{locals.nextCursor && <button type="button" className={styles.secondary} onClick={locals.loadMore} disabled={locals.loadingMore}>Mais cinemas</button>}</div>
       <SupplyState list={list} empty="Nenhuma solicitação encontrada." noun="solicitações" />
-      {list.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de solicitações; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Solicitações de estoque</caption><thead><tr><th scope="col">Solicitação</th><th scope="col">Cinema</th><th scope="col">Item</th><th scope="col">Quantidade</th><th scope="col">Status</th><th scope="col">Data</th><th scope="col">Ações</th></tr></thead><tbody>{list.items.map(row => <tr key={row.id_solicitacao}><th scope="row">#{row.id_solicitacao}</th><td>{localName(row.id_local)}</td><td>{itemName(row)}</td><td>{row.quantidade}</td><td><span className={`${styles.badge} ${['RECUSADA', 'CANCELADA'].includes(row.status) ? styles.inactive : ''}`}>{row.status_supervisao === 'PENDENTE' ? 'Pendente de supervisão' : statusName(row.status)}</span></td><td>{dateTime(row.data_solicitacao)}</td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Ver detalhes" aria-label={`Ver solicitação ${row.id_solicitacao}`} onClick={() => actions.open('view', row)}><Eye size={16} aria-hidden="true" /></button>{row.status === 'PENDENTE' && row.status_supervisao !== 'PENDENTE' && <><button type="button" className={styles.iconButton} title="Aprovar solicitação" aria-label={`Aprovar solicitação ${row.id_solicitacao}`} onClick={() => actions.open('approve', row)}><Check size={16} aria-hidden="true" /></button><button type="button" className={styles.iconButton} title="Recusar solicitação" aria-label={`Recusar solicitação ${row.id_solicitacao}`} onClick={() => actions.open('refuse', row)}><X size={16} aria-hidden="true" /></button></>}</div></td></tr>)}</tbody></table></div>}
+      {list.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label="Tabela de solicitações; role horizontalmente em telas pequenas" tabIndex={0}><table className={styles.table}><caption className="sr-only">Solicitações de estoque</caption><thead><tr><th scope="col">Solicitação</th><th scope="col">Cinema</th><th scope="col">Item</th><th scope="col">Quantidade</th><th scope="col">Status</th><th scope="col">Data</th><th scope="col">Ações</th></tr></thead><tbody>{list.items.map(row => <tr key={row.id_solicitacao}><th scope="row">#{row.id_solicitacao}</th><td>{localName(row.id_local)}</td><td>{itemName(row)}</td><td>{row.quantidade}</td><td><span className={`${styles.badge} ${['RECUSADA', 'CANCELADA'].includes(row.status) ? styles.inactive : ''}`}>{row.status === 'PENDENTE' && !row.entrega && <>
+        <button type="button" className={styles.iconButton} title="Editar solicitação" aria-label={`Editar solicitação ${row.id_solicitacao}`} onClick={() => actions.open('edit', row)}><Pencil size={16} aria-hidden="true" /></button>
+        <button type="button" className={styles.iconButton} title="Cancelar solicitação" aria-label={`Cancelar solicitação ${row.id_solicitacao}`} onClick={() => actions.open('cancel', row)}><XCircle size={16} aria-hidden="true" /></button>
+      </>}{row.status === 'PENDENTE' && row.status_supervisao === 'PENDENTE' ? 'Pendente de supervisão' : statusName(row.status)}</span></td><td>{dateTime(row.data_solicitacao)}</td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Ver detalhes" aria-label={`Ver solicitação ${row.id_solicitacao}`} onClick={() => actions.open('view', row)}><Eye size={16} aria-hidden="true" /></button>{row.status === 'PENDENTE' && !row.entrega && <>
+        <button type="button" className={styles.iconButton} title="Editar solicitação" aria-label={`Editar solicitação ${row.id_solicitacao}`} onClick={() => actions.open('edit', row)}><Pencil size={16} aria-hidden="true" /></button>
+        <button type="button" className={styles.iconButton} title="Cancelar solicitação" aria-label={`Cancelar solicitação ${row.id_solicitacao}`} onClick={() => actions.open('cancel', row)}><XCircle size={16} aria-hidden="true" /></button>
+      </>}{row.status === 'PENDENTE' && row.status_supervisao !== 'PENDENTE' && <><button type="button" className={styles.iconButton} title="Aprovar solicitação" aria-label={`Aprovar solicitação ${row.id_solicitacao}`} onClick={() => actions.open('approve', row)}><Check size={16} aria-hidden="true" /></button><button type="button" className={styles.iconButton} title="Recusar solicitação" aria-label={`Recusar solicitação ${row.id_solicitacao}`} onClick={() => actions.open('refuse', row)}><X size={16} aria-hidden="true" /></button></>}</div></td></tr>)}</tbody></table></div>}
       <TablePagination list={list} />
     </section>
-    <Dialog open={Boolean(actions.dialog)} onOpenChange={value => { if (!value) actions.close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{actions.dialog?.type === 'form' ? 'Nova solicitação' : actions.dialog?.type === 'view' ? `Solicitação #${item?.id_solicitacao}` : `${decision === 'approve' ? 'Aprovar' : 'Recusar'} solicitação #${item?.id_solicitacao}`}</DialogTitle><DialogDescription className={styles.dialogDescription}>{actions.dialog?.type === 'form' ? 'O item e o fornecedor precisam estar disponíveis e autorizados no cinema de destino.' : actions.dialog?.type === 'approve' ? 'A aprovação reserva o encaminhamento para a logística.' : actions.dialog?.type === 'refuse' ? 'A solicitação será recusada.' : 'Detalhes do pedido de estoque.'}</DialogDescription>
+    <Dialog open={Boolean(actions.dialog)} onOpenChange={value => { if (!value) actions.close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{actions.dialog?.type === 'form' ? 'Nova solicitação' : actions.dialog?.type === 'view' ? `Solicitação #${item?.id_solicitacao}` : `${verb[decision] ?? ''} solicitação #${item?.id_solicitacao}`}</DialogTitle><DialogDescription className={styles.dialogDescription}>{actions.dialog?.type === 'form' ? 'O item e o fornecedor precisam estar disponíveis e autorizados no cinema de destino.' : details[decision] ?? 'Detalhes do pedido de estoque.'}</DialogDescription>
       {formOpen && <form className={styles.form} onSubmit={save}>
         <label>Cinema de destino<select name="localId" value={formLocalId} onChange={event => changeLocal(event.target.value)} required><option value="">Selecione</option>{locals.items.filter(row => row.status === 'ATIVO').map(row => <option key={row.id_local} value={row.id_local}>{row.nome}</option>)}</select></label>
         <label>Tipo de item<select value={kind} onChange={event => changeKind(event.target.value)}><option value="input">Insumo</option><option value="equipment">Equipamento</option></select></label>
@@ -100,7 +130,16 @@ export default function RequestsAdmin() {
         <div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="submit" className={styles.primary} disabled={actions.pending || source.loading || sessions.loading}>{actions.pending ? 'Registrando…' : 'Criar solicitação'}</button></div>
       </form>}
       {actions.dialog?.type === 'view' && item && <dl className={styles.detailGrid}><div><dt>Cinema</dt><dd>{localName(item.id_local)}</dd></div><div><dt>Item</dt><dd>{itemName(item)}</dd></div><div><dt>Quantidade</dt><dd>{item.quantidade}</dd></div><div><dt>Status</dt><dd>{statusName(item.status)}</dd></div><div><dt>Sessão</dt><dd>{item.id_sessao ? `#${item.id_sessao}` : '—'}</dd></div><div><dt>Solicitante</dt><dd>#{item.id_usuario}</dd></div><div><dt>Data</dt><dd>{dateTime(item.data_solicitacao)}</dd></div><div><dt>Observação</dt><dd>{item.observacao || '—'}</dd></div></dl>}
-      {['approve', 'refuse'].includes(actions.dialog?.type) && <div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="button" className={decision === 'approve' ? styles.primary : styles.danger} disabled={actions.pending} onClick={() => actions.run(() => supplyRequest(`requests/${item.id_solicitacao}/${decision}`, { method: 'POST' }), decision === 'approve' ? 'Solicitação aprovada.' : 'Solicitação recusada.')}>{actions.pending ? 'Aguarde…' : decision === 'approve' ? 'Aprovar' : 'Recusar'}</button></div>}
+      {decision === 'edit' && <form className={styles.form} onSubmit={edit}>
+        <label>Quantidade<input name="quantity" type="number" min="1" max="2147483647" defaultValue={item.quantidade} readOnly={Boolean(item.id_equipamento)} required /></label>
+        <label className={styles.wide}>Observação<textarea name="note" maxLength={2000} defaultValue={item.observacao ?? ''} /></label>
+        <div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={actions.close}>Voltar</button><button type="submit" className={styles.primary} disabled={actions.pending}>Salvar solicitação</button></div>
+      </form>}
+      {['approve', 'refuse', 'cancel'].includes(decision) && <form className={styles.form} onSubmit={decide}>
+        {decision === 'approve' && <div className={styles.wide}><input id="prepare-shipment" type="checkbox" name="prepareShipment" defaultChecked /> <label htmlFor="prepare-shipment">Preparar entrega agora</label></div>}
+        <div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={actions.close}>Voltar</button>
+          <button type="submit" className={decision === 'approve' ? styles.primary : styles.danger} disabled={actions.pending}>{actions.pending ? 'Aguarde…' : `${verb[decision]} solicitação`}</button></div>
+      </form>}
       {actions.error && <p className={styles.error} role="alert">{actions.error}</p>}
     </DialogContent></Dialog>
   </SupplyLayout>;

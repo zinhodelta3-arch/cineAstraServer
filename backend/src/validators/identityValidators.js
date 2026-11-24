@@ -11,12 +11,14 @@ const id = z.string().regex(/^[1-9]\d{0,19}$/).refine(v => BigInt(v) <= 18446744
 const token = z.string().regex(/^[a-f0-9]{64}$/);
 const password = z.string().min(1).max(72).refine(v => Buffer.byteLength(v) <= 72);
 const name = z.string().trim().min(2).max(100);
+const companyId = z.string().regex(/^[1-9]\d{0,9}$/).refine(value=>Number(value)<=4294967295);
+const staffProfile = { name:name.optional(), phone:z.string().regex(/^\+?[\d ()-]{8,20}$/).nullable().optional() };
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => Number.isFinite(Date.parse(`${v}T00:00:00Z`)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v && v <= new Date().toISOString().slice(0, 10));
 const strict = shape => z.object(shape).strict();
 const nonEmpty = schema => schema.refine(o => Object.keys(o).length > 0);
 export const schemas = {
     register: strict({ documentsSource: z.literal('LOCAL_TEST_PDF').optional(), name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, termsVersion: z.string().min(1).max(50), privacyVersion: z.string().min(1).max(50), acceptTerms: z.literal(true), acceptPrivacy: z.literal(true), ageProof: z.string().min(1).max(512).optional(), guardianProof: z.string().min(1).max(512).optional(), captchaToken: z.string().min(1).max(4096).optional() }),
-    login: strict({ email, password, captchaToken: z.string().min(1).max(4096).optional(), profile: z.enum(['CLIENTE', 'FORNECEDOR']).optional() }),
+    login: strict({ email, password, captchaToken: z.string().min(1).max(4096).optional(), profile: z.enum(['CLIENTE', 'FORNECEDOR', 'EQUIPE']).optional() }),
     forgot: strict({ email, captchaToken: z.string().min(1).max(4096).optional() }),
     reset: strict({ token, password, passwordConfirmation: password, captchaToken: z.string().min(1).max(4096).optional() }),
     verify: strict({ challengeToken: token, code: z.string().regex(/^\d{6}$/) }),
@@ -48,9 +50,15 @@ export const schemas = {
             color: z.number().int().min(0).max(4).optional()
         })).optional()
     })),
-    adminUser: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password, role: z.enum(['CLIENTE', 'FORNECEDOR', 'SUPERVISOR', 'COLABORADOR', 'ADMIN']) }),
-    adminProfile: nonEmpty(strict({ name: name.optional(), phone: z.string().regex(/^\+?[\d ()-]{8,20}$/).nullable().optional() })),
-    accessChange: nonEmpty(strict({ role: z.enum(['CLIENTE', 'FORNECEDOR', 'SUPERVISOR', 'COLABORADOR', 'ADMIN']).optional(), status: z.enum(['ATIVO', 'INATIVO', 'BLOQUEADO']).optional() })),
+    collaboratorAccount: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password }),
+    adminUser: strict({ name, email, cpf, dateOfBirth: date, password, passwordConfirmation: password,
+        role:z.enum(['CLIENTE','FORNECEDOR','SUPERVISOR','COLABORADOR','ADMIN']),companyId:companyId.optional() })
+        .refine(value=>(value.role==='FORNECEDOR')===Boolean(value.companyId),{path:['companyId']}),
+    adminProfile: nonEmpty(strict({ ...staffProfile,email:email.optional() })),
+    staffProfile: nonEmpty(strict(staffProfile)),
+    accessChange: nonEmpty(strict({ role:z.enum(['CLIENTE','FORNECEDOR','SUPERVISOR','COLABORADOR','ADMIN']).optional(),
+        status:z.enum(['ATIVO','INATIVO','BLOQUEADO']).optional(),companyId:companyId.optional() }))
+        .refine(value=>!value.companyId||value.role==='FORNECEDOR',{path:['companyId']}),
     supervisorLocation: strict({ localId: z.string().regex(/^[1-9]\d{0,9}$/).refine(v => BigInt(v) <= 4294967295n).nullable() }),
     parental: nonEmpty(strict({ compras_permitidas: z.boolean().optional(), assinaturas_permitidas: z.boolean().optional(), limite_minutos_diarios: z.number().int().min(1).max(1440).optional() })),
     authorizeMinor: strict({ purpose: z.enum(['COMPRA', 'ASSINATURA']), operationReference: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), expiresAt: z.iso.datetime() }),

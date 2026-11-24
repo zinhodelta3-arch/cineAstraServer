@@ -1,0 +1,10 @@
+ALTER TABLE suporte
+    MODIFY status ENUM('ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO','CANCELADO') DEFAULT 'ABERTO';
+
+ALTER TABLE suporte_mensagens
+    MODIFY papel ENUM('CLIENTE','ADMIN','SUPERVISOR','COLABORADOR','FORNECEDOR') NOT NULL,
+    MODIFY origem ENUM('NOVA','LEGADO_ABERTURA','LEGADO_RESPOSTA','EDICAO') NOT NULL DEFAULT 'NOVA';
+
+ALTER TABLE notificacoes
+    ADD COLUMN destino JSON NULL,
+    ADD INDEX idx_notificacoes_usuario_recente (id_usuario, data_envio, id_notificacao);

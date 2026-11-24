@@ -12,6 +12,36 @@ export function createOrderModel(){return {
             WHERE id_usuario=?${before} ORDER BY id_pedido DESC LIMIT ?`,args))[0];
     },
     ownStatus:(c,id,userId)=>one(c,'SELECT id_pedido,status,valor_total FROM pedidos WHERE id_pedido=? AND id_usuario=?',[id,userId]),
+    ownPurchaseDocument:(c,id,userId)=>one(c,`SELECT p.id_pedido,p.status,p.valor_total,p.data_pedido,
+        cp.codigo AS coupon,pp.snapshot,
+        pg.status AS payment_status,pg.data_pagamento,intent.provider,pm.tipo AS payment_type
+        FROM pedidos p
+        LEFT JOIN cupons cp ON cp.id_cupom=p.id_cupom
+        LEFT JOIN pedido_precificacao pp ON pp.id_pedido=p.id_pedido
+        LEFT JOIN pagamentos pg ON pg.id_pagamento=(SELECT pay.id_pagamento FROM pagamentos pay
+            WHERE pay.id_pedido=p.id_pedido AND pay.status IN ('APROVADO','PARCIALMENTE_ESTORNADO','ESTORNADO')
+            ORDER BY pay.data_pagamento DESC,pay.id_pagamento DESC LIMIT 1)
+        LEFT JOIN pagamento_intencoes intent ON intent.id_intencao=pg.id_intencao
+        LEFT JOIN metodos_pagamento pm ON pm.id_metodo=pg.id_metodo
+        WHERE p.id_pedido=? AND p.id_usuario=?`,[id,userId]),
+    purchaseDocumentItems:async(c,id)=>(await c.execute(`SELECT ip.id_item,ip.id_insumo,ip.id_combo,ip.id_sessao,ip.id_filme,
+        ip.tipo_ingresso,ip.tipo_streaming,ip.quantidade,ip.subtotal,
+        COALESCE(i.nome,co.nome,f.titulo) AS item_name,s.data,s.horario_inicio,s.status AS session_status,
+        sa.nome AS room,loc.nome AS cinema,loc.cidade,loc.estado,a.fileira,a.numero,
+        COALESCE(loc.nome,pickup.nome) AS venue
+        FROM itens_pedido ip
+        LEFT JOIN insumos i ON i.id_insumo=ip.id_insumo
+        LEFT JOIN combos co ON co.id_combo=ip.id_combo
+        LEFT JOIN sessoes s ON s.id_sessao=ip.id_sessao
+        LEFT JOIN filmes f ON f.id_filme=COALESCE(s.id_filme,ip.id_filme)
+        LEFT JOIN salas sa ON sa.id_sala=s.id_sala
+        LEFT JOIN locais loc ON loc.id_local=sa.id_local
+        LEFT JOIN locais pickup ON pickup.id_local=COALESCE(i.id_local,co.id_local)
+        LEFT JOIN assentos a ON a.id_assento=ip.id_assento
+        WHERE ip.id_pedido=? ORDER BY ip.id_item`,[id]))[0],
+    purchaseDocumentTickets:async(c,id)=>(await c.execute(`SELECT t.id_ticket,t.id_item,t.tipo,t.status,t.expira_em
+        FROM itens_pedido ip JOIN tickets t ON t.id_item=ip.id_item
+        WHERE ip.id_pedido=? ORDER BY ip.id_item,t.id_ticket`,[id]))[0],
     ownDraft:(c,id,userId,lock=false)=>one(c,`SELECT id_pedido,proposta_admin FROM pedidos
         WHERE id_pedido=? AND id_usuario=? AND status='EM_ANDAMENTO' AND proposta_admin IS NOT NULL${lock?' FOR UPDATE':''}`,[id,userId]),
     claimDraft:(c,id,key,hash)=>c.execute('UPDATE pedidos SET checkout_key=?,checkout_hash=?,checkout_expira_em=DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 15 MINUTE) WHERE id_pedido=?',[key,hash,id]),

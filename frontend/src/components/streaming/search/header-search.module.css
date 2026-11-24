@@ -8,7 +8,7 @@
 .close { display: grid; place-items: center; align-self: start; width: 44px; height: 44px; background: transparent; color: var(--foreground); cursor: pointer; }
 .close:hover { color: var(--primary); }
 .form { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; min-width: 0; padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--muted-foreground); }
-.form:focus-within { border-color: var(--ring); outline: 1px solid var(--ring); }
+.form:has(input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
 .form > svg { flex-shrink: 0; }
 .form input { flex: 1; min-width: 0; width: 100%; min-height: 44px; border: 0; outline: none; background: transparent; color: var(--foreground); font: inherit; font-size: clamp(16px, 2vw, 24px); }
 .form input::placeholder { color: var(--muted-foreground); opacity: 1; }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import MoneyInput from '@/components/ui/money-input';
 import { unitOperation, useUnitList } from '@/hooks/unit/use-unit-data';
 import { UnitListState, label } from './unit-layout';
@@ -22,7 +23,7 @@ export default function UnitSessionForm({ item, localId, trailerMinutes, action,
   const [query, setQuery] = useState('');
   const [chosenFilm, setChosenFilm] = useState(() => item ? { id_filme: item.id_filme, titulo: item.titulo_filme, duracao: item.duracao_filme } : null);
   const [start, setStart] = useState(item?.horario_inicio?.slice(0, 5) ?? '');
-  const films = useUnitList(`/films?limit=20&cinema=true${query ? `&titulo=${encodeURIComponent(query)}` : ''}`, unitOperation);
+  const films = useUnitList(`/film-offers?limit=20&localId=${localId}${query ? `&titulo=${encodeURIComponent(query)}` : ''}`, unitOperation);
   const rooms = useUnitList(!item ? `/locations/${localId}/rooms?limit=20&status=ATIVA` : null, unitOperation);
   const film = films.items.find(row => row.id_filme === chosenFilm?.id_filme) ?? chosenFilm;
   const unchangedTime = item && film?.id_filme === item.id_filme && start === item.horario_inicio.slice(0, 5);
@@ -59,10 +60,11 @@ export default function UnitSessionForm({ item, localId, trailerMinutes, action,
       <label>Buscar filmes pelo título<input type="search" value={search} maxLength={200} onChange={event => setSearch(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); setQuery(search.trim()); } }} /></label>
       <button type="button" className={styles.secondary} onClick={() => setQuery(search.trim())}>Buscar</button>
       {films.nextCursor && <button type="button" className={styles.secondary} onClick={films.loadMore} disabled={films.loadingMore}>{films.loadingMore ? 'Carregando…' : 'Carregar mais filmes'}</button>}
-      <UnitListState list={films} empty="Nenhum filme encontrado." />
+      <UnitListState list={films} empty="Nenhum filme encontrado na oferta da unidade." />
       {films.error && films.items.length > 0 && <p role="alert" className={styles.error}>{films.error}</p>}
     </div>}
     {!searchOpen && films.error && <p role="alert" className={styles.error}>{films.error}</p>}
+    {!films.loading && !films.error && !films.items.length && !query && <Link href="/unidade/filmes" className={styles.secondary}>Gerenciar oferta de filmes</Link>}
     {!item ? <>
       <label className={styles.full}>Sala<select name="id_sala" required defaultValue="">
         <option value="">{rooms.loading ? 'Carregando salas…' : 'Selecione uma sala'}</option>

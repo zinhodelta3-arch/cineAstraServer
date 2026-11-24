@@ -2,6 +2,7 @@ import { success } from '../utils/dto.js';
 const context=req=>({actor:req.usuario,signal:req.signal,requestId:req.res.locals.requestId});
 export function createPricingController(service){return {
     quote:async(req,res)=>success(res,await service.quote(req.input,context(req))),
+    guestSnackQuote:async(req,res)=>success(res,await service.guestSnackQuote(req.input,context(req))),
     adminQuote:async(req,res)=>success(res,await service.adminQuote(req.input,context(req))),
     parameters:async(req,res)=>success(res,await service.parameters(context(req))),
     setParameter:async(req,res)=>success(res,await service.setParameter(req.params.category,req.input,context(req))),

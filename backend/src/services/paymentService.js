@@ -17,13 +17,20 @@ function normalized(event){
     if(!Number.isFinite(time.getTime())||time.getTime()>Date.now()+300000)throw ApiError.validacao('Evento do gateway inválido');
     return {...event,intentionId,occurredSql:time.toISOString().replace('T',' ').replace('Z','').slice(0,23)};
 }
-export function createPaymentService({model,methods,identity,provider,checkout,subscriptions,socialProgram}){
+export function createPaymentService({model,methods,identity,provider,checkout,subscriptions,socialProgram,refunds,notifications}){
     const tx=(context,fn)=>identity.transaction(fn,context);
+    async function stoppedSessions(c,orderId){
+        if(!orderId||!refunds)return [];
+        // O mesmo lock usado pela alteração da programação evita emissão após a interrupção.
+        const sessions=await model.lockOrderSessions(c,orderId);
+        return sessions.filter(row=>['INTERROMPIDA','CANCELADA'].includes(row.status)).map(row=>idString(row.id_sessao));
+    }
     function ready(){if(provider?.available===false||!/^[A-Za-z0-9_-]{2,40}$/.test(provider?.name??'')||typeof provider.create!=='function'||typeof provider.consult!=='function'||typeof provider.verifyWebhook!=='function')throw unavailable();}
     async function ownPayment(id,context){return tx(context,async c=>{const a=await contextActor(identity,c,context);const row=await model.byPayment(id,c);if(!row||idString(row.id_usuario)!==idString(a.id_usuario))throw ApiError.naoEncontrado();return statusDto(row);});}
-    async function applyEventOnConnection(c,raw,type,context){
+    async function applyEventOnConnection(c,raw,type,context,notifyOrder=true){
             const e=normalized(raw);
             const hint=await model.intent(e.intentionId,c);
+            const stopped=await stoppedSessions(c,hint?.id_pedido);
             if(hint?.id_pedido)await model.lockOrder(c,hint.id_pedido);
             const row=await model.intent(e.intentionId,c,true);
             if(!row||row.provider!==provider.name||!row.id_pagamento||row.moeda!=='BRL'||String(row.valor)!==e.amount||
@@ -41,29 +48,35 @@ export function createPaymentService({model,methods,identity,provider,checkout,s
             if(e.status==='APROVADO'){
                 const obligation=await model.obligation(c,row);
                 const expected=obligation&&(row.id_pedido?obligation.valor:chargeTotal(obligation));
-                fulfill=Boolean(obligation&&String(expected)===e.amount&&(row.id_pedido?obligation.status==='AGUARDANDO_PAGAMENTO':['PENDENTE','ATRASADO'].includes(obligation.status)));
+                fulfill=Boolean(!stopped.length&&obligation&&String(expected)===e.amount&&(row.id_pedido?obligation.status==='AGUARDANDO_PAGAMENTO':['PENDENTE','ATRASADO'].includes(obligation.status)));
                 checkoutOrder=Boolean(row.id_pedido&&obligation?.checkout_expira_em);
                 if(fulfill&&checkoutOrder)fulfill=await checkout.ready(c,row.id_pedido,obligation);
                 if(fulfill&&!row.id_pedido&&subscriptions)fulfill=await subscriptions.canSettle(c,row.id_cobranca);
             }
             await model.settle(c,row,e.status,e.occurredSql,e.transactionId,fulfill);
+            if(e.status==='APROVADO'&&stopped.length)await refunds.reviewStoppedSession(c,row.id_pagamento,stopped,context);
             if(e.status==='APROVADO'&&fulfill&&checkoutOrder)await checkout.confirm(c,row.id_pedido,row.id_usuario,e.occurredSql);
             if(e.status==='APROVADO'&&fulfill&&row.id_pedido)await socialProgram?.capture(c,{
                 orderId:row.id_pedido,paymentId:row.id_pagamento,amount:e.amount,occurredAt:e.occurredSql});
+            if(e.status==='APROVADO'&&fulfill&&row.id_pedido&&row.id_usuario&&notifyOrder) {
+                const id=idString(row.id_pedido);
+                await notifications?.emit(c,{recipientId:idString(row.id_usuario),type:'ORDER_PAID',dedupeKey:`order-paid:${id}`,
+                    title:`Pagamento confirmado · Pedido #${id}`,message:'O pagamento foi confirmado. Abra o pedido para consultar seus itens e comprovantes.',target:{kind:'order',id}});
+            }
             if(e.status==='APROVADO'&&fulfill&&!row.id_pedido&&subscriptions)await subscriptions.activate(c,row.id_cobranca,e.occurredSql);
             await identity.audit(c,e.status==='APROVADO'?(fulfill?'PAYMENT.APPROVED':'PAYMENT.APPROVAL_REVIEW'):'PAYMENT.DECLINED',row.id_pagamento,context);
             return {duplicate:false,status:e.status};
     }
     const applyEvent=(raw,type,context={})=>tx(context,c=>applyEventOnConnection(c,raw,type,context));
-    async function settleCounter(c,{orderId,amount,owner,key},context){
+    async function settleCounter(c,{orderId,amount,owner,key,label,notifyOrder=true},context){
         ready();
         if(provider.name!=='simulado')throw unavailable();
-        const intention=await model.prepareCounterPix(c,{orderId,amount,owner,key});
+        const intention=await model.prepareCounterPix(c,{orderId,amount,owner,key,label});
         const paymentId=await model.claim(c,intention,provider.name);
         const request={intentionId:intention.id_intencao,amount,idempotencyKey:key,currency:'BRL'};
         const {transactionId}=await provider.create(request);
         const event=await provider.consult({...request,transactionId});
-        await applyEventOnConnection(c,event,'CONSULTA',context);
+        await applyEventOnConnection(c,event,'CONSULTA',context,notifyOrder);
         return paymentId;
     }
     async function create(input,key,context){
@@ -72,11 +85,13 @@ export function createPaymentService({model,methods,identity,provider,checkout,s
         const dispatch=await tx(context,async c=>{
             const a=await contextActor(identity,c,context);
             const hint=await model.intent(prepared.id,c);
+            const stopped=await stoppedSessions(c,hint?.id_pedido);
             if(hint?.id_pedido)await model.lockOrder(c,hint.id_pedido);
             const row=await model.intent(prepared.id,c,true);
             if(!row||idString(row.id_usuario)!==idString(a.id_usuario)||row.metodo_provider!==provider.name)throw conflict();
             if(row.estado==='CANCELADA')throw conflict();
             if(row.estado!=='PREPARADA')return {send:false,payment:statusDto(row)};
+            if(stopped.length)throw new ApiError('A sessão vinculada foi interrompida ou cancelada.',409,null,'SESSION_CONFLICT');
             if(!row.metodo_ativo||!row.provider_token)throw conflict();
             const obligation=await model.obligation(c,row);
             const current=obligation&&(row.id_pedido?obligation.valor:chargeTotal(obligation));

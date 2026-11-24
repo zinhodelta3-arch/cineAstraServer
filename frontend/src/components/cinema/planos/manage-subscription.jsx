@@ -7,10 +7,12 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import useCinemaPlans from '@/hooks/cinema/planos/use-cinema-plans';
 import { subscriptionManagementPath } from '@/lib/auth/destination.mjs';
-import { planDate, planMoney, planPeriod, planStatus } from '@/lib/api/plan-subscription.mjs';
+import { readSessionResponse, sessionFetch } from '@/lib/auth/session-response.mjs';
+import { planBenefits, planDate, planModalities, planModality, planMoney, planPeriod, planStatus } from '@/lib/api/plan-subscription.mjs';
 import SubscriptionOffer from './subscription-offer';
 import SubscriptionPayment from './subscription-payment';
 import { SubscriptionCheckout } from './plans-subscription';
+import { SubscriptionInvitations, SubscriptionParticipants } from './subscription-sharing';
 import ticket from '../ticket.module.css';
 import '../perfil/cinema-profile.css';
 
@@ -21,7 +23,8 @@ function ChangePlan({ subscription: s, catalog }) {
   const stage = changeResult ? 2 : offer ? 1 : 0;
   const heading = useRef(null);
   useEffect(() => { heading.current?.focus(); }, [stage]);
-  const samePlan = change?.planId === s.selected && planPeriod(change?.period) === planPeriod(s.billing);
+  const samePlan = change?.planId === s.selected && planPeriod(change?.period) === planPeriod(s.billing) &&
+    change?.modality === s.modality && change?.autoRenew === s.autoRenew;
 
   return <section className={`${ticket.ticket} space-y-5 p-5 sm:p-7`} aria-labelledby="change-plan-heading">
     <ol aria-label="Etapas da troca" className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
@@ -38,7 +41,7 @@ function ChangePlan({ subscription: s, catalog }) {
     </> : offer ? <>
       <dl className="ca-subscription-facts">
         <div><dt>Plano atual</dt><dd>{planName(change, s.planNames)} · {planPeriod(change.period)} · {planMoney(change.contractPrice)}</dd></div>
-        <div><dt>Novo plano</dt><dd>{s.selectedPlanName} · {planPeriod(s.billing)} · {planMoney(offer.offer.total)}</dd></div>
+        <div><dt>Novo plano</dt><dd>{s.selectedPlanName} · {planModality(s.modality)} · {planPeriod(s.billing)} · {planMoney(offer.offer.total)}</dd></div>
         <div><dt>Próximo ciclo</dt><dd>{planDate(change.endsOn, true)} · após o pagamento</dd></div>
         <div><dt>Cobrança pela troca hoje</dt><dd>{planMoney(0)}</dd></div>
       </dl>
@@ -46,11 +49,18 @@ function ChangePlan({ subscription: s, catalog }) {
       <SubscriptionOffer {...s} actionLabel="Confirmar troca de plano" />
     </> : <>
       <p className="text-sm text-muted-foreground">Seu plano atual vale até {planDate(change.endsOn)}. A troca será agendada para o próximo ciclo.</p>
-      <label className="grid max-w-48 gap-2 text-sm font-bold">Período
+      <div className="grid max-w-md gap-3 sm:grid-cols-2">
+      <label className="grid gap-2 text-sm font-bold">Modalidade
+        <select value={s.modality} onChange={event => catalog.setModality(event.target.value)} disabled={s.pending} className="min-h-10 rounded-lg border border-border bg-card px-3">
+          {planModalities.map(option => <option key={option.id} value={option.id}>{option.name} · {option.members} {option.members === 1 ? 'pessoa' : 'pessoas'}</option>)}
+        </select>
+      </label>
+      <label className="grid gap-2 text-sm font-bold">Período
         <select value={s.billing} onChange={event => catalog.setBilling(event.target.value)} disabled={s.pending} className="min-h-10 rounded-lg border border-border bg-card px-3">
           <option value="monthly">Mensal</option><option value="annual">Anual</option>
         </select>
       </label>
+      </div>
       {catalog.list.loading && <p role="status">Carregando planos…</p>}
       {catalog.list.error && <div role="alert"><p>{catalog.list.error}</p><Button type="button" variant="outline" onClick={catalog.list.retry}>Tentar novamente</Button></div>}
       {!catalog.list.loading && !catalog.list.error && !catalog.plans.length && <p>Nenhum plano está disponível para troca no momento.</p>}
@@ -58,7 +68,7 @@ function ChangePlan({ subscription: s, catalog }) {
         <legend className="mb-2 text-sm font-bold">Planos</legend>
         {catalog.plans.map(plan => <label key={plan.id} className="ca-plan-option">
           <input type="radio" name="next-plan" value={plan.id} checked={plan.id === s.selected} disabled={!plan.available} onChange={() => catalog.startSubscription(plan.id)} />
-          <span><strong>{plan.name}</strong><small className="block text-muted-foreground">{plan.benefits[0]}{plan.id === change.planId && ' · Plano atual'}</small></span>
+          <span><strong>{plan.name}</strong>{plan.id === change.planId && <small className="block text-muted-foreground">Categoria atual</small>}</span>
           <span className="font-bold">{plan.priceLabel}{plan.available && catalog.periodFor}</span>
         </label>)}
       </fieldset>}
@@ -93,34 +103,49 @@ function SubscriptionList({ subscription: s, initialPaymentId }) {
     {s.error && !cancelId && <p role="alert" className="text-destructive">{s.error}</p>}
     {draft && !s.result && <section className={`${ticket.ticket} space-y-3 p-5 sm:p-7`}>
       <h2 className={`${ticket.title} text-2xl font-bold`}>Proposta pendente de aceite</h2>
-      <p>{planName(draft, s.planNames)} · {planPeriod(draft.period)}</p>
+      <p>{planName(draft, s.planNames)} · {planModality(draft.modality) ?? 'Individual'} · {planPeriod(draft.period)}</p>
       {s.selected ? <SubscriptionCheckout subscription={s} /> :
         <Button type="button" onClick={() => s.chooseDraft(draft)} disabled={s.pending}>Selecionar proposta</Button>}
     </section>}
     {subscriptions.map(item => {
       const active = item.status === 'ATIVA';
       const scheduled = item.scheduledChange;
+      const benefits = item.contract ? planBenefits(item.contract) : [];
       return <section key={item.id} className={`${ticket.ticket} overflow-hidden`}>
         <div className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-7">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">{active ? 'Plano atual' : 'Assinatura'}</p>
             <h2 className={`${ticket.title} text-3xl font-black`}>{planName(item, s.planNames)}</h2>
-            <p>{planPeriod(item.period)} · {planMoney(item.contractPrice)} <span className="block text-sm font-bold text-primary sm:inline sm:ms-2">{planStatus(item)}</span></p>
+            <p>{[planModality(item.modality), planPeriod(item.period), planMoney(item.contractPrice)].filter(Boolean).join(' · ')} <span className="block text-sm font-bold text-primary sm:inline sm:ms-2">{planStatus(item)}</span></p>
             {item.endsOn && <p className="text-sm text-muted-foreground">Ciclo até {planDate(item.endsOn)}</p>}
           </div>
-          {active && item.endsOn >= today && <Button type="button" onClick={() => s.startChange(item)} disabled={s.pending}>Trocar plano</Button>}
-          {scheduled && <p className="w-full rounded-lg border border-dashed border-border p-3 text-sm">
-            <strong>Troca agendada</strong><br />{scheduled.planName} · {planPeriod(scheduled.period)} · {planMoney(scheduled.price)} · a partir de {planDate(scheduled.effectiveOn)}, após o pagamento.
+          {active && !item.endingOn && item.endsOn >= today && <Button type="button" onClick={() => s.startChange(item)} disabled={s.pending}>Trocar plano</Button>}
+          {item.endingOn && <p className="w-full rounded-lg border border-dashed border-border p-3 text-sm">
+            {active ? `Encerramento programado. Seu acesso vai até ${planDate(item.endingOn)}.` : `Assinatura encerrada ao fim do ciclo de ${planDate(item.endingOn)}.`}
           </p>}
+          {active && item.adminProposal && !item.endingOn && <div className="w-full space-y-2 rounded-lg border border-dashed border-border p-3 text-sm">
+            <p><strong>Proposta da administração</strong><br />{item.adminProposal.planName} · {planModality(item.adminProposal.modality)} · {planPeriod(item.adminProposal.period)}</p>
+            <Button type="button" variant="outline" onClick={() => s.startChange(item, item.adminProposal)} disabled={s.pending}>Revisar proposta</Button>
+          </div>}
+          {scheduled && <p className="w-full rounded-lg border border-dashed border-border p-3 text-sm">
+            <strong>Troca agendada</strong><br />{[scheduled.planName, planModality(scheduled.modality), planPeriod(scheduled.period), planMoney(scheduled.price)].filter(Boolean).join(' · ')} · a partir de {planDate(scheduled.effectiveOn)}, após o pagamento.
+          </p>}
+          {active && benefits.length > 0 && <details className="w-full text-sm">
+            <summary className="cursor-pointer font-semibold">Benefícios deste ciclo</summary>
+            <ul className="mt-2 list-inside list-disc space-y-1">{benefits.map(benefit => <li key={benefit}>{benefit}</li>)}</ul>
+            {item.contract?.freeComboId && Number(item.contract.freeCombosPerMonth) > 0 && <MonthlyCombo subscriptionId={item.id} />}
+          </details>}
         </div>
         <div aria-hidden="true" className={ticket.tear} />
         <div className={`${ticket.stub} flex flex-wrap gap-3 p-4 sm:px-7`}>
           <Button type="button" variant="outline" onClick={() => setPaymentId(item.id)} disabled={s.pending || currentPayment === item.id}>Ver cobrança</Button>
           {['ATIVA', 'PENDENTE'].includes(item.status) && <Button type="button" variant="ghost" onClick={() => setCancelId(item.id)} disabled={s.pending}>Cancelar assinatura</Button>}
         </div>
+        {active && item.maxMembers > 1 && <SubscriptionParticipants item={item} userId={s.session.user.id} />}
       </section>;
     })}
     {s.mine.cursor && !s.mine.error && <Button type="button" variant="outline" onClick={s.mine.loadMore} disabled={s.mine.loading}>Carregar mais assinaturas</Button>}
+    <SubscriptionInvitations userId={s.session.user.id} onPayment={setPaymentId} />
     {currentPayment && <section className="space-y-3">
       <div className="flex flex-wrap justify-between gap-2"><h2 ref={paymentHeading} tabIndex={-1} className={`${ticket.title} text-2xl font-bold`}>Cobrança</h2><Button type="button" variant="ghost" onClick={() => setPaymentId(null)}>Fechar cobrança</Button></div>
       <SubscriptionPayment key={currentPayment} id={currentPayment} onUpdated={s.mine.retry} />
@@ -136,6 +161,33 @@ function SubscriptionList({ subscription: s, initialPaymentId }) {
         </div>
       </DialogContent>
     </Dialog>
+  </div>;
+}
+
+function MonthlyCombo({ subscriptionId }) {
+  const lock = useRef(false);
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState('');
+  async function requestCombo() {
+    if (lock.current) return;
+    lock.current = true;
+    setStatus('pending');
+    setError('');
+    try {
+      await readSessionResponse(await sessionFetch('/api/plans/redeem-combo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId })
+      }));
+      setStatus('requested');
+    } catch (cause) {
+      setError(cause.message);
+      setStatus('idle');
+    } finally { lock.current = false; }
+  }
+  return <div className="mt-3 space-y-2">
+    {status === 'requested' ? <p role="status">Solicitação de combo registrada.</p> :
+      <Button type="button" size="sm" variant="outline" onClick={requestCombo} disabled={status === 'pending'}>Solicitar combo mensal</Button>}
+    {error && <p className="text-destructive" role="alert">{error}</p>}
   </div>;
 }
 

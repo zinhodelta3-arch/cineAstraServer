@@ -45,13 +45,34 @@ export function updateCart(key, update) {
   window.dispatchEvent(new Event(cartChanged));
 }
 
+export function cartAtSnackLocation(current, localId) {
+  const belongsToAnotherCinema = item => ['INPUT', 'COMBO'].includes(item.purchaseKind) && item.localId && item.localId !== localId;
+  const moved = current.items.filter(belongsToAnotherCinema);
+  let items = current.items.filter(item => !belongsToAnotherCinema(item));
+  const savedForLater = [...moved];
+  for (const item of current.savedForLater) {
+    if (!['INPUT', 'COMBO'].includes(item.purchaseKind) || item.localId !== localId || items.some(entry => entry.id === item.id)) {
+      savedForLater.push(item);
+      continue;
+    }
+    try {
+      const candidate = [...items, item];
+      cartOrder(candidate);
+      items = candidate;
+    } catch {
+      savedForLater.push(item);
+    }
+  }
+  return moved.length || savedForLater.length !== current.savedForLater.length ? { items, savedForLater } : current;
+}
+
 function transferGuestCart(id) {
   const key = accountCartKey(id);
   const guest = parseCart(readCartSnapshot(guestCartKey));
-  if (!key || !guest.items.length) return;
+  if (!key || (!guest.items.length && !guest.savedForLater.length)) return;
   updateCart(key, current => {
     let items = current.items;
-    const savedForLater = [...current.savedForLater];
+    const savedForLater = [...current.savedForLater, ...guest.savedForLater];
     for (const item of guest.items) {
       if (!["INPUT", "COMBO"].includes(item.purchaseKind)) continue;
       const same = entry => entry.purchaseKind === item.purchaseKind && entry.sourceId === item.sourceId && entry.localId === item.localId;

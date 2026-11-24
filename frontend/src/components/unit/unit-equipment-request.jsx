@@ -13,7 +13,7 @@ export default function UnitEquipmentRequest({ localId, canManage, sessionId, ac
   const sources = useUnitList(canRequest ? `/sources?kind=equipment&limit=20&localId=${localId}` : null, unitOperation);
   const sessionsPath = canManage && localId ? `/sessions?limit=20&localId=${localId}` : null;
   const sessionOptions = useUnitList(sessionsPath ? `${sessionsPath}&status=${sessionStatus}` : null, unitOperation);
-  const sessions = sessionOptions.items;
+  const sessions = sessionOptions.items.filter(item => item.status_operacional !== 'EXPIRADA');
   const equipment = sources.items.find(item => item.id_equipamento === selected);
 
   async function submit(event) {
@@ -39,7 +39,7 @@ export default function UnitEquipmentRequest({ localId, canManage, sessionId, ac
 
   return <section className={styles.panel} aria-labelledby="unit-equipment-request">
     <header className={styles.panelHeader}><div>
-      <h2 id="unit-equipment-request">Solicitar equipamento</h2>
+      <h2 id="unit-equipment-request">{canManage ? 'Solicitar equipamento ao fornecedor' : 'Sugerir equipamento'}</h2>
       <p>Peça um equipamento de outro cinema para uma sessão desta unidade.</p>
     </div><PackagePlus size={19} aria-hidden="true" /></header>
     <div className={styles.body}>
@@ -49,7 +49,7 @@ export default function UnitEquipmentRequest({ localId, canManage, sessionId, ac
             <select value={selected} onChange={event => setSelected(event.target.value)} required disabled={action.pending}>
               <option value="">Selecione</option>
               {sources.items.map(item => <option key={item.id_equipamento} value={item.id_equipamento}>
-                {item.nome} · {item.nome_origem}
+                {[item.nome, item.fornecedor, item.nome_origem].filter(Boolean).join(' · ')}
               </option>)}
             </select>
           </label>
@@ -71,7 +71,7 @@ export default function UnitEquipmentRequest({ localId, canManage, sessionId, ac
           </> : <p className={styles.full}>Sessão da equipe #{sessionId}</p>}
           <label className={styles.full}>Observação<input name="note" maxLength={2000} placeholder="Opcional" disabled={action.pending} /></label>
           <button type="submit" className={styles.button} disabled={action.pending || !equipment || (canManage && !sessions.length)}>
-            {action.pending ? 'Aguarde…' : 'Solicitar equipamento'}
+            {action.pending ? 'Aguarde…' : canManage ? 'Solicitar equipamento' : 'Enviar sugestão'}
           </button>
         </form>
         <UnitFeedback error={action.error} notice={action.notice} />

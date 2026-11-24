@@ -14,7 +14,10 @@ function target(method, parts, search) {
   if (method === 'GET' && parts.length === 1 && ['subscriptions', 'accesses'].includes(parts[0])) return `/admin/streaming/${parts[0]}${search}`;
   if (parts[0] === 'subscriptions') {
     if (method === 'POST' && parts.length === 1) return '/admin/streaming/subscriptions';
-    if (method === 'PATCH' && parts.length === 2 && id(parts[1])) return `/admin/streaming/subscriptions/${parts[1]}`;
+    if (['PATCH','DELETE'].includes(method) && parts.length === 2 && id(parts[1])) return `/admin/streaming/subscriptions/${parts[1]}`;
+  }
+  if (method === 'DELETE' && parts.length === 2 && parts[0] === 'accesses' && /^[1-9]\d{0,19}$/.test(parts[1]) && BigInt(parts[1]) <= 18446744073709551615n) {
+    return `/admin/streaming/accesses/${parts[1]}`;
   }
   return null;
 }

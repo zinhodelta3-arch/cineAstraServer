@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
-import { createSessionService, interval, sessionDto } from '../src/services/sessionService.js';
+import { createSessionService, interval, operationalStatus, sessionDto } from '../src/services/sessionService.js';
 import { createSessionController } from '../src/controllers/sessionController.js';
 import { sessionRoutes } from '../src/routes/sessionRoutes.js';
 import { sessionSchemas } from '../src/validators/sessionValidators.js';
@@ -12,7 +12,7 @@ import { errorMiddleware } from '../src/middlewares/errorMiddleware.js';
 import { ApiError } from '../src/utils/ApiError.js';
 
 function fixture() {
-    let state = { sessions: [], items: [], events: [], local: { id_local: '1', status: 'ATIVO' },
+    let state = { sessions: [], items: [], events: [], payments: [], reviews: [], local: { id_local: '1', status: 'ATIVO' },
         rooms: [{ id_sala: '1', id_local: '1', sala_status: 'ATIVA', capacidade: 1 }, { id_sala: '2', id_local: '1', sala_status: 'ATIVA', capacidade: 1 }],
         film: { id_filme: '1', status: 'ATIVO', disponivel_cinema: true, duracao: 60 } }, next = 1, chain = Promise.resolve();
     const model = {
@@ -23,6 +23,8 @@ function fixture() {
         async film(id) { return id === state.film.id_filme ? state.film : null; },
         async activeSeats() { return { total: 1 }; },
         async hasItems(id) { return state.items.find(i => i === id) ? { id_item: '1' } : null; },
+        async affectedPayments(c, id) { return state.payments.filter(p => p.id_sessao === id); },
+        async archive(c, id) { (await model.session(id)).arquivada_em = '2090-01-01 00:00:00'; },
         async overlapCandidates(localId, start, end, excludeId) { return state.sessions.filter(s => s.id_local === localId && s.data >= start && s.data <= end && s.status !== 'CANCELADA' && s.id_sessao !== excludeId); },
         async list(q, admin) { return state.sessions.filter(s => BigInt(s.id_sessao) > BigInt(q.cursor ?? '0') && (!q.localId || s.id_local === q.localId) && (!q.date || s.data === q.date) && (!q.startFrom || s.horario_inicio >= q.startFrom) && (!q.startUntil || s.horario_inicio <= q.startUntil) && (admin ? !q.status || s.status === q.status : ['AGENDADA','EM_CARTAZ'].includes(s.status) && state.local.status === 'ATIVO' && state.rooms.find(r => r.id_sala === s.id_sala).sala_status === 'ATIVA' && state.film.status === 'ATIVO')).slice(0, q.limit + 1); },
         async publicSession(id) { const s = state.sessions.find(s => s.id_sessao === id); return s && ['AGENDADA','EM_CARTAZ'].includes(s.status) && state.local.status === 'ATIVO' ? s : null; },
@@ -34,7 +36,10 @@ function fixture() {
         async activeActor(c, context) { return { tipo_usuario: context.actor?.tipo }; },
         async audit(c, type, id) { state.events.push({ type, id }); }
     };
-    const service = createSessionService({ model, identity });
+    const refunds = { async reviewStoppedSession(c, paymentId) {
+        if (!state.reviews.includes(paymentId)) state.reviews.push(paymentId);
+    } };
+    const service = createSessionService({ model, identity, refunds });
     const app = express(); app.use(deadline(3000), express.json()); app.use((req, res, next) => { res.locals.requestId = '00000000-0000-4000-8000-000000000001'; next(); });
     app.use(sessionRoutes(createSessionController(service), { auth(req, res, next) { if (!req.headers['x-fixture-role']) throw ApiError.naoAutorizado(); req.usuario = { id: '1', tipo: req.headers['x-fixture-role'] }; next(); } })); app.use(errorMiddleware);
     const api = (method, path, role = 'ADMIN') => request(app)[method](path).set('X-Fixture-Role', role);
@@ -94,16 +99,43 @@ test('meia-noite, dia anterior/seguinte e corrida concorrente', async () => {
 });
 
 test('itens de pedido congelam preço/horário e cancelamento; avanço de status permitido', async () => {
-    const f = fixture(), created = await f.api('post', '/api/admin/sessions').send(body()).expect(201), id = created.body.data.id_sessao;
+    const f = fixture(), created = await f.api('post', '/api/admin/sessions').send(body('2090-01-01')).expect(201), id = created.body.data.id_sessao;
     f.addItem(id);
     await f.api('patch', `/api/admin/sessions/${id}`).send({ preco_inteira: '30.00' }).expect(409);
-    await f.api('patch', `/api/admin/sessions/${id}`).send({ data: '2026-10-11' }).expect(409);
+    await f.api('patch', `/api/admin/sessions/${id}`).send({ data: '2090-01-02' }).expect(409);
     await f.api('delete', `/api/admin/sessions/${id}`).expect(409);
     await f.api('patch', `/api/admin/sessions/${id}`).send({ status: 'EM_CARTAZ' }).expect(200);
     await f.api('patch', `/api/admin/sessions/${id}`).send({ status: 'ENCERRADA' }).expect(200);
     await request(f.app).get(`/api/sessions/${id}`).expect(404);
     await f.api('get', `/api/admin/sessions/${id}`).expect(200);
     assert.equal(f.state.sessions[0].preco_inteira, '20.00');
+});
+
+test('atraso só após 15 minutos, expiração prevalece no término e respeita meia-noite', () => {
+    const row = { data:'2026-10-10', horario_inicio:'23:55:00', horario_fim:'01:15:00', status:'AGENDADA' };
+    const { start, end } = interval(row);
+    assert.equal(operationalStatus(row, start + 899_999), 'AGENDADA');
+    assert.equal(operationalStatus(row, start + 900_000), 'ATRASADA');
+    assert.equal(operationalStatus(row, end), 'EXPIRADA');
+    assert.equal(operationalStatus({ ...row, status:'INTERROMPIDA' }, end), 'INTERROMPIDA');
+});
+
+test('interrupção e cancelamento de sessão em andamento preservam itens e enfileiram pagamento', async () => {
+    const f = fixture();
+    const { body:result } = await f.api('post','/api/admin/sessions').send(body('2090-01-01')).expect(201);
+    const id = result.data.id_sessao, endpoint = `/api/admin/sessions/${id}`;
+    f.addItem(id);
+    f.state.payments.push({ id_sessao:id, id_pagamento:'42' });
+    await f.api('post', `${endpoint}/archive`).expect(409);
+    await f.api('patch', endpoint).send({ status:'EM_CARTAZ' }).expect(200);
+    await f.api('patch', endpoint).send({ status:'INTERROMPIDA' }).expect(200);
+    await request(f.app).get(`/api/sessions/${id}`).expect(404);
+    await f.api('delete', endpoint).expect(204);
+    await f.api('post', `${endpoint}/archive`).expect(204);
+    assert.equal(f.state.sessions[0].status, 'CANCELADA');
+    assert.ok(f.state.sessions[0].arquivada_em);
+    assert.deepEqual(f.state.items, [id]);
+    assert.deepEqual(f.state.reviews, ['42']);
 });
 
 test('RN20 não limita sessão administrativa; validação e SQL parametrizado', async () => {

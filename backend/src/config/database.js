@@ -72,6 +72,7 @@ export function createDatabase(config, suppliedPool) {
     const execute = (sql, params = [], options) => withConnection(c => c.execute(sql, params), options);
     async function transaction(operation, options) {
         return withConnection(async connection => {
+            if (options?.readCommitted === true) await connection.execute('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
             await connection.beginTransaction();
             try {
                 const result = await operation(connection);

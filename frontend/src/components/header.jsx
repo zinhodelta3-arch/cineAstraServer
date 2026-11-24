@@ -108,10 +108,8 @@ export function Header({ showAssistant = false }) {
 
               {canAccessStreaming && <Link href="/streaming" className="hidden xl:inline-flex shrink-0 items-center gap-2 rounded-md border border-dashed border-primary/60 bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><TvMinimalPlay className="size-4" aria-hidden="true" /> Streaming</Link>}
 
-              <div className={session.user ? "flex items-center" : "hidden items-center sm:flex"}><SessionControls session={session} /></div>
-
               <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-                {session.user && <NotificationButton key={session.user.id} userId={session.user.id} />}
+                {session.user && <NotificationButton key={session.user.id} userId={session.user.id} role={session.user.role} />}
                 {canOpenCart && <button
                   type="button"
                   onClick={() => setCartOpen(true)}
@@ -129,6 +127,7 @@ export function Header({ showAssistant = false }) {
                   <AppearanceSelector />
                 </div>
                 <MobileNavigation session={session} canAccessStreaming={canAccessStreaming} />
+                <div className={session.user ? "flex items-center" : "hidden items-center sm:flex"}><SessionControls session={session} /></div>
               </div>
             </div>
           </div>

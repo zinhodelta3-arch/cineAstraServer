@@ -1,7 +1,8 @@
 'use client';
 
 import { usePaginatedList } from '@/hooks/use-paginated-list';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTablePreference } from '@/hooks/use-table-preference';
 import { sessionFetch, readSessionResponse } from '@/lib/auth/session-response.mjs';
 
 export async function supplierRequest(path, { method = 'GET', body, signal } = {}) {
@@ -13,14 +14,24 @@ export async function supplierRequest(path, { method = 'GET', body, signal } = {
   return readSessionResponse(response);
 }
 
-export function useSupplierList(path) {
-  return usePaginatedList(path, supplierRequest);
+export function useSupplierList(path, remember) {
+  return usePaginatedList(path, supplierRequest,{remember});
+}
+export function useSupplierSearch(surface) {
+  const [query, setQuery, ready] = useTablePreference(`fornecedor:${surface}:busca`, '');
+  const [search, setSearch] = useState('');
+  useEffect(()=>{
+    if(!ready)return;
+    const timer=setTimeout(()=>setSearch(String(query).trim().slice(0,120)),250);
+    return()=>clearTimeout(timer);
+  },[query,ready]);
+  return {query,setQuery,search,ready,parameter:search?`&q=${encodeURIComponent(search)}`:''};
 }
 
-export function useSupplierLocations() {
-  const grants = useSupplierList('locations?limit=100&status=ATIVO');
+export function useSupplierLocations(enabled = true) {
+  const grants = useSupplierList(enabled ? 'locations?limit=100&status=ATIVO' : null);
   const names = new Map(grants.items.map(row => [String(row.id_local), row.nome_local]));
-  return { ...grants, name: id => id ? names.get(String(id)) ?? `Cinema #${id}` : '—' };
+  return { ...grants, name: id => id ? names.get(String(id)) ?? "Cinema vinculado" : '—' };
 }
 
 export function useSupplierAction(reload) {

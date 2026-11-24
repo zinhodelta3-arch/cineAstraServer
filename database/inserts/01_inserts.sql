@@ -1889,10 +1889,10 @@ INSERT INTO `pedido_precificacao` (`id_pedido`, `total`, `snapshot`) VALUES (900
 
 -- planos · 3 registros
 INSERT INTO `planos` (`id_plano`, `nome`, `descricao`, `valor_mensal`, `valor_anual`, `limite_membros`, `ativo`, `custo_beneficios_mensal`, `custo_beneficios_anual`, `combo_gratis_mes`, `acesso_catalogo`, `id_combo_medio`) SELECT 900001, 'Básico', 'Benefícios em ingressos e bomboniere.', 19.9, 199, 1, TRUE, 5, 60, 0, FALSE, NULL WHERE NOT EXISTS (SELECT 1 FROM `planos` WHERE `nome` = 'Básico');
-INSERT INTO `planos` (`id_plano`, `nome`, `descricao`, `valor_mensal`, `valor_anual`, `limite_membros`, `ativo`, `custo_beneficios_mensal`, `custo_beneficios_anual`, `combo_gratis_mes`, `acesso_catalogo`, `id_combo_medio`) SELECT 900002, 'Família', 'Benefícios em ingressos e bomboniere.', 39.9, 399, 4, TRUE, 7, 84, 0, FALSE, NULL WHERE NOT EXISTS (SELECT 1 FROM `planos` WHERE `nome` = 'Família');
+INSERT INTO `planos` (`id_plano`, `nome`, `descricao`, `valor_mensal`, `valor_anual`, `limite_membros`, `ativo`, `custo_beneficios_mensal`, `custo_beneficios_anual`, `combo_gratis_mes`, `acesso_catalogo`, `id_combo_medio`) SELECT 900002, 'Essencial', 'Benefícios em ingressos e no AstraSnack.', 39.9, 399, 4, TRUE, 7, 84, 0, FALSE, NULL WHERE NOT EXISTS (SELECT 1 FROM `planos` WHERE `nome` IN ('Essencial','Família'));
 INSERT INTO `planos` (`id_plano`, `nome`, `descricao`, `valor_mensal`, `valor_anual`, `limite_membros`, `ativo`, `custo_beneficios_mensal`, `custo_beneficios_anual`, `combo_gratis_mes`, `acesso_catalogo`, `id_combo_medio`) SELECT 900003, 'Plus', 'Acesso ao catálogo de streaming e benefícios em ingressos e bomboniere.', 59.9, 599, 5, TRUE, 9, 108, 1, TRUE, 900001 WHERE NOT EXISTS (SELECT 1 FROM `planos` WHERE `nome` = 'Plus');
 SET @plano_1 = (SELECT id_plano FROM planos WHERE nome = 'Básico' ORDER BY id_plano LIMIT 1);
-SET @plano_2 = (SELECT id_plano FROM planos WHERE nome = 'Família' ORDER BY id_plano LIMIT 1);
+SET @plano_2 = (SELECT id_plano FROM planos WHERE nome IN ('Essencial','Família') ORDER BY (nome='Essencial') DESC,id_plano LIMIT 1);
 SET @plano_3 = (SELECT id_plano FROM planos WHERE nome = 'Plus' ORDER BY id_plano LIMIT 1);
 
 -- sessoes · 110 registros

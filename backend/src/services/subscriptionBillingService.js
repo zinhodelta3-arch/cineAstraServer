@@ -5,12 +5,12 @@ import {competenceOf,daysLate,dueAfterCycle,lateCharges} from './subscriptionBil
 
 const prevMonth=date=>new Date(Date.UTC(Number(date.slice(0,4)),Number(date.slice(5,7))-2,1)).toISOString().slice(0,7).replace('-','');
 const todayUtc=()=>new Date().toISOString().slice(0,10);
-export function createSubscriptionBillingService({model,identity,notifications,ipca}){
+export function createSubscriptionBillingService({model,plans,participation,identity,notifications,ipca}){
   const tx=fn=>identity.transaction(fn,{});
   async function notify(c,userId,type,key,message){if(notifications)await notifications.emit(c,{recipientId:idString(userId),title:'Cobrança da assinatura',message,type,dedupeKey:key});}
   async function issue(id,today=todayUtc()){return tx(async c=>{
     const s=await model.subscription(c,id,true);
-    if(!s||s.status!=='ATIVA'||!s.fim||s.fim>=today||!s.preco_contratado)return null;
+    if(!s||s.status!=='ATIVA'||s.encerramento_admin_em||!s.fim||s.fim>=today||!s.preco_contratado)return null;
     const due=dueAfterCycle(s.fim),competence=competenceOf(due);
     const scheduled=typeof s.alteracao_programada==='string'?JSON.parse(s.alteracao_programada):s.alteracao_programada;
     const change=scheduled?.effectiveOn===due?scheduled:null;
@@ -22,7 +22,16 @@ export function createSubscriptionBillingService({model,identity,notifications,i
     const shares=divideCents(cents(price),users,mode,s.id_usuario);
     const total=shares.reduce((sum,x)=>sum+cents(x.amount),0n);
     if(total!==cents(price))throw new Error('Rateio inconsistente');
-    const cycleId=await model.insertCycle(c,id,competence,due,mode,price,shares);
+    let benefits=null;
+    if(plans&&!change){
+      const plan=await plans.plan(c,s.id_plano,true);
+      const discounts=await plans.benefits(c,s.id_plano);
+      const combo=plan.id_combo_medio?await plans.combo(c,plan.id_combo_medio):null;
+      const freeComboId=combo?.ativo?idString(plan.id_combo_medio):null;
+      benefits={catalogAccess:Boolean(plan.acesso_catalogo),freeComboId,freeCombosPerMonth:freeComboId?plan.combo_gratis_mes:0,
+        discounts:Object.fromEntries(discounts.map(row=>[row.categoria,row.desconto_bps]))};
+    }
+    const cycleId=await model.insertCycle(c,id,competence,due,mode,price,shares,benefits);
     for(const share of shares){if(mode==='TITULAR_PAGA'&&share.userId!==idString(s.id_usuario))continue;
       await model.insertCharge(c,id,share.userId,competence,share.amount,due);
       await notify(c,share.userId,'COBRANCA_ASSINATURA',`ciclo:${id}:${competence}:${share.userId}`,'Nova cobrança da assinatura disponível para pagamento. Consulte valor e vencimento na sua conta.');
@@ -76,6 +85,17 @@ export function createSubscriptionBillingService({model,identity,notifications,i
     else await model.resumeParticipant(c,s.id_assinatura,settlement.id_usuario);
   }
   async function runOnce({today=todayUtc(),limit=25,cursor='0'}={}){
+    if(participation)await participation.expireDue(limit);
+    if(model.dueAdminEnds){
+      for(const row of await model.dueAdminEnds(today,limit)){
+        await tx(async c=>{
+          const s=await model.subscription(c,row.id_assinatura,true);
+          if(s?.status!=='ATIVA'||!s.encerramento_admin_em||s.encerramento_admin_em>=today)return;
+          await model.closeAdminEnd(c,row.id_assinatura);
+          await identity.audit(c,'SUBSCRIPTION.ADMIN_END_EFFECTIVE',row.id_assinatura,{});
+        });
+      }
+    }
     const due=await model.dueSubscriptions(today,limit);
     for(const row of due)await issue(row.id_assinatura,today);
     const charges=await model.dueCharges(today,limit,cursor);

@@ -14,23 +14,36 @@ const response = data => ({ description:'Sucesso',content:{'application/json':{s
 spec.components.schemas.InventoryBalance = obj({ id_insumo:{...intId,nullable:true},id_equipamento:{...intId,nullable:true},id_fornecedor:intId,id_local:{...intId,nullable:true},quantidade:count,quantidade_reservada:count,disponivel:count,quantidade_minima:count,alerta_reposicao:{type:'boolean'},status:{type:'string'} },['id_fornecedor','id_local','quantidade','quantidade_reservada','disponivel','status']);
 spec.components.schemas.InventoryMovement = obj({ id_movimentacao:id,id_insumo:{...intId,nullable:true},id_equipamento:{...intId,nullable:true},id_reserva:{...id,nullable:true},id_usuario:intId,tipo:{type:'string',enum:['ENTRADA','SAIDA','AJUSTE','PERDA','DEVOLUCAO']},quantidade:{type:'integer',minimum:-2147483647,maximum:2147483647},motivo:{type:'string',nullable:true},data_movimentacao:{type:'string'} });
 const movementSchema = spec.components.schemas.InventoryMovement;
-Object.assign(movementSchema.properties, { id_logistica: { ...intId, nullable:true }, id_solicitacao: { ...intId, nullable:true } });
-movementSchema.required.push('id_logistica','id_solicitacao');
+Object.assign(movementSchema.properties, { id_logistica: { ...intId, nullable:true }, id_solicitacao: { ...intId, nullable:true },
+    id_local:{...intId,nullable:true},nome_item:{type:'string',nullable:true},estorno_de:{...id,nullable:true},
+    correcao_de:{...id,nullable:true},estornada_por:{...id,nullable:true} });
+movementSchema.required = Object.keys(movementSchema.properties);
 const list = schema => obj({ items:{type:'array',items:schema},pagination:ref('Pagination') });
 const errors = {400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for (const r of inventoryOperations) {
     const op = {operationId:r.operationId,tags:['Estoque'],summary:r.operationId.replaceAll('_',' '),description:'ADMIN ou FORNECEDOR próprio. Saldo físico e reservado são separados. Movimentos são atômicos com histórico; reserva/consumo do checkout são operações internas na mesma transação, sem endpoint público.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
     if(r.method==='get')op.description+=' Supervisor consulta a própria unidade; colaborador consulta somente unidades vinculadas à sua equipe.';
-    if(r.action==='move')op.description+=' Supervisor registra saída ou perda de insumos da própria unidade. Colaborador pode registrar saída ou perda com justificativa na unidade em que possui equipe ativa.';
-    if (r.path.includes('{id}')) op.parameters.push({name:'id',in:'path',required:true,schema:intId});
+    if(r.action==='move')op.description+=' Supervisor na própria unidade e colaborador com equipe ativa registram entrada, saída ou perda de insumos e equipamentos com justificativa. Equipamento comprometido segue o fluxo logístico. Uma venda ou entrega usa suas operações próprias.';
+    const revision = ['correct','reverse'].includes(r.action);
+    if (r.path.includes('{id}')) op.parameters.push({name:'id',in:'path',required:true,schema:revision?id:intId});
     if (r.action === 'list' || r.action === 'alerts') {
+        op.parameters.push({name:'q',in:'query',schema:{type:'string',minLength:1,maxLength:120}});
         if (r.action === 'alerts') op.parameters.push({name:'localId',in:'query',required:true,schema:intId});
         else for (const name of ['inputId','equipmentId','localId']) op.parameters.push({name,in:'query',schema:intId});
+        if (r.action==='list') op.parameters.push({name:'kind',in:'query',schema:{type:'string',enum:['inputs']}},
+            {name:'scope',in:'query',schema:{type:'string',enum:['linked']},description:'Somente movimentos registrados em uma unidade.'},
+            {name:'order',in:'query',schema:{type:'string',enum:['recent']},description:'Ordena do registro mais recente ao mais antigo.'});
         op.parameters.push({name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:r.action === 'alerts' ? intId : id});
         op.responses['200'] = response(list(r.action === 'alerts' ? ref('InventoryBalance') : ref('InventoryMovement')));
     } else if (r.action === 'move') {
-        op.requestBody = {required:true,content:{'application/json':{schema:obj({inputId:intId,equipmentId:intId,tipo:spec.components.schemas.InventoryMovement.properties.tipo,quantidade:{type:'integer',minimum:-2147483647,maximum:2147483647},motivo:{type:'string',minLength:1,maxLength:255}},['tipo','quantidade'])}}};
+        op.requestBody = {required:true,content:{'application/json':{schema:obj({inputId:intId,equipmentId:intId,localId:intId,tipo:movementSchema.properties.tipo,quantidade:movementSchema.properties.quantidade,motivo:{type:'string',minLength:1,maxLength:255}},['tipo','quantidade'])}}};
         op.responses['201'] = response(obj({movement:ref('InventoryMovement'),balance:ref('InventoryBalance')}));
+    } else if (revision) {
+        op.description = 'Exclusivo para ADMIN. Recalcula o saldo da unidade e acrescenta registros de estorno e, na correção, de substituição para preservar o histórico.';
+        const motivo={type:'string',minLength:1,maxLength:255};
+        const schema=r.action==='correct'?obj({tipo:movementSchema.properties.tipo,quantidade:movementSchema.properties.quantidade,motivo}):obj({motivo});
+        op.requestBody={required:true,content:{'application/json':{schema}}};
+        op.responses['200']=response(obj({reversalId:id,replacementId:{...id,nullable:true},balance:ref('InventoryBalance')}));
     } else op.responses['200'] = response(ref('InventoryBalance'));
     for (const [code,name] of Object.entries(errors)) op.responses[code] = {$ref:`#/components/responses/${name}`};
     (spec.paths[r.path] ??= {})[r.method] = op;

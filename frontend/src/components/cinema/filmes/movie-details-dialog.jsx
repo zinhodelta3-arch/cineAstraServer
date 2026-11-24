@@ -14,7 +14,7 @@ import ticketStyles from '../ticket.module.css';
 
 function Details({id,onSessions}){
  const [showTrailer,setShowTrailer]=useState(false);
- const {movie,loading,error,retry,genres}=useMovieDetails(id,{includeGallery:false});
+ const {movie,loading,error,retry,genres}=useMovieDetails(id);
  if(loading||error)return <div className="p-5 sm:p-6"><DialogHeader><DialogTitle>Detalhes do filme</DialogTitle><DialogDescription>{loading?'Carregando informações…':'Não foi possível carregar este filme.'}</DialogDescription></DialogHeader>{error&&<div role="alert"><p>{error}</p><Button onClick={retry}>Tentar novamente</Button></div>}</div>;
 
  const trailer=youtubeEmbed(movie.trailer);
@@ -45,7 +45,7 @@ function Details({id,onSessions}){
    <div className={ticketStyles.tear} aria-hidden="true" />
    <div className={`${ticketStyles.stub} flex flex-wrap gap-2 px-4 py-4 sm:px-6`}>
     <Button className="min-h-11" onClick={()=>onSessions(movie)}>Consultar sessões</Button>
-    <Button className="min-h-11" nativeButton={false} variant="outline" render={<Link href={`/cinema/filmes/${movie.id}`} />}>Página do filme</Button>
+    <Button className="min-h-11" nativeButton={false} variant="outline" render={<Link href={`/cinema/filmes/${encodeURIComponent(movie.slug ?? movie.id)}`} />}>Página do filme</Button>
    </div>
   </>
  );

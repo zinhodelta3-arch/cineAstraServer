@@ -109,9 +109,9 @@ test('catálogo numerado usa os mesmos filtros no total e na página pedida', as
     const q = catalogSchemas.query.parse({ page:'99', limit:'10', genreId:'12', cinema:'true', titulo:'50%' });
     const result = await model.listNumberedFilms(q);
     assert.deepEqual(result.pagination,{ limit:10, nextCursor:null, page:3, total:25, totalPages:3 });
-    assert.deepEqual(calls[0].params,['ATIVO','%50!%%',true,'12']);
+    assert.deepEqual(calls[0].params,['ATIVO','50%','50%',true,'12']);
     assert.deepEqual(calls[1].params,[...calls[0].params,10,20]);
-    assert.equal(calls[0].sql.split('FROM filmes f')[1],calls[1].sql.split('FROM filmes f')[1].split(' ORDER BY f.id_filme')[0]);
+    assert.equal(calls[0].sql.split('FROM filmes f')[1],calls[1].sql.split('FROM filmes f')[1].split(' ORDER BY venda_disponivel DESC, f.id_filme')[0].trimEnd());
     assert.equal(catalogSchemas.query.safeParse({ page:'3', cursor:'20' }).success,false);
     assert.equal(catalogSchemas.query.safeParse({ page:'0' }).success,false);
 });

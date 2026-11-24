@@ -27,6 +27,7 @@ export async function POST(request,{params}) {
   if(!request.headers.get('content-type')?.includes('application/json'))throw new AuthError(415,'Envie os dados em JSON.');
   const text=await request.text();if(text.length>12000)throw new AuthError(413,'Dados excessivos.');
   let body;try{body=JSON.parse(text);}catch{throw new AuthError(400,'Dados inválidos.');}
+  if(action==='login'&&body&&typeof body==='object'&&!Array.isArray(body)&&body.profile===undefined)body.profile='CLIENTE';
   const data=await backendAuth(`/auth/${action==='register'?'register':action==='forgot'?'password/forgot':action==='reset'?'password/reset':'login'}`,{method:'POST',body});
   if(action==='register')return json({user:sessionUserDto(data),message:data.ageVerified?'Conta criada. Entre para continuar.':'Conta criada. Sua idade foi informada por você e não foi verificada. Entre para continuar.'},201);
   if(action!=='login')return json({message:action==='forgot'?'Se a conta for elegível, você receberá as instruções de recuperação.':'Senha redefinida. Entre novamente com sua nova senha.'});

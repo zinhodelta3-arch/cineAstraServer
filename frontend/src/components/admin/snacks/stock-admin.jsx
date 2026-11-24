@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import TablePagination from '@/components/ui/table-pagination';
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeftRight, Gauge, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useAdminVenues } from "@/hooks/admin/use-admin-venues";
+import { usePaginatedList } from "@/hooks/use-paginated-list";
 import { snackRequest, useAdminSnacks } from "@/hooks/admin/use-admin-snacks";
 import SnackLayout, { SnackState } from "./snack-layout";
 import styles from "../catalog/catalog.module.css";
@@ -15,36 +17,30 @@ const dateTime = (value) => value ? new Date(value).toLocaleString("pt-BR", { da
 export default function StockAdmin() {
   const [localId, setLocalId] = useState("");
   const [dialog, setDialog] = useState(null);
-  const [balance, setBalance] = useState(null);
-  const [balanceLoading, setBalanceLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pending, setPending] = useState(false);
   const lock = useRef(false);
   const locals = useAdminVenues("locations?limit=100");
-  const inputs = useAdminSnacks(`inputs?limit=20${localId ? `&localId=${localId}` : ""}`);
-  const movements = useAdminSnacks(`inventory/movements?limit=20${localId ? `&localId=${localId}` : ""}`);
+  const inputs = useAdminSnacks(`inputs?limit=20&scope=linked${localId ? `&localId=${localId}` : ""}`);
+  const movements = useAdminSnacks(`inventory/movements?limit=20&scope=linked&kind=inputs${localId ? `&localId=${localId}` : ""}`);
   const alerts = useAdminSnacks(localId ? `inventory/alerts?limit=20&localId=${localId}` : null);
   const item = dialog?.item;
+  const { data:balance, loading:balanceLoading, error:balanceError } = usePaginatedList(
+    item ? `inventory/inputs/${item.id_insumo}` : null, snackRequest, { mode:'resource' }
+  );
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("insumo");
     if (!/^[1-9]\d{0,9}$/.test(id ?? "")) return;
     let active = true;
     snackRequest(`inputs/${id}`).then((value) => {
-      if (!active) return;
+      if (!active || !value.id_local) return;
       setLocalId(value.id_local);
       setDialog({ type: "balance", item: value });
     }).catch(() => {});
     return () => { active = false; };
   }, []);
-  useEffect(() => {
-    if (!dialog || !item) return;
-    let active = true;
-    setBalance(null); setBalanceLoading(true);
-    snackRequest(`inventory/inputs/${item.id_insumo}`).then((value) => { if (active) setBalance(value); }).catch((cause) => { if (active) setError(cause.message); }).finally(() => { if (active) setBalanceLoading(false); });
-    return () => { active = false; };
-  }, [dialog?.type, item?.id_insumo]);
   function open(type, row) { setError(""); setNotice(""); setDialog({ type, item: row }); }
   function close() { if (!lock.current) setDialog(null); }
   function save(event) {
@@ -65,7 +61,7 @@ export default function StockAdmin() {
   const inputName = (id) => inputs.items.find((row) => row.id_insumo === id)?.nome ?? `Insumo #${id}`;
   const localName = (id) => locals.items.find((row) => row.id_local === id)?.nome ?? `Cinema #${id}`;
 
-  return <SnackLayout title="Estoque" description="Acompanhe saldos, reposições e movimentações dos insumos.">
+  return <SnackLayout title="Estoque das unidades" description="Acompanhe saldos, reposições e movimentações dos insumos vinculados aos cinemas." action={<Link className={styles.secondary} href="/admin/suprimentos/movimentacoes">Gerenciar movimentações</Link>}>
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     <section className={styles.filmPicker} aria-label="Filtrar estoque por cinema"><div className={styles.pickerControl}><label>Cinema<select value={localId} onChange={(event) => setLocalId(event.target.value)}><option value="">Todos os cinemas</option>{locals.items.map((local) => <option key={local.id_local} value={local.id_local}>{local.nome}</option>)}</select></label>{locals.nextCursor && <button type="button" className={styles.secondary} onClick={locals.loadMore} disabled={locals.loadingMore}>Mais cinemas</button>}</div></section>
     <section className={styles.panel} aria-labelledby="balances-title"><header className={styles.panelHeader}><div><h2 id="balances-title">Saldo dos insumos</h2><p>Consulte o saldo detalhado ou registre uma movimentação.</p></div><span className={styles.count}>{inputs.items.length} carregados</span></header>
@@ -82,6 +78,7 @@ export default function StockAdmin() {
     </section>
     <Dialog open={Boolean(dialog)} onOpenChange={(value) => { if (!value) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{dialog?.type === "move" ? `Movimentar · ${item?.nome}` : `Saldo · ${item?.nome}`}</DialogTitle><DialogDescription className={styles.dialogDescription}>{localName(item?.id_local)} · Insumo #{item?.id_insumo}</DialogDescription>
       {balanceLoading && <p role="status">Carregando saldo…</p>}
+      {balanceError && <p className={styles.error} role="alert">{balanceError}</p>}
       {balance && <div className={`${styles.summaryGrid} ${styles.stockSummary}`}><div><span>Em mãos</span><strong>{balance.quantidade}</strong></div><div><span>Reservado</span><strong>{balance.quantidade_reservada}</strong></div><div><span>Disponível</span><strong>{balance.disponivel}</strong></div></div>}
       {dialog?.type === "move" && <form className={styles.form} onSubmit={save}><label>Tipo<select name="tipo" defaultValue="AJUSTE"><option value="ENTRADA">Entrada</option><option value="SAIDA">Saída</option><option value="AJUSTE">Ajuste</option><option value="PERDA">Perda</option><option value="DEVOLUCAO">Devolução</option></select></label><label>Quantidade<input name="quantidade" type="number" min="1" max="2147483647" required /></label><label>Direção do ajuste<select name="direcao" defaultValue="ENTRADA"><option value="ENTRADA">Aumentar</option><option value="SAIDA">Reduzir</option></select></label><label className={styles.wide}>Motivo<input name="motivo" maxLength={255} placeholder="Obrigatório para ajustes, perdas e devoluções" /></label>{error && <p className={`${styles.error} ${styles.wide}`} role="alert">{error}</p>}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}><Plus size={16} aria-hidden="true" />{pending ? "Registrando…" : "Registrar movimentação"}</button></div></form>}
       {dialog?.type === "balance" && <>{error && <p className={styles.error} role="alert">{error}</p>}<div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={close}>Fechar</button><button type="button" className={styles.primary} onClick={() => open("move", item)} disabled={balanceLoading}>Movimentar estoque</button></div></>}

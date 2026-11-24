@@ -5,6 +5,7 @@ import { useCart } from "@/components/cart/cart-provider";
 import { useCheckoutSession } from "@/hooks/use-checkout-session";
 import { useSession } from "@/hooks/auth/use-session";
 import { checkoutStorageKey } from "@/lib/api/checkout-storage.mjs";
+import { seatLabel, sessionSeat } from "@/components/cinema/assentos/seat-state.mjs";
 
 export default function useTicketCheckout() {
   const router = useRouter();
@@ -15,8 +16,13 @@ export default function useTicketCheckout() {
   function handleContinue(order) {
     if (loading || user?.role !== "CLIENTE") throw new Error("Entre na sua conta para continuar.");
     if (!order.session.seatMap || !order.session.localId) throw new Error("Seleção de assentos inválida. Volte ao filme e escolha a sessão novamente.");
-    const selectedSeats = order.session.seats.map(seat => ({ label: seat, seatId: order.session.seatMap.find(item => item.id === seat)?.seatId }));
-    if (selectedSeats.some(seat => !seat.seatId)) throw new Error("Assento indisponível. Volte e escolha os lugares novamente.");
+    const selectedSeats = order.session.seats.map(key => {
+      const seat = sessionSeat(order.session.seatMap, key);
+      return seat && { label: seatLabel(seat), seatId: seat.seatId ?? seat.id };
+    });
+    if (selectedSeats.some(seat => !seat || !/^[1-9]\d{0,9}$/.test(seat.seatId)) || new Set(selectedSeats.map(seat => seat.seatId)).size !== selectedSeats.length) {
+      throw new Error("Assento indisponível. Volte e escolha os lugares novamente.");
+    }
     try {
       sessionStorage.setItem(checkoutStorageKey("session", user.id), JSON.stringify(order.session));
     } catch {

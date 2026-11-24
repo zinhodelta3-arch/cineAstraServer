@@ -13,8 +13,9 @@ export function createCheckoutService({model,orders,identity,pricing,inventory,s
     async function reserveCheckout(c,{input,key,hash,context,actorId,quote,contract,draftOrderId}){
         const orderId=draftOrderId??await model.createCheckout(c,actorId,key,hash);
         if(draftOrderId)await model.claimDraft(c,orderId,key,hash);
-        const snapshot=await pricing.commit(c,{orderId,input:pricingInput(input),context,allowDeclaredHalf:true});
-        if(snapshot.total!==quote.total||snapshot.lines.length!==input.lines.length)throw conflict('Cotação mudou; tente novamente');
+        const snapshot=await pricing.commit(c,{orderId,input:pricingInput(input),context,ownerId:actorId,allowDeclaredHalf:true});
+        if(snapshot.total!==quote.total||snapshot.lines.length!==input.lines.length||
+            snapshot.lines.some((line,index)=>line.unitPrice!==quote.lines[index]?.unitPrice))throw conflict('Cotação mudou; tente novamente');
         const seatsToReserve=input.lines.filter(x=>x.kind==='SESSION').sort((a,b)=>idSort(a.id,b.id)||idSort(a.seatId,b.seatId));
         for(const line of seatsToReserve)await seats.reserve(c,{orderId,sessionId:line.id,seatId:line.seatId});
         const stockLines=input.lines.filter(x=>x.kind==='INPUT'||x.kind==='COMBO').map(x=>({...(x.kind==='INPUT'?{inputId:x.id}:{comboId:x.id}),quantidade:x.quantity}));

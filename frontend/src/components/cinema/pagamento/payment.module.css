@@ -77,7 +77,8 @@
 .inlineLink, .paymentResult a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
 .paymentResult { display: grid; gap: 6px; margin-top: 20px; padding: 16px; border: 1px dashed var(--primary); border-radius: 12px; font-size: 13px; }.paymentResult strong { font-size: 15px; }.paymentResult a { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; }
 .payButton { width: 100%; min-height: 48px; margin-top: 22px; border-radius: 999px; font-weight: 700; }
-.formDivider { border-top: 1px dashed var(--border); }.cardForm { margin-top: 36px; gap: 30px; }
+.formDivider { border-top: 1px dashed var(--border); }.cardForm { margin-top: 36px; gap: 24px; }
+.cardFields { display: grid; min-width: 0; gap: 24px; }
 .pixPanel { margin-top: 40px; max-width: 470px; }.qrFrame { display: grid; place-items: center; width: max-content; margin: 24px 0 18px; padding: 16px; border-radius: 14px; background: #fff; }.pixTimer { color: var(--primary); font-size: 17px; font-weight: 750; font-variant-numeric: tabular-nums; }.retryButton { margin-top: 14px; padding: 10px 16px; border: 1px solid var(--primary); border-radius: 999px; color: var(--primary); font-weight: 700; }
 .page :is(a, button, input, select, summary):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .page ::selection { background: var(--primary); color: var(--primary-foreground); }

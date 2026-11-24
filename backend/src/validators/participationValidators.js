@@ -3,7 +3,10 @@ import {ApiError} from '../utils/ApiError.js';
 
 const intId=z.string().regex(/^[1-9]\d{0,9}$/).refine(x=>BigInt(x)<=4294967295n);
 const bigintId=z.string().regex(/^[1-9]\d{0,19}$/).refine(x=>BigInt(x)<=18446744073709551615n);
-export const invitationBody=z.object({userId:intId}).strict();
+export const invitationBody=z.union([
+  z.object({userId:intId}).strict(),
+  z.object({email:z.string().trim().email().max(150).transform(value=>value.toLowerCase())}).strict()
+]);
 export const proposalBody=z.object({divisionMode:z.enum(['TITULAR_PAGA','DIVISAO_IGUAL'])}).strict();
 export const consentBody=z.object({accept:z.boolean()}).strict();
 export function participantParams(req,res,next){for(const [key,value] of Object.entries(req.params)){const schema=['invitationId','proposalId'].includes(key)?bigintId:intId;if(!schema.safeParse(value).success)throw ApiError.validacao('ID inválido');}next();}

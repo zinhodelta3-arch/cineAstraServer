@@ -1,11 +1,14 @@
 'use client';
+import { OperationFeedback } from '@/components/ui/list-feedback';
 
 import { useState } from 'react';
+import { useTablePreference } from '@/hooks/use-table-preference';
 import MoneyInput from '@/components/ui/money-input';
+import EquipmentPosition from '@/components/inventory/equipment-position';
 import { Archive, Pencil, Plus, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { useSupplierAction, useSupplierList, useSupplierLocations } from '@/hooks/supplier/use-supplier-data';
-import SupplierLayout, { More, SupplierState, statusName } from './supplier-layout';
+import { useSupplierAction, useSupplierList, useSupplierLocations, useSupplierSearch } from '@/hooks/supplier/use-supplier-data';
+import SupplierLayout, { More, SupplierSearch, SupplierState, statusName } from './supplier-layout';
 import styles from '@/components/admin/catalog/catalog.module.css';
 
 export default function SupplierProducts({ kind }) {
@@ -13,16 +16,18 @@ export default function SupplierProducts({ kind }) {
   const singular = input ? 'insumo' : 'equipamento';
   const plural = input ? 'insumos' : 'equipamentos';
   const key = input ? 'id_insumo' : 'id_equipamento';
-  const [localId, setLocalId] = useState('');
-  const [status, setStatus] = useState('');
+  const [scope, setScope] = useTablePreference(`${kind}:vínculo`,'own');
+  const [localId, setLocalId] = useTablePreference(`${kind}:cinema`,'');
+  const [status, setStatus] = useTablePreference(`${kind}:status`,'');
+  const search = useSupplierSearch(kind);
   const [dialog, setDialog] = useState(null);
-  const params = new URLSearchParams({ limit: '20' });
-  if (localId) params.set('localId', localId);
+  const params = new URLSearchParams({ limit: '20', scope });
+  if (scope === 'linked' && localId) params.set('localId', localId);
   if (status) params.set('status', status);
-  const list = useSupplierList(`${kind}?${params}`);
+  const list = useSupplierList(`${kind}?${params}${search.parameter}`,`fornecedor:${kind}`);
   const categoryList = useSupplierList(dialog?.type === 'form' ? `${kind}/categories?limit=20` : null);
   const categories = categoryList.data?.options ?? [];
-  const locations = useSupplierLocations();
+  const locations = useSupplierLocations(scope === 'linked');
   const action = useSupplierAction(list.reload);
   const item = dialog?.item;
   function open(type, row = null) { action.setError(''); setDialog({ type, item: row }); }
@@ -54,11 +59,11 @@ export default function SupplierProducts({ kind }) {
     if (await action.run(`${kind}/${item[key]}`, item.status === 'DISPONIVEL' ? { method: 'DELETE' } : { method: 'PATCH', body: { status: 'DISPONIVEL' } }, item.status === 'DISPONIVEL' ? 'Item arquivado.' : 'Item reativado.')) setDialog(null);
   }
   return <SupplierLayout title={input ? 'Insumos' : 'Equipamentos'} description={`Gerencie os ${plural} da sua empresa.`} action={<button type="button" className={styles.primary} onClick={() => open('form')}><Plus size={16} aria-hidden="true" />Novo {singular}</button>}>
-    {action.notice && <p className={styles.notice} role="status">{action.notice}</p>}
-    <section className={styles.panel}><header className={styles.panelHeader}><div><h2>Catálogo de {plural}</h2><p>Produtos vinculados à sua conta de fornecedor.</p></div><span className={styles.count}>{list.items.length} carregados</span></header>
-      <div className={styles.toolbar}><label className={styles.filter}>Cinema<select value={localId} onChange={event => setLocalId(event.target.value)}><option value="">Todos</option>{locations.items.map(row => <option key={row.id_local} value={row.id_local}>{row.id_local ? locations.name(row.id_local) : 'Sem cinema vinculado'}</option>)}</select></label><label className={styles.filter}>Status<select value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos</option><option value="DISPONIVEL">Disponível</option>{!input && <option value="MANUTENCAO">Manutenção</option>}<option value="INDISPONIVEL">Indisponível</option></select></label></div>
+    <OperationFeedback pending={action.pending} success={action.notice} className="mb-4"/>
+    <section className={styles.panel}><header className={styles.panelHeader}><div><h2>{scope === "own" ? input ? "Insumos próprios" : "Equipamentos próprios" : input ? "Insumos vinculados a unidades" : "Equipamentos vinculados a unidades"}</h2></div><span className={styles.count}>{list.items.length} carregados</span></header>
+      <div className={styles.toolbar}><SupplierSearch {...search} placeholder="Nome ou categoria"/><label className={styles.filter}>Vínculo<select value={scope} onChange={event => { setScope(event.target.value); setLocalId(""); }}><option value="own">Estoque próprio</option><option value="linked">Vinculados a unidades</option></select></label>{scope === "linked" && <label className={styles.filter}>Unidade<select value={localId} onChange={event => setLocalId(event.target.value)}><option value="">Todos</option>{locations.items.map(row => <option key={row.id_local} value={row.id_local}>{row.id_local ? locations.name(row.id_local) : 'Sem cinema vinculado'}</option>)}</select></label>}{scope === "linked" && locations.nextCursor && <button type="button" className={styles.secondary} onClick={locations.loadMore} disabled={locations.loadingMore}>Mais unidades</button>}<label className={styles.filter}>Situação<select value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos</option><option value="DISPONIVEL">Disponível</option>{!input && <option value="MANUTENCAO">Manutenção</option>}<option value="INDISPONIVEL">Indisponível</option></select></label></div>
       <SupplierState list={list} noun={plural} empty={`Nenhum ${singular} encontrado.`} />
-      {list.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label={`Tabela de ${plural}; role horizontalmente em telas pequenas`} tabIndex={0}><table className={styles.table}><thead><tr><th scope="col">Nome</th><th scope="col">Cinema</th><th scope="col">Quantidade</th>{input && <th scope="col">Preço</th>}<th scope="col">Status</th><th scope="col">Ações</th></tr></thead><tbody>{list.items.map(row => <tr key={row[key]}><th scope="row">{row.nome}<small className={styles.muted}> · #{row[key]}</small></th><td>{row.id_local ? locations.name(row.id_local) : 'Sem cinema vinculado'}</td><td>{row.quantidade}</td>{input && <td>{Number(row.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>}<td><span className={`${styles.badge} ${row.status !== 'DISPONIVEL' ? styles.inactive : ''}`}>{statusName(row.status)}</span></td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar" aria-label={`Editar ${row.nome}`} onClick={() => open('form', row)}><Pencil size={16} aria-hidden="true" /></button><button type="button" className={`${styles.iconButton} ${row.status === 'DISPONIVEL' ? styles.destructive : ''}`} title={row.status === 'DISPONIVEL' ? 'Arquivar' : 'Reativar'} aria-label={`${row.status === 'DISPONIVEL' ? 'Arquivar' : 'Reativar'} ${row.nome}`} onClick={() => open('status', row)}>{row.status === 'DISPONIVEL' ? <Archive size={16} aria-hidden="true" /> : <RotateCcw size={16} aria-hidden="true" />}</button></div></td></tr>)}</tbody></table></div>}
+      {list.items.length > 0 && <div className={styles.tableWrap} role="region" aria-label={`Tabela de ${plural}; role horizontalmente em telas pequenas`} tabIndex={0}><table className={styles.table}><thead><tr><th scope="col">Nome</th><th scope="col">Proprietário</th><th scope="col">Unidade vinculada</th>{!input && <th scope="col">Posição</th>}<th scope="col">Quantidade</th>{input && <th scope="col">Preço</th>}<th scope="col">Status</th><th scope="col">Ações</th></tr></thead><tbody>{list.items.map(row => <tr key={row[key]}><th scope="row">{row.nome}<small className={styles.muted}> · #{row[key]}</small></th><td>{row.nome_fornecedor ?? `Fornecedor #${row.id_fornecedor}`}</td><td>{row.id_local ? row.nome_local ?? locations.name(row.id_local) : 'Sem unidade vinculada'}</td>{!input && <td><EquipmentPosition item={row} /></td>}<td>{row.quantidade}</td>{input && <td>{Number(row.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>}<td><span className={`${styles.badge} ${row.status !== 'DISPONIVEL' ? styles.inactive : ''}`}>{statusName(row.status)}</span></td><td><div className={styles.actions}><button type="button" className={styles.iconButton} title="Editar" aria-label={`Editar ${row.nome}`} onClick={() => open('form', row)}><Pencil size={16} aria-hidden="true" /></button><button type="button" className={`${styles.iconButton} ${row.status === 'DISPONIVEL' ? styles.destructive : ''}`} title={row.status === 'DISPONIVEL' ? 'Arquivar' : 'Reativar'} aria-label={`${row.status === 'DISPONIVEL' ? 'Arquivar' : 'Reativar'} ${row.nome}`} onClick={() => open('status', row)}>{row.status === 'DISPONIVEL' ? <Archive size={16} aria-hidden="true" /> : <RotateCcw size={16} aria-hidden="true" />}</button></div></td></tr>)}</tbody></table></div>}
       <More list={list} noun={plural} />
     </section>
     <Dialog open={Boolean(dialog)} onOpenChange={value => { if (!value && !action.pending) setDialog(null); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{dialog?.type === 'status' ? `${item?.status === 'DISPONIVEL' ? 'Arquivar' : 'Reativar'} ${singular}` : item ? `Editar ${singular}` : `Novo ${singular}`}</DialogTitle><DialogDescription className={styles.dialogDescription}>{dialog?.type === 'status' ? `Confirme a alteração de ${item?.nome}.` : item ? 'Atualize os dados do item da sua empresa.' : 'O item será cadastrado no estoque do fornecedor.'}</DialogDescription>

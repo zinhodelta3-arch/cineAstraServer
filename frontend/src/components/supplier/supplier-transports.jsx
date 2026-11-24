@@ -5,13 +5,14 @@ import { Dialog,DialogContent,DialogDescription,DialogTitle } from '@/components
 import { useSupplierTransports } from '@/hooks/supplier/use-supplier-transports';
 import SupplierLayout,{ dateTime,More,SupplierState,statusName } from './supplier-layout';
 import styles from '@/components/admin/catalog/catalog.module.css';
+import { OperationFeedback } from '@/components/ui/list-feedback';
 
 export default function SupplierTransports() {
   const transport=useSupplierTransports();
   const {list,action,dialog,item}=transport;
   const types=list.data?.types ?? [];
   return <SupplierLayout title="Transportes" description="Cadastre e acompanhe os meios de transporte próprios da sua empresa." action={<button type="button" className={styles.primary} onClick={()=>transport.open('form')}><Plus size={16} aria-hidden="true"/>Novo transporte</button>}>
-    {action.notice&&<p className={styles.notice} role="status">{action.notice}</p>}
+    <OperationFeedback pending={action.pending} success={action.notice} className="mb-4"/>
     <section className={styles.panel} aria-labelledby="supplier-transports-title">
       <header className={styles.panelHeader}><div><h2 id="supplier-transports-title">Transportes próprios</h2><p>Registros vinculados ao seu fornecedor.</p></div><span className={styles.count}>{list.items.length} carregados</span></header>
       <div className={styles.toolbar}>

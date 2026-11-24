@@ -66,7 +66,8 @@ function ProfileContent({ session }) {
       <ProfileOverview profile={resource.data} saveProfile={saveProfile} />
       <div className="min-w-0 space-y-3">
         {client && <ProfileSubscription />}
-        <AccountSection title="Dados e contato" description="Endereços e outros contatos" icon={Contact}>
+        <AccountSection title="Contatos" description="Telefone e endereços da conta" icon={Contact}>
+          <p className="rounded-lg border border-border px-4 py-3 text-sm"><strong>Telefone principal</strong><br/>{resource.data.phone||'Não informado'}</p>
           <ProfileRecords kind="addresses" />
           <ProfileRecords kind="contacts" />
         </AccountSection>

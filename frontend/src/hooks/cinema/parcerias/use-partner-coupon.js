@@ -1,4 +1,5 @@
 "use client";
+import { copyText } from "@/lib/copy-text.mjs";
 
 import { useRef, useState } from "react";
 
@@ -8,8 +9,7 @@ export default function usePartnerCoupon(code) {
 
   async function copyCode() {
     try {
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(code);
+      await copyText(code);
       setStatus('Código de demonstração copiado.');
     } catch {
       const selection = window.getSelection();

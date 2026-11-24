@@ -14,10 +14,11 @@ import { identityOperations } from '../src/routes/identityRoutes.js';
 import { catalogOperations } from '../src/routes/catalogRoutes.js';
 import { imageUploadOperations } from '../src/routes/imageUploadRoutes.js';
 import { filmGalleryOperations } from '../src/routes/filmGalleryRoutes.js';
-import { venueOperations } from '../src/routes/venueRoutes.js';
-import { sessionOperations } from '../src/routes/sessionRoutes.js';
+import { roomLayoutOperations, roomSceneOperations, venueOperations } from '../src/routes/venueRoutes.js';
+import { sessionOperations, unitSessionOperations } from '../src/routes/sessionRoutes.js';
 import { teamLookupOperations, teamOperations } from '../src/routes/teamRoutes.js';
 import { taskOperations } from '../src/routes/taskRoutes.js';
+import { unitCommunicationOperations } from '../src/routes/unitCommunicationRoutes.js';
 import { notificationOperations } from '../src/routes/notificationRoutes.js';
 import { supplierOperations } from '../src/routes/supplierRoutes.js';
 import { supplierTransportOperations } from '../src/routes/supplierTransportRoutes.js';
@@ -42,15 +43,17 @@ import { newsletterDeliveryOperations } from '../src/routes/newsletterDeliveryRo
 import { experienceRequestOperations } from '../src/routes/experienceRequestRoutes.js';
 import { supportOperations } from '../src/routes/supportRoutes.js';
 import { contentOperations } from '../src/routes/contentRoutes.js';
+import { newsOperations } from '../src/routes/newsRoutes.js';
 import { socialProgramOperations } from '../src/routes/socialProgramRoutes.js';
 import { reportOperations } from '../src/routes/reportRoutes.js';
+import { adminStreamingOperations } from '../src/routes/adminStreamingRoutes.js';
 
 export async function validateOpenapi() {
     const spec = JSON.parse(await readFile(new URL('../src/docs/openapi.json', import.meta.url), 'utf8'));
     await SwaggerParser.validate(structuredClone(spec));
     const ids = new Set();
     const operations = Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, op]) => ({ path, method, op })));
-    const registered = [...streamingPhotoOperations, ...dashboardOperations, ...promotionalOperations, ...snackCatalogOperations, ...adminDirectoryOperations, ...streamingProgressOperations, ...streamingFavoriteOperations, ...streamingProfileOperations, ...infrastructureOperations, ...identityOperations, ...catalogOperations, ...imageUploadOperations, ...filmGalleryOperations, ...venueOperations, ...sessionOperations, ...teamLookupOperations, ...teamOperations, ...taskOperations, ...notificationOperations, ...supplierOperations, ...supplierTransportOperations, ...productOperations, ...comboOperations, ...commerceGalleryOperations, ...inventoryOperations, ...supplyOperations, ...pricingOperations, ...paymentMethodOperations, ...paymentOperations, ...refundOperations, ...orderOperations, ...counterOrderOperations, ...salesOperations, ...ticketOperations, ...streamingOperations, ...planOperations, ...participationOperations, ...newsletterOperations, ...newsletterCampaignOperations, ...newsletterDeliveryOperations, ...supportOperations, ...experienceRequestOperations, ...contentOperations, ...reportOperations, ...socialProgramOperations];
+    const registered = [...streamingPhotoOperations, ...dashboardOperations, ...promotionalOperations, ...snackCatalogOperations, ...adminDirectoryOperations, ...streamingProgressOperations, ...streamingFavoriteOperations, ...streamingProfileOperations, ...infrastructureOperations, ...identityOperations, ...catalogOperations, ...imageUploadOperations, ...filmGalleryOperations, ...venueOperations, ...roomLayoutOperations, ...roomSceneOperations, ...sessionOperations, ...unitSessionOperations, ...teamLookupOperations, ...teamOperations, ...taskOperations, ...notificationOperations,...unitCommunicationOperations, ...supplierOperations, ...supplierTransportOperations, ...productOperations, ...comboOperations, ...commerceGalleryOperations, ...inventoryOperations, ...supplyOperations, ...pricingOperations, ...paymentMethodOperations, ...paymentOperations, ...refundOperations, ...orderOperations, ...counterOrderOperations, ...salesOperations, ...ticketOperations, ...streamingOperations, ...planOperations, ...adminStreamingOperations, ...participationOperations, ...newsletterOperations, ...newsletterCampaignOperations, ...newsletterDeliveryOperations, ...supportOperations, ...experienceRequestOperations, ...contentOperations, ...newsOperations, ...reportOperations, ...socialProgramOperations];
     if (operations.length !== registered.length) throw new Error(`OpenAPI diverge das rotas registradas: ${operations.length}/${registered.length}`);
     for (const route of registered) {
         const op = spec.paths[route.path]?.[route.method];

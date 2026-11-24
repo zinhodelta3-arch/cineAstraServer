@@ -1,7 +1,14 @@
 export const MAX_SEATS = 20;
 
+export const seatLabel = seat => `${seat.row}${seat.number}`;
+
+export function sessionSeat(seats = [], key) {
+  return seats.find(seat => seat.id === key || seat.seatId === key)
+    ?? seats.find(seat => seatLabel(seat) === key);
+}
+
 export function cleanSeats(ids = [], seats = []) {
-  const requested = new Set(ids);
+  const requested = new Set(ids.map(id => sessionSeat(seats, id)?.id));
   return seats.filter(seat => requested.has(seat.id) && !seat.occupied)
     .slice(0, MAX_SEATS).map(seat => seat.id);
 }

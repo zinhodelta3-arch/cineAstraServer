@@ -28,7 +28,7 @@ export default async function StreamingLayout({ children }) {
             </div>
           </StreamingDetailsProvider>
           <Footer supportHref="/streaming/suporte" />
-          <FloatingAssistant key={user.id} signedIn supportHref="/streaming/suporte" />
+          <FloatingAssistant key={user.id} signedIn area="streaming" supportHref="/streaming/suporte" />
         </StreamingPlayerProvider>
       </AccountPreferencesProvider>
     </SessionProvider>

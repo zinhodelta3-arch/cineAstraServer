@@ -190,7 +190,12 @@ test('Front-end real: páginas e proxies restringem cada área ao perfil autoriz
     assert.ok(['127.0.0.1', 'localhost'].includes(origin.hostname));
     const accounts = credentials(await readFile(loginFixtures, 'utf8'));
     const destinations = { ADMIN: '/admin/dashboard', FORNECEDOR: '/fornecedor', SUPERVISOR: '/unidade', COLABORADOR: '/unidade', CLIENTE: '/cinema/home' };
-    const areas = [['/admin/dashboard', ['ADMIN']], ['/fornecedor/estoque', ['FORNECEDOR']], ['/unidade', ['SUPERVISOR', 'COLABORADOR']]];
+    const areas = [
+        ['/admin/dashboard', ['ADMIN'], 'equipe'],
+        ['/admin/areas', ['ADMIN'], 'equipe'],
+        ['/fornecedor/estoque', ['FORNECEDOR'], 'fornecedor', '/admin/areas?area=fornecedor'],
+        ['/unidade', ['SUPERVISOR', 'COLABORADOR'], 'equipe', '/admin/areas?area=unidade'],
+    ];
     const proxies = [
         ['/api/admin/catalog/films', ['ADMIN']],
         ['/api/fornecedor/inputs', ['FORNECEDOR']],
@@ -217,10 +222,12 @@ test('Front-end real: páginas e proxies restringem cada área ao perfil autoriz
         await delay(seconds * 1000);
         return send();
     }
-    for (const [path] of areas) {
+    for (const [path, , profile] of areas) {
         const response = await web(path);
         assert.equal(response.status, 307);
-        assert.equal(new URL(response.headers.get('Location'), origin).pathname, '/auth/login');
+        const redirect = new URL(response.headers.get('Location'), origin);
+        assert.equal(redirect.pathname, '/auth/login');
+        assert.equal(redirect.searchParams.get('perfil'), profile);
         await response.arrayBuffer();
     }
     for (const [path] of proxies) {
@@ -229,16 +236,20 @@ test('Front-end real: páginas e proxies restringem cada área ao perfil autoriz
         await response.arrayBuffer();
     }
     for (const role of roles) {
-        const login = await web('/api/session/login', null, { method: 'POST', body: accounts[role][0] });
+        const profile = ['CLIENTE', 'FORNECEDOR'].includes(role) ? role : 'EQUIPE';
+        const login = await web('/api/session/login', null, { method: 'POST', body: { ...accounts[role][0], profile } });
         assert.equal(login.status, 200, `Login frontend de ${role}`);
         assert.equal((await login.json()).user.role, role);
         const cookie = login.headers.get('Set-Cookie')?.split(';')[0];
         assert.ok(cookie, 'Sessão emitida pelo frontend');
         try {
-            for (const [path, allowed] of areas) {
+            for (const [path, allowed, , adminDestination] of areas) {
                 const response = await web(path, cookie);
                 assert.equal(response.status, allowed.includes(role) ? 200 : 307, `${role} ${path}`);
-                if (!allowed.includes(role)) assert.equal(new URL(response.headers.get('Location'), origin).pathname, destinations[role]);
+                if (!allowed.includes(role)) {
+                    const redirect = new URL(response.headers.get('Location'), origin);
+                    assert.equal(redirect.pathname + redirect.search, role === 'ADMIN' ? adminDestination : destinations[role]);
+                }
                 await response.arrayBuffer();
             }
             for (const [path, allowed] of proxies) {

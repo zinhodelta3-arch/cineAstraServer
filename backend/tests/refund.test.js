@@ -9,10 +9,12 @@ import {createRefundController} from '../src/controllers/refundController.js';
 function fixture({ageDays=2,providerMode='PENDING',planPaid=false}={}){
     const date=new Date(Date.now()-ageDays*86400000).toISOString().slice(0,19).replace('T',' ');
     const payment={id_pagamento:'7',id_pedido:planPaid?null:'11',id_cobranca:planPaid?'20':null,id_usuario:'9',valor:'24.50',status:'APROVADO',transacao_id:'txn_1',provider:'gateway',provider_ref:'txn_1',data_pedido:planPaid?null:date,assinatura_inicio:planPaid?date.slice(0,10):null,assinatura_status:planPaid?'ATIVA':null};
-    const requests=[],audits=[],state={calls:0,mode:providerMode,consult:null,plan:'ATIVA'};
+    const requests=[],audits=[],notices=[],state={calls:0,mode:providerMode,consult:null,plan:'ATIVA'};
     const lookup=id=>{const r=requests.find(x=>x.id_reembolso===String(id));return r?{...r,pagamento_valor:payment.valor,pagamento_status:payment.status,transacao_id:payment.transacao_id,id_pedido:payment.id_pedido,id_cobranca:payment.id_cobranca,pagamento_provider:payment.provider,pagamento_provider_ref:payment.provider_ref}:null;};
     const model={
         payment:async()=>({...payment}),refund:async id=>lookup(id),byKey:async(owner,key)=>requests.find(x=>x.id_usuario===String(owner)&&x.chave_idempotencia===key)??null,
+        activeRequest:async(c,id,approvedOnly)=>requests.find(x=>x.id_pagamento===id&&
+            (['RECEBIDA','ENVIADA'].includes(x.status)||!approvedOnly&&x.status==='EM_ANALISE')),
         confirmed:async()=>({total:requests.filter(x=>x.status==='CONFIRMADA').reduce((n,x)=>n+Number(x.valor_confirmado),0).toFixed(2)}),
         insert:async(c,d)=>{const prior=requests.find(x=>x.id_usuario===String(d.owner)&&x.chave_idempotencia===d.key);if(prior)return {id:prior.id_reembolso,created:false};const id=String(requests.length+1);requests.push({id_reembolso:id,id_pagamento:String(d.paymentId),id_usuario:String(d.owner),chave_idempotencia:d.key,motivo:d.reason,detalhes:d.details,dentro_prazo:d.within,termos_versao:d.termsVersion,valor_solicitado:d.amount,valor_confirmado:null,status:d.status,provider_ref:null,compensacao_status:'NAO_APLICAVEL',solicitado_em:'2026-10-10 12:00:00',prazo_resposta_em:'2026-10-15 12:00:00',respondido_em:null});return {id,created:true};},
         sent:async(c,id)=>{requests[Number(id)-1].status='ENVIADA';},reference:async(c,id,ref)=>{requests[Number(id)-1].provider_ref=ref;},
@@ -22,9 +24,10 @@ function fixture({ageDays=2,providerMode='PENDING',planPaid=false}={}){
     };
     const identity={transaction:async fn=>fn({execute:async()=>[]}),activeActor:async(c,ctx)=>({id_usuario:ctx.actor.id,tipo_usuario:ctx.actor.tipo}),audit:async(c,type)=>audits.push(type)};
     const provider={name:'gateway',available:true,async refund(){state.calls++;if(state.mode==='THROW')throw new Error('timeout');return {status:state.mode,refundId:'refund_1',amount:requests.at(-1).valor_solicitado,currency:'BRL'};},async consultRefund(){return state.consult;}};
-    const service=createRefundService({model,identity,provider,termsVersion:'2026-10'});
+    const notifications={emit:async(c,notice)=>{notices.push(notice);}};
+    const service=createRefundService({model,identity,provider,termsVersion:'2026-10',notifications});
     const client={actor:{id:'9',tipo:'CLIENTE'}},admin={actor:{id:'1',tipo:'ADMIN'}};
-    return {service,payment,requests,audits,state,client,admin,provider};
+    return {service,payment,requests,audits,notices,state,client,admin,provider};
 }
 
 test('arrependimento em sete dias confirma recebimento e não inventa estorno',async()=>{
@@ -67,13 +70,27 @@ test('após sete dias fica em análise; ADMIN decide parcial com versão dos Ter
     const receipt=await f.service.request('7',{reason:'DEFEITO',details:'Falha na sessão'},'refund_key_123',f.client);
     assert.equal(receipt.status,'EM_ANALISE');assert.equal(f.state.calls,0);
     await assert.rejects(f.service.decide('1',{decision:'APPROVE',amount:'10.00',termsVersion:'errada',basis:'Termos aplicáveis ao defeito'},f.admin),{statusCode:422});
-    const approved=await f.service.decide('1',{decision:'APPROVE',amount:'10.00',termsVersion:'2026-10',basis:'Termos aplicáveis ao defeito'},f.admin);
+    await assert.rejects(f.service.request('7',{reason:'OUTRO'},'outro_reembolso_123',f.client),/Já existe uma solicitação/);
+    const approved=await f.service.decide('1',{decision:'APPROVE',amount:'10.00',termsVersion:'2026-10',basis:'Termos aplicáveis ao defeito',response:'Aprovamos a devolução parcial.'},f.admin);
     assert.equal(approved.status,'RECEBIDA');assert.equal(approved.requestedAmount,'10.00');
     await f.service.dispatch('1',f.admin);
     f.state.consult={status:'CONFIRMED',refundId:'refund_1',amount:'10.00',currency:'BRL'};
     await f.service.reconcile('1',f.client);
     assert.equal(f.payment.status,'PARCIALMENTE_ESTORNADO');
+    assert.deepEqual(f.notices.map(({recipientId,type})=>[recipientId,type]),[['9','REFUND_APPROVED'],['9','REFUND_CONFIRMED']]);
+    assert.equal(f.notices[0].message,'Aprovamos a devolução parcial.');
     assert.equal(refundSchemas.decision.safeParse({decision:'APPROVE',termsVersion:'2026-10',basis:'Termos aplicáveis ao defeito'}).success,false);
+});
+
+test('negativa guarda motivo administrativo e envia somente a resposta destinada ao cliente',async()=>{
+    const f=fixture();
+    await f.service.request('7',{reason:'OUTRO'},'refund_denial_123',f.client);
+    const result=await f.service.decide('1',{decision:'DENY',termsVersion:'2026-10',basis:'Parecer interno da administração',response:'A análise foi concluída e o pedido foi negado.'},f.admin);
+    assert.equal(result.status,'NEGADA');
+    assert.equal(f.requests[0].decisao_fundamento,'Parecer interno da administração');
+    assert.equal(f.notices[0].message,'A análise foi concluída e o pedido foi negado.');
+    assert.equal(f.notices[0].type,'REFUND_DENIED');
+    assert.equal(f.state.calls,0);
 });
 
 test('titular cancela renovação; outro usuário não cancela',async()=>{

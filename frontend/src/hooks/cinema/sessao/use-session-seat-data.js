@@ -24,8 +24,8 @@ export function useSessionSeatData(sessionId) {
         ]);
         if (abort.signal.aborted) return;
         const seatMap = availability.seats.map(seat => ({
-          id: `${seat.row}${seat.number}`, seatId: seat.seatId,
-          row: seat.row, number: Number(seat.number),
+          id: String(seat.seatId),
+          row: seat.row, number: Number(seat.number), position: seat.position, type: seat.type, availability: seat.availability,
           occupied: seat.availability !== "DISPONIVEL",
           accessible: ["PCD", "OBESO", "IDOSO"].includes(seat.type),
         }));
@@ -36,8 +36,8 @@ export function useSessionSeatData(sessionId) {
             title: film.titulo, genre: "", duration: `${film.duracao} min`,
             rating: film.classificacao, poster: publicAsset(film.imagem),
           },
-          cinema: { name: cinema.nome, room: room.nome },
-          localId: show.id_local, date,
+          cinema: { name: cinema.nome, room: room.nome, spaceType: cinema.tipo_local },
+          localId: show.id_local, roomId: show.id_sala, date,
           dateLabel: new Date(`${date}T12:00:00Z`).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "UTC" }),
           time: show.horario_inicio.slice(0, 5), format: room.tipo,
           language: show.idioma, priceCents: Math.round(Number(show.preco_inteira) * 100),

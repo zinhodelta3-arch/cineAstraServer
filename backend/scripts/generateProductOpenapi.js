@@ -27,6 +27,12 @@ const base = { id_fornecedor: id, id_local: nullable(id), ...common, quantidade:
 const inputProduct = { id_insumo: id, ...base, quantidade_minima: count, preco: money, venda_avulsa: {type:'boolean'} };
 spec.components.schemas.InputProduct = obj({ ...inputProduct, custo_receita: nullable(cost), custo_parceria: nullable(cost) }, Object.keys(inputProduct));
 spec.components.schemas.EquipmentProduct = obj({ id_equipamento: id, ...base, numero_patrimonio: patrimony, status: equipmentStatus });
+const listNames = { nome_fornecedor:nullable(name),nome_local:nullable(name) };
+Object.assign(spec.components.schemas.InputProduct.properties,listNames);
+Object.assign(spec.components.schemas.EquipmentProduct.properties,listNames,{
+    posicao:{type:'string',enum:['FORNECEDOR','UNIDADE','EM_ENTREGA']},
+    entrega:nullable(obj({id_logistica:id,id_local_destino:nullable(id),nome_local_destino:nullable(name)}))
+});
 spec.components.schemas.SupplierLocationGrant = obj({ id_fornecedor: id, id_local: id, status: grantStatus, criado_em: { type: 'string' } });
 spec.components.schemas.SupplierLocationGrant.properties.nome_local = { type: 'string' };
 const inputFields = { ...common, supplierId: id, localId: nullable(id), quantidade_minima: count, ...costs, venda_avulsa: {type:'boolean',default:false} };
@@ -35,7 +41,7 @@ const inputCreate = { oneOf: [
     obj({ ...inputFields, priceMode:{type:'string',enum:['RULE']}, venda_avulsa:{type:'boolean',enum:[true]} }, ['nome','supplierId','priceMode','venda_avulsa','custo_receita','custo_parceria'])
 ] };
 const equipmentCreate = obj({ ...common, supplierId: id, localId: nullable(id), numero_patrimonio: patrimony }, ['nome']);
-const inputPatch = { ...obj({ ...common, quantidade_minima: count, preco: money, ...costs, venda_avulsa: {type:'boolean'}, status: inputStatus }, []), minProperties: 1 };
+const inputPatch = { ...obj({ ...common, quantidade_minima: count, preco: money, priceMode:{type:'string',enum:['RULE'],description:'Somente ADMIN. Use sem preco para recalcular a partir dos custos efetivos.'}, ...costs, venda_avulsa: {type:'boolean'}, status: inputStatus }, []), minProperties: 1, not:{required:['preco','priceMode']} };
 const equipmentPatch = { ...obj({ ...common, numero_patrimonio: patrimony, status: equipmentStatus }, []), minProperties: 1 };
 const bodies = { inputs: { create: inputCreate, patch: inputPatch }, equipment: { create: equipmentCreate, patch: equipmentPatch } };
 const paging = schema => obj({ items: { type: 'array', items: schema }, pagination: ref('Pagination') });
@@ -46,7 +52,7 @@ for (const r of productOperations) {
     const op = { operationId: r.operationId, tags: [tag], summary: `${r.action} ${r.type ?? 'fornecedor-local'}`, security: [{ bearerAuth: [] }], parameters: [], responses: {} };
     if (r.type) op.description = 'FORNECEDOR administra itens próprios e novos cadastros iniciam sem cinema. ADMIN pode informar fornecedor e local com vínculo ativo. A quantidade inicia em zero e muda por movimentações de estoque. DELETE arquiva o cadastro.';
     if (r.type === 'inputs') op.description += ' A venda avulsa de um insumo disponível exige os dois custos e preço positivo igual ou superior ao total. Somente ADMIN consulta e edita custos.';
-    if (r.type === 'inputs' && r.action === 'create') op.description += ' ADMIN pode selecionar priceMode=RULE e usar o markup de INPUT para calcular e salvar o preço oficial.';
+    if (r.type === 'inputs' && ['create','patch'].includes(r.action)) op.description += ' ADMIN pode selecionar priceMode=RULE e usar o markup de INPUT para calcular e salvar o preço oficial.';
     if (!r.type) op.description = r.admin ? 'Somente ADMIN gerencia o vínculo operacional fornecedor-local.' : 'FORNECEDOR consulta os próprios locais autorizados.';
     for (const param of ['id','supplierId','localId']) if (r.path.includes(`{${param}}`)) op.parameters.push({ name: param, in: 'path', required: true, schema: id });
     if (['list','grants','myGrants'].includes(r.action)) {
@@ -54,6 +60,8 @@ for (const r of productOperations) {
         if (r.type) op.parameters.push({ name: 'supplierId', in: 'query', schema: id, description: 'Filtro ADMIN; FORNECEDOR usa escopo da conta.' }, { name: 'localId', in: 'query', schema: id }, { name: 'status', in: 'query', schema: r.type === 'inputs' ? inputStatus : equipmentStatus });
         else op.parameters.push({ name: 'status', in: 'query', schema: grantStatus });
     }
+    if (r.action==='list') op.parameters.push({name:'scope',in:'query',schema:{type:'string',enum:['own','linked']},
+        description:'own seleciona itens sem unidade; linked seleciona itens vinculados. Use localId somente com linked ou sem scope.'});
     const body = r.type ? bodies[r.type]?.[r.action] : r.action === 'grant' ? obj({ localId: id }) : null;
     if (body) op.requestBody = { required: true, content: { 'application/json': { schema: body } } };
     if (r.action === 'archive' || r.action === 'revokeGrant') op.responses['204'] = { description: 'Arquivado logicamente.' };

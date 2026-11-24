@@ -8,6 +8,8 @@ const id = value => typeof value === 'string' && /^[1-9]\d{0,9}$/.test(value) &&
 
 function target(method, parts, search) {
   const [group, second, third, fourth] = parts;
+  if (group === 'companies' && parts.length === 1 && ['GET', 'POST'].includes(method)) return `/admin/supplier-companies${method === 'GET' ? search : ''}`;
+  if (group === 'companies' && parts.length === 2 && id(second) && method === 'PATCH') return `/admin/supplier-companies/${second}`;
   if (group === 'users' && parts.length === 1 && method === 'GET') return `/admin/users${search}`;
   if (group === 'suppliers') {
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/admin/suppliers${method === 'GET' ? search : ''}`;
@@ -20,16 +22,20 @@ function target(method, parts, search) {
     if (parts.length === 2 && id(second) && ['GET', 'PATCH', 'DELETE'].includes(method)) return `/equipment/${second}`;
   }
   if (group === 'inventory' && second === 'equipment' && parts.length === 3 && id(third) && method === 'GET') return `/inventory/equipment/${third}`;
-  if (group === 'inventory' && second === 'movements' && parts.length === 2 && method === 'POST') return '/inventory/movements';
+  if (group === 'inventory' && second === 'movements' && parts.length === 2 && ['GET', 'POST'].includes(method)) return `/inventory/movements${method === 'GET' ? search : ''}`;
+  if (group === 'inventory' && second === 'movements' && parts.length === 3 && /^[1-9]\d{0,19}$/.test(third) && BigInt(third) <= 18446744073709551615n && ['PATCH', 'DELETE'].includes(method)) return `/admin/inventory/movements/${third}`;
   if (group === 'requests') {
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/stock/requests${method === 'GET' ? search : ''}`;
     if (parts.length === 2 && id(second) && method === 'GET') return `/stock/requests/${second}`;
+    if (parts.length === 2 && id(second) && ['PATCH', 'DELETE'].includes(method)) return `/admin/stock/requests/${second}`;
     if (parts.length === 3 && id(second) && ['approve', 'refuse'].includes(third) && method === 'POST') return `/stock/requests/${second}/${third}`;
   }
   if (group === 'logistics') {
     if (parts.length === 1 && method === 'GET') return `/logistics${search}`;
+    if (parts.length === 1 && method === 'POST') return '/admin/logistics';
     if (parts.length === 2 && id(second) && method === 'GET') return `/logistics/${second}`;
-    if (parts.length === 3 && id(second) && third === 'history' && method === 'GET') return `/logistics/${second}/history${search}`;
+    if (parts.length === 2 && id(second) && ['PATCH', 'DELETE'].includes(method)) return `/admin/logistics/${second}`;
+    if (parts.length === 3 && id(second) && ['history', 'dispatch-options'].includes(third) && method === 'GET') return `/logistics/${second}/${third}${search}`;
     if (parts.length === 3 && id(second) && ['send', 'transit', 'receive', 'return', 'cancel'].includes(third) && method === 'POST') return `/logistics/${second}/${third}`;
   }
   if (group === 'input-links') {
@@ -53,11 +59,14 @@ async function handle(request, { params }) {
     const path = target(method, (await params).path ?? [], new URL(request.url).search);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
     let body;
-    if (['POST', 'PATCH', 'PUT'].includes(method) && !/(?:\/approve|\/refuse|\/send|\/transit|\/receive|\/return|\/cancel)$/.test(path)) {
+    const movementReversal = method === 'DELETE' && path.startsWith('/admin/inventory/movements/');
+    if (movementReversal || (['POST', 'PATCH', 'PUT'].includes(method) && !/\/(?:refuse|transit|receive|return|cancel)$/.test(path))) {
       const raw = await request.text();
       if (raw.length > 13000) return json({ message: 'Dados muito longos.' }, 413);
-      try { body = JSON.parse(raw); } catch { return json({ message: 'Dados inválidos.' }, 400); }
-      if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
+      if (raw || !path.endsWith('/approve')) {
+        try { body = JSON.parse(raw); } catch { return json({ message: 'Dados inválidos.' }, 400); }
+        if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
+      }
     }
     const data = await backendAuth(path, { token, method, body });
     return method === 'DELETE' ? new NextResponse(null, { status: 204 }) : json(data);

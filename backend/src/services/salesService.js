@@ -1,6 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { idString } from '../utils/dto.js';
 import { instant } from './identityService.js';
+import { createHash } from 'node:crypto';
 
 const date = value => value == null ? null : new Date(instant(value)).toISOString();
 const page = (rows, q, key, map) => {
@@ -11,8 +12,15 @@ const page = (rows, q, key, map) => {
 const parse=value=>typeof value==='string'?JSON.parse(value):value;
 const found=row=>{if(!row)throw ApiError.naoEncontrado();return row;};
 const conflict=message=>new ApiError(message,409,null,'ADMIN_SALES_CONFLICT');
+const archiveStatus = {
+  orders: ['PAGO','FINALIZADO','CANCELADO'],
+  payments: ['APROVADO','RECUSADO','PARCIALMENTE_ESTORNADO','ESTORNADO'],
+  refunds: ['CONFIRMADA','NEGADA','FALHOU','CANCELADA'],
+};
+const archiveAudit = {orders:'ORDER',payments:'PAYMENT',refunds:'REFUND'};
+const pixResult = row => ({paymentId:idString(row.id_pagamento),orderId:idString(row.id_pedido),status:row.status,amount:String(row.valor)});
 
-export function createSalesService({ model, identity, checkout, paymentService }) {
+export function createSalesService({ model, identity, checkout, paymentService, simulatedPixEnabled }) {
   function adminTransaction(context, work) {
     return identity.transaction(async c => {
       const admin=await identity.activeActor(c,context);
@@ -36,18 +44,47 @@ export function createSalesService({ model, identity, checkout, paymentService }
       if (kind === 'orders') return page(await model.orders(c, q), q, 'id_pedido', row => ({
         id: idString(row.id_pedido), userId: idString(row.id_usuario), customer: row.cliente,
         status: row.status, total: String(row.valor_total), createdAt: date(row.data_pedido), draft:parse(row.proposta_admin)??null,
+        archivedAt:date(row.arquivado_admin_em), canSimulatePix:Boolean(simulatedPixEnabled&&row.status==='AGUARDANDO_PAGAMENTO'&&row.checkout_expira_em&&instant(row.checkout_expira_em)>Date.now()),
         ...(row.cancelado_por_admin&&{cancellation:{adminId:idString(row.cancelado_por_admin),reason:row.motivo_cancelamento_admin}})
       }));
       return page(await model.payments(c, q), q, 'id_pagamento', row => ({
         id: idString(row.id_pagamento), orderId: row.id_pedido == null ? null : idString(row.id_pedido),
         chargeId: row.id_cobranca == null ? null : idString(row.id_cobranca), userId: idString(row.id_usuario),
         customer: row.cliente, method: row.metodo, amount: String(row.valor), status: row.status,
-        createdAt: date(row.criado_em ?? row.data_pagamento), paidAt: date(row.data_pagamento), reconcilable:Boolean(row.provider)&&['PENDENTE','RECUSADO'].includes(row.status)
+        createdAt: date(row.criado_em ?? row.data_pagamento), paidAt: date(row.data_pagamento), archivedAt:date(row.arquivado_admin_em),
+        reconcilable:Boolean(row.provider)&&['PENDENTE','RECUSADO'].includes(row.status)
       }));
     });
   }
   return {
     list,
+    archive:(kind,id,context)=>adminTransaction(context,async c=>{
+      const row=found(await model.archivedRecord(c,kind,id));
+      if(!row.arquivado_admin_em){
+        if(!archiveStatus[kind].includes(row.status))throw conflict('Encerre a operação antes de arquivar este registro.');
+        await model.archive(c,kind,id);
+        await identity.audit(c,`${archiveAudit[kind]}.ARCHIVED_BY_ADMIN`,id,context);
+      }
+      return {id,archived:true};
+    }),
+    simulatePix:(id,key,context)=>adminTransaction(context,async(c,admin)=>{
+      if(!simulatedPixEnabled)throw conflict('O Pix administrativo está disponível apenas no modo simulado.');
+      const order=found(await model.order(c,id));
+      const owner=idString(order.id_usuario);
+      const internalKey=`admin-pix:${createHash('sha256').update(`${admin.id_usuario}:${id}:${key}`).digest('hex')}`;
+      const previous=await model.simulatedPixByKey(c,owner,internalKey);
+      if(previous)return pixResult(previous);
+      if(order.arquivado_admin_em||!await checkout.ready(c,id,order))throw conflict('Selecione um pedido pendente com reserva vigente.');
+      if(await model.unsettledIntent(c,id)||await model.blockingPayment(c,id)){
+        throw conflict('Já existe um pagamento em andamento ou confirmado para este pedido. Consulte o pagamento antes de tentar novamente.');
+      }
+      await paymentService.settleCounter(c,{orderId:id,amount:String(order.valor_total),owner,key:internalKey,label:'Pix administrativo'},context);
+      const result=await model.simulatedPixByKey(c,owner,internalKey);
+      const settled=await model.order(c,id);
+      if(result?.status!=='APROVADO'||settled.status!=='PAGO')throw conflict('Não foi possível confirmar o Pix simulado e concluir o pedido.');
+      await identity.audit(c,'PAYMENT.ADMIN_SIMULATED_PIX_CREATED',result.id_pagamento,context);
+      return pixResult(result);
+    }),
     createDraft:({userId,draft},context)=>adminTransaction(context,async c=>{
       if(!await model.customer(c,userId))throw conflict('Selecione um cliente ativo.');
       validateDraft(draft);

@@ -1,3 +1,4 @@
+import { validOrderId } from '@/lib/api/purchases.mjs';
 import PurchaseHistory from "@/components/purchases/PurchaseHistory";
 
 export const metadata = {
@@ -5,6 +6,7 @@ export const metadata = {
   description: "Seu histórico de pedidos e ingressos no CineAstra.",
 };
 
-export default function MyPurchasesPage() {
-  return <PurchaseHistory />;
+export default async function MyPurchasesPage({searchParams}) {
+  const {pedido}=await searchParams;
+  return <PurchaseHistory orderId={validOrderId(pedido)?pedido:null} />;
 }

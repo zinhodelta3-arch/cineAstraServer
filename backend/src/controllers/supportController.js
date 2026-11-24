@@ -2,6 +2,8 @@ import {success} from '../utils/dto.js';
 const context=req=>({actor:req.usuario,signal:req.signal,requestId:req.res.locals.requestId});
 export function createSupportController(service){return {
     create:async(req,res)=>success(res,await service.create(req.supportInput,context(req)),201),
+    edit:async(req,res)=>success(res,await service.edit(req.params.id,req.supportInput,context(req))),
+    cancel:async(req,res)=>success(res,await service.cancel(req.params.id,context(req))),
     ownList:async(req,res)=>success(res,await service.ownList(req.supportPage,context(req))),
     adminQueue:async(req,res)=>success(res,await service.adminQueue(req.supportPage,context(req))),
     get:async(req,res)=>success(res,await service.get(req.params.id,context(req))),

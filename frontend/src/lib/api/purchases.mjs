@@ -3,11 +3,13 @@ export function purchaseTarget(parts=[],cursor=null){
  if(cursor!==null&&!validOrderId(cursor))return null;
  const page='?limit=20'+(cursor?'&cursor='+cursor:'');
  if(!parts.length)return '/orders'+page;
+ if(parts[0]==='refunds'&&parts.length===2&&validOrderId(parts[1])&&cursor===null)return '/refunds/'+parts[1];
  if(!validOrderId(parts[0]))return null;
  if(parts.length===1)return '/orders/'+parts[0];
  if(parts.length===2&&parts[1]==='tickets')return '/orders/'+parts[0]+'/tickets'+page;
  if(parts.length===2&&parts[1]==='refunds')return '/orders/'+parts[0]+'/refunds'+page;
  if(parts.length===2&&parts[1]==='receipt')return '/orders/'+parts[0]+'/receipt';
+ if(parts.length===2&&parts[1]==='pdf'&&cursor===null)return '/orders/'+parts[0]+'/purchase-document';
  if(parts.length===2&&parts[1]==='draft')return '/orders/'+parts[0]+'/draft';
  return null;
 }
@@ -26,10 +28,17 @@ export function purchaseDate(v){
  if(!v)return 'Data não informada';
  const date=new Date(v);return Number.isNaN(date.getTime())?'Data não informada':date.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
 }
-export function purchaseSummary(order,detail,receipt){
- return ['CineAstra — resumo do pedido (sem valor fiscal)', 'Pedido #'+order.orderId,
- 'Data: '+purchaseDate(order.createdAt)+' (Brasília)','Estado: '+(orderStatuses[detail.financialStatus]||detail.financialStatus),
- 'Total do pedido: '+purchaseMoney(order.total),
- ...(receipt?['Contrato aceito em: '+purchaseDate(receipt.acceptedAt),...receipt.contract.offer.lines.map(line=>(itemTypes[line.category]||line.category)+' #'+line.id+' · '+line.quantity+' × '+purchaseMoney(line.unitPrice)+' = '+purchaseMoney(line.subtotal))]:[]),
- 'Cancelamento não comprova estorno. Consulte o estado do pagamento com o suporte.'].join('\n');
+export const purchasePaymentStatuses={APROVADO:'Pagamento confirmado',PARCIALMENTE_ESTORNADO:'Pagamento estornado em parte',ESTORNADO:'Pagamento estornado'};
+export const purchaseDocumentStatus = document => document.status==='CANCELADO' ? 'Pedido cancelado'
+ : purchasePaymentStatuses[document.payment?.status] ?? orderStatuses[document.status] ?? 'Situação indisponível';
+export const purchaseDocumentTotalLabel = document => document.payment?.status==='APROVADO' && document.status!=='CANCELADO' ? 'Total pago' : 'Total do pedido';
+export const purchasePaymentMethods={PIX:'Pix',CREDITO:'Cartão de crédito',DEBITO:'Cartão de débito',BOLETO:'Boleto'};
+export function purchaseItemLabel(item){
+ if(item.kind==='SESSION')return ({MEIA:'Ingresso meia-entrada',INTEIRA:'Ingresso inteiro',ISENTA:'Ingresso isento'})[item.admission]??'Ingresso';
+ return item.name || itemTypes[item.kind] || 'Item do pedido';
+}
+export function purchaseSessionDate(session) {
+ const date=typeof session?.date==='string'?session.date.slice(0,10).split('-').reverse().join('/'):null;
+ const time=typeof session?.time==='string'?session.time.slice(0,5).replace(':','h'):null;
+ return [date,time].filter(Boolean).join(' às ');
 }

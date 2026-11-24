@@ -9,6 +9,8 @@ export function filmDto(row, admin = false) {
     for (const key of ['preco_aluguel', 'preco_compra']) if (out[key] !== null) out[key] = moneyString(out[key]);
     out.generos = typeof row.generos === 'string' ? JSON.parse(row.generos) : row.generos ?? [];
     out.banner = row.banner ?? null;
+    if (row.slug) out.slug = row.slug;
+    if (row.venda_disponivel != null) out.venda_disponivel = Number(row.venda_disponivel) === 1;
     return out;
 }
 const genreDto = row => ({ id_genero: idString(row.id_genero), nome: row.nome, status: row.status });
@@ -27,6 +29,10 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
     return {
         async popularFilms(limit) { return (await model.popularFilms(limit)).map(r => filmDto(r)); },
         async listFilms(q, isAdmin, signal) {
+            if (!isAdmin && q.showcase) {
+                const limit = Math.min(q.limit ?? 8, 12);
+                return { items: (await model.showcaseFilms(limit)).map(row => filmDto(row)), pagination: { limit, nextCursor: null } };
+            }
             if (!isAdmin && q.page) {
                 const {items, pagination} = await model.listNumberedFilms(q, signal);
                 return { items:items.map(row => filmDto(row)), pagination };

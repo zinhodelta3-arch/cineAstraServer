@@ -26,7 +26,7 @@ export function createOrderService({model,identity,pricing,socialProgram,selfDec
         if(total+line.quantity>row.limite_evento)throw new ApiError('O lote do combo temático não tem a quantidade solicitada.',409,null,'EVENT_COMBO_SOLD_OUT');
         if(customer+line.quantity>row.limite_cliente_evento)throw new ApiError('Limite deste combo temático por cliente atingido.',409,null,'EVENT_COMBO_CUSTOMER_LIMIT');
     }
-    async function quoteOnConnection(c,input,context,{counter=false,ageConfirmed=false}={}){
+    async function quoteOnConnection(c,input,context,{counter=false,ageConfirmed=false,customerId=null}={}){
         const user=await identity.activeActor(c,context);
         if(user.tipo_usuario!==(counter?'COLABORADOR':'CLIENTE'))throw ApiError.acessoNegado();
         const proof=counter?null:agePolicy.resolve(user,await model.age(c,user.id_usuario));
@@ -52,7 +52,7 @@ export function createOrderService({model,identity,pricing,socialProgram,selfDec
             }else if(line.kind==='COMBO'){
                 const row=found(await model.combo(c,line.id));
                 if(row.oferta_local===0||row.oferta_local===false||!input.localId||idString(row.id_local)!==input.localId||!row.ativo||row.local_status!=='ATIVO')throw conflict('Combo indisponível no local');
-                await validateEventCombo(c,row,line,input,user.id_usuario);
+                await validateEventCombo(c,row,line,input,counter&&customerId ? customerId : user.id_usuario);
                 if(line.sessionId){
                     const session=found(await model.session(c,line.sessionId));
                     if(idString(session.id_local)!==input.localId||!['AGENDADA','EM_CARTAZ'].includes(session.status)||session.sala_status!=='ATIVA'||session.local_status!=='ATIVO'||interval(session).end+1800000<=Date.now())throw conflict('Sessão de retirada indisponível');

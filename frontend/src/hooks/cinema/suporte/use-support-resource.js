@@ -1,8 +1,8 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
 import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
-export async function supportRequest(path='',body,signal){
- return readSessionResponse(await sessionFetch('/api/support'+(path?'/'+path:''),{method:body?'POST':'GET',cache:'no-store',credentials:'same-origin',signal,headers:body?{'Content-Type':'application/json'}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
+export async function supportRequest(path='',body,signal,method=body?'POST':'GET'){
+ return readSessionResponse(await sessionFetch('/api/support'+(path.startsWith('?')?path:path?'/'+path:''),{method,cache:'no-store',credentials:'same-origin',signal,headers:body?{'Content-Type':'application/json'}:undefined,...(body?{body:JSON.stringify(body)}:{})}));
 }
 export function useSupportResource(path,paginated=true){
  const [revision,setRevision]=useState(0),[state,setState]=useState({key:null,items:[],data:null,cursor:null,loading:false,error:null});
@@ -21,7 +21,7 @@ export function useSupportResource(path,paginated=true){
   if(busy.current||!visible.cursor)return;
   const abort=controller.current;busy.current=true;setState(s=>({...s,loading:true,error:null}));
   try{
-   const data=await supportRequest(path+'?cursor='+encodeURIComponent(visible.cursor),undefined,abort.signal);
+   const data=await supportRequest(path+(path.includes('?')?'&':'?')+'cursor='+encodeURIComponent(visible.cursor),undefined,abort.signal);
    if(!Array.isArray(data.items)||data.pagination?.nextCursor===visible.cursor)throw new Error('Paginação inválida.');
    if(!abort.signal.aborted)setState(s=>({...s,items:[...s.items,...data.items],cursor:data.pagination?.nextCursor,loading:false}));
   }catch(e){if(!abort.signal.aborted)setState(s=>({...s,loading:false,error:e.message}));}

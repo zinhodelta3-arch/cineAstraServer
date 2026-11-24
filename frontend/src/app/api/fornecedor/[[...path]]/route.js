@@ -35,7 +35,7 @@ function target(method, parts, search) {
   if (group === 'logistics') {
     if (parts.length === 1 && method === 'GET') return `/logistics${search}`;
     if (parts.length === 2 && id(second) && method === 'GET') return `/logistics/${second}`;
-    if (parts.length === 3 && id(second) && third === 'history' && method === 'GET') return `/logistics/${second}/history${search}`;
+    if (parts.length === 3 && id(second) && ['history', 'dispatch-options'].includes(third) && method === 'GET') return `/logistics/${second}/${third}${search}`;
     if (parts.length === 3 && id(second) && ['send', 'transit', 'return', 'cancel', 'incidents'].includes(third) && method === 'POST') return `/logistics/${second}/${third}`;
   }
   return null;

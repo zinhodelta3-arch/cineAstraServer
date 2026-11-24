@@ -97,7 +97,7 @@ test('SQL mantém atualização condicional e histórico parametrizado',async()=
     const model=createInventoryModel(db);
     assert.equal(await model.changeInput(db,'10',-1,0),true);
     assert.ok(queries[0].sql.includes('quantidade + ? >= quantidade_reservada + ?'));
-    await model.insertMovement(db,{inputId:'10',actorId:'1',tipo:'SAIDA',quantidade:-1});
-    assert.ok(queries[1].sql.includes('VALUES (?,?,?,?,?,?,?)'));
-    assert.equal(queries[1].args[0],'10');
+    await model.insertMovement(db,{equipmentId:'20',localId:'1',actorId:'1',tipo:'SAIDA',quantidade:-1});
+    assert.match(queries[1].sql,/id_local_movimentacao\) VALUES \(\?,\?,\?,\?,\?,\?,\?,\?\)/);
+    assert.deepEqual(queries[1].args,[null,'20',null,'1','SAIDA',-1,null,'1']);
 });

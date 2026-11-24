@@ -11,7 +11,12 @@ export function userDto(u) {
     return { id: idString(u.id_usuario), name: u.nome, email: u.email, phone: u.telefone ?? null, dateOfBirth: u.data_nascimento, role: u.tipo_usuario, status: u.status };
 }
 const conflict = () => new ApiError('Cadastro ou operação em conflito', 409, null, 'IDENTITY_CONFLICT');
-export function createIdentityService({ database, model, config, tokens, providers }) {
+const loginProfileRoles = {
+    CLIENTE: ['CLIENTE'],
+    FORNECEDOR: ['FORNECEDOR'],
+    EQUIPE: ['ADMIN', 'SUPERVISOR', 'COLABORADOR'],
+};
+export function createIdentityService({ database, model, config, tokens, providers, onAccountCreated }) {
     let dummyHash;
     const settings = config.identity;
     const twoFactorEnabled = config.security?.twoFactorEnabled === true;
@@ -19,8 +24,8 @@ export function createIdentityService({ database, model, config, tokens, provide
         if (!twoFactorEnabled) throw new ApiError('2FA temporariamente desativado', 404, null, 'FEATURE_DISABLED');
     };
     const audit = (c, type, id, context = {}) => recordAuditEvent(c, { eventId: randomUUID(), requestId: context.requestId ?? randomUUID(), aggregateId: id, actorId: context.actor?.id ?? null, type, version: 1, occurredAt: new Date().toISOString() });
-    const transaction = async (fn, context = {}) => {
-        try { return await database.transaction(fn, { signal: context.signal }); }
+    const transaction = async (fn, context = {}, options = {}) => {
+        try { return await database.transaction(fn, { signal: context.signal, readCommitted: options.readCommitted }); }
         catch (e) { if (e.code === 'ER_DUP_ENTRY') throw conflict(); throw e; }
     };
     async function activeUser(c, id) {
@@ -95,7 +100,7 @@ export function createIdentityService({ database, model, config, tokens, provide
         return { age, guardian };
     }
     const service = {
-        model, transaction, audit, activeUser, activeActor, passwordSnapshot, sameCredential, proveFactor,
+        model, transaction, audit, activeUser, activeActor, passwordSnapshot, sameCredential, proveFactor, notifyAccountCreated:onAccountCreated,
         sessionProvider: {
             async verifyActive({ userId, sessionId, jti, signal }) {
                 const row = await model.session(sessionId, userId, tokenHash(jti), { signal });
@@ -131,20 +136,18 @@ export function createIdentityService({ database, model, config, tokens, provide
                 await model.consent(c, id, 'PRIVACIDADE', input.privacyVersion, consentBasis);
                 if (age) await model.age(c, id, age);
                 if (guardian) await model.guardian(c, id, guardian);
+                await onAccountCreated?.(c,id);
                 await audit(c, age ? 'IDENTITY.REGISTERED' : 'IDENTITY.REGISTERED_UNVERIFIED', id, context);
                 return { ...userDto(await model.user(id, c)), ageVerified: Boolean(age) };
             }, context);
         },
         async login(input, context = {}) {
             const snapshot = await credential(input.email, input.password);
+            const allowedRoles = loginProfileRoles[input.profile];
+            if (input.profile !== undefined && !allowedRoles?.includes(snapshot.tipo_usuario)) throw ApiError.naoAutorizado();
             return transaction(async c => {
                 const user = await activeUser(c, snapshot.id_usuario); sameCredential(user, snapshot);
-                if (input.profile === 'CLIENTE' && user.tipo_usuario === 'FORNECEDOR') {
-                    throw new ApiError('Selecione Fornecedor para entrar com esta conta.', 403, null, 'LOGIN_SUPPLIER_PROFILE_REQUIRED');
-                }
-                if (input.profile === 'FORNECEDOR' && user.tipo_usuario !== 'FORNECEDOR') {
-                    throw new ApiError('Selecione Cliente para entrar com esta conta.', 403, null, 'LOGIN_CUSTOMER_PROFILE_REQUIRED');
-                }
+                if (allowedRoles && !allowedRoles.includes(user.tipo_usuario)) throw ApiError.naoAutorizado();
                 const factors = twoFactorEnabled ? await model.factors(c, user.id_usuario) : [];
                 if (factors.length) {
                     const factor = factors.find(f => f.metodo === 'APP') ?? factors[0];

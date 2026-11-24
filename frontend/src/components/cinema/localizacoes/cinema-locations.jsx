@@ -1,6 +1,5 @@
 "use client";
 
-import Footer from "@/components/Footer";
 import CinemaStyles from "./cinema-styles";
 import LocationPanel from "./location-panel";
 import EmptyPanel from "./empty-panel";
@@ -36,7 +35,6 @@ export default function CinemasPage() {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 }

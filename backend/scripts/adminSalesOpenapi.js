@@ -6,11 +6,15 @@ const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const json = schema => ({ 'application/json': { schema } });
 const param = (name, location, schema) => ({ name, in: location, required: location === 'path', schema });
 const definitions = {
-  list_admin_sales_orders: ['Listar pedidos', 200, null, ['limit', 'cursor', 'userId', 'customerName', 'status']],
-  list_admin_sales_payments: ['Listar pagamentos', 200, null, ['limit', 'cursor', 'userId', 'customerName', 'status', 'orderId']],
+  list_admin_sales_orders: ['Listar pedidos', 200, null, ['limit', 'cursor', 'userId', 'customerName', 'status', 'orderId','visibility']],
+  list_admin_sales_payments: ['Listar pagamentos', 200, null, ['limit', 'cursor', 'userId', 'customerName', 'status', 'orderId','visibility']],
   create_admin_order_draft: ['Criar proposta de pedido', 201, 'AdminSalesDraftCreate'],
   update_admin_order_draft: ['Editar proposta pendente', 200, 'AdminSalesDraft'],
   cancel_admin_order: ['Cancelar pedido pendente', 200, 'AdminSalesCancellation'],
+  create_admin_simulated_pix: ['Registrar Pix simulado pelo total reservado', 201, 'AdminSalesEmptyInput'],
+  archive_admin_orders: ['Arquivar pedido encerrado ou pago', 200, 'AdminSalesEmptyInput'],
+  archive_admin_payments: ['Arquivar pagamento concluído', 200, 'AdminSalesEmptyInput'],
+  archive_admin_refunds: ['Arquivar reembolso encerrado', 200, 'AdminSalesEmptyInput'],
   reconcile_admin_payment: ['Consultar e conciliar pagamento pelo provedor', 200],
   list_admin_payment_notes: ['Consultar notas administrativas do pagamento', 200],
   add_admin_payment_note: ['Adicionar nota ao pagamento', 201, 'AdminSalesPaymentNote'],
@@ -34,6 +38,7 @@ export function documentAdminSales(spec) {
     type:'object',additionalProperties:false,required:['reason'],
     properties:{reason:{type:'string',minLength:3,maxLength:1000}}
   };
+  schemas.AdminSalesEmptyInput = {type:'object',additionalProperties:false,properties:{}};
   schemas.OrderCheckoutInput = structuredClone(schemas.OrderCartInput);
   schemas.OrderCheckoutInput.properties.draftOrderId = { ...id, description: 'Proposta pendente do cliente, com os mesmos itens.' };
   spec.paths['/api/orders/checkout'].post.requestBody.content['application/json'].schema = ref('OrderCheckoutInput');
@@ -47,7 +52,10 @@ export function documentAdminSales(spec) {
     const parameters = query.map(name => param(name, 'query', name === 'limit'
       ? { type: 'integer', minimum: 1, maximum: 100 }
       : name === 'customerName' ? { type: 'string', minLength: 1, maxLength: 100, description: 'Trecho do nome do cliente.' }
-      : name === 'status' ? { type: 'string' } : id));
+      : name === 'status' ? { type: 'string' } : name==='visibility'?{type:'string',enum:['active','archived']}:id));
+    if(operationId==='create_admin_simulated_pix')parameters.push({
+      ...param('Idempotency-Key','header',{type:'string',minLength:8,maxLength:120}),required:true,
+    });
     const pathParam = path.match(/\{(\w+)\}/)?.[1];
     if (pathParam) parameters.push(param(pathParam, 'path', id));
     const responses = {

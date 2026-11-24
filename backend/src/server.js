@@ -6,7 +6,6 @@ import { runtimeConfig } from './config/runtime.js';
 import { createDatabase } from './config/database.js';
 import { createApp } from './app.js';
 import { simulatedPaymentProvider } from './providers/paymentProvider.js';
-import { brevoNewsletterEmailProvider } from './providers/newsletterEmailProvider.js';
 import { createLogModel } from './models/logModel.js';
 import { createLogQueue } from './services/logService.js';
 import { createLogRetention } from './jobs/logRetention.js';
@@ -14,6 +13,7 @@ import { createCheckoutExpiry } from './jobs/checkoutExpiry.js';
 import {createSubscriptionBillingJob} from './jobs/subscriptionBilling.js';
 import {createNewsletterDeliveryJob} from './jobs/newsletterDelivery.js';
 import {createSupportLiveExpiry} from './jobs/supportLiveExpiry.js';
+import {createTeamEntryExpiry} from './jobs/teamEntryExpiry.js';
 import { report, startRuntimeMonitor } from './utils/telemetry.js';
 
 export async function startServer(config, overrides = {}) {
@@ -82,7 +82,7 @@ export async function startServer(config, overrides = {}) {
         return shutdown;
     };
     try {
-        const newsletterEmailProvider = overrides.newsletterEmailProvider ?? (config.newsletterBrevo ? brevoNewsletterEmailProvider(config.newsletterBrevo) : undefined);
+        const newsletterEmailProvider = overrides.newsletterEmailProvider;
         app = createApp({ config, database, logQueue: queue, retention, lifecycle, identityProviders: overrides.identityProviders, captchaProvider: overrides.captchaProvider, paymentProvider: overrides.paymentProvider ?? (config.paymentMode === 'SIMULATED' ? simulatedPaymentProvider() : undefined), streamingProvider: overrides.streamingProvider, newsletterEmailProvider, assistantProvider: overrides.assistantProvider, ipcaProvider: overrides.ipcaProvider, storeFactory: overrides.storeFactory, registerCleanup: cleanup => { closeApp = cleanup; } });
         server = createServer(app);
         server.requestTimeout = config.httpTimeout;
@@ -95,7 +95,7 @@ export async function startServer(config, overrides = {}) {
         const newsletterDelivery=createNewsletterDeliveryJob(app.locals.newsletterDelivery);
         const supportLiveExpiry=createSupportLiveExpiry(app.locals.support);
         workers.push({ name: 'checkout_expiry', job: checkoutExpiry }, { name: 'subscription_billing', job: subscriptionBilling },
-            { name: 'support_live_expiry', job: supportLiveExpiry });
+            { name: 'support_live_expiry', job: supportLiveExpiry },{name:'team_entry_expiry',job:createTeamEntryExpiry(app.locals.teams)});
         if (app.locals.newsletterDeliveryEnabled) workers.push({ name: 'newsletter_delivery', job: newsletterDelivery });
         startWorkers = startWorkersWhenDatabaseReady().catch(error => report('worker_startup_failed', { error }));
         monitor = startRuntimeMonitor();

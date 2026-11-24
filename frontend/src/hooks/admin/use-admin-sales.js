@@ -12,6 +12,6 @@ export async function salesRequest(path, { method = 'GET', body, signal, idempot
   return readSessionResponse(response);
 }
 
-export function useAdminSales(path) {
-  return usePaginatedList(path, salesRequest);
+export function useAdminSales(path, remember) {
+  return usePaginatedList(path, salesRequest,{remember});
 }

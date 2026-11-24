@@ -1,17 +1,24 @@
-import { ArrowRight, Check } from "lucide-react"
+import { ArrowRight, Check, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { planModalities } from "@/lib/api/plan-subscription.mjs"
 import styles from "../ticket.module.css"
 
-export default function PlansCatalog({ list, plans, billing, setBilling, periodFor, startSubscription, pending }) {
+export default function PlansCatalog({ list, plans, billing, setBilling, modality, setModality, periodFor, startSubscription, pending }) {
   return (
       <section id="planos" className="mx-auto max-w-[1600px] scroll-mt-24 px-5 py-14 md:px-10 md:py-20">
         <div className="text-center">
-          <div className="mb-2 text-[10px] font-black tracking-[.25em] text-primary uppercase">Encontre seu plano</div>
-          <h2 className={`${styles.title} text-5xl font-black sm:text-6xl md:text-7xl`}>Escolha como viver o cinema<span className="text-primary">.</span></h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">Compare preços e benefícios. O acesso ao catálogo de streaming aparece nos planos que o incluem.</p>
-          <div className="mt-6 inline-flex items-center gap-1 rounded-full border border-border bg-card p-1.5">
-            <button type="button" disabled={pending} aria-pressed={billing === "monthly"} onClick={() => setBilling("monthly")} className={`rounded-full px-4 py-2 text-xs font-bold transition ${billing === "monthly" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>Mensal</button>
-            <button type="button" disabled={pending} aria-pressed={billing === "annual"} onClick={() => setBilling("annual")} className={`rounded-full px-4 py-2 text-xs font-bold transition ${billing === "annual" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>Anual</button>
+          <h2 className={`${styles.title} text-5xl font-black sm:text-6xl md:text-7xl`}>Compare os planos</h2>
+          <div className="mx-auto mt-6 grid max-w-lg grid-cols-1 gap-3 text-left sm:grid-cols-2">
+            <label className="grid gap-1 text-sm font-bold">Modalidade
+              <select className="min-h-11 rounded-lg border border-border bg-card px-3 font-normal" value={modality} onChange={event => setModality(event.target.value)} disabled={pending}>
+                {planModalities.map(option => <option key={option.id} value={option.id}>{option.name} · {option.members} {option.members === 1 ? 'pessoa' : 'pessoas'}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-bold">Período
+              <select className="min-h-11 rounded-lg border border-border bg-card px-3 font-normal" value={billing} onChange={event => setBilling(event.target.value)} disabled={pending}>
+                <option value="monthly">Mensal</option><option value="annual">Anual</option>
+              </select>
+            </label>
           </div>
         </div>
 
@@ -24,16 +31,19 @@ export default function PlansCatalog({ list, plans, billing, setBilling, periodF
             return (
               <article key={plan.id} className={`${styles.ticket} flex h-full flex-col overflow-hidden ${plan.accent ? "ring-1 ring-primary" : ""}`}>
                 <div className={`px-6 pb-6 pt-6 ${plan.accent ? "bg-primary/10" : ""}`}>
-                  <div className="flex items-center justify-between gap-3"><div className="grid size-11 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Icon className="size-5" /></div><span className={`rounded-full border px-2.5 py-1 text-[9px] font-black tracking-wider uppercase ${plan.accent ? "border-primary/30 bg-primary text-primary-foreground" : "border-border text-muted-foreground"}`}>{plan.badge}</span></div>
+                  <div className="grid size-11 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary"><Icon className="size-5" aria-hidden="true" /></div>
                   <h3 className={`${styles.title} mt-5 text-3xl font-black`}>{plan.name}</h3>
-                  <p className="mt-2 min-h-10 text-sm leading-5 text-muted-foreground">{plan.tagline}</p>
-                  <div className="mt-5 flex flex-wrap items-baseline gap-1"><span className={`${styles.title} text-5xl font-black`}>{plan.priceLabel}</span>{plan.available && <span className="text-xs text-muted-foreground">{periodFor}</span>}</div>
+                  <div className="mt-5 flex flex-wrap items-baseline gap-1"><span className={`${styles.title} text-5xl font-black tabular-nums`}>{plan.priceLabel}</span>{plan.available && <span className="text-xs text-muted-foreground">{periodFor}</span>}</div>
                 </div>
                 <div className={styles.tear} aria-hidden="true" />
                 <div className={`${styles.stub} flex flex-1 flex-col p-6 pt-5`}>
-                  <div className="mb-4 text-[10px] font-black tracking-[.2em] text-muted-foreground uppercase">O que está incluído</div>
+                  <h4 className="mb-4 text-sm font-bold">Benefícios</h4>
                   <ul className="mb-7 flex-1 space-y-3">
-                    {plan.benefits.map((benefit) => <li key={benefit} className="flex items-start gap-2.5 text-sm leading-5"><Check className="mt-0.5 size-4 shrink-0 text-primary" /><span>{benefit}</span></li>)}
+                    {plan.benefitRows.map(({ label, included }) => <li key={label} className="flex items-start gap-2.5 text-sm leading-5">
+                      {included ? <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /> :
+                        <Minus className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />}
+                      <span>{label}<span className={included ? "sr-only" : "block text-xs text-muted-foreground"}>{included ? " incluído" : "Indisponível"}</span></span>
+                    </li>)}
                   </ul>
                   <Button disabled={pending || !plan.available} onClick={() => startSubscription(plan.id)} className="h-auto min-h-9 w-full whitespace-normal" variant={plan.accent ? "default" : "outline"}>{plan.available ? `Escolher ${plan.name}` : "Indisponível neste período"} <ArrowRight className="size-4 shrink-0" /></Button>
                 </div>

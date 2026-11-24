@@ -2,22 +2,30 @@ import {idString} from '../utils/dto.js';
 const rows=async(c,sql,args=[])=> (await c.execute(sql,args))[0];
 const one=async(c,sql,args=[])=> (await rows(c,sql,args))[0]??null;
 const projection='id_suporte,id_cliente,id_atendente,assunto,status,data_abertura,prazo_resposta_em,primeira_resposta_em,ultima_interacao_em,data_fechamento';
+const requester = ', (SELECT nome FROM usuarios WHERE id_usuario=id_cliente) AS cliente_nome, (SELECT tipo_usuario FROM usuarios WHERE id_usuario=id_cliente) AS cliente_papel';
 
 export function createSupportModel(){return {
-    support:(c,id,lock=false)=>one(c,`SELECT ${projection} FROM suporte WHERE id_suporte=?${lock?' FOR UPDATE':''}`,[id]),
-    ownerList:(c,owner,limit,cursor)=>rows(c,`SELECT ${projection} FROM suporte WHERE id_cliente=? AND id_suporte>? ORDER BY id_suporte LIMIT ?`,[owner,cursor,limit+1]),
-    queue:(c,limit,cursor,status,q)=>rows(c,`SELECT ${projection} FROM suporte WHERE id_suporte>?${status==='ALL'?'':status?' AND status=?':" AND status IN ('ABERTO','EM_ATENDIMENTO')"}${q?" AND CONCAT_WS(' ',id_suporte,id_cliente,assunto) LIKE ? ESCAPE '!'":''} ORDER BY id_suporte LIMIT ?`,[cursor,...(status&&status!=='ALL'?[status]:[]),...(q?[`%${q.replace(/[!%_]/g,value=>`!${value}`)}%`]:[]),limit+1]),
+    support:(c,id,lock=false)=>one(c,`SELECT ${projection},mensagem${requester} FROM suporte WHERE id_suporte=?${lock?' FOR UPDATE':''}`,[id]),
+    ownerList(c,owner,limit,cursor,order) {
+        const recent=order==='desc';
+        const filter=recent?(cursor==='0'?'':' AND id_suporte<?'):' AND id_suporte>?';
+        return rows(c,`SELECT ${projection} FROM suporte WHERE id_cliente=?${filter} ORDER BY id_suporte ${recent?'DESC':'ASC'} LIMIT ?`,
+            filter?[owner,cursor,limit+1]:[owner,limit+1]);
+    },
+    queue:(c,limit,cursor,status,q)=>rows(c,`SELECT ${projection}${requester} FROM suporte WHERE id_suporte>?${status==='ALL'?'':status?' AND status=?':" AND status IN ('ABERTO','EM_ATENDIMENTO')"}${q?" AND CONCAT_WS(' ',id_suporte,id_cliente,assunto,(SELECT nome FROM usuarios WHERE id_usuario=id_cliente)) LIKE ? ESCAPE '!'":''} ORDER BY id_suporte LIMIT ?`,[cursor,...(status&&status!=='ALL'?[status]:[]),...(q?[`%${q.replace(/[!%_]/g,value=>`!${value}`)}%`]:[]),limit+1]),
     adminUser:(c,id)=>one(c,"SELECT id_usuario FROM usuarios WHERE id_usuario=? AND tipo_usuario='ADMIN' AND status='ATIVO'",[id]),
     async create(c,owner,input){const [result]=await c.execute("INSERT INTO suporte(id_cliente,assunto,mensagem,status,data_abertura,prazo_resposta_em,ultima_interacao_em) VALUES(?,?,?,'ABERTO',UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL 5 DAY),UTC_TIMESTAMP())",[owner,input.subject,input.message]);return idString(result.insertId);},
-    async append(c,id,author,role,message){const [result]=await c.execute("INSERT INTO suporte_mensagens(id_suporte,id_autor,papel,mensagem,registrada_em,origem) VALUES(?,?,?,?,UTC_TIMESTAMP(),'NOVA')",[id,author,role,message]);return idString(result.insertId);},
+    async append(c,id,author,role,message,origin='NOVA'){const [result]=await c.execute('INSERT INTO suporte_mensagens(id_suporte,id_autor,papel,mensagem,registrada_em,origem) VALUES(?,?,?,?,UTC_TIMESTAMP(),?)',[id,author,role,message,origin]);return idString(result.insertId);},
+    edit:(c,id,input)=>c.execute('UPDATE suporte SET assunto=?,mensagem=?,ultima_interacao_em=UTC_TIMESTAMP() WHERE id_suporte=?',[input.subject,input.message,id]),
+    cancel:(c,id)=>c.execute("UPDATE suporte SET status='CANCELADO',data_fechamento=UTC_TIMESTAMP() WHERE id_suporte=?",[id]),
     messages(c,id,limit,cursor,order){
         const newestFirst=order==='desc';
         const cursorFilter=newestFirst?(cursor==='0'?'':' AND id_mensagem<?'):' AND id_mensagem>?';
         const direction=newestFirst?'DESC':'ASC';
-        return rows(c,`SELECT id_mensagem,id_autor,papel,mensagem,registrada_em,origem FROM suporte_mensagens WHERE id_suporte=?${cursorFilter} ORDER BY id_mensagem ${direction} LIMIT ?`,cursorFilter?[id,cursor,limit+1]:[id,limit+1]);
+        return rows(c,`SELECT id_mensagem,id_autor,papel,mensagem,registrada_em,origem,(SELECT nome FROM usuarios WHERE id_usuario=id_autor) AS autor_nome FROM suporte_mensagens WHERE id_suporte=?${cursorFilter} ORDER BY id_mensagem ${direction} LIMIT ?`,cursorFilter?[id,cursor,limit+1]:[id,limit+1]);
     },
     lastAdminMessage:(c,id)=>one(c,"SELECT id_mensagem FROM suporte_mensagens WHERE id_suporte=? AND papel='ADMIN' ORDER BY id_mensagem DESC LIMIT 1",[id]),
-    lastClientMessage:(c,id)=>one(c,"SELECT id_mensagem FROM suporte_mensagens WHERE id_suporte=? AND papel='CLIENTE' ORDER BY id_mensagem DESC LIMIT 1",[id]),
+    lastClientMessage:(c,id)=>one(c,"SELECT id_mensagem FROM suporte_mensagens WHERE id_suporte=? AND papel<>'ADMIN' ORDER BY id_mensagem DESC LIMIT 1",[id]),
     assign:(c,id,adminId)=>c.execute('UPDATE suporte SET id_atendente=? WHERE id_suporte=? AND id_atendente IS NULL',[adminId,id]),
     latestResponse:(c,id,message)=>c.execute('UPDATE suporte SET resposta=?,primeira_resposta_em=COALESCE(primeira_resposta_em,UTC_TIMESTAMP()),ultima_interacao_em=UTC_TIMESTAMP() WHERE id_suporte=?',[message,id]),
     clientInteraction:(c,id,reopen)=>c.execute(`UPDATE suporte SET ultima_interacao_em=UTC_TIMESTAMP()${reopen?",status='ABERTO',prazo_resposta_em=DATE_ADD(UTC_TIMESTAMP(),INTERVAL 5 DAY),primeira_resposta_em=NULL":''} WHERE id_suporte=?`,[id]),

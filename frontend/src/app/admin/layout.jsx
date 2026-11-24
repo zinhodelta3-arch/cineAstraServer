@@ -12,7 +12,7 @@ export const metadata = {
 
 export default async function AdminLayout({ children }) {
   const user = await currentUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/login?perfil=equipe");
   if (user.role !== "ADMIN") redirect(loginDestination(user.role) || "/cinema/home");
   return <SessionProvider initialUser={sessionUserDto(user)}><AdminShell>{children}</AdminShell><FloatingAssistant key={user.id} signedIn role={user.role} /></SessionProvider>;
 }

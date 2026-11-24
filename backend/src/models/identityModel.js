@@ -19,9 +19,13 @@ export function createIdentityModel(database) {
     }
     return {
         user: (id, c = database, lock = false) => one(c, `SELECT ${USER} FROM usuarios WHERE id_usuario = ?${lock ? ' FOR UPDATE' : ''}`, [id]),
-        supervisorLocation: (c, id) => one(c, 'SELECT sl.id_local,l.nome AS local_nome FROM supervisor_locais sl JOIN locais l ON l.id_local = sl.id_local WHERE sl.id_supervisor = ? FOR UPDATE', [id]),
+        supervisorLocation: (c, id, lock = false) => one(c, `SELECT sl.id_local,l.nome AS local_nome FROM supervisor_locais sl JOIN locais l ON l.id_local = sl.id_local WHERE sl.id_supervisor = ?${lock?' FOR UPDATE':''}`, [id]),
         location: (c, id) => one(c, 'SELECT id_local,nome,status FROM locais WHERE id_local = ?', [id]),
-        activeSupervisorTeamLocations: (c, id) => rows(c, "SELECT sa.id_local FROM equipes e JOIN sessoes s ON s.id_sessao = e.id_sessao JOIN salas sa ON sa.id_sala = s.id_sala WHERE e.id_supervisor = ? AND e.status = 'ATIVA' FOR UPDATE", [id]),
+        supervisorsAtLocation: (c,id) => rows(c,'SELECT id_supervisor FROM supervisor_locais WHERE id_local=? ORDER BY id_supervisor LIMIT 3 FOR UPDATE',[id]),
+        activeSupervisorTeamLocations: (c, id) => rows(c,`SELECT sa.id_local FROM equipes e JOIN sessoes s ON s.id_sessao=e.id_sessao
+            JOIN salas sa ON sa.id_sala=s.id_sala WHERE e.id_supervisor=? AND e.status='ATIVA'
+            AND s.status IN ('AGENDADA','EM_CARTAZ')
+            AND TIMESTAMP(IF(s.horario_fim<s.horario_inicio,DATE_ADD(s.data,INTERVAL 1 DAY),s.data),s.horario_fim)>UTC_TIMESTAMP() FOR UPDATE`,[id]),
         setSupervisorLocation: (c, id, localId) => c.execute('INSERT INTO supervisor_locais (id_supervisor,id_local) VALUES (?,?) ON DUPLICATE KEY UPDATE id_local = VALUES(id_local), atribuido_em = CURRENT_TIMESTAMP(3)', [id, localId]),
         clearSupervisorLocation: (c, id) => c.execute('DELETE FROM supervisor_locais WHERE id_supervisor = ?', [id]),
         byEmail: email => one(database, `SELECT ${USER} FROM usuarios WHERE email_normalizado = ?`, [email]),

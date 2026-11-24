@@ -8,7 +8,7 @@ const object=(properties,required=Object.keys(properties))=>({type:'object',addi
 const ref=name=>({$ref:`#/components/schemas/${name}`});
 const response=data=>({description:'Sucesso',content:{'application/json':{schema:object({success:{type:'boolean',enum:[true]},data,requestId:{type:'string',format:'uuid'}})}}});
 const nullableId={...id,nullable:true};
-const statusReq={type:'string',enum:['PENDENTE','APROVADA','RECUSADA','FINALIZADA']};
+const statusReq={type:'string',enum:['PENDENTE','APROVADA','RECUSADA','FINALIZADA','CANCELADA']};
 const statusShip={type:'string',enum:['PENDENTE','ENVIADO','EM_TRANSITO','RECEBIDO','CANCELADO','DEVOLVIDO']};
 const distance={type:'string',pattern:'^[0-9]{1,6}(?:\\.[0-9]{1,2})?$'};
 const duration={type:'integer',minimum:1,maximum:10080};
@@ -22,12 +22,14 @@ const stockRequest = spec.components.schemas.StockRequest;
 Object.assign(stockRequest.properties, {
     status_supervisao: { type:'string', nullable:true, enum:['PENDENTE','APROVADA','RECUSADA',null] },
     id_supervisor_decisao: nullableId,
-    data_decisao_supervisao: { type:'string', nullable:true }
+    data_decisao_supervisao: { type:'string', nullable:true },
+    fornecedor:{type:'string',nullable:true},
+    entrega:{...object({id_logistica:id,status:statusShip,envio:{type:'string',nullable:true},recebimento:{type:'string',nullable:true}}),nullable:true}
 });
-stockRequest.required.push('status_supervisao','id_supervisor_decisao','data_decisao_supervisao');
+stockRequest.required.push('status_supervisao','id_supervisor_decisao','data_decisao_supervisao','fornecedor','entrega');
 spec.components.schemas.Logistics=object({id_logistica:id,id_fornecedor:id,id_local_origem:nullableId,id_local_destino:id,id_solicitacao:nullableId,id_insumo_origem:nullableId,id_equipamento_origem:nullableId,id_insumo_destino:nullableId,quantidade:{type:'integer',nullable:true},status:statusShip,data_envio:{type:'string',nullable:true},data_prevista:{type:'string',nullable:true},data_recebimento:{type:'string',nullable:true},data_devolucao:{type:'string',nullable:true},id_usuario_recebimento:nullableId,id_usuario_devolucao:nullableId,observacao:{type:'string',nullable:true},devolucao_disponivel:{type:'boolean'}});
 const logistics = spec.components.schemas.Logistics;
-Object.assign(logistics.properties,{id_transporte:nullableId,nome_transporte:{type:'string',nullable:true},
+Object.assign(logistics.properties,{id_transporte:nullableId,nome_transporte:{type:'string',nullable:true},nome_item:{type:'string',nullable:true},
     id_rota_referencia:{...nullableId,description:'Rota ativa usada no envio, quando disponível.'},
     distancia_rota_km:{...distance,nullable:true,description:'Distância de referência no envio.'},
     tempo_rota_min:{...duration,nullable:true,description:'Tempo de referência no envio.'}});
@@ -35,7 +37,14 @@ logistics.required.push('id_transporte','nome_transporte','id_rota_referencia','
 const incidentTypes = ['ACIDENTE','EXTRAVIO','PERDA'];
 const eventId = {type:'string',pattern:'^[1-9][0-9]{0,19}$'};
 spec.components.schemas.LogisticsEvent=object({id_evento:eventId,id_usuario:id,tipo:{type:'string',enum:['STATUS',...incidentTypes]},status:statusShip,descricao:{type:'string',nullable:true},criado_em:{type:'string'}});
-spec.components.schemas.LocalStock=object({id_local:id,inputs:{type:'array',items:object({id_insumo:id,id_fornecedor:id,nome:{type:'string'},quantidade:{type:'integer'},disponivel:{type:'integer'},status:{type:'string',enum:['EM_ESTOQUE','SEM_ESTOQUE']}})},equipment:{type:'array',items:object({id_equipamento:id,id_fornecedor:id,nome:{type:'string'},quantidade:{type:'integer'},status:{type:'string',enum:['EM_ESTOQUE','SEM_ESTOQUE']}})},a_chegar:{type:'array',items:object({id_logistica:id,id_insumo:nullableId,id_equipamento:nullableId,nome:{type:'string'},quantidade:{type:'integer'},status:statusShip})}});
+const itemStock={id_fornecedor:id,nome:{type:'string'},quantidade:{type:'integer'},
+    status:{type:'string',enum:['EM_ESTOQUE','SEM_ESTOQUE']},movimentavel:{type:'boolean'}};
+spec.components.schemas.LocalStock=object({
+    id_local:id,can_record:{type:'boolean',description:'O perfil pode registrar movimentações avulsas nesta unidade.'},
+    inputs:{type:'array',items:object({id_insumo:id,...itemStock,disponivel:{type:'integer'}})},
+    equipment:{type:'array',items:object({id_equipamento:id,...itemStock})},
+    a_chegar:{type:'array',items:object({id_logistica:id,id_insumo:nullableId,id_equipamento:nullableId,nome:{type:'string'},quantidade:{type:'integer'},status:statusShip})}
+});
 const list=schema=>object({items:{type:'array',items:ref(schema)},pagination:ref('Pagination')});
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for(const r of supplyOperations){
@@ -49,7 +58,7 @@ for(const r of supplyOperations){
         : r.action==='sources'
         ? 'Origens disponíveis para reposição no cinema do supervisor ou da equipe do colaborador.'
         : r.path.startsWith('/api/admin/')
-        ? 'Exclusivo para ADMIN. Cada direção possui uma rota de referência que pode ser editada, arquivada ou reativada.'
+        ? 'Exclusivo para ADMIN. A operação preserva o histórico vinculado.'
         : 'Escopo por ADMIN, fornecedor proprietário, supervisor do cinema atribuído ou colaborador membro ativo da equipe da sessão. O envio usa a duração da rota ativa para registrar a previsão de chegada quando disponível.';
     const op={operationId:r.operationId,tags:['Suprimentos'],summary:r.operationId.replaceAll('_',' '),description,security:[{bearerAuth:[]}],parameters:[],responses:{}};
     if(r.path.includes('{id}'))op.parameters.push({name:'id',in:'path',required:true,schema:id});
@@ -59,7 +68,7 @@ for(const r of supplyOperations){
     }else if(r.action==='sources'){
         op.parameters.push({name:'localId',in:'query',schema:id},{name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},
             {name:'cursor',in:'query',schema:id},{name:'kind',in:'query',schema:{type:'string',enum:['input','equipment'],default:'input'}});
-        const source={nome:{type:'string'},id_local_origem:id,nome_origem:{type:'string'},disponivel:{type:'integer',minimum:1}};
+        const source={nome:{type:'string'},id_local_origem:id,nome_origem:{type:'string'},fornecedor:{type:'string',nullable:true},disponivel:{type:'integer',minimum:1}};
         op.responses['200']=response(object({
             items:{type:'array',items:{oneOf:[object({id_insumo:id,...source}),object({id_equipamento:id,...source})]}},
             pagination:ref('Pagination')
@@ -82,9 +91,13 @@ for(const r of supplyOperations){
         op.parameters.push({name:'localId',in:'query',required:true,schema:id},{name:'sessionId',in:'query',schema:id});
         op.responses['200']=response(ref('LocalStock'));
     }else if(['requests','shipments'].includes(r.action)){
+        op.parameters.push({name:'q',in:'query',schema:{type:'string',minLength:1,maxLength:120}});
         op.parameters.push({name:'localId',in:'query',schema:id},{name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:id});
         op.parameters.push({name:'sessionId',in:'query',schema:id});
-        if(r.action==='requests')op.parameters.push({name:'status',in:'query',schema:statusReq});
+        if(r.action==='requests')op.parameters.push({name:'status',in:'query',schema:statusReq},{name:'requestId',in:'query',schema:id},
+            {name:'supervision',in:'query',schema:{type:'string',enum:['PENDENTE']}},
+            {name:'withoutShipment',in:'query',schema:{type:'string',enum:['true']}});
+        else op.parameters.push({name:'supplierId',in:'query',schema:id},{name:'requestId',in:'query',schema:id});
         op.responses['200']=response(list(name));
     }else if(r.action==='createRequest'){
         op.description+=' Solicitações de colaboradores aguardam revisão do supervisor antes de aparecerem para o fornecedor.';
@@ -93,6 +106,22 @@ for(const r of supplyOperations){
     }else if(r.action==='review'){
         op.requestBody={required:true,content:{'application/json':{schema:object({decision:{type:'string',enum:['APROVADA','RECUSADA']}})}}};
         op.responses['200']=response(ref('StockRequest'));
+    }else if(r.action==='approve'){
+        op.description+=' O ADMIN pode deixar a solicitação aprovada para preparar a entrega depois.';
+        op.requestBody={required:false,content:{'application/json':{schema:object({prepareShipment:{type:'boolean',default:true}},[])}}};
+        op.responses['200']=response(ref('StockRequest'));
+    }else if(['editRequest','createShipment','editShipment'].includes(r.action)){
+        const note={type:'string',nullable:true,maxLength:2000};
+        const fields={editRequest:{quantity:{type:'integer',minimum:1,maximum:2147483647},note},createShipment:{requestId:id},editShipment:{transportId:nullableId,note}};
+        const creating=r.action==='createShipment';
+        op.requestBody={required:true,content:{'application/json':{schema:{...object(fields[r.action],creating?['requestId']:[]),minProperties:1}}}};
+        op.responses[creating?'201':'200']=response(ref(name));
+    }else if(r.action==='dispatchOptions'){
+        op.description='ADMIN ou fornecedor proprietário. Retorna a rota ativa e o transporte planejado ou mais recente disponível para o percurso.';
+        op.parameters.push({name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:id});
+        const transport=object({id_transporte:id,nome:{type:'string'},identificacao:{type:'string',nullable:true}});
+        op.responses['200']=response(object({items:{type:'array',items:transport},pagination:ref('Pagination'),
+            route:{...object({id_rota:id,...routeMetrics}),nullable:true},preferred:{...transport,nullable:true}}));
     }else if(r.action==='send'){
         op.description+=' Exige transporte ativo, próprio do fornecedor e sem entrega em andamento. Se houver rota ativa, registra seus dados de referência no envio.';
         op.requestBody={required:true,content:{'application/json':{schema:object({transportId:id})}}};

@@ -1,6 +1,7 @@
 import {ApiError} from '../utils/ApiError.js';
 import {unavailableAssistantProvider} from '../providers/assistantProvider.js';
-import {normalizeQuestion,restrictedQuestion,roleGuidance,sensitiveText} from './assistantKnowledge.js';
+import {actionRequest,normalizeQuestion,restrictedQuestion,roleGuidance,sensitiveText} from './assistantKnowledge.js';
+import {streamingHelp} from './streamingHelp.js';
 
 export function createAssistantService({identity,support,provider=unavailableAssistantProvider}){
     const authenticatedRole=context=>identity.transaction(async c=>(await identity.activeActor(c,context)).tipo_usuario,context);
@@ -13,8 +14,14 @@ export function createAssistantService({identity,support,provider=unavailableAss
             const question=normalizeQuestion(input.message);
             if(sensitiveText.test(input.message)||sensitiveText.test(question))return local('Retire dados pessoais ou credenciais e envie somente a dúvida sobre o CineAstra.');
             if(restrictedQuestion.test(question))return local('Informações internas e dados privados são restritos. Posso orientar sobre as funções disponíveis para a sua conta.');
+            if(actionRequest.test(question))return {...local('Posso explicar como fazer isso na sua área do CineAstra. Para executar a operação, use as opções do seu painel.'),available:false};
             if(role!=='CLIENTE')return local(roleGuidance(role,question));
-            const fallback=()=>({...local(roleGuidance(role,question)), available:false});
+            const streamingTopic=input.area==='streaming'&&streamingHelp.find(item=>item.pattern.test(question));
+            if(streamingTopic)return local(streamingTopic.answer);
+            const fallback=()=>{
+                const guidance=roleGuidance(role,question,{matchedOnly:true});
+                return guidance ? local(guidance) : {...local(roleGuidance(role,question)),available:false};
+            };
             if(provider.available!==true)return fallback();
             // O provedor recebe a dúvida, sem acesso à identidade ou à sessão do cliente.
             try{const answer=await provider.answer({message:input.message,signal:context.signal});

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { ChevronDown, MapPin } from 'lucide-react';
 
 const loadThreshold = 64;
 
@@ -50,8 +50,10 @@ export default function FilmAvailability({ film }) {
         <option value="">Todos os cinemas carregados</option>
         {locations.items.map(local => <option key={local.id_local} value={local.id_local}>{local.nome} · {local.cidade}, {local.estado}</option>)}
       </select>
+      {!cinemaFilter && (locations.items.length > 3 || locations.cursor) && <p className="cf-scroll-hint" id="cf-location-scroll-hint"><ChevronDown size={15} aria-hidden="true"/> Role a lista para ver outros cinemas</p>}
       <div id="cf-availability-list" ref={listRef} className="cf-availability-scroll" role="region"
-        tabIndex={cinemaFilter ? undefined : 0} aria-label="Lista de cinemas e disponibilidade" onScroll={handleScroll}>
+        tabIndex={cinemaFilter ? undefined : 0} aria-label="Lista de cinemas e disponibilidade"
+        aria-describedby={!cinemaFilter&&(locations.items.length>3||locations.cursor)?'cf-location-scroll-hint':undefined} onScroll={handleScroll}>
         <div className="cf-availability-list">
           {visibleLocations.map(local => {
             const id = String(local.id_local);

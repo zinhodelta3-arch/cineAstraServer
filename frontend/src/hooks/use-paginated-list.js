@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTablePreference } from './use-table-preference';
 
 function queryFor(path) {
   return new URLSearchParams(path?.split('?')[1] ?? '');
@@ -14,12 +15,23 @@ function pagePath(path, limit, cursor) {
 }
 
 // As tabelas mantêm só a página atual. loadMore é reservado aos seletores de opções.
-export function usePaginatedList(path, request, { mode = 'list', refreshKey = 0, itemKey } = {}) {
+export function usePaginatedList(path, request, { mode = 'list', refreshKey = 0, itemKey, remember } = {}) {
   const initialSize = Number(queryFor(path).get('limit')) || 20;
+  const [saved, save, ready, preferenceKey] = useTablePreference(remember && path ? `${remember}:${path}` : null, null);
+  const restorationKey = preferenceKey ?? path;
   const [navigation, setNavigation] = useState({ path, initialized: path != null, pageSize: initialSize, index: 0, cursors: [null], revision: 0 });
   const current = navigation.path === path ? navigation : { ...navigation, path, initialized: navigation.initialized || path != null, index: 0, cursors: [null], pageSize: navigation.initialized ? navigation.pageSize : initialSize };
   const cursor = mode === 'list' ? current.cursors[current.index] : null;
-  const target = path == null ? null : mode === 'list' ? pagePath(path, current.pageSize, cursor) : path;
+  const [restored, setRestored] = useState(null);
+  useEffect(()=>{
+    if(!remember||!path||!ready||restored===restorationKey)return;
+    const valid = Array.isArray(saved?.cursors) && saved.cursors.length <= 100 && Number.isInteger(saved.index) &&
+      saved.index>=0 && saved.index<saved.cursors.length && [10,20,50,100].includes(saved.pageSize) &&
+      saved.cursors.every((value,index)=>index===0?value===null:typeof value==='string'&&/^\d{1,20}$/.test(value));
+    setNavigation(previous=>({...previous,path,initialized:true,pageSize:valid?saved.pageSize:initialSize,index:valid?saved.index:0,cursors:valid?saved.cursors:[null]}));
+    setRestored(restorationKey);
+  },[remember,path,ready,restored,restorationKey,saved,initialSize]);
+  const target = path == null || remember && (!ready || restored!==restorationKey) ? null : mode === 'list' ? pagePath(path, current.pageSize, cursor) : path;
   const key = JSON.stringify([target, current.revision, refreshKey]);
   const empty = { key, items: [], data: null, nextCursor: null, loading: path != null, loadingMore: false, error: null };
   const [state, setState] = useState(empty);
@@ -63,13 +75,15 @@ export function usePaginatedList(path, request, { mode = 'list', refreshKey = 0,
     const cursors = nextPage && current.cursors[page - 1] !== visible.nextCursor
       ? [...current.cursors.slice(0, current.index + 1), visible.nextCursor] : current.cursors;
     setNavigation({ ...current, index: page - 1, cursors });
+    if(remember&&cursors.length<=100)save({index:page-1,cursors,pageSize:current.pageSize});
   }
   function setPageSize(size) {
     if (![10, 20, 50, 100].includes(size) || visible.loadingMore) return;
     setNavigation({ ...current, pageSize: size, index: 0, cursors: [null] });
+    if(remember)save({index:0,cursors:[null],pageSize:size});
   }
   function reload() {
-    setNavigation({ ...current, index: 0, cursors: [null], revision: current.revision + 1 });
+    setNavigation({ ...current, revision: current.revision + 1 });
   }
   async function loadMore() {
     if (mode !== 'list' || target == null || busy.current || visible.loading || !visible.nextCursor) return;

@@ -8,10 +8,12 @@ import { useSessionSeatData } from "@/hooks/cinema/sessao/use-session-seat-data"
 import { useSeatSelection } from "@/hooks/cinema/sessao/use-seat-selection";
 import { useSession } from "@/hooks/auth/use-session";
 import SeatMap from "./seat-map";
+import { venueTypes } from "@/lib/api/cinema-locations.mjs";
 import styles from "./seat-selection.module.css";
 
 function Selection({ session }) {
   const selection = useSeatSelection(session);
+  const spaceType = session.cinema.spaceType ?? 'CINEMA';
   return (
     <main className={styles.page}>
       <div className={styles.perforation} aria-hidden="true" />
@@ -23,8 +25,9 @@ function Selection({ session }) {
         <div className={styles.layout}>
           <div className={styles.stage}>
             <header className={styles.heading}><h1>Escolha seu <em>lugar.</em></h1><p>Uma boa história começa com o seu lugar na sala.</p></header>
-            <div className={styles.mapHeading}><h2>Selecione seus assentos</h2><span>{session.cinema.room} · {session.format}</span></div>
-            <SeatMap selection={selection} seats={session.seatMap} />
+            <div className={styles.mapHeading}><h2>Selecione seus assentos</h2><span>{[venueTypes[spaceType], session.cinema.room, session.format].filter(Boolean).join(' · ')}</span></div>
+            <SeatMap selection={selection} seats={session.seatMap} spaceType={spaceType}
+              sceneUrl={`/locations/${session.localId}/rooms/${session.roomId}/scene`} />
 <SeatTypes />
             <p className={styles.demo}>Disponibilidade consultada agora. Os assentos são reservados somente ao confirmar o pedido.</p>
           </div>

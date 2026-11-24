@@ -12,6 +12,9 @@ const sections = [
   { href: '/admin/marketing/parceiros', label: 'Parceiros' },
   { href: '/admin/marketing/categorias', label: 'Categorias' },
   { href: '/admin/marketing/campanhas', label: 'Campanhas' },
+  { href: '/admin/precificacao/promocoes', label: 'Promoções de compra' },
+  { href: '/admin/marketing/noticias', label: 'Notícias' },
+  { href: '/admin/relatorios/destinacao-social', label: 'Destinação social' },
   { href: '/admin/marketing/conteudo', label: 'Conteúdo' }
 ];
 export const label = value => String(value ?? '—').replaceAll('_', ' ').toLocaleLowerCase('pt-BR').replace(/^./, letter => letter.toLocaleUpperCase('pt-BR'));

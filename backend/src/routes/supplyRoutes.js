@@ -19,10 +19,16 @@ export const supplyOperations=[
     ['get','/api/stock/requests/{id}','get_stock_request','request'],
     ['post','/api/stock/requests/{id}/approve','approve_stock_request','approve'],
     ['post','/api/stock/requests/{id}/refuse','refuse_stock_request','refuse'],
+    ['patch','/api/admin/stock/requests/{id}','edit_stock_request','editRequest'],
+    ['delete','/api/admin/stock/requests/{id}','cancel_stock_request','cancelRequest'],
+    ['post','/api/admin/logistics','create_admin_shipment','createShipment'],
+    ['patch','/api/admin/logistics/{id}','edit_admin_shipment','editShipment'],
+    ['delete','/api/admin/logistics/{id}','cancel_admin_shipment','cancel'],
     ['get','/api/logistics','list_logistics','shipments'],
     ['get','/api/logistics/{id}','get_logistics','shipment'],
     ['post','/api/logistics/{id}/send','send_logistics','send'],
     ['get','/api/logistics/{id}/history','logistics_history','history'],
+    ['get','/api/logistics/{id}/dispatch-options','list_dispatch_options','dispatchOptions'],
     ['post','/api/logistics/{id}/incidents','report_logistics_incident','incident'],
     ['post','/api/logistics/{id}/transit','transit_logistics','transit'],
     ['post','/api/logistics/{id}/receive','receive_logistics','receive'],
@@ -39,6 +45,10 @@ export function supplyRoutes(controller,{auth}){
         if(r.action==='requests'||r.action==='shipments'||r.action==='stock')middle.push(supplyQuery(r.action==='requests'?supplySchemas.requestsQuery:r.action==='stock'?supplySchemas.stockQuery:supplySchemas.shipmentsQuery));
         if(r.action==='createRequest')middle.push(validateBody(supplySchemas.request));
         if(r.action==='review')middle.push(validateBody(supplySchemas.supervisorReview));
+        if(r.action==='approve')middle.push(validateBody(supplySchemas.approval));
+        const adminBody={editRequest:'requestPatch',createShipment:'shipmentCreate',editShipment:'shipmentPatch'}[r.action];
+        if(adminBody)middle.push(validateBody(supplySchemas[adminBody]));
+        if(r.action==='dispatchOptions')middle.push(supplyQuery(supplySchemas.dispatchOptions));
         if(r.action==='send')middle.push(validateBody(supplySchemas.dispatch));
         if(r.action==='incident')middle.push(validateBody(supplySchemas.incident));
         if(r.action==='history')middle.push(supplyQuery(supplySchemas.shipmentHistory));

@@ -5,61 +5,20 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  CalendarDays,
   Clapperboard,
   Newspaper,
-  Theater,
+  Info,
   Trees,
   Users,
   X,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { articlePath, newsPath } from "@/lib/content/cineastra-news.mjs";
+import { publicGet } from "@/lib/api/public-api.mjs";
 import { cn } from "@/lib/utils";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 
-/* ============ DADOS (resumo das notícias do site) ============ */
-// ⚠ Confirme data e horários antes de publicar (mesmos valores do mural).
-const EVENTO = {
-  filme: "Vingadores: Doomsday",
-  data: "Sáb, 14 Nov",
-  abertura: "18:00",
-  inicio: "19:30",
-};
-
-const ATUALIZADO_EM = "22 de outubro de 2026";
-
-const NOTICIAS = [
-  {
-    id: "n-2",
-    categoria: "Transmissões",
-    titulo: `${EVENTO.filme} ao ar livre`,
-    resumo: "Sessão gratuita no Parque Linear de São Caetano do Sul. Leve cadeira e manta.",
-    icon: Clapperboard,
-    destaque: true,
-  },
-  {
-    id: "n-1",
-    categoria: "Parcerias",
-    titulo: "Parceria com o Parque Linear",
-    resumo: "Cinema e cultura dentro do parque, abertos à comunidade.",
-    icon: Trees,
-  },
-  {
-    id: "n-3",
-    categoria: "Parcerias",
-    titulo: "Conversas com teatros e cinemas",
-    resumo: "Rede cultural local com programação conjunta.",
-    icon: Theater,
-  },
-  {
-    id: "n-5",
-    categoria: "Comunidade",
-    titulo: "Indique o próximo filme",
-    resumo: "Sugira títulos e locais para as próximas sessões.",
-    icon: Users,
-  },
-];
+const newsIcons = { Parcerias: Trees, "Transmissões": Clapperboard, Comunidade: Users, Avisos: Info };
 
 const BTN = 48; // tamanho do botão (px)
 const PANEL_W = 352; // largura do painel (22rem)
@@ -67,6 +26,8 @@ const PANEL_W = 352; // largura do painel (22rem)
 /* ============ COMPONENTE ============ */
 export function NoticiasWidget({ className }) {
   const [open, setOpen] = useState(false);
+  const [edition, setEdition] = useState(null);
+  const [newsError, setNewsError] = useState(false);
   const pathname = usePathname();
   const panelId = useId();
   const titleId = useId();
@@ -100,8 +61,17 @@ export function NoticiasWidget({ className }) {
     };
   }, [open]);
 
-  const [destaque, ...demais] = NOTICIAS;
-
+  useEffect(() => {
+    if (!open || pathname?.startsWith("/cinema/noticias")) return;
+    const controller = new AbortController();
+    publicGet("/news?limit=4", { signal: controller.signal })
+      .then(data => { setEdition(data.items); setNewsError(false); })
+      .catch(() => { if (!controller.signal.aborted) setNewsError(true); });
+    return () => controller.abort();
+  }, [open, pathname]);
+  const destaque = edition?.find(item => item.destaque) ?? edition?.[0];
+  const demais = edition?.filter(item => item.id !== destaque?.id) ?? [];
+  const HeadlineIcon = newsIcons[destaque?.categoria] ?? Newspaper;
   // Não mostra o widget dentro da própria página de notícias
   if (pathname?.startsWith("/cinema/noticias")) return null;
   if (!pos) return null; // aguarda a posição (evita piscar / erro de hidratação)
@@ -165,9 +135,9 @@ export function NoticiasWidget({ className }) {
             <p className="mb-4 text-xs text-muted-foreground">Resumo do que está acontecendo.</p>
 
             {/* Manchete */}
-            <article className="mb-3 rounded-xl border border-primary/60 bg-secondary p-4 text-secondary-foreground">
+            {destaque && <article className="mb-3 rounded-xl border border-primary/60 bg-secondary p-4 text-secondary-foreground">
               <div className="mb-2 flex items-center justify-between">
-                <destaque.icon className="size-5 text-primary" aria-hidden="true" />
+                <HeadlineIcon className="size-5 text-primary" aria-hidden="true" />
                 <span className="rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold text-primary-foreground">
                   Manchete
                 </span>
@@ -176,17 +146,17 @@ export function NoticiasWidget({ className }) {
                 <Link href={articlePath(destaque.id)} prefetch={false} onClick={() => setOpen(false)} className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring">{destaque.titulo}</Link>
               </h3>
               <p className="mt-1 text-xs opacity-80">{destaque.resumo}</p>
-              <p className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
-                <CalendarDays className="size-3.5" aria-hidden="true" />
-                {EVENTO.data} · Portões {EVENTO.abertura} · Sessão {EVENTO.inicio}
-              </p>
-            </article>
-
+            </article>}
+            {newsError && <p role="status" className="text-sm text-muted-foreground">Não foi possível atualizar as notícias.</p>}
+            {!edition && !newsError && <p role="status" className="text-sm text-muted-foreground">Carregando notícias…</p>}
+            {edition?.length === 0 && !newsError && <p className="text-sm text-muted-foreground">Nenhuma notícia publicada.</p>}
             {/* Demais notícias */}
             <ul className="grid gap-2">
-              {demais.map((n) => (
+              {demais.map(n => {
+                const Icon = newsIcons[n.categoria] ?? Newspaper;
+                return (
                 <li key={n.id} className="flex items-start gap-3 rounded-xl border border-border bg-background/40 p-3">
-                  <n.icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                  <Icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                   <div className="min-w-0">
                     <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">{n.categoria}</span>
                     <h3 className="text-[13px] font-bold leading-snug">
@@ -195,7 +165,7 @@ export function NoticiasWidget({ className }) {
                     <p className="mt-0.5 text-xs text-muted-foreground">{n.resumo}</p>
                   </div>
                 </li>
-              ))}
+              ); })}
             </ul>
           </div>
 
@@ -205,7 +175,6 @@ export function NoticiasWidget({ className }) {
               className={buttonVariants({ className: "min-h-11 w-full rounded-full font-bold" })}>
               Abrir CineAstraNews
             </Link>
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">Atualizado em {ATUALIZADO_EM}</p>
           </footer>
         </section>
       )}

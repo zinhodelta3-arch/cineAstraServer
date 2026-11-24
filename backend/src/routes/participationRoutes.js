@@ -13,6 +13,8 @@ export const participationOperations=[
   {method:'post',path:'/api/subscriptions/{subscriptionId}/participants/me/leave',operationId:'leave_subscription'},
   {method:'post',path:'/api/subscriptions/{subscriptionId}/participants/{userId}/suspend',operationId:'suspend_subscription_participant'},
   {method:'post',path:'/api/subscriptions/{subscriptionId}/participants/{userId}/resume',operationId:'resume_subscription_participant'},
+  {method:'post',path:'/api/subscriptions/{subscriptionId}/participants/{userId}/remove',operationId:'remove_subscription_participant'},
+  {method:'post',path:'/api/subscriptions/{subscriptionId}/invitations/{invitationId}/cancel',operationId:'cancel_subscription_invitation'},
   {method:'post',path:'/api/subscriptions/{subscriptionId}/division-proposals',operationId:'propose_subscription_division'},
   {method:'get',path:'/api/subscriptions/{subscriptionId}/division-proposals/pending',operationId:'get_pending_subscription_division'},
   {method:'post',path:'/api/subscriptions/{subscriptionId}/division-proposals/{proposalId}/consent',operationId:'consent_subscription_division'},
@@ -31,6 +33,8 @@ export function participationRoutes(controller,{auth,limits}){
   r.post('/api/subscriptions/:subscriptionId/participants/me/leave',...write,participantParams,controller.leave);
   r.post('/api/subscriptions/:subscriptionId/participants/:userId/suspend',...write,participantParams,controller.suspend);
   r.post('/api/subscriptions/:subscriptionId/participants/:userId/resume',...write,participantParams,controller.resume);
+  r.post('/api/subscriptions/:subscriptionId/participants/:userId/remove',...write,participantParams,controller.remove);
+  r.post('/api/subscriptions/:subscriptionId/invitations/:invitationId/cancel',...write,participantParams,controller.cancelInvitation);
   r.post('/api/subscriptions/:subscriptionId/division-proposals',...write,participantParams,validateBody(proposalBody),controller.propose);
   r.get('/api/subscriptions/:subscriptionId/division-proposals/pending',...client,participantParams,controller.pendingDivision);
   r.post('/api/subscriptions/:subscriptionId/division-proposals/:proposalId/consent',...write,participantParams,validateBody(consentBody),controller.consent);

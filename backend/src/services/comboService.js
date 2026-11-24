@@ -6,7 +6,7 @@ const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const conflict = message => new ApiError(message, 409, null, 'COMBO_CONFLICT');
 const cost = row => row.custo_operacional == null ? null : moneyString(row.custo_operacional);
 const eventDto = row => row.id_evento == null ? {} : {event:{eventId:idString(row.id_evento),sessionId:idString(row.id_sessao_evento),totalLimit:row.limite_evento,customerLimit:row.limite_cliente_evento}};
-const dto = (row, items) => ({ id_combo: idString(row.id_combo), id_local: row.id_local === null ? null : idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, preco: moneyString(row.preco), imagem: row.imagem ?? null, imagem_alternativa: row.imagem_alternativa ?? null, ativo: Boolean(row.ativo), data_cadastro: row.data_cadastro, ...eventDto(row), items: items.map(i => ({ id_insumo: idString(i.id_insumo), nome: i.nome, quantidade: i.quantidade })) });
+const dto = (row, items) => ({ id_combo: idString(row.id_combo), id_local: row.id_local === null ? null : idString(row.id_local), nome: row.nome, descricao: row.descricao ?? null, preco: moneyString(row.preco), imagem: row.imagem ?? null, imagem_alternativa: row.imagem_alternativa ?? null, ativo: Boolean(row.ativo), data_cadastro: row.data_cadastro, ...(row.em_estoque!==undefined&&{inStock:Boolean(row.em_estoque)}), ...eventDto(row), items: items.map(i => ({ id_insumo: idString(i.id_insumo), nome: i.nome, quantidade: i.quantidade })) });
 export function createComboService({ model, identity, pricing }) {
     async function admin(c, context) { if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); }
     async function transact(context, work) { return identity.transaction(async c => { await admin(c, context); return work(c); }, context); }
@@ -31,14 +31,14 @@ export function createComboService({ model, identity, pricing }) {
     return {
         async list(q) {
             const rows = await model.list(q), items = rows.slice(0, q.limit);
-            return { items: await Promise.all(items.map(r => detail(r.id_combo))), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1).id_combo) : null } };
+            return { items: await Promise.all(items.map(async row => dto(row, await model.items(row.id_combo)))), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1).id_combo) : null } };
         },
         async get(id) {
             const row = found(await model.combo(id));
             if (!row.ativo || row.id_local === null) throw ApiError.naoEncontrado();
             const visible = await model.list({ localId: idString(row.id_local), cursor: String(BigInt(id) - 1n), limit: 1 });
             if (!visible[0] || idString(visible[0].id_combo) !== idString(id)) throw ApiError.naoEncontrado();
-            return detail(id);
+            return dto(visible[0], await model.items(id));
         },
         async adminList(q,context) { return transact(context,async c=>{
             const rows=await model.adminList(c,q),page=rows.slice(0,q.limit);
@@ -70,7 +70,7 @@ export function createComboService({ model, identity, pricing }) {
                 if (priceMode === 'RULE') {
                     const quantities = new Map(data.items.map(item => [item.inputId, item.quantidade]));
                     const parts = rows.map(row => ({ ...row, quantidade: quantities.get(idString(row.id_insumo)) }));
-                    data.preco = await pricing.catalogPriceForCreate(c, 'COMBO', data, parts);
+                    data.preco = await pricing.catalogPriceFromRule(c, 'COMBO', data, parts);
                 }
                 const id = await model.create(c, data);
                 if(event)await model.setEvent(c,id,event);
@@ -88,7 +88,16 @@ export function createComboService({ model, identity, pricing }) {
                 if (row.id_local !== initial.id_local) throw conflict('Local alterado');
                 const adminCostOnly = Object.keys(input).length === 1 && input.custo_operacional !== undefined;
                 if (!row.ativo || (!adminCostOnly && await model.referenced(id, c))) throw conflict('Combo arquivado ou referenciado não pode ser alterado');
-                const {event,...fields}=input;
+                const {event,priceMode,...fields}=input;
+                if (priceMode === 'RULE') {
+                    const items = await model.items(id, c);
+                    if (!items.length) throw conflict('Combo sem composição');
+                    const ids = items.map(item => ({ inputId: idString(item.id_insumo) }));
+                    const rows = await validItems(c, row.id_local, ids);
+                    const quantities = new Map(items.map(item => [idString(item.id_insumo), item.quantidade]));
+                    const parts = rows.map(part => ({ ...part, quantidade: quantities.get(idString(part.id_insumo)) }));
+                    fields.preco = await pricing.catalogPriceFromRule(c, 'COMBO', { ...row, ...fields }, parts);
+                }
                 if(event!==undefined){
                     if(event&&await model.planUsingCombo(c,id))throw conflict('O combo de um plano não pode virar oferta de evento.');
                     await validateEvent(c,row.id_local,event);

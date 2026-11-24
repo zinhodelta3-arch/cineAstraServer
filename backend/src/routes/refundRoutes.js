@@ -21,7 +21,7 @@ export function refundRoutes(controller,{auth,limits}){
     const r=Router(),client=[noStore,auth,allowRoles('CLIENTE')],admin=[noStore,auth,allowRoles('ADMIN')];
     r.get('/api/orders/:id/refunds',...client,refundId,orderRefundPage,controller.orderHistory);
     r.post('/api/orders/:id/refunds',...client,...limits.checkout,refundId,paymentKey,validateBody(refundSchemas.order),controller.requestOrder(false));
-    r.post('/api/admin/sales/orders/:id/refunds',...admin,...limits.checkout,refundId,paymentKey,validateBody(refundSchemas.order),controller.requestOrder(true));
+    r.post('/api/admin/sales/orders/:id/refunds',...admin,...limits.checkout,refundId,paymentKey,validateBody(refundSchemas.adminOrder),controller.requestOrder(true));
     r.get('/api/admin/refunds',...admin,adminRefundPage,controller.adminList);
     r.get('/api/admin/refunds/:id',...admin,refundId,controller.adminGet);
     r.post('/api/payments/:id/refunds',...client,...limits.checkout,refundId,paymentKey,validateBody(refundSchemas.request),controller.request);

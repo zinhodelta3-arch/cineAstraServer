@@ -13,7 +13,8 @@ export async function POST(request){
   let body;try{body=JSON.parse(raw);}catch{return json({message:'Dados inválidos.'},400);}
   if(!validCartOrder(body))return json({message:'Confira os produtos, quantidades e cinema do carrinho.'},422);
   const quote=await backendAuth('/orders/quote',{token,method:'POST',body});
-  if(!Array.isArray(quote.lines)||quote.lines.length!==body.lines.length||quote.total==null)throw new AuthError(503,'Cotação incompleta.');
+  if(!Array.isArray(quote.lines)||quote.lines.length!==body.lines.length||quote.total==null||
+    (quote.couponCode??null)!==(body.couponCode??null))throw new AuthError(503,'Cotação incompleta.');
   for(const [index,line] of body.lines.entries()){
    const result=quote.lines[index];
    if(!result||result.category!==line.kind||result.id!==line.id||result.quantity!==line.quantity||result.unitPrice==null)throw new AuthError(503,'Cotação incompatível com o carrinho.');

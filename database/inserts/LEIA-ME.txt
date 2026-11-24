@@ -29,6 +29,15 @@ Use logins.txt para consultar as contas. Esse arquivo contém senhas e está exc
 O SQL contém somente hashes das senhas.
 A autenticação, os serviços externos e a disponibilidade dos trailers continuam dependendo das configurações do projeto.
 
+APRESENTAÇÃO
+Em um banco separado, após instalar o schema e carregar 01_inserts.sql, aplique
+07_experiencias.sql, 08_banners_catalogo_original.sql, 09_noticias.sql e 10_apresentacao.sql nessa ordem.
+As matérias anteriores são importadas como rascunhos. A carga de apresentação publica uma matéria
+simulada, programa sessões futuras nos cinemas Paulista, Shopping ABC e Campinas e inclui imagens
+e produtos ilustrativos. Use as cinco funções cadastradas pela carga operacional para a demonstração.
+A newsletter mantém rascunhos e histórico no Admin. O envio por e-mail fica desativado.
+revisao_duplicidades_marketing.sql lista e ensaia a consolidação de cópias idênticas, com ROLLBACK.
+
 REVISÃO
 Foram conferidos estaticamente os nomes de colunas, campos obrigatórios, enums, limites de texto, referências internas e ordem das dependências.
 A carga foi importada no banco local. Consulte IMPORTACAO.txt e 03_importacao.csv. Não reaplique neste banco.

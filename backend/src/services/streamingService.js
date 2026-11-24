@@ -46,7 +46,7 @@ export function createStreamingService({model,identity,provider,selfDeclaredAge=
         let created=0;
         for(const item of items){
             const existing=await model.existing(c,item.id_item);
-            if(existing){if(idString(existing.id_usuario)!==idString(item.id_usuario)||idString(existing.id_filme)!==idString(item.id_filme)||existing.status!=='ATIVO')throw conflict('Direito existente incompatível');continue;}
+            if(existing){if(idString(existing.id_usuario)!==idString(item.id_usuario)||idString(existing.id_filme)!==idString(item.id_filme))throw conflict('Direito existente incompatível');continue;}
             await model.grant(c,item,item.id_usuario,at);created++;
         }
         return {created};

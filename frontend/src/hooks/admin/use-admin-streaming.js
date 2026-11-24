@@ -13,6 +13,6 @@ export async function streamingAdminRequest(path, { method = 'GET', body, signal
   return readSessionResponse(response);
 }
 
-export function useAdminStreaming(path) {
-  return usePaginatedList(path, streamingAdminRequest);
+export function useAdminStreaming(path,remember) {
+  return usePaginatedList(path, streamingAdminRequest,{remember});
 }

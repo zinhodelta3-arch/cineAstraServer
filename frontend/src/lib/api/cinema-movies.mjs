@@ -1,13 +1,15 @@
 import {publicAsset, safeLink} from './public-api.mjs';
-export function cinemaMovie(film, today = new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'})) {
+import {cinemaProgram} from './cinema-program.mjs';
+export function cinemaMovie(film, today) {
  const releaseDate=film.data_lancamento?.slice(0,10)||null;
- return {id:String(film.id_filme),title:film.titulo,synopsis:film.descricao||'Sinopse ainda não informada.',poster:publicAsset(film.imagem),banner:publicAsset(film.banner),duration:film.duracao,age:film.classificacao,releaseDate,status:releaseDate&&releaseDate>today?'em-breve':'em-cartaz',genres:[],sessions:[],formats:[],director:film.diretor,trailer:safeLink(film.trailer)};
+ return {id:String(film.id_filme),slug:film.slug,title:film.titulo,synopsis:film.descricao||'Sinopse ainda não informada.',poster:publicAsset(film.imagem),banner:publicAsset(film.banner),duration:film.duracao,age:film.classificacao,releaseDate,...cinemaProgram(film,today),genres:Array.isArray(film.generos)?film.generos.map(g=>g.nome):[],sessions:[],formats:[],director:film.diretor,trailer:safeLink(film.trailer)};
 }
 export function cinemaCatalogPath(query, genre, section, { page, pageSize = 20 } = {}) {
  const params=new URLSearchParams({cinema:'true',limit:String(pageSize)});
  if(query.trim())params.set('titulo',query.trim());
  if(genre!=='Todos')params.set('genreId',genre);
- if(section)params.set('upcoming',String(section==='em-breve'));
+ if(section)params.set('upcoming',String(section!=='em-cartaz'));
+ if(page&&section!=='em-cartaz'&&section)params.set('sale',section==='pre-venda'?'open':'closed');
  if(page)params.set('page',String(page));
  return `/films?${params}`;
 }
@@ -21,7 +23,7 @@ export function readCinemaCatalogUrl(params) {
   page:validCatalogId(page) ? Number(page) : 1,
   pageSize:moviePageSizes.includes(size) ? size : 20,
   genre:validCatalogId(genre) ? genre : 'Todos',
-  section:params.get('aba') === 'em-breve' ? 'em-breve' : 'em-cartaz',
+  section:['em-breve','pre-venda'].includes(params.get('aba')) ? params.get('aba') : 'em-cartaz',
   search:(params.get('q') ?? '').trim().slice(0, 200),
  };
 }

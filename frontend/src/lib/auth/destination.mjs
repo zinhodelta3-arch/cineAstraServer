@@ -1,4 +1,5 @@
 import { experienceRequestsPath, validExperienceId } from '../api/experience-inquiry.mjs';
+import { purchaseVerificationPath, validPurchaseReference } from '../api/purchase-reference.mjs';
 
 export function loginDestination(role) {
  if (role === 'ADMIN') return '/admin/dashboard';
@@ -12,6 +13,8 @@ export function checkoutDestination(next) {
 }
 export const subscriptionManagementPath = '/cinema/perfil/assinatura';
 export function clientLoginDestination(next) {
+ const receiptPrefix = `${purchaseVerificationPath}?referencia=`;
+ if (typeof next === 'string' && next.startsWith(receiptPrefix) && validPurchaseReference(next.slice(receiptPrefix.length))) return next;
  if (typeof next === 'string' && /^\/cinema\/experiencias\/solicitar(?:\?experiencia=(?:personalizado|[1-9]\d{0,9}))?$/.test(next)) return next;
  const requestPrefix = `${experienceRequestsPath}?pedido=`;
  if (typeof next === 'string' && next.startsWith(requestPrefix) && validExperienceId(next.slice(requestPrefix.length))) return next;

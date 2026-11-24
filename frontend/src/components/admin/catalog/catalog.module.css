@@ -8,7 +8,7 @@
 .panelHeader h2 { font-size: 16px; font-weight: 650; }
 .panelHeader p, .count { margin-top: 5px; color: var(--muted-foreground); font-size: 11px; line-height: 1.45; }
 .count { margin-top: 0; white-space: nowrap; }
-.toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 0 24px 18px; }
+.toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; padding: 6px 24px 20px; }
 .search { display: flex; width: min(100%, 300px); height: 40px; align-items: center; gap: 8px; padding: 0 11px; border: 1px solid var(--border); border-radius: 8px; color: var(--muted-foreground); }
 .search:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
 .search input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--foreground); font-size: 12px; outline: none; }
@@ -25,9 +25,9 @@
 .salesFilters > label :is(input, select) { width: 100%; min-width: 0; }
 .salesFilters > [role="alert"] { flex-basis: 100%; }
 .tableWrap { margin: 0 24px; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; scrollbar-color: var(--border) transparent; }
-.table { width: 100%; min-width: 650px; border-collapse: collapse; font-size: 12px; text-align: left; }
+.table { width: 100%; min-width: 650px; border-collapse: collapse; font-size: 13px; text-align: left; }
 .table thead { background: var(--muted); }
-.table th, .table td { padding: 10px 14px; }
+.table th, .table td { padding: 12px 14px; overflow-wrap: anywhere; }
 .table thead th { font-size: 11px; font-weight: 600; white-space: nowrap; }
 .table tbody tr { border-top: 1px solid var(--border); }
 .table tbody tr:hover { background: color-mix(in srgb, var(--muted) 35%, transparent); }

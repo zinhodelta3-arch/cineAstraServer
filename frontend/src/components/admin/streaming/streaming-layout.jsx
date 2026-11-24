@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import page from '../tabelaexemplo/example-table.module.css';
 import styles from '../catalog/catalog.module.css';
+import { ListSkeleton } from '@/components/ui/list-feedback';
 
 const sections = [
   { href: '/admin/streaming', label: 'Planos' },
@@ -21,7 +22,7 @@ export default function StreamingLayout({ title, description, action, children }
 }
 
 export function StreamingState({ list, empty, noun }) {
-  if (list.loading) return <p className={styles.state} role="status">Carregando {noun}…</p>;
+  if (list.loading) return <ListSkeleton label={`Carregando ${noun}…`}/>;
   if (list.error) return <div className={styles.state} role="alert"><p>{list.error}</p><button type="button" onClick={list.reload}>Tentar novamente</button></div>;
   if (!list.items.length) return <p className={styles.state}>{empty}</p>;
   return null;

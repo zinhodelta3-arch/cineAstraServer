@@ -21,7 +21,7 @@ async function handle(request, { params }) {
     const limit = new URL(request.url).searchParams.get('limit') ?? '50';
     const q = new URL(request.url).searchParams.get('q')?.trim();
     if (!/^\d{1,3}$/.test(limit) || Number(limit) < 1 || Number(limit) > 100 || (q?.length ?? 0) > 150) return json({ message: 'Paginação ou busca inválida.' }, 422);
-    if (statusFilter && !['ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO','ALL'].includes(statusFilter)) return json({ message: 'Status inválido.' }, 422);
+    if (statusFilter && !['ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO','CANCELADO','ALL'].includes(statusFilter)) return json({ message: 'Status inválido.' }, 422);
     if (!validCursor(cursor) || (parts.length && !validId(parts[0]))) return json({ message: "Chamado ou página inválida." }, 422);
 
     let body = {};

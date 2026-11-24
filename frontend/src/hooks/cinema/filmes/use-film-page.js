@@ -4,8 +4,8 @@ import {useFilmAvailability} from './use-film-availability';
 import {useMovieDetails} from './use-movie-details';
 import {usePublicList} from '@/hooks/cinema/home/use-public-list';
 import {publicGet} from '@/lib/api/public-api.mjs';
-export function useFilmPage(id){
- const details=useMovieDetails(id);
+export function useFilmPage(id,initialFilm){
+ const details=useMovieDetails(id,{initialFilm});
  const locations=usePublicList('/locations?limit=20');
  const [chosenLocalId,setLocalId]=useState('');
  const availability=useFilmAvailability(id);

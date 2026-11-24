@@ -16,7 +16,7 @@ export default function FinanceAdmin() {
   const data = report.data;
   return <ReportsLayout title="Relatório financeiro" description="Consulte capturas, estornos e cobertura dos custos conhecidos.">
     <ReportSection id="finance-title" title="Movimento financeiro" description="Eventos registrados no período em UTC, incluindo as duas datas.">
-      <ReportFilters range={range} onSubmit={() => { if (range.commit()) setAppliedScope(scope); }}><label className={styles.filter}>Escopo<select value={scope} onChange={event => setScope(event.target.value)}>{Object.entries(scopes).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label></ReportFilters>
+      <div className="pt-2"><ReportFilters range={range} onSubmit={() => { if (range.commit()) setAppliedScope(scope); }}><label className={styles.filter}>Escopo<select value={scope} onChange={event => setScope(event.target.value)}>{Object.entries(scopes).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label></ReportFilters></div>
       {range.applied ? <ReportState report={report} /> : <p className={styles.state} role="status">Preparando período…</p>}
       {data && <div className={reports.body}>
         <p className={styles.hint}>{scopes[data.scope]}</p>

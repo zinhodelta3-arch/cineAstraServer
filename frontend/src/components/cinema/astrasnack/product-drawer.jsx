@@ -20,16 +20,13 @@ export default function ProductDrawer({snack:s}){
   </div><div className="mt-auto border-t border-border p-5">
    {p.inStock!==false&&<>
     {s.session.loading&&<p role="status">Verificando sua conta…</p>}
-    {s.guest && (s.guestPrice === null ? <p>Preço indisponível neste cinema.</p> : <>
-      <ProductPrice price={s.guestPrice} note="Por unidade · preço de catálogo"/>
-      <p className="my-3 flex justify-between gap-3">Subtotal estimado<strong>{s.productTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></p>
-      {p.eventSessionId && <p className="text-sm">Este combo acompanha ingressos da sessão vinculada.</p>}
-    </>)}
-    {s.session.user?.role === 'CLIENTE'&&!s.currentQuote&&<p role="status">Consultando preço…</p>}
+    {s.guest&&p.eventSessionId&&<p className="text-sm">Este combo acompanha ingressos da sessão vinculada.</p>}
+    {(s.guest||s.session.user?.role === 'CLIENTE')&&!s.currentQuote&&<p role="status">Consultando preço e estoque…</p>}
     {s.session.user&&s.session.user.role !== 'CLIENTE'&&<p>Use uma conta de cliente para fazer um pedido.</p>}
     {s.currentQuote?.error&&<div role="alert"><p>{s.currentQuote.error}</p><Button variant="outline" onClick={s.retry}>Tentar novamente</Button></div>}
-    {s.currentQuote&&!s.currentQuote.error&&<><ProductPrice price={s.currentQuote.unitPrice} originalPrice={s.currentQuote.originalPrice} discountSources={s.currentQuote.discountSources} note="Por unidade · preço para sua conta, sem cupom"/><p className="my-3 flex justify-between">Subtotal cotado<strong>{s.productTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></p>{!s.currentQuote.finalizable&&<p role="status">{s.currentQuote.catalogOutOfSync ? 'O preço precisa ser atualizado pelo cinema antes da compra.' : 'Esta cotação ainda não permite a compra. Atualize o produto e tente novamente.'}</p>}</>}
-    <Button className="mt-4 w-full" disabled={!s.canAdd} onClick={s.handleAddToCart}>Adicionar ao carrinho</Button><p className="mt-3 text-xs text-muted-foreground">Adicionar não reserva estoque. O checkout confirma os valores e a disponibilidade.</p>
+    {s.currentQuote&&!s.currentQuote.error&&<><ProductPrice price={s.currentQuote.unitPrice} originalPrice={s.currentQuote.originalPrice} discountSources={s.currentQuote.discountSources} note={s.guest?'Por unidade · preço deste cinema':'Por unidade · preço para sua conta, sem cupom'}/><p className="my-3 flex justify-between">Subtotal cotado<strong>{s.productTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong></p>{!s.currentQuote.finalizable&&<p role="status">{s.currentQuote.catalogOutOfSync ? 'O preço precisa ser atualizado pelo cinema antes da compra.' : 'Esta cotação ainda não permite a compra. Atualize o produto e tente novamente.'}</p>}</>}
+    {s.pickupConflict&&<p className="mt-3 text-sm">O carrinho tem itens de outro cinema. Escolha o cinema do carrinho para adicionar lanches ao mesmo pedido.</p>}
+    <Button className="mt-4 w-full" disabled={!s.canAdd} onClick={s.handleAddToCart}>Adicionar ao carrinho</Button><p className="mt-3 text-xs text-muted-foreground">O checkout confirma os valores e a disponibilidade.</p>
    </>}
   </div></>}
  </SheetContent></Sheet>;

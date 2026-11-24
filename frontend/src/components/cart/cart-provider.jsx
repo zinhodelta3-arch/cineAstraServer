@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react"
 import { useSession } from "@/hooks/auth/use-session"
-import { accountCartKey, cartChanged, guestCartKey, parseCart, readCartSnapshot, updateCart } from "@/lib/api/local-cart.mjs"
+import { accountCartKey, cartAtSnackLocation, cartChanged, guestCartKey, parseCart, readCartSnapshot, updateCart } from "@/lib/api/local-cart.mjs"
 
 const CartContext = createContext(null)
 const emptySnapshot = () => null
@@ -76,6 +76,15 @@ export function CartProvider({ children }) {
   }, [setItems])
 
   const clearCart = useCallback(() => setItems(() => []), [setItems])
+  const selectSnackLocation = useCallback(localId => {
+    let items = []
+    updateCart(key, current => {
+      const selected = cartAtSnackLocation(current, localId)
+      items = selected.items
+      return selected
+    })
+    return items
+  }, [key])
   const resumeSavedItems = useCallback(() => {
     updateCart(key, current => {
       if (current.items.length || !current.savedForLater.length) return current
@@ -93,7 +102,7 @@ export function CartProvider({ children }) {
   }, [key])
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const value = useMemo(() => ({ items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart, savedForLater, resumeSavedItems }), [items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart, savedForLater, resumeSavedItems])
+  const value = useMemo(() => ({ items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart, selectSnackLocation, savedForLater, resumeSavedItems }), [items, itemCount, total, addItem, updateQuantity, updatePrices, removeItem, clearCart, selectSnackLocation, savedForLater, resumeSavedItems])
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

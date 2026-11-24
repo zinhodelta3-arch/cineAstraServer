@@ -8,7 +8,7 @@ import { useLocationImage } from "@/hooks/cinema/localizacoes/use-location-image
 
 export function VenueImg({ src, kind, alt = "", className = "" }) {
   const { failed, onError } = useLocationImage(src);
-  if (failed || !src) return <VenueArt kind={kind} className={`w-full h-full ${className}`} />;
+  if (failed || !src) return <VenueArt kind={kind} className={`w-full h-full bg-card ${className}`} />;
   return <LoadingImage src={src} alt={alt} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={onError} className={`w-full h-full object-cover ${className}`} />;
 }
 

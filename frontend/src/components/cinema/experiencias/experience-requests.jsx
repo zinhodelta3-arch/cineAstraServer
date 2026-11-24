@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ListSkeleton, OperationFeedback } from '@/components/ui/list-feedback';
 import { usePublicList } from '@/hooks/cinema/home/use-public-list';
 import { readSessionResponse, sessionFetch } from '@/lib/auth/session-response.mjs';
 
@@ -27,6 +28,7 @@ export default function ExperienceRequests({ role, userId, initialId }) {
   const [revision, refresh] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const pageLock = useRef(false);
   const client = role === 'CLIENTE';
 
   useEffect(() => {
@@ -38,13 +40,15 @@ export default function ExperienceRequests({ role, userId, initialId }) {
   }, [revision]);
 
   async function more() {
+    if(pageLock.current||!list?.nextCursor)return;
+    pageLock.current=true;
     setBusy(true);
     setError('');
     try {
       const next = await request(endpoint(null, list.nextCursor));
       setList({ ...next, items: [...list.items, ...next.items] });
     } catch (cause) { setError(cause.message); }
-    finally { setBusy(false); }
+    finally { pageLock.current=false;setBusy(false); }
   }
 
   const detail = selected && <div className="min-w-0 lg:col-start-2 lg:row-start-1">
@@ -54,12 +58,15 @@ export default function ExperienceRequests({ role, userId, initialId }) {
   return <section className="mx-auto w-full max-w-6xl px-4 py-10 text-foreground md:px-8">
     {client && <Link className="text-primary underline" href="/cinema/experiencias">Voltar ao catálogo de experiências</Link>}
     <h1 className="f-display mb-6 mt-3 text-4xl font-bold">{client ? 'Minhas experiências' : 'Solicitações de experiências'}</h1>
-    {error && <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => { setError(''); refresh(value => value + 1); }}>Tentar novamente</Button></div>}
-    {!list && !error && <p role="status">Carregando solicitações…</p>}
+    {error && <div className="mb-4 space-y-2"><OperationFeedback error={error}/><Button variant="outline" onClick={() => { setError(''); refresh(value => value + 1); }}>Tentar novamente</Button></div>}
+    {!list && !error && <ListSkeleton label="Carregando solicitações…"/>}
+    {list&&!list.items.length&&!selected&&<div className="rounded-xl border border-dashed border-border bg-card p-6">
+      <h2 className="text-lg font-bold">{client?'Você ainda não tem pedidos de experiência':'Nenhum pedido para esta unidade'}</h2>
+      <p className="mt-2 text-sm text-muted-foreground">{client?'As solicitações aparecem aqui assim que são enviadas.':'Os pedidos encaminhados para a unidade aparecem aqui para análise.'}</p>
+    </div>}
     {(list || selected) && <div className="grid items-start gap-6 lg:grid-cols-[minmax(230px,1fr)_2fr]">
       {initialId && detail}
       {list && <ul className="space-y-2 lg:col-start-1 lg:row-start-1" aria-label="Solicitações">
-        {!list.items.length && <li>Nenhuma solicitação disponível.</li>}
         {list.items.map(item => <li key={item.id}>
           <button type="button" aria-pressed={selected === item.id} onClick={() => setSelected(item.id)}
             className="grid w-full gap-1 rounded-lg border border-border bg-card p-4 text-left hover:border-primary aria-pressed:border-primary">
@@ -80,6 +87,7 @@ function RequestDetails({ id, role, userId, onUpdate }) {
   const [error, setError] = useState('');
   const [revision, refresh] = useState(0);
   const locations = usePublicList(role === 'ADMIN' ? '/locations?limit=100' : null);
+  const actionLock = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -90,11 +98,13 @@ function RequestDetails({ id, role, userId, onUpdate }) {
   }, [id, revision]);
 
   async function run(operation) {
+    if(actionLock.current)return;
+    actionLock.current=true;
     setBusy(true);
     setError('');
     try { await operation(); }
     catch (cause) { setError(cause.message); }
-    finally { setBusy(false); }
+    finally { actionLock.current=false;setBusy(false); }
   }
 
   async function submit(body, messageForm) {
@@ -116,7 +126,8 @@ function RequestDetails({ id, role, userId, onUpdate }) {
 
   const nextStages = data ? stages[data.status] : [];
   return <article aria-label="Detalhes da solicitação" className="min-w-0 space-y-4 rounded-xl border border-border bg-card p-5">
-    {error && <div role="alert"><p>{error}</p>{!data && <Button variant="outline" onClick={() => { setError(''); refresh(value => value + 1); }}>Tentar novamente</Button>}</div>}
+    <OperationFeedback pending={busy} error={error}/>
+    {error && !data && <Button variant="outline" onClick={() => { setError(''); refresh(value => value + 1); }}>Tentar novamente</Button>}
     {!data && !error && <p role="status">Carregando solicitação…</p>}
     {data && <>
       <header><p className="text-sm font-medium text-primary">{data.protocol} · {labels[data.status]}</p><h2 className="text-2xl font-bold">{data.title}</h2></header>

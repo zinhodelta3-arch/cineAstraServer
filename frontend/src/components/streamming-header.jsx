@@ -92,9 +92,8 @@ export default function StreammingHeader() {
         <div className={styles.actions}>
           <HeaderSearch />
           <SiteFullscreen />
-          {session.user && <NotificationButton key={session.user.id} userId={session.user.id} />}
+          {session.user && <NotificationButton key={session.user.id} userId={session.user.id} role={session.user.role} />}
           <div className={styles.appearance}><AppearanceSelector /></div>
-          <SessionControls session={session} />
           <button ref={menuButtonRef} type="button" onClick={toggleMenu} className={styles.menuToggle}
             aria-label={menuOpen ? "Fechar menu do streaming" : "Abrir menu do streaming"}
             aria-expanded={menuOpen} aria-controls={menuOpen ? menuId : undefined}>
@@ -103,6 +102,7 @@ export default function StreammingHeader() {
         </div>
 
         <div className={styles.cinemaStub}><CinemaLink /></div>
+        <div className="shrink-0"><SessionControls session={session} /></div>
         </div>
       </div>
 

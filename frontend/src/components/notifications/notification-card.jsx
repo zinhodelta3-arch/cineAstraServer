@@ -10,7 +10,7 @@ export default function NotificationCard({item,onOpen,onToggle,pending}){
    <div className={styles.cardMeta}><span>{item.label}</span>{item.createdAt&&<time dateTime={item.createdAt} title={fullDateFormatter.format(new Date(item.createdAt))}>{dateFormatter.format(new Date(item.createdAt))}</time>}{!item.read&&<span className={styles.newBadge}>Nova</span>}</div>
    <h3>{item.title}</h3><p className="break-words whitespace-pre-wrap">{item.description}</p>
    <div className={styles.cardActions}>{item.href
-    ? <Link href={item.href} prefetch={false} className={styles.detailsButton}>Abrir solicitação <ArrowRight size={15} aria-hidden="true" /></Link>
+    ? <Link href={item.href} prefetch={false} className={styles.detailsButton}>{item.linkLabel ?? 'Abrir solicitação'} <ArrowRight size={15} aria-hidden="true" /></Link>
     : <button type="button" className={styles.detailsButton} onClick={()=>onOpen(item)}>Ver detalhes <ArrowRight size={15} aria-hidden="true" /></button>}
     {!item.read&&<div className={styles.secondaryActions}><button type="button" disabled={pending} onClick={()=>onToggle(item)} aria-label={'Marcar '+item.subject+' como lida'}><Check size={15} aria-hidden="true" /><span>Marcar como lida</span></button></div>}
    </div>

@@ -2,7 +2,6 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {participationOperations} from '../src/routes/participationRoutes.js';
 
 const file=new URL('../src/docs/openapi.json',import.meta.url),spec=JSON.parse(await readFile(file,'utf8'));
-spec.info.version='1.26.0';
 spec.tags=[...spec.tags.filter(x=>x.name!=='Participation'),{name:'Participation',description:'Convites, participantes e concordância de rateio de assinaturas.'}];
 const id={type:'string',pattern:'^[1-9][0-9]{0,19}$'},intId={type:'string',pattern:'^[1-9][0-9]{0,9}$'};
 const date={type:'string',format:'date-time',nullable:true},competence={type:'string',format:'date'};
@@ -13,9 +12,14 @@ const page=schema=>obj({items:{type:'array',items:schema},pagination:obj({limit:
 const mode={type:'string',enum:['TITULAR_PAGA','DIVISAO_IGUAL']};
 const status={type:'string',enum:['ATIVO','SAIU','SUSPENSO']};
 const nullableMode={...mode,nullable:true};
-spec.components.schemas.SubscriptionMember=obj({userId:intId,status,joinedAt:date,leftAt:date});
-spec.components.schemas.SubscriptionMembers=obj({subscriptionId:intId,ownerId:intId,divisionMode:mode,scheduledMode:nullableMode,scheduledCompetence:{...competence,nullable:true},maxMembers:{type:'integer',nullable:true},participants:{type:'array',items:ref('SubscriptionMember')}});
-spec.components.schemas.SubscriptionInvitation=obj({id,subscriptionId:intId,userId:intId,status:{type:'string',enum:['PENDENTE','ACEITO','RECUSADO','EXPIRADO']},invitedAt:date,respondedAt:date});
+spec.components.schemas.SubscriptionMember=obj({userId:intId,name:{type:'string'},status,joinedAt:date,leftAt:date},['userId','status','joinedAt','leftAt']);
+const invitationFields={id,subscriptionId:intId,userId:intId,status:{type:'string',enum:['PENDENTE','ACEITO','RECUSADO','EXPIRADO']},invitedAt:date,respondedAt:date};
+spec.components.schemas.SubscriptionInvitation=obj({
+  ...invitationFields,expiresAt:date,name:{type:'string'},ownerName:{type:'string'},planName:{type:'string'},
+  divisionMode:mode,contractPrice:{type:'string',nullable:true},period:{type:'string'},membership:{...status,nullable:true},
+  endingOn:{...competence,nullable:true},hasCharge:{type:'boolean'}
+},Object.keys(invitationFields));
+spec.components.schemas.SubscriptionMembers=obj({subscriptionId:intId,ownerId:intId,divisionMode:mode,scheduledMode:nullableMode,scheduledCompetence:{...competence,nullable:true},maxMembers:{type:'integer',nullable:true},participants:{type:'array',items:ref('SubscriptionMember')},invitations:{type:'array',items:ref('SubscriptionInvitation')}});
 spec.components.schemas.SubscriptionMemberEvent=obj({id,userId:intId,actorId:intId,event:{type:'string',enum:['ENTROU','SAIU','SUSPENSO','REATIVADO']},at:date});
 spec.components.schemas.SubscriptionMemberChange=obj({userId:intId,status});
 spec.components.schemas.SubscriptionDivisionProposal=obj({id,subscriptionId:intId,divisionMode:mode,effectiveCompetence:competence,status:{type:'string',enum:['PENDENTE','APROVADA']}},['id','divisionMode','effectiveCompetence','status']);
@@ -27,6 +31,11 @@ const schemaById={list_subscription_participants:ref('SubscriptionMembers'),subs
 const summaries={list_subscription_participants:'Consultar participantes vinculados',subscription_participant_history:'Consultar histórico de participação',invite_subscription_participant:'Convidar cliente para o plano',list_my_subscription_invitations:'Listar convites recebidos',accept_subscription_invitation:'Aceitar convite',decline_subscription_invitation:'Recusar convite',leave_subscription:'Sair do plano',suspend_subscription_participant:'Suspender participante',resume_subscription_participant:'Reativar participante',propose_subscription_division:'Propor mudança de rateio',get_pending_subscription_division:'Consultar proposta pendente e próprio voto',consent_subscription_division:'Votar na mudança de rateio',preview_subscription_next_cycle:'Prévia de cotas do próximo ciclo',list_own_subscription_charges:'Consultar próprias cobranças de uma competência'};
 const examples={list_subscription_participants:{subscriptionId:'1',ownerId:'7',divisionMode:'TITULAR_PAGA',scheduledMode:null,scheduledCompetence:null,maxMembers:4,participants:[{userId:'9',status:'ATIVO',joinedAt:'2026-10-10 12:00:00.000',leftAt:null}]},subscription_participant_history:{items:[],pagination:{limit:50,nextCursor:null}},invite_subscription_participant:{id:'2',subscriptionId:'1',userId:'9',status:'PENDENTE',invitedAt:'2026-10-10 12:00:00.000',respondedAt:null},list_my_subscription_invitations:{items:[],pagination:{limit:50,nextCursor:null}},accept_subscription_invitation:{id:'2',subscriptionId:'1',userId:'9',status:'ACEITO',invitedAt:'2026-10-10 12:00:00.000',respondedAt:'2026-10-10 13:00:00.000'},decline_subscription_invitation:{id:'2',subscriptionId:'1',userId:'9',status:'RECUSADO',invitedAt:'2026-10-10 12:00:00.000',respondedAt:'2026-10-10 13:00:00.000'},leave_subscription:{userId:'9',status:'SAIU'},suspend_subscription_participant:{userId:'9',status:'SUSPENSO'},resume_subscription_participant:{userId:'9',status:'ATIVO'},propose_subscription_division:{id:'12',subscriptionId:'1',divisionMode:'DIVISAO_IGUAL',effectiveCompetence:'2026-11-01',status:'PENDENTE'},get_pending_subscription_division:{proposal:{id:'12',subscriptionId:'1',divisionMode:'DIVISAO_IGUAL',effectiveCompetence:'2026-11-01',status:'PENDENTE',myConsent:'PENDENTE'}},consent_subscription_division:{id:'12',divisionMode:'DIVISAO_IGUAL',effectiveCompetence:'2026-11-01',status:'APROVADA'},preview_subscription_next_cycle:{subscriptionId:'1',competence:'2026-11-01',divisionMode:'DIVISAO_IGUAL',total:'30.00',shares:[{userId:'7',amount:'15.00'},{userId:'9',amount:'15.00'}],issued:false},list_own_subscription_charges:{subscriptionId:'1',competence:'2026-10-01',charges:[{id:'9007199254740993',userId:'7',amount:'30.00',status:'PAGO'}]}};
 examples.list_own_subscription_charges.charges[0]={id:'9007199254740993',userId:'7',amount:'30.00',fine:'0.00',interest:'0.00',correction:'0.00',total:'30.00',ipcaThrough:null,dueOn:'2026-10-10',paidAt:'2026-10-10 12:00:00.000',status:'PAGO'};
+Object.assign(schemaById,{remove_subscription_participant:ref('SubscriptionMemberChange'),cancel_subscription_invitation:ref('SubscriptionInvitation')});
+Object.assign(summaries,{remove_subscription_participant:'Remover participante pelo titular',cancel_subscription_invitation:'Encerrar convite pendente'});
+examples.list_subscription_participants.invitations=[];
+examples.remove_subscription_participant={userId:'9',status:'SAIU'};
+examples.cancel_subscription_invitation={...examples.invite_subscription_participant,status:'EXPIRADO'};
 function normalizeExample(value){if(typeof value==='string'&&/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/.test(value))return value.replace(' ','T')+'Z';if(Array.isArray(value))return value.map(normalizeExample);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,normalizeExample(item)]));return value;}
 const body=schema=>({required:true,content:{'application/json':{schema}}});
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
@@ -36,7 +45,7 @@ for(const route of participationOperations){
   for(const key of ['subscriptionId','invitationId','proposalId','userId'])if(route.path.includes(`{${key}}`))op.parameters.push({name:key,in:'path',required:true,schema:key==='invitationId'||key==='proposalId'?id:intId});
   if(['subscription_participant_history','list_my_subscription_invitations'].includes(route.operationId))op.parameters.push({name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:50}},{name:'cursor',in:'query',schema:{type:'string',pattern:'^(0|[1-9][0-9]{0,19})$'}});
   if(route.operationId==='list_own_subscription_charges')op.parameters.push({name:'competence',in:'query',required:true,schema:{type:'string',pattern:'^\\d{4}-(0[1-9]|1[0-2])-01$'}});
-  if(route.operationId==='invite_subscription_participant')op.requestBody=body(obj({userId:intId}));
+  if(route.operationId==='invite_subscription_participant')op.requestBody=body({oneOf:[obj({userId:intId}),obj({email:{type:'string',format:'email',maxLength:150}})]});
   if(route.operationId==='propose_subscription_division')op.requestBody=body(obj({divisionMode:mode}));
   if(route.operationId==='consent_subscription_division')op.requestBody=body(obj({accept:{type:'boolean'}}));
   if(route.operationId==='preview_subscription_next_cycle')op.description='Prévia não emite cobrança. Participantes e modo agendado só alteram cotas na geração do ciclo seguinte; cobranças emitidas ficam preservadas.';

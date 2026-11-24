@@ -6,6 +6,7 @@ import { ApiError } from '../utils/ApiError.js';
 
 export const pricingOperations=[
     ['post','/api/pricing/quote','quote_price','quote',false],
+    ['post','/api/pricing/snacks/preview','preview_public_snack_prices','guestSnackQuote',false],
     ['post','/api/admin/pricing/quote','admin_quote_price','adminQuote',true],
     ['get','/api/admin/pricing/parameters','list_pricing_parameters','parameters',true],
     ['put','/api/admin/pricing/parameters/{category}','set_pricing_parameters','setParameter',true],
@@ -26,7 +27,9 @@ export const pricingOperations=[
 export function pricingRoutes(controller,{auth}){
     const router=Router();
     for(const r of pricingOperations){
-        const middleware=[(req,res,next)=>{res.set('Cache-Control','no-store');next();},auth,allowRoles(r.admin?'ADMIN':'CLIENTE')];
+        const middleware=[(req,res,next)=>{res.set('Cache-Control','no-store');next();}];
+        if(r.action==='guestSnackQuote')middleware.push(validateBody(pricingSchemas.quote.refine(input=>Boolean(input.localId))));
+        else middleware.push(auth,allowRoles(r.admin?'ADMIN':'CLIENTE'));
         if(['promotions','coupons'].includes(r.action))middleware.push(pricingListQuery);
         if(r.path.includes('{'))middleware.push(pricingParams);
         if(r.action==='setPlanBenefit')middleware.push((req,res,next)=>{if(req.params.category==='PLAN')throw ApiError.validacao('Categoria inválida');next();});

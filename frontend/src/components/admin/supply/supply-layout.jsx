@@ -7,7 +7,9 @@ import styles from '../catalog/catalog.module.css';
 
 const sections = [
   { href: '/admin/suprimentos', label: 'Fornecedores' },
+  { href: '/admin/suprimentos/empresas', label: 'Empresas' },
   { href: '/admin/suprimentos/equipamentos', label: 'Equipamentos' },
+  { href: '/admin/suprimentos/movimentacoes', label: 'Movimentações' },
   { href: '/admin/suprimentos/solicitacoes', label: 'Solicitações' },
   { href: '/admin/suprimentos/logistica', label: 'Logística' },
   { href: '/admin/suprimentos/rotas', label: 'Rotas de entrega' }

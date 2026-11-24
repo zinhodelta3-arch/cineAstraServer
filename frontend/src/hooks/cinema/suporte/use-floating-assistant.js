@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { supportRequest } from "./use-support-resource";
 
-export function useFloatingAssistant(signedIn) {
+export function useFloatingAssistant(signedIn, area) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -21,7 +21,7 @@ export function useFloatingAssistant(signedIn) {
     setMessages(current => [...current, { role: "user", text: message }]);
     setQuestion("");
     try {
-      const answer = await supportRequest("assistant/messages", { message });
+      const answer = await supportRequest("assistant/messages", { message, area });
       if (typeof answer.message !== "string" || typeof answer.available !== "boolean") {
         throw new Error("A assistente enviou uma resposta incompleta. Tente novamente.");
       }

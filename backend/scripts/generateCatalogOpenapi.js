@@ -6,7 +6,6 @@ import { catalogOperations } from '../src/routes/catalogRoutes.js';
 const file = new URL('../src/docs/openapi.json', import.meta.url);
 const spec = JSON.parse(await readFile(file, 'utf8'));
 spec.tags = [...spec.tags.filter(t => t.name !== 'Catálogo'), { name: 'Catálogo' }];
-spec.info.version = '1.2.0';
 spec.info.description += spec.info.description.includes('Tarefa14') ? '' : ' Tarefa14: catálogo administrativo e consultas públicas de filmes/gêneros ativos; uploads/galerias ficam15/16.';
 const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const object = (properties, required = Object.keys(properties)) => ({ type: 'object', additionalProperties: false, properties, required });
@@ -25,6 +24,10 @@ spec.components.schemas.CatalogFilm = object({
     preco_aluguel: nullable({ type: 'string', pattern: '^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$' }), preco_compra: nullable({ type: 'string', pattern: '^(0|[1-9][0-9]{0,7})\\.[0-9]{2}$' }),
     dias_acesso_aluguel: nullable({ type: 'integer', minimum: 1 }), status: { type: 'string', enum: ['ATIVO', 'INATIVO'] }
 });
+spec.components.schemas.CatalogFilm.properties.slug = { type:'string', maxLength:180, description:'Link público estável para o filme.' };
+spec.components.schemas.CatalogFilm.properties.venda_disponivel = { type:'boolean', description:'Há sessão futura com assento ativo livre.' };
+spec.components.schemas.CatalogFilm.properties.banner = { type:'string', nullable:true };
+spec.components.schemas.CatalogFilm.properties.generos = { type:'array', items:object({id:{type:'integer'},nome:{type:'string'}}) };
 spec.components.schemas.CatalogAdminFilm = structuredClone(spec.components.schemas.CatalogFilm);
 spec.components.schemas.CatalogAdminFilm.properties.url_reproducao = nullable({ type: 'string', description: 'Somente ADMIN; nunca presente no catálogo público.' });
 spec.components.schemas.CatalogAdminFilm.required.push('url_reproducao');
@@ -51,6 +54,7 @@ for (const r of catalogOperations) {
         const props = spec.components.schemas[`CatalogInput_${r.query}`].properties;
         for (const [name, schema] of Object.entries(props)) operation.parameters.push({ name, in: 'query', schema, description: name === 'limit' ? '1–100' : name });
     }
+    if (r.operationId === 'get_films') operation.parameters[0].schema = { type:'string', maxLength:180, description:'Slug público ou identificador numérico legado.' };
     if (r.operationId === 'list_films') operation.description += ' Envie page sem cursor para obter page, total e totalPages dos filtros aplicados. Página acima do total retorna a última página; uma lista vazia retorna página 1.';
     if (r.schema) operation.requestBody = { required: true, content: { 'application/json': { schema: ref(`CatalogInput_${r.schema}`) } } };
     operation.responses[r.status] = { description: r.status === 204 ? 'Concluído sem corpo; DELETE de entidade arquiva' : 'Sucesso', ...(r.status === 201 && { headers: { Location: { schema: { type: 'string' }, description: 'Detalhe administrativo do recurso criado' } } }), ...(r.status !== 204 && { content: { 'application/json': { schema: object({ success: { type: 'boolean', enum: [true] }, data, requestId: { type: 'string', format: 'uuid' } }) } } }) };

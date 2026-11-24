@@ -48,7 +48,9 @@ export function createComboModel(database) {
             const stockFilter = q.inStock ? 'OR i.quantidade - i.quantidade_reservada < ci.quantidade' : '';
             const count = q.inStock ? ', (SELECT COUNT(*) FROM combo_itens ci WHERE ci.id_combo = c.id_combo) AS item_count' : '';
             return rows(c, `SELECT c.id_combo,c.id_local,c.nome,c.descricao,c.preco,c.ativo,c.data_cadastro,
-                ${imageColumns}${count}
+                ${eventColumns},${imageColumns}${count},
+                NOT EXISTS (SELECT 1 FROM combo_itens ci JOIN insumos i ON i.id_insumo=ci.id_insumo
+                    WHERE ci.id_combo=c.id_combo AND i.quantidade-i.quantidade_reservada<ci.quantidade) AS em_estoque
                 FROM combos c JOIN locais l ON l.id_local = c.id_local
                 WHERE c.id_local = ? AND c.id_combo > ? AND c.ativo = 1 AND c.oferta_local = TRUE AND c.custo_operacional IS NOT NULL AND l.status = 'ATIVO' ${eventFilter}
                 AND EXISTS (SELECT 1 FROM combo_itens ci WHERE ci.id_combo = c.id_combo)
@@ -56,7 +58,7 @@ export function createComboModel(database) {
                     SELECT 1 FROM combo_itens ci JOIN insumos i ON i.id_insumo = ci.id_insumo
                     JOIN fornecedores f ON f.id_fornecedor = i.id_fornecedor JOIN usuarios u ON u.id_usuario = f.id_usuario
                     LEFT JOIN fornecedor_locais fl ON fl.id_fornecedor = i.id_fornecedor AND fl.id_local = i.id_local
-                    WHERE ci.id_combo = c.id_combo AND (i.id_local <> c.id_local OR i.status <> 'DISPONIVEL'
+                    WHERE ci.id_combo = c.id_combo AND (i.id_local IS NULL OR i.id_local <> c.id_local OR i.status <> 'DISPONIVEL'
                         OR f.status <> 'ATIVO' OR u.status <> 'ATIVO' OR u.tipo_usuario <> 'FORNECEDOR'
                         OR fl.status IS NULL OR fl.status <> 'ATIVO' ${stockFilter})
                 ) ${nameFilter} ORDER BY c.id_combo LIMIT ?`, args);

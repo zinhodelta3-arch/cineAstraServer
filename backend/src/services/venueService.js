@@ -5,7 +5,7 @@ import { idString } from '../utils/dto.js';
 const fields = {
     local: ['nome', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'telefone', 'status','tipo_local','lotacao_eventos','acesso_eventos','imagem_url'],
     room: ['id_local', 'nome', 'capacidade', 'tipo', 'status'],
-    seat: ['id_sala', 'fileira', 'numero', 'tipo', 'status']
+    seat: ['id_sala', 'fileira', 'numero', 'tipo', 'status','posicao_visual']
 };
 const pk = { local: 'id_local', room: 'id_sala', seat: 'id_assento' };
 const found = value => { if (!value) throw ApiError.naoEncontrado(); return value; };
@@ -14,6 +14,7 @@ const total = row => Number(row?.total ?? 0);
 export function venueDto(kind, row) {
     const dto = { [pk[kind]]: idString(row[pk[kind]]) };
     for (const key of fields[kind]) dto[key] = key.startsWith('id_') ? idString(row[key]) : row[key] ?? null;
+    if (kind === 'local' && row.slug) dto.slug = row.slug;
     if (kind === 'seat') dto.acessivel = ['PCD', 'OBESO', 'IDOSO'].includes(dto.tipo);
     return dto;
 }
@@ -47,7 +48,92 @@ export function createVenueService({ model, identity }) {
     }
     function page(kind, rows, q) { const items = rows.slice(0, q.limit); return { items: items.map(r => venueDto(kind, r)), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? idString(items.at(-1)[pk[kind]]) : null } }; }
     async function requireMutableRoom(c, roomId) { if (await model.roomSessions(c, roomId)) throw conflict('Sala com sessões vinculadas não admite alteração estrutural'); }
+    const layoutDto=(place,hall,rows,structureLocked)=>({room:venueDto('room',hall),spaceType:place.tipo_local??'CINEMA',structureLocked,
+        seats:rows.map(row=>venueDto('seat',row))});
+    function checkPositions(rows){
+        const slots=new Set();
+        for(const row of rows){
+            const position=row.posicao_visual??row.numero;
+            const key=`${row.fileira}:${position}`;
+            if(slots.has(key))throw conflict(`A posição ${position} da fileira ${row.fileira} já está ocupada.`);
+            slots.add(key);
+        }
+    }
     return {
+        async publicRoomScene(ids) {
+            await context('room', ids);
+            const row = await model.roomScene(null, ids.roomId);
+            const scene = typeof row?.cena_3d === 'string' ? JSON.parse(row.cena_3d) : row?.cena_3d;
+            if (!scene) throw ApiError.naoEncontrado();
+            return scene;
+        },
+        publishRoomScene(ids, scene, contextValue, unitAccess = false) {
+            return safeMutation(async c => {
+                await context('room', ids, true, c, true);
+                const seats = await model.seatLayout(c, ids.roomId, true);
+                const missing = new Set(seats.filter(row => row.status === 'ATIVA').map(row => idString(row.id_assento)));
+                const idsUsed = new Set();
+                for (const item of scene.objects) {
+                    if (idsUsed.has(item.id)) throw conflict('O arquivo tem objetos com IDs repetidos.');
+                    idsUsed.add(item.id);
+                    if (item.seatId && (!['seat','vip','bench','car'].includes(item.type) || !missing.delete(item.seatId))) {
+                        throw conflict('Cada lugar da cena deve estar ligado uma vez a um assento ativo desta sala.');
+                    }
+                }
+                if (!seats.some(row => row.status === 'ATIVA') || missing.size) {
+                    throw conflict('Vincule todos os assentos ativos da sala antes de publicar.');
+                }
+                await model.saveRoomScene(c, ids.roomId, scene);
+                await identity.audit(c, 'VENUE.ROOM_SCENE_PUBLISHED', ids.roomId, contextValue);
+                return { published: true };
+            }, contextValue, ids.localId, unitAccess);
+        },
+        layout(ids,contextValue,unitAccess=false){
+            return identity.transaction(async c=>{
+                if(unitAccess)await unitReadLocation(c,await identity.activeActor(c,contextValue),ids.localId);
+                else await admin(c,contextValue);
+                const {place,hall}=await context('room',ids,true,c);
+                return layoutDto(place,hall,await model.seatLayout(c,ids.roomId),Boolean(await model.roomSessions(c,ids.roomId)));
+            },contextValue);
+        },
+        batchSeats(ids,input,contextValue,unitAccess=false){
+            return safeMutation(async c=>{
+                const {place,hall}=await context('room',ids,true,c,true);
+                await requireMutableRoom(c,ids.roomId);
+                const existing=await model.seatLayout(c,ids.roomId,true);
+                const all=[...existing,...input.seats];
+                if(all.filter(row=>row.status==='ATIVA').length>hall.capacidade)throw conflict('O lote excede a capacidade de assentos ativos da sala.');
+                checkPositions(all);
+                await model.insertSeats(c,ids.roomId,input.seats);
+                await identity.audit(c,'VENUE.SEATS_BATCH_CREATED',ids.roomId,contextValue);
+                return layoutDto(place,hall,await model.seatLayout(c,ids.roomId),false);
+            },contextValue,ids.localId,unitAccess);
+        },
+        moveSeats(ids,input,contextValue,unitAccess=false){
+            return safeMutation(async c=>{
+                const {place,hall}=await context('room',ids,true,c,true);
+                const existing=await model.seatLayout(c,ids.roomId,true);
+                const changes=new Map(input.moves.map(move=>[move.seatId,move.position]));
+                const updated=[];
+                const layout=existing.map(row=>{
+                    const seatId=idString(row.id_assento);
+                    if(!changes.has(seatId))return row;
+                    const position=changes.get(seatId);
+                    changes.delete(seatId);
+                    if((row.posicao_visual??null)!==position)updated.push({seatId,position});
+                    return {...row,posicao_visual:position};
+                });
+                if(changes.size)throw ApiError.naoEncontrado();
+                checkPositions(layout);
+                if(updated.length){
+                    // Temporary slots outside the input range allow atomic moves and swaps.
+                    await model.moveSeats(c,ids.roomId,updated.map((move,index)=>({...move,position:4294967295-index})));
+                    await model.moveSeats(c,ids.roomId,updated);
+                    await identity.audit(c,'VENUE.SEAT_POSITIONS_CHANGED',ids.roomId,contextValue);
+                }
+                return layoutDto(place,hall,layout,Boolean(await model.roomSessions(c,ids.roomId)));
+            },contextValue,ids.localId,unitAccess);
+        },
         async list(kind, ids, q, adminRead = false) {
             if (kind !== 'local') await context(kind, ids, adminRead);
             const parentId = kind === 'room' ? ids.localId : kind === 'seat' ? ids.roomId : null;
@@ -92,7 +178,7 @@ export function createVenueService({ model, identity }) {
                         }
                     }
                 } else {
-                    await requireMutableRoom(c, ids.roomId);
+                    if(!id||Object.keys(input).some(key=>key!=='posicao_visual'))await requireMutableRoom(c, ids.roomId);
                     const nextStatus = input.status ?? previous?.status ?? 'ATIVA';
                     if (hall.status === 'ATIVA' && id && nextStatus !== previous.status) throw conflict('Desative a sala antes de alterar assentos ativos');
                     if (nextStatus === 'ATIVA' && (!id || previous.status !== 'ATIVA') && total(await model.activeSeats(c, ids.roomId)) >= hall.capacidade) {

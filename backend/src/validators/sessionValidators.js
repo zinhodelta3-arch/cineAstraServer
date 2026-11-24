@@ -9,19 +9,26 @@ const date = z.string().regex(/^[1-9]\d{3}-\d{2}-\d{2}$/).refine(v => {
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/).transform(v => v.length === 5 ? `${v}:00` : v);
 const price = z.string().regex(/^(0|[1-9]\d{0,7})\.\d{2}$/);
 const language = z.enum(['DUBLADO', 'LEGENDADO', 'ORIGINAL']);
-const state = z.enum(['AGENDADA', 'EM_CARTAZ', 'ENCERRADA', 'CANCELADA']);
+const state = z.enum(['AGENDADA', 'EM_CARTAZ', 'ENCERRADA', 'CANCELADA', 'INTERROMPIDA']);
+const operationalState = z.enum([...state.options, 'ATRASADA', 'EXPIRADA']);
+const limit = z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20);
+const note = z.string().trim().max(300).transform(value => value || null).nullable().default(null);
 const fields = { id_filme: catalogId, id_sala: catalogId, data: date, horario_inicio: time, horario_fim: time,
     idioma: language, preco_inteira: price };
 const create = z.object({ ...fields, idioma: language.default('DUBLADO') }).strict();
 export const sessionSchemas = {
     create,
+    offerQuery: z.object({ limit, cursor: catalogId.optional(), localId: catalogId.optional(), titulo: z.string().trim().min(1).max(200).optional() }).strict(),
+    offerCreate: z.object({ id_filme:catalogId, observacao:note }).strict(),
+    offerPatch: z.object({ observacao:note.removeDefault() }).strict(),
     unitCreate: create.extend({ horario_fim: time.optional() }),
     patch: z.object({ id_filme: catalogId, data: date, horario_inicio: time, horario_fim: time,
         idioma: language, preco_inteira: price, status: state }).partial().strict().refine(v => Object.keys(v).length > 0),
     query: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),
         cursor: catalogId.optional(), localId: catalogId.optional(), filmId: catalogId.optional(), date: date.optional(), startFrom: time.optional(), startUntil: time.optional() }).strict(),
-    adminQuery: z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),
-        cursor: catalogId.optional(), localId: catalogId.optional(), roomId: catalogId.optional(), date: date.optional(), startFrom: time.optional(), startUntil: time.optional(), status: state.optional() }).strict()
+    adminQuery: z.object({ limit, cursor: catalogId.optional(), localId: catalogId.optional(), roomId: catalogId.optional(), date: date.optional(),
+        startFrom: time.optional(), startUntil: time.optional(), status: state.optional(), operationalStatus: operationalState.optional(),
+        visibility: z.enum(['programming','archived']).optional() }).strict()
 };
 export function sessionQuery(schema) { return (req, res, next) => {
     const parsed = schema.safeParse(req.query);

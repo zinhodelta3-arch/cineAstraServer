@@ -24,12 +24,12 @@ function SearchField() {
       <div className={styles.top}>
         <div className={styles.heading}>
           <DialogTitle className={styles.title}>O que vamos assistir?</DialogTitle>
-          <DialogDescription className={styles.description}>Digite o nome ou parte do título de um filme.</DialogDescription>
+          <DialogDescription className={styles.description}>Busque pelo título, direção ou gênero.</DialogDescription>
         </div>
         <DialogClose className={styles.close} aria-label="Fechar busca"><X size={24} aria-hidden="true" /></DialogClose>
         <form className={styles.form} role="search" aria-label="Buscar no streaming" onSubmit={submit}>
           <Search size={24} aria-hidden="true" />
-          <input ref={input} type="search" maxLength={200} aria-label="Nome do filme" placeholder="Digite o nome de um filme…"
+          <input ref={input} type="search" maxLength={200} aria-label="Buscar por título, direção ou gênero" placeholder="Título, direção ou gênero"
             value={query} onChange={change} onKeyDown={focusSuggestion} autoComplete="off" />
           {query && <button type="button" onClick={clear} aria-label="Limpar busca"><X size={20} aria-hidden="true" /></button>}
         </form>

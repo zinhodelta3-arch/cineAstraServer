@@ -28,7 +28,10 @@ export const catalogSchemas = {
     genre: z.object({ nome: z.string().trim().min(1).max(100), status: z.enum(['ATIVO', 'INATIVO']).default('ATIVO') }).strict(),
     genrePatch: z.object({ nome: z.string().trim().min(1).max(100).optional(), status: z.enum(['ATIVO', 'INATIVO']).optional() }).strict().refine(v => Object.keys(v).length > 0),
     link: z.object({ genreId: catalogId }).strict(),
-    query: query.extend({ page: catalogId.transform(Number).optional() }).refine(q => !(q.page && q.cursor)),
+    query: query.extend({
+        page: catalogId.transform(Number).optional(), sale: z.enum(['open', 'closed']).optional(),
+        showcase: z.literal('true').transform(() => true).optional()
+    }).refine(q => !(q.page && q.cursor) && (!q.sale || q.page) && (!q.showcase || Object.keys(q).every(key => ['showcase', 'limit'].includes(key)))),
     adminQuery: query.extend({ status: z.enum(['ATIVO', 'INATIVO']).optional() }),
     popularQuery: z.object({ limit: z.enum(['4', '8']).transform(Number).default(4) }).strict(),
     genreQuery: z.object(paging).strict(), adminGenreQuery: z.object({ ...paging, q: z.string().trim().min(1).max(100).optional(), status: z.enum(['ATIVO', 'INATIVO']).optional() }).strict()

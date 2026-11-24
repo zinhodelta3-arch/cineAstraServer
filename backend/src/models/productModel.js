@@ -34,12 +34,25 @@ export function createProductModel(database) {
         list(type, q, supplierId = null) {
             const s = spec(type);
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
-            const where = [`${s.id} > ?`], args = [q.cursor ?? '0'];
-            if (q.q) { where.push("CONCAT_WS(' ', nome, categoria) LIKE ? ESCAPE '!'"); args.push(`%${q.q.replace(/[!%_]/g, value => `!${value}`)}%`); }
-            if (supplierId || q.supplierId) { where.push('id_fornecedor = ?'); args.push(supplierId ?? q.supplierId); }
-            if (q.localId) { where.push('id_local = ?'); args.push(q.localId); }
-            if (q.status) { where.push('status = ?'); args.push(q.status); }
-            return rows(database, `SELECT ${s.fields} FROM ${s.table} WHERE ${where.join(' AND ')} ORDER BY ${s.id} LIMIT ${q.limit + 1}`, args);
+            const where = [`p.${s.id} > ?`], args = [q.cursor ?? '0'];
+            if (q.q) { where.push("CONCAT_WS(' ', p.nome, p.categoria) LIKE ? ESCAPE '!'"); args.push(`%${q.q.replace(/[!%_]/g, value => `!${value}`)}%`); }
+            if (supplierId || q.supplierId) { where.push('p.id_fornecedor = ?'); args.push(supplierId ?? q.supplierId); }
+            if (q.localId) { where.push('p.id_local = ?'); args.push(q.localId); }
+            if (q.status) { where.push('p.status = ?'); args.push(q.status); }
+            if (q.scope) where.push(q.scope === 'own' ? 'p.id_local IS NULL' : 'p.id_local IS NOT NULL');
+            const fields = s.fields.split(',').map(field => `p.${field}`).join(',');
+            const shipmentFields = type === 'equipment' ? ', entrega.id_logistica, entrega.id_local_destino,destino.nome AS nome_local_destino' : '';
+            const shipmentJoins = type === 'equipment' ? `
+                LEFT JOIN logistica entrega ON entrega.id_logistica = (
+                    SELECT l.id_logistica FROM logistica l WHERE l.id_equipamento_origem=p.id_equipamento
+                    AND l.id_fornecedor=p.id_fornecedor AND l.status IN ('ENVIADO','EM_TRANSITO')
+                    ORDER BY l.id_logistica DESC LIMIT 1)
+                LEFT JOIN locais destino ON destino.id_local=entrega.id_local_destino` : '';
+            return rows(database, `SELECT ${fields}, COALESCE(NULLIF(f.nome_cine,''), f.razao_social) AS nome_fornecedor,
+                unidade.nome AS nome_local${shipmentFields} FROM ${s.table} p
+                JOIN fornecedores f ON f.id_fornecedor=p.id_fornecedor
+                LEFT JOIN locais unidade ON unidade.id_local=p.id_local${shipmentJoins}
+                WHERE ${where.join(' AND ')} ORDER BY p.${s.id} LIMIT ${q.limit + 1}`, args);
         },
         async create(type, c, input) {
             const s = spec(type);

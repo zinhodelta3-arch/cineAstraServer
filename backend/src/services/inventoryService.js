@@ -12,7 +12,10 @@ const balanceDto = (kind, row, committed = false) => {
     const available = row.quantidade - reserved;
     return { [kind === 'inputs' ? 'id_insumo' : 'id_equipamento']: idString(row[kind === 'inputs' ? 'id_insumo' : 'id_equipamento']), nome: row.nome ?? null, id_fornecedor: idString(row.id_fornecedor), id_local: row.id_local == null ? null : idString(row.id_local), quantidade: row.quantidade, quantidade_reservada: reserved, disponivel: available, ...(kind === 'inputs' ? { quantidade_minima: row.quantidade_minima, alerta_reposicao: available <= row.quantidade_minima } : {}), status: row.status };
 };
-const movementDto = row => ({ id_movimentacao: idString(row.id_movimentacao), id_insumo: row.id_insumo === null ? null : idString(row.id_insumo), id_equipamento: row.id_equipamento === null ? null : idString(row.id_equipamento), nome_item: row.nome_insumo ?? row.nome_equipamento ?? null, id_reserva: row.id_reserva === null ? null : idString(row.id_reserva), id_logistica: row.id_logistica == null ? null : idString(row.id_logistica), id_solicitacao: row.id_solicitacao == null ? null : idString(row.id_solicitacao), id_usuario: idString(row.id_usuario), tipo: row.tipo, quantidade: row.quantidade, motivo: row.motivo ?? null, data_movimentacao: row.data_movimentacao });
+const nullableId=value=>value==null?null:idString(value);
+const movementDto = row => ({ id_movimentacao: idString(row.id_movimentacao), id_insumo: nullableId(row.id_insumo), id_equipamento: nullableId(row.id_equipamento), nome_item: row.nome_insumo ?? row.nome_equipamento ?? null, id_reserva: nullableId(row.id_reserva), id_logistica: nullableId(row.id_logistica), id_solicitacao: nullableId(row.id_solicitacao), id_usuario: idString(row.id_usuario), tipo: row.tipo, quantidade: row.quantidade, motivo: row.motivo ?? null, data_movimentacao: row.data_movimentacao,
+    id_local:nullableId(row.id_local_movimentacao),estorno_de:nullableId(row.estorno_de),
+    correcao_de:nullableId(row.correcao_de),estornada_por:nullableId(row.estornada_por) });
 const positive = value => Number.isInteger(value) && value > 0 && value <= 2147483647;
 const stockFields = row => ({ quantity: row.quantidade, reserved: row.quantidade_reservada, available: row.quantidade - row.quantidade_reservada });
 const offerDto = (kind, row) => ({ id: idString(row.id), name: row.nome, price: String(row.preco), offered: Boolean(row.oferta_local),
@@ -159,10 +162,11 @@ export function createInventoryService({ model, identity }) {
                 if (!['ADMIN','FORNECEDOR','SUPERVISOR','COLABORADOR'].includes(actor.role)) throw ApiError.acessoNegado();
                 const qty = input.quantidade;
                 const unitStaff = ['SUPERVISOR','COLABORADOR'].includes(actor.role);
-                if (unitStaff && (kind !== 'inputs' || !['SAIDA','PERDA'].includes(input.tipo) || qty >= 0)) throw ApiError.acessoNegado();
-                if (actor.role === 'COLABORADOR' && !input.motivo?.trim()) throw ApiError.validacao('Informe a justificativa da movimentação.');
+                if (unitStaff && !['ENTRADA','SAIDA','PERDA'].includes(input.tipo)) throw ApiError.acessoNegado();
+                if (unitStaff && !input.motivo?.trim()) throw ApiError.validacao('Informe a justificativa da movimentação.');
                 if ((['ENTRADA','DEVOLUCAO'].includes(input.tipo) && qty <= 0) || (['SAIDA','PERDA'].includes(input.tipo) && qty >= 0) || !Number.isInteger(qty) || qty === 0 || Math.abs(qty) > 2147483647) throw ApiError.validacao('Sinal da quantidade incompatível com o tipo');
                 const row = found(await model.item(kind,id,c,true));
+                if (input.localId && nullableId(row.id_local)!==input.localId) throw conflict('O item pertence a outro estoque.');
                 if (actor.role === 'COLABORADOR') {
                     if (row.id_local == null) throw ApiError.acessoNegado();
                     await unitReadLocation(c,user,row.id_local,{ activeTeam: true });
@@ -172,10 +176,38 @@ export function createInventoryService({ model, identity }) {
                 if (kind === 'inputs' && qty < 0 && row.quantidade - row.quantidade_reservada < -qty) throw conflict('Saldo disponível insuficiente');
                 if (row.status === 'INDISPONIVEL' && actor.role !== 'ADMIN') throw conflict('Item indisponível');
                 await change(c,kind,id,qty);
-                const movementId = await model.insertMovement(c,{ inputId: input.inputId, equipmentId: input.equipmentId, actorId: actor.id, tipo: input.tipo, quantidade: qty, motivo: input.motivo });
+                const movementId = await model.insertMovement(c,{ inputId: input.inputId, equipmentId: input.equipmentId,
+                    localId: row.id_local, actorId: actor.id, tipo: input.tipo, quantidade: qty, motivo: input.motivo });
                 await identity.audit(c,'INVENTORY.MOVED',movementId,context);
                 return { movement: movementDto(found(await model.movement(movementId,c))), balance: balanceDto(kind,found(await model.item(kind,id,c))) };
             },context);
+        },
+        async reviseMovement(movementId, input, context, correct=false) {
+            return identity.transaction(async c=>{
+                const actor=await identity.activeActor(c,context);
+                if(actor.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();
+                const previous=found(await model.movement(movementId,c,true));
+                if(previous.id_reserva!=null||previous.id_logistica!=null||previous.estorno_de!=null) {
+                    throw conflict('Este movimento pertence a uma operação vinculada ou é um estorno.');
+                }
+                if(await model.reversalOf(c,movementId))throw conflict('A movimentação já foi estornada.');
+                const isInput=previous.id_insumo!=null;
+                const kind=isInput?'inputs':'equipment',itemId=nullableId(isInput?previous.id_insumo:previous.id_equipamento);
+                const item=found(await model.item(kind,itemId,c,true));
+                const localId=nullableId(item.id_local);
+                if(localId==null||previous.id_local_movimentacao!=null&&nullableId(previous.id_local_movimentacao)!==localId) {
+                    throw conflict('A correção requer que o item esteja na mesma unidade da movimentação.');
+                }
+                if(!isInput&&await model.equipmentCommitment(itemId,c,true))throw conflict('O equipamento está comprometido com uma transferência.');
+                const delta=(correct?input.quantidade:0)-previous.quantidade;
+                if(delta!==0)await change(c,kind,itemId,delta);
+                const data={inputId:nullableId(previous.id_insumo),equipmentId:nullableId(previous.id_equipamento),
+                    actorId:idString(actor.id_usuario),localId,motivo:input.motivo};
+                const reversal=await model.appendRevision(c,{...data,tipo:'AJUSTE',quantidade:-previous.quantidade,reverses:movementId});
+                const replacement=correct?await model.appendRevision(c,{...data,tipo:input.tipo,quantidade:input.quantidade,replaces:movementId}):null;
+                await identity.audit(c,correct?'INVENTORY.MOVEMENT_CORRECTED':'INVENTORY.MOVEMENT_REVERSED',movementId,context);
+                return {reversalId:reversal,replacementId:replacement,balance:balanceDto(kind,found(await model.item(kind,itemId,c)))};
+            },context,{readCommitted:true});
         },
         // API interna do checkout: o chamador cria pedido e linhas na MESMA transação/conexão.
         async reserve(c,{ orderId, localId, lines }) {

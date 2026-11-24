@@ -8,21 +8,19 @@ const cinemaSections = [
     ["Cinemas", "/cinema/localizacoes"],
     ["Experiências", "/cinema/experiencias"], ["AstraSnack", "/cinema/astrasnack"],
   ] },
-  { title: "Clube", items: [
-    ["Planos e assinaturas", "/cinema/planos"], ["Minhas compras", "/cinema/minhascompras"],
+  { title: "Minha conta", items: [
+    ["Meu perfil", "/cinema/perfil"], ["Minhas compras", "/cinema/minhascompras"], ["Gerenciar assinatura", "/cinema/perfil/assinatura"],
   ] },
 ];
 const streamingSections = [
-  { title: "Streaming", items: [
-    ["Categorias", "/streaming/categorias"], ["Meu perfil", "/streaming/meuperfil"],
-  ] },
-  { title: "Cinema", items: [["Voltar ao cinema", "/cinema/home"], ["Planos e assinaturas", "/cinema/planos"]] },
+  { title: "Cinema", items: [["Voltar ao cinema", "/cinema/home"], ["Categorias do Streaming", "/streaming/categorias"], ["Planos e assinaturas", "/cinema/planos"]] },
+  { title: "Minha conta", items: [["Meu perfil no Streaming", "/streaming/meuperfil"], ["Gerenciar assinatura", "/cinema/perfil/assinatura"]] },
 ];
 
 export default function Footer({ supportHref = "/cinema/suporte" }) {
   const streaming = supportHref.startsWith("/streaming/");
   const sections = [...(streaming ? streamingSections : cinemaSections), { title: "CineAstra", items: [
-    ["Sobre nós", "/cinema/sobre-nos"], ["CineAstraNews", "/cinema/noticias"], ["Parcerias", "/cinema/parcerias"], ["Destinação social", "/cinema/destinacao-social"],
+    ["Sobre nós", "/cinema/sobre-nos"], ["Parcerias", "/cinema/parcerias"], ["Destinação social", "/cinema/destinacao-social"],
     [registrationDocuments.terms.title, registrationDocuments.terms.url], [registrationDocuments.privacy.title, registrationDocuments.privacy.url],
     ["Suporte", supportHref],
   ] }];

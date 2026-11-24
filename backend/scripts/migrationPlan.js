@@ -55,7 +55,16 @@ export async function migrationPlan() {
         '20261115_55_monthly_social_program.sql',
         '20261118_56_unit_snack_offers.sql',
         '20261118_57_supplier_owned_stock.sql',
-        '20261118_58_experience_spaces.sql'
+        '20261118_58_experience_spaces.sql',
+        '20261122_59_admin_sales_archive.sql',
+        '20261123_60_unit_film_offers_session_operations.sql',
+        '20261123_61_counter_customer_name.sql',
+        '20261123_62_inventory_movement_location.sql',
+        '20261123_63_supply_admin_operations.sql',
+        '20261123_64_support_notifications.sql',
+        '20261123_65_seat_layout.sql',
+        '20261123_66_subscription_management.sql',
+        '20261123_67_catalog_links.sql'
     ]);
     const sources = [
         ['20261001_02_create_tables.sql', sql => /^(CREATE TABLE|CREATE INDEX)\b/i.test(sql)],
@@ -120,14 +129,30 @@ export async function migrationPlan() {
         ['20261115_55_monthly_social_program.sql', () => true],
         ['20261118_56_unit_snack_offers.sql', () => true],
         ['20261118_57_supplier_owned_stock.sql', () => true],
-        ['20261118_58_experience_spaces.sql', () => true]
+        ['20261118_58_experience_spaces.sql', () => true],
+        ['20261122_59_admin_sales_archive.sql', () => true],
+        ['20261123_60_unit_film_offers_session_operations.sql', () => true],
+        ['20261123_61_counter_customer_name.sql', () => true],
+        ['20261123_62_inventory_movement_location.sql', () => true],
+        ['20261123_63_supply_admin_operations.sql', () => true],
+        ['20261123_64_support_notifications.sql', () => true],
+        ['20261123_65_seat_layout.sql', () => true],
+        ['20261123_66_subscription_management.sql', () => true],
+        ['20261123_67_catalog_links.sql', () => true],
+        ['20261123_68_news.sql', () => true],
+        ['20261123_69_marketing_promotions.sql', () => true],
+        ['20261123_70_room_scene.sql', () => true]
     ];
     const plan = [];
     for (const [file, filter] of sources) {
         const text = await readFile(new URL(`../../database/migrations/${file}`, import.meta.url), 'utf8');
         let index = 0;
         for (const sql of splitSql(text).filter(filter)) {
-            if (!/^(CREATE TABLE|CREATE INDEX|ALTER TABLE|INSERT INTO|UPDATE suporte SET)\b/i.test(sql) || sql.includes(' ?')) throw new Error('Statement não aprovado');
+            const companyBackfill = file === '20261123_63_supply_admin_operations.sql'
+                && /^UPDATE fornecedores f JOIN empresas_fornecedoras e\b/.test(sql);
+            const categoryRename = file === '20261123_66_subscription_management.sql'
+                && /^UPDATE planos SET nome='Essencial', descricao='Benefícios em ingressos e no AstraSnack\.' WHERE nome='Família'$/.test(sql);
+            if ((!companyBackfill && !categoryRename && !/^(CREATE TABLE|CREATE INDEX|ALTER TABLE|INSERT INTO|UPDATE suporte SET)\b/i.test(sql)) || sql.includes(' ?')) throw new Error('Statement não aprovado');
             const statement = legacyLf.has(file) ? sql.replaceAll('\r\n', '\n') : sql;
             plan.push({ name: `${file}:${++index}`, sql: statement, checksum: createHash('sha256').update(statement).digest('hex') });
         }

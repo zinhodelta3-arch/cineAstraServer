@@ -36,16 +36,16 @@ export default function PosterCard({ movie, onSelectMovie, soon = false }) {
         <div className="absolute inset-0 poster-scrim" aria-hidden="true" />
         {soon ? (
           <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-lg bg-red-700 px-2.5 py-1.5 text-xs font-bold uppercase text-white shadow-lg f-title">
-            <Flame className="w-3.5 h-3.5" aria-hidden="true" /> Em breve
+            <Flame className="w-3.5 h-3.5" aria-hidden="true" /> {movie.label ?? "Em breve"}
           </span>
         ) : (
           <span className="absolute top-3 left-3 inline-flex items-center rounded-lg bg-background/70 backdrop-blur-md border border-border px-2.5 py-1.5 text-xs font-bold text-foreground f-title">
-            No catálogo
+            {movie.label ?? "No catálogo"}
           </span>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity flex items-end justify-center p-4">
           <span className="inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">
-            <Ticket className="w-4 h-4 mr-1.5" aria-hidden="true" /> {soon ? "Consultar sessões" : "Consultar sessões"}
+            <Ticket className="w-4 h-4 mr-1.5" aria-hidden="true" /> {movie.onSale ? "Consultar sessões" : "Ver detalhes"}
           </span>
         </div>
       </div>
@@ -63,7 +63,7 @@ export default function PosterCard({ movie, onSelectMovie, soon = false }) {
           <p className="text-xs font-semibold text-foreground flex items-center"><CalendarDays className="w-3.5 h-3.5 mr-1.5 text-primary" aria-hidden="true" />{movie.release}</p>
         ) : (
           <div>
-            <p className="text-[11px] text-muted-foreground mb-1.5">Consultar horários disponíveis</p>
+            <p className="text-[11px] text-muted-foreground mb-1.5">{movie.onSale ? 'Consultar horários disponíveis' : 'Ver informações do filme'}</p>
             <div className="flex gap-1.5 flex-wrap">
               {movie.sessions.slice(0, 3).map((t) => (
                 <span key={t} className="px-2 py-1 rounded-sm bg-secondary/20 border border-secondary/40 text-[11px] font-bold text-foreground group-hover:text-primary">{t}</span>

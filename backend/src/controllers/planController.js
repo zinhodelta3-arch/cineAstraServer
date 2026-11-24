@@ -10,6 +10,7 @@ export function createPlanController(service){return {
     archive:async(req,res)=>{await service.archive(req.params.planId,context(req));res.status(204).end();},
     adminCreateSubscription:async(req,res)=>success(res,await service.adminCreateSubscription(req.input,context(req)),201),
     adminEditSubscription:async(req,res)=>success(res,await service.adminEditSubscription(req.params.subscriptionId,req.input,context(req))),
+    adminEndSubscription:async(req,res)=>{await service.adminEndSubscription(req.params.subscriptionId,context(req));res.status(204).end();},
     mine:async(req,res)=>success(res,await service.mySubscriptions(req.planPage,context(req))),
     current:async(req,res)=>success(res,await service.current(context(req))),
     own:async(req,res)=>success(res,await service.ownSubscription(req.params.subscriptionId,context(req))),

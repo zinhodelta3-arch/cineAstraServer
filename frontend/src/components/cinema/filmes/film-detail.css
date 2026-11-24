@@ -845,3 +845,11 @@
 .ca-film .cf-date-ticket[aria-pressed="true"]{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground);}
 .ca-film .cf-date-ticket:focus-visible,.ca-film .cf-date-arrows button:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
 @media(max-width:640px){.ca-film .cf-date-band{padding-top:22px;padding-bottom:18px}.ca-film .cf-date-ticket{flex-basis:120px;min-width:120px;min-height:76px}}
+.ca-film .cf-frame { margin-block-end: clamp(24px, 5vw, 64px); }
+.ca-film .cf-date-head { align-items: center; }
+.ca-film .cf-date-kicker { margin-block: 8px 0; }
+.ca-film .cf-date-arrows button:disabled { opacity: .45; cursor: default; }
+.ca-film .cf-heading, .ca-film .cf-movie-title { overflow-wrap: anywhere; text-wrap: balance; line-height: 1.08; }
+.ca-film .cf-scroll-hint { display:flex; align-items:center; gap:6px; margin-block: 0 8px; color: var(--muted-foreground); font-size: .75rem; }
+.ca-film .cf-availability-scroll { overscroll-behavior-y: auto; scrollbar-color: var(--muted-foreground) transparent; padding-block-end: 12px; }
+.ca-film .cf-availability-heading { flex-wrap: wrap; }

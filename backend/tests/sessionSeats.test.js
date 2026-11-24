@@ -22,7 +22,7 @@ test('consulta pública retorna mapa com tipos e estados sem dados do comprador'
     const rows=states.map((state,i)=>({...base,id_assento:String(i+1),fileira:'A',numero:i+1,tipo:i===1?'PCD':'COMUM',disponibilidade:state,id_usuario:'secret',id_pedido:'private',expira_em:'private'}));
     const f=fixture(rows),res=await request(f.app).get('/api/sessions/1/seats').expect(200);
     assert.equal(res.headers['cache-control'],'no-store');
-    assert.deepEqual(res.body.data,{sessionId:'1',roomId:'2',locationId:'3',seats:states.map((state,i)=>({seatId:String(i+1),row:'A',number:i+1,type:i===1?'PCD':'COMUM',availability:state}))});
+    assert.deepEqual(res.body.data,{sessionId:'1',roomId:'2',locationId:'3',seats:states.map((state,i)=>({seatId:String(i+1),row:'A',number:i+1,position:i+1,type:i===1?'PCD':'COMUM',availability:state}))});
 });
 test('sala sem assentos retorna mapa vazio; sessão não pública/inexistente retorna 404',async()=>{
     const empty=fixture([{...base,id_assento:null}]);

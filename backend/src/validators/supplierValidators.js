@@ -5,18 +5,23 @@ import { normalizeCnpj } from '../utils/cnpj.js';
 
 const name = z.string().trim().min(1).max(150);
 const cnpj = z.string().transform(normalizeCnpj).pipe(z.string().length(14));
-const query = z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: catalogId.optional(), status: z.enum(['ATIVO','INATIVO']).optional() }).strict();
+const paging = z.object({ limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: catalogId.optional() });
+const query = paging.extend({ status:z.enum(['ATIVO','INATIVO']).optional(),companyId:catalogId.optional() }).strict();
+const companyFields={razao_social:name,nome_cine:name.nullable().optional()};
 export const supplierSchemas = {
-    create: z.object({ userId: catalogId, razao_social: name, nome_cine: name.nullable().optional(), cnpj }).strict(),
-    patch: z.object({ razao_social: name.optional(), nome_cine: name.nullable().optional(), cnpj: cnpj.optional(), status: z.enum(['ATIVO','INATIVO']).optional() }).strict().refine(v => Object.keys(v).length > 0),
+    create: z.object({ userId:catalogId, companyId:catalogId }).strict(),
+    patch: z.object({ companyId:catalogId.optional(),status:z.enum(['ATIVO','INATIVO']).optional() }).strict().refine(v => Object.keys(v).length > 0),
+    companyCreate:z.object({...companyFields,cnpj}).strict(),
+    companyPatch:z.object(companyFields).strict(),
+    companyQuery:paging.extend({q:name.optional()}).strict(),
     query
 };
 export function supplierParams(req, res, next) {
     if (!catalogId.safeParse(req.params.id).success) throw ApiError.validacao('Identificador inválido');
     next();
 }
-export function supplierQuery(req, res, next) {
-    const parsed = query.safeParse(req.query);
+export function supplierQuery(schema) { return (req, res, next) => {
+    const parsed = schema.safeParse(req.query);
     if (!parsed.success) throw ApiError.validacao('Paginação ou filtro inválido');
     req.supplierQuery = parsed.data; next();
-}
+};}

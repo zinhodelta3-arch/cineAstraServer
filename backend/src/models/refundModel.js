@@ -5,36 +5,45 @@ export function createRefundModel(database){
     const one=async(c,sql,args=[])=> (await rows(c,sql,args))[0]??null;
     const paymentSql='SELECT p.id_pagamento,p.id_pedido,p.id_cobranca,p.id_metodo,p.valor,p.status,p.transacao_id,COALESCE(i.id_usuario,o.id_usuario,ac.id_usuario) AS id_usuario,i.provider,i.provider_ref,o.data_pedido,a.inicio AS assinatura_inicio,a.periodicidade,a.status AS assinatura_status FROM pagamentos p LEFT JOIN pagamento_intencoes i ON i.id_intencao=p.id_intencao LEFT JOIN pedidos o ON o.id_pedido=p.id_pedido LEFT JOIN assinatura_cobrancas ac ON ac.id_cobranca=p.id_cobranca LEFT JOIN assinaturas a ON a.id_assinatura=ac.id_assinatura WHERE p.id_pagamento=?';
     const refundSql='SELECT r.id_reembolso,r.id_pagamento,r.id_usuario,r.chave_idempotencia,r.motivo,r.detalhes,r.dentro_prazo,r.termos_versao,r.valor_solicitado,r.valor_confirmado,r.status,r.provider_ref,r.compensacao_status,r.solicitado_em,r.prazo_resposta_em,r.respondido_em,p.valor AS pagamento_valor,p.status AS pagamento_status,p.transacao_id,p.id_pedido,p.id_cobranca,i.provider AS pagamento_provider,i.provider_ref AS pagamento_provider_ref FROM reembolso_solicitacoes r JOIN pagamentos p ON p.id_pagamento=r.id_pagamento LEFT JOIN pagamento_intencoes i ON i.id_intencao=p.id_intencao WHERE r.id_reembolso=?';
-    const adminFields='r.id_reembolso,r.id_pagamento,r.id_usuario,r.motivo,r.dentro_prazo,r.valor_solicitado,r.valor_confirmado,r.status,r.compensacao_status,r.solicitado_em,r.prazo_resposta_em,r.respondido_em,p.id_pedido,p.id_cobranca,p.valor AS pagamento_valor,p.status AS pagamento_status';
+    const adminFields='r.id_reembolso,r.id_pagamento,r.id_usuario,r.motivo,r.dentro_prazo,r.valor_solicitado,r.valor_confirmado,r.status,r.compensacao_status,r.solicitado_em,r.prazo_resposta_em,r.respondido_em,r.arquivado_admin_em,p.id_pedido,p.id_cobranca,p.valor AS pagamento_valor,p.status AS pagamento_status';
     const adminFrom=' FROM reembolso_solicitacoes r JOIN pagamentos p ON p.id_pagamento=r.id_pagamento';
+    const replyJoin=` LEFT JOIN notificacoes n ON n.id_usuario=r.id_usuario AND n.dedupe_key=CONCAT('refund-decision:',r.id_reembolso)`;
     return {
         order:(c,id)=>one(c,'SELECT id_pedido,id_usuario,status FROM pedidos WHERE id_pedido=?',[id]),
-        orderPayment:(c,id)=>one(c,`SELECT p.id_pagamento FROM pagamentos p JOIN pagamento_intencoes i ON i.id_intencao=p.id_intencao
+        orderPayment:(c,id,paymentId)=>one(c,`SELECT p.id_pagamento FROM pagamentos p JOIN pagamento_intencoes i ON i.id_intencao=p.id_intencao
             WHERE p.id_pedido=? AND p.status IN ('APROVADO','PARCIALMENTE_ESTORNADO') AND i.provider IS NOT NULL
-            ORDER BY p.id_pagamento DESC LIMIT 1`,[id]),
-        orderRequests:(c,id,owner,limit,cursor)=>rows(c,`SELECT ${adminFields}${adminFrom}
+            ${paymentId?'AND p.id_pagamento=?':''} ORDER BY p.id_pagamento DESC LIMIT 1`,paymentId?[id,paymentId]:[id]),
+        orderRequests:(c,id,owner,limit,cursor)=>rows(c,`SELECT ${adminFields},r.detalhes,n.mensagem AS resposta_cliente${adminFrom}${replyJoin}
             WHERE p.id_pedido=? AND r.id_usuario=? AND (? IS NULL OR r.id_reembolso<?)
             ORDER BY r.id_reembolso DESC LIMIT ?`,[id,owner,cursor??null,cursor??null,limit+1]),
         async adminList(c,q){
             const where=[],args=[];
             if(q.cursor){where.push('r.id_reembolso<?');args.push(q.cursor);}
+            if(q.stage==='pending')where.push("r.status IN ('EM_ANALISE','RECEBIDA','ENVIADA')");
+            if(q.stage==='closed')where.push("r.status IN ('CONFIRMADA','NEGADA','FALHOU','CANCELADA')");
+            if(q.visibility)where.push(q.visibility==='archived'?'r.arquivado_admin_em IS NOT NULL':'r.arquivado_admin_em IS NULL');
             for(const [key,column] of Object.entries({status:'r.status',reason:'r.motivo',compensation:'r.compensacao_status',userId:'r.id_usuario',paymentId:'r.id_pagamento',orderId:'p.id_pedido',chargeId:'p.id_cobranca'}))if(q[key]){where.push(`${column}=?`);args.push(q[key]);}
             args.push(q.limit+1);
             return rows(c,`SELECT ${adminFields}${adminFrom} ${where.length?'WHERE '+where.join(' AND '):''} ORDER BY r.id_reembolso DESC LIMIT ?`,args);
         },
-        adminGet:(c,id)=>one(c,`SELECT ${adminFields},r.detalhes,r.termos_versao,r.decisao_fundamento,r.itens_selecionados${adminFrom} WHERE r.id_reembolso=?`,[id]),
+        adminGet:(c,id)=>one(c,`SELECT ${adminFields},r.detalhes,r.termos_versao,r.decisao_fundamento,r.itens_selecionados,
+            n.mensagem AS resposta_cliente${adminFrom}${replyJoin} WHERE r.id_reembolso=?`,[id]),
         orderItems:(c,id)=>rows(c,`SELECT ip.id_item,ip.subtotal,ip.quantidade,
             COALESCE(f.titulo,sf.titulo,co.nome,i.nome,'Item da compra') AS nome
             FROM itens_pedido ip LEFT JOIN filmes f ON f.id_filme=ip.id_filme
             LEFT JOIN sessoes s ON s.id_sessao=ip.id_sessao LEFT JOIN filmes sf ON sf.id_filme=s.id_filme
             LEFT JOIN combos co ON co.id_combo=ip.id_combo LEFT JOIN insumos i ON i.id_insumo=ip.id_insumo
             WHERE ip.id_pedido=? ORDER BY ip.id_item`,[id]),
-        selectedHistory:(c,paymentId)=>rows(c,"SELECT itens_selecionados FROM reembolso_solicitacoes WHERE id_pagamento=? AND status='CONFIRMADA' AND itens_selecionados IS NOT NULL",[paymentId]),
+        selectedHistory:(c,paymentId,lock=false)=>rows(c,`SELECT itens_selecionados FROM reembolso_solicitacoes
+            WHERE id_pagamento=? AND status='CONFIRMADA' AND itens_selecionados IS NOT NULL${lock?' FOR UPDATE':''}`,[paymentId]),
         recordItems:(c,id,items)=>c.execute('UPDATE reembolso_solicitacoes SET itens_selecionados=? WHERE id_reembolso=?',[JSON.stringify(items),id]),
-        async payment(id,c=database,lock=false){if(lock&&!await one(c,'SELECT id_pagamento FROM pagamentos WHERE id_pagamento=? FOR UPDATE',[id]))return null;return one(c,paymentSql,[id]);},
+        payment:(id,c=database,lock=false)=>one(c,`${paymentSql}${lock?' FOR UPDATE OF p':''}`,[id]),
         async refund(id,c=database,lock=false){if(lock&&!await one(c,'SELECT id_reembolso FROM reembolso_solicitacoes WHERE id_reembolso=? FOR UPDATE',[id]))return null;return one(c,refundSql,[id]);},
-        byKey:(owner,key,c)=>one(c,'SELECT id_reembolso FROM reembolso_solicitacoes WHERE id_usuario=? AND chave_idempotencia=?',[owner,key]),
-        confirmed:(paymentId,c)=>one(c,"SELECT COALESCE(SUM(valor_confirmado),0) AS total FROM reembolso_solicitacoes WHERE id_pagamento=? AND status='CONFIRMADA'",[paymentId]),
+        byKey:(owner,key,c,lock=false)=>one(c,`SELECT id_reembolso FROM reembolso_solicitacoes WHERE id_usuario=? AND chave_idempotencia=?${lock?' FOR UPDATE':''}`,[owner,key]),
+        activeRequest:(c,paymentId,approvedOnly=false)=>one(c,`SELECT id_reembolso FROM reembolso_solicitacoes
+            WHERE id_pagamento=? AND status IN (${approvedOnly?"'RECEBIDA','ENVIADA'":"'EM_ANALISE','RECEBIDA','ENVIADA'"})
+            ORDER BY id_reembolso LIMIT 1 FOR UPDATE`,[paymentId]),
+        confirmed:(paymentId,c,lock=false)=>one(c,`SELECT COALESCE(SUM(valor_confirmado),0) AS total FROM reembolso_solicitacoes WHERE id_pagamento=? AND status='CONFIRMADA'${lock?' FOR UPDATE':''}`,[paymentId]),
         async insert(c,d){const [r]=await c.execute('INSERT INTO reembolso_solicitacoes(id_pagamento,id_usuario,chave_idempotencia,motivo,detalhes,dentro_prazo,termos_versao,valor_solicitado,status,prazo_resposta_em) VALUES(?,?,?,?,?,?,?,?,?,UTC_TIMESTAMP(3)+INTERVAL 5 DAY) ON DUPLICATE KEY UPDATE id_reembolso=LAST_INSERT_ID(id_reembolso)',[d.paymentId,d.owner,d.key,d.reason,d.details,d.within,d.termsVersion,d.amount,d.status]);return {id:idString(r.insertId),created:r.affectedRows===1};},
         sent:(c,id)=>c.execute("UPDATE reembolso_solicitacoes SET status='ENVIADA' WHERE id_reembolso=? AND status='RECEBIDA'",[id]),
         reference:(c,id,ref)=>c.execute('UPDATE reembolso_solicitacoes SET provider_ref=? WHERE id_reembolso=? AND provider_ref IS NULL',[ref,id]),

@@ -4,7 +4,7 @@ import { useDeferredValue, useState } from 'react';
 import { useAdminPeople } from '@/hooks/admin/use-admin-people';
 import styles from '../catalog/catalog.module.css';
 
-export default function UserLookupFilter({ label = 'Usuário', role, value, onChange, allowHistoricalId = false, activeOnly = false }) {
+export default function UserLookupFilter({ label = 'Usuário', role, value, onChange, allowHistoricalId = false, activeOnly = false, initialName }) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
   const search = useDeferredValue(query.trim());
@@ -25,8 +25,8 @@ export default function UserLookupFilter({ label = 'Usuário', role, value, onCh
   return <div className={styles.lookupFilter}>
     <label className={styles.filter}>Buscar {label.toLocaleLowerCase('pt-BR')}<input type="search" value={query} onChange={event => setQuery(event.target.value)} maxLength={150} placeholder="Nome, e-mail ou ID" /></label>
     <label className={styles.filter}>{label}<select value={value} required={activeOnly} onChange={event => choose(event.target.value)}>
-      <option value="">{activeOnly?'Selecione um cliente ativo':'Todos'}</option>
-      {value && !users.items.some(user => user.id === value) && <option value={value}>{current ? `${current.name} · #${value}` : `${label} #${value}`}</option>}
+      <option value="">{activeOnly?`Selecione um ${label.toLocaleLowerCase('pt-BR')} ativo`:'Todos'}</option>
+      {value && !users.items.some(user => user.id === value) && <option value={value}>{current?.name||initialName||label} · #{value}</option>}
       {!activeOnly && exactId && exactId !== value && !users.items.some(user => user.id === exactId) && <option value={exactId}>ID #{exactId}</option>}
       {users.items.map(user => <option key={user.id} value={user.id}>{user.name} · {user.email} · #{user.id}</option>)}
     </select></label>

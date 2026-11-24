@@ -10,9 +10,10 @@ export function documentCounterOrders(spec) {
         obj({kind:value('SESSION'),id,seatId:id,quantity:{type:'integer',enum:[1]}}),
         obj({kind:value('INPUT'),id,quantity}),
         obj({kind:value('COMBO'),id,quantity}),
-    ]}),minItems:1,maxItems:50},ageConfirmed:{type:'boolean',default:false}};
+    ]}),minItems:1,maxItems:50},ageConfirmed:{type:'boolean',default:false},customerId:id};
     const catalog=obj({classification:{type:'string',enum:['L','10','12','14','16','18']},
-        seats:array(obj({id,label:str})),snacks:array(obj({id,name:str,kind:{type:'string',enum:['INPUT','COMBO']}}))});
+        seats:array(obj({id,label:str})),seatMap:array(obj({id,row:str,number:{type:'integer'},position:{type:'integer'},
+            type:str,availability:{type:'string',enum:['DISPONIVEL','RESERVADO','VENDIDO','INDISPONIVEL']}})),snacks:array(obj({id,name:str,kind:{type:'string',enum:['INPUT','COMBO']}}))});
     const sale=obj({orderId:id,channel:{type:'string',enum:['BALCAO','APP']},
         status:{type:'string',enum:['EM_ANDAMENTO','AGUARDANDO_PAGAMENTO','PAGO','FINALIZADO','CANCELADO']},
         total:{...money,nullable:true},tickets:array(obj({code:str,type:{type:'string',enum:['INGRESSO_SESSAO','RETIRADA_INSUMO']}}))});
@@ -31,9 +32,17 @@ export function documentCounterOrders(spec) {
         },
     });
     spec.paths[path]={get:op('counter_catalog','Consultar catálogo da sessão para venda presencial',200,catalog)};
+    spec.paths[`${path}/customers`]={get:op('counter_customers','Buscar clientes ativos para vincular à venda presencial',200,
+        obj({items:array(obj({id,name:str,emailHint:{...str,nullable:true}})),pagination:obj({nextCursor:{...id,nullable:true}})}),null,[
+            session,{name:'q',in:'query',required:true,schema:{type:'string',minLength:3,maxLength:254}},
+            {name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:30,default:12}},{name:'cursor',in:'query',schema:id},
+        ])};
     spec.paths[`${path}/quote`]={post:op('counter_quote','Cotar venda presencial',200,{$ref:'#/components/schemas/OrderCartQuote'},obj(cart,['lines']))};
     spec.paths[`${path}/orders`]={post:op('counter_sale','Pagar no balcão ou enviar pedido à conta do cliente',201,sale,{oneOf:[
-        obj({...cart,channel:value('BALCAO'),expectedTotal:money},['lines','channel','expectedTotal']),
-        obj({...cart,channel:value('APP'),customerEmail:{type:'string',format:'email',maxLength:254}},['lines','channel','customerEmail']),
+        obj({...cart,channel:value('BALCAO'),expectedTotal:money},['lines','channel','expectedTotal','customerId']),
+        obj({...Object.fromEntries(Object.entries(cart).filter(([key])=>key!=='customerId')),channel:value('BALCAO'),expectedTotal:money,
+            customerName:{type:'string',minLength:2,maxLength:100,example:'Laura Andrade'}},['lines','channel','expectedTotal','customerName']),
+        obj({...cart,channel:value('APP')},['lines','channel','customerId']),
+        obj({...Object.fromEntries(Object.entries(cart).filter(([key])=>key!=='customerId')),channel:value('APP'),customerEmail:{type:'string',format:'email',maxLength:254}},['lines','channel','customerEmail']),
     ]},[session,key])};
 }

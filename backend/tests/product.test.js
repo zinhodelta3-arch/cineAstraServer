@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
 import { createProductService } from '../src/services/productService.js';
+import { createPricingService } from '../src/services/pricingService.js';
 import { createProductController } from '../src/controllers/productController.js';
 import { productRoutes } from '../src/routes/productRoutes.js';
 import { createProductModel } from '../src/models/productModel.js';
@@ -39,7 +40,8 @@ function fixture() {
         async activeActor(c, context) { return { id_usuario: context.actor.id, tipo_usuario: roles.get(context.actor.id) }; },
         async audit(c, type, id) { state.audit.push({ type, id }); }
     };
-    const service = createProductService({ model, identity });
+    const pricing = createPricingService({ model: { parameter: async () => ({ markup_bps: 6000 }) }, identity });
+    const service = createProductService({ model, identity, pricing });
     const app = express(); app.use(express.json());
     app.use((req, res, next) => { res.locals.requestId = '00000000-0000-4000-8000-000000000001'; next(); });
     app.use(productRoutes(createProductController(service), { auth(req, res, next) { const id = req.headers['x-user-id']; if (!id) throw ApiError.naoAutorizado(); const tipo = roles.get(id); if (!tipo) throw ApiError.naoAutorizado(); req.usuario = { id, tipo }; next(); } }));
@@ -47,6 +49,22 @@ function fixture() {
     const api = (method, path, user = '1') => request(app)[method](path).set('X-User-Id', user);
     return { app, api, get state() { return state; } };
 }
+
+test('admin calcula o preço do insumo no cadastro e na edição', async () => {
+    const f = fixture();
+    const created = await f.api('post', '/api/inputs').send({
+        nome: 'Milho de pipoca', supplierId: '10', localId: '1', priceMode: 'RULE',
+        venda_avulsa: true, custo_receita: '5.00', custo_parceria: '1.00'
+    }).expect(201);
+    assert.equal(created.body.data.preco, '9.60');
+    const path = '/api/inputs/' + created.body.data.id_insumo;
+    await f.api('patch', path, '2').send({ priceMode: 'RULE' }).expect(403);
+    await f.api('patch', path).send({ priceMode: 'RULE', preco: '1.00' }).expect(422);
+    const revised = await f.api('patch', path).send({
+        priceMode: 'RULE', custo_receita: '7.00', custo_parceria: '1.00'
+    }).expect(200);
+    assert.equal(revised.body.data.preco, '12.80');
+});
 
 test('fornecedor cadastra item próprio sem cinema; ADMIN controla o vínculo operacional', async () => {
     const f = fixture();

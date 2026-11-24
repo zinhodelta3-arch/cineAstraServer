@@ -1,10 +1,10 @@
 import SupportCenter from "@/components/support/support-center";
 
 export const metadata = {
-  title: "Central de Suporte | CineAstra",
-  description: "Encontre respostas para as principais dúvidas sobre o CineAstra.",
+  title: "Ajuda do Streaming | CineAstra",
+  description: "Tire dúvidas sobre assinatura, cobrança, perfis e reprodução no Streaming.",
 };
 
 export default function SuportePage() {
-  return <SupportCenter />;
+  return <SupportCenter area="streaming" />;
 }

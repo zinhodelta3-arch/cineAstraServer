@@ -6,20 +6,22 @@ spec.tags=[...spec.tags.filter(x=>x.name!=='Suporte'),{name:'Suporte',descriptio
 const id={type:'string',pattern:'^[1-9][0-9]{0,19}$'},str=(max)=>({type:'string',minLength:1,maxLength:max});
 const obj=(properties,required=Object.keys(properties))=>({type:'object',additionalProperties:false,properties,required});
 const nullableDate={type:'string',nullable:true};
-const ticket=obj({id,clientId:id,attendantId:{...id,nullable:true},subject:str(150),status:{type:'string',enum:['ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO']},openedAt:str(32),responseDueAt:nullableDate,firstResponseAt:nullableDate,lastInteractionAt:nullableDate,closedAt:nullableDate,responseOverdue:{type:'boolean'}});
-const message=obj({id,authorId:{...id,nullable:true},role:{type:'string',enum:['CLIENTE','ADMIN']},message:str(10000),createdAt:nullableDate,origin:{type:'string',enum:['NOVA','LEGADO_ABERTURA','LEGADO_RESPOSTA']}});
+const ticketBase=obj({id,clientId:id,attendantId:{...id,nullable:true},subject:str(150),status:{type:'string',enum:['ABERTO','EM_ATENDIMENTO','RESOLVIDO','FECHADO','CANCELADO']},openedAt:str(32),responseDueAt:nullableDate,firstResponseAt:nullableDate,lastInteractionAt:nullableDate,closedAt:nullableDate,responseOverdue:{type:'boolean'}});
+const ticket={...ticketBase,properties:{...ticketBase.properties,clientName:{type:'string',nullable:true},clientRole:{type:'string',nullable:true},initialMessage:{type:'string'}}};
+const message=obj({id,authorName:{type:'string',nullable:true},authorId:{...id,nullable:true},role:{type:'string',enum:['CLIENTE','ADMIN','SUPERVISOR','COLABORADOR','FORNECEDOR']},message:str(10200),createdAt:nullableDate,origin:{type:'string',enum:['NOVA','LEGADO_ABERTURA','LEGADO_RESPOSTA','EDICAO']}});
 const paginated=item=>obj({items:{type:'array',items:item},pagination:obj({limit:{type:'integer'},nextCursor:{type:'string',nullable:true}})});
 const envelope=data=>obj({success:{type:'boolean',enum:[true]},data,requestId:{type:'string',format:'uuid'}});
 const body=(properties)=>({required:true,content:{'application/json':{schema:obj(properties)}}});
 const response=(data,example)=>({description:'Operação concluída',content:{'application/json':{schema:envelope(data),example:{success:true,data:example,requestId:'00000000-0000-4000-8000-000000000001'}}}});
 const sample={id:'1',clientId:'2',attendantId:null,subject:'Dúvida sobre pedido',status:'ABERTO',openedAt:'2026-10-11 12:00:00',responseDueAt:'2026-10-16 12:00:00',firstResponseAt:null,lastInteractionAt:'2026-10-11 12:00:00',closedAt:null,responseOverdue:false};
-const sampleMessage={id:'1',authorId:'2',role:'CLIENTE',message:'Preciso de ajuda com meu pedido.',createdAt:'2026-10-11 12:00:00',origin:'NOVA'};
+const sampleMessage={id:'1',authorName:'Laura Andrade',authorId:'2',role:'CLIENTE',message:'Preciso de ajuda com meu pedido.',createdAt:'2026-10-11 12:00:00',origin:'NOVA'};
 for(const route of supportOperations){
     const op={operationId:route.operationId,tags:['Suporte'],summary:route.operationId.replaceAll('_',' '),security:[{bearerAuth:[]}],responses:{}};
     if(route.path.includes('{id}'))op.parameters=[{name:'id',in:'path',required:true,schema:id}];
     if(['list_own_support','admin_support_queue','support_message_history'].includes(route.operationId))op.parameters=[...(op.parameters??[]),{name:'limit',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:20}},{name:'cursor',in:'query',schema:{type:'string',default:'0'}}];
-    if(route.operationId==='support_message_history')op.parameters.push({name:'order',in:'query',description:'Use desc para começar pelas mensagens mais recentes e continue com nextCursor na mesma ordem.',schema:{type:'string',enum:['asc','desc'],default:'asc'}});
+    if(['support_message_history','list_own_support'].includes(route.operationId))op.parameters.push({name:'order',in:'query',description:'Use desc para começar pelas mensagens mais recentes e continue com nextCursor na mesma ordem.',schema:{type:'string',enum:['asc','desc'],default:'asc'}});
     if(route.operationId==='create_support_request')op.requestBody=body({subject:str(150),message:str(10000)});
+    if(route.operationId==='edit_own_support_request')op.requestBody=body({subject:str(150),message:str(10000)});
     if(route.operationId==='append_support_message')op.requestBody={required:true,content:{'application/json':{schema:obj({message:str(10000),mode:{type:'string',enum:['ASYNC','LIVE'],default:'ASYNC'}},['message'])}}};
     if(route.operationId==='assign_support_request')op.requestBody=body({attendantId:id});
     const kind=route.operationId;
@@ -30,7 +32,8 @@ for(const route of supportOperations){
     if(kind==='create_support_request')op.description='Recebimento imediato, prazo de manifestação em até cinco dias corridos e histórico append-only. Reembolso continua no serviço próprio /api/payments/{id}/refunds.';
     if(kind==='assign_support_request')op.description='ADMIN atribui chamado ainda sem responsável a um ADMIN ativo. Repetição para o mesmo responsável devolve o estado atual; tentativa de substituir responsável retorna 409 SUPPORT_CONFLICT. Reatribuição não possui contrato nesta etapa.';
     if(kind==='start_support_live'||kind==='end_support_live')op.description='Cada sessão ao vivo dura no máximo dez minutos. Fim/expiração devolve solicitação à fila ABERTO sem resolver a demanda.';
-    if(kind==='get_support_request'||kind==='support_message_history')op.description='CLIENTE acessa apenas solicitação própria; ADMIN acessa para atendimento.';
+    if(kind==='get_support_request'||kind==='support_message_history')op.description='Cada solicitante acessa somente seus próprios chamados. ADMIN acessa para atendimento.';
+    if(['edit_own_support_request','cancel_own_support_request'].includes(kind))op.description='Exclusivo para SUPERVISOR titular de chamado aberto. Preserva o histórico da conversa.';
     (spec.paths[route.path]??={})[route.method]=op;
 }
 await writeFile(file,`${JSON.stringify(spec,null,2)}\n`);

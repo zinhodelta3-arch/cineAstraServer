@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { planMoney, planPeriod } from '@/lib/api/plan-subscription.mjs';
+import { planModality, planMoney, planPeriod } from '@/lib/api/plan-subscription.mjs';
 import { subscriptionManagementPath } from '@/lib/auth/destination.mjs';
 import SubscriptionOffer from './subscription-offer';
 
@@ -9,12 +9,19 @@ export function SubscriptionCheckout({ subscription: s }) {
   if (!s.selectedPlanAvailable) return <p role="status">Este plano está indisponível no período escolhido.</p>;
 
   return <div className="space-y-4">
-    <p className="text-sm text-muted-foreground">{s.selectedPlanName} · {planPeriod(s.billing)}</p>
+    <p className="text-sm text-muted-foreground">{s.selectedPlanName} · {planModality(s.modality)} · {planPeriod(s.billing)} · {planMoney(s.selectedPrice)}</p>
     {!s.offer ? <>
+      {s.modality !== 'INDIVIDUAL' && <label className="grid max-w-sm gap-1 text-sm font-semibold">Pagamento do grupo
+        <select className="min-h-11 rounded-lg border border-border bg-background px-3 font-normal" value={s.divisionMode} onChange={event => s.changeDivision(event.target.value)} disabled={s.pending}>
+          <option value="TITULAR_PAGA">Titular paga o valor integral</option>
+          <option value="DIVISAO_IGUAL">Divisão igual a partir do próximo ciclo</option>
+        </select>
+      </label>}
       <label className="flex items-center gap-2"><input type="checkbox" checked={s.autoRenew} onChange={event => s.changeAutoRenew(event.target.checked)} disabled={s.pending} /> Renovação automática</label>
       <Button type="button" onClick={s.review} disabled={s.pending}>{s.pending ? 'Consultando…' : 'Revisar oferta'}</Button>
     </> : <>
       <p className="text-lg font-semibold">Valor da oferta {planMoney(s.offer.offer.total)}</p>
+      <Button type="button" variant="outline" onClick={s.editChoice} disabled={s.pending}>Voltar à escolha</Button>
       <SubscriptionOffer {...s} actionLabel="Aceitar e registrar assinatura" />
     </>}
   </div>;

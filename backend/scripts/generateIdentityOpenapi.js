@@ -20,7 +20,7 @@ for (const [name, schema] of Object.entries(schemas)) {
         json.properties[field].description = 'Máximo 72 bytes UTF-8; senha nova mínimo 12 caracteres, maiúscula, minúscula, número e símbolo. Confirmação idêntica. Sem truncamento bcrypt.';
     }
     if (json.properties?.captchaToken) json.properties.captchaToken.description = 'Obrigatório somente quando CAPTCHA_ENABLED=true; omitido em standby.';
-    if (name === 'login') json.properties.profile.description = 'Seleção opcional do formulário. FORNECEDOR exige conta de fornecedor; CLIENTE admite cliente e equipe interna. Com credenciais válidas, escolha incompatível retorna 403 antes da emissão de sessão.';
+    if (name === 'login') json.properties.profile.description = 'Seleção opcional para clientes da API. CLIENTE exige conta de cliente, FORNECEDOR exige conta de fornecedor e EQUIPE admite ADMIN, SUPERVISOR e COLABORADOR. Perfil incompatível retorna a mesma resposta 401 de credenciais inválidas.';
     if (json.properties?.cpf) json.properties.cpf.description = 'CPF normalizado para 11 dígitos e dígitos verificadores válidos; UNIQUE também no banco.';
     if (json.properties?.dateOfBirth) json.properties.dateOfBirth.description = 'Data civil real, não futura. Cadastro exige prova do provider vinculada a CPF/e-mail/data; autodeclaração não comprova idade.';
     if (name === 'enroll') json.description = 'Exatamente um: challengeToken restrito recebido no login OU password com Bearer. Rotação exige code atual. APP implementado. SMS/EMAIL retornam 503 até integração real de destino verificado e entrega.';
@@ -62,10 +62,10 @@ const descriptions = {
     privacyDecision: 'Somente ADMIN. Pendências comerciais impedem concluir a exclusão; aprovação anonimiza o cadastro e revoga as sessões.',
     export: 'Portabilidade paginada do módulo identidade, própria conta, senha e fator se ativo. Seções explícitas; sem hash, segredo, token ou referência interna de prova. CPF só aparece nesta exportação privada. Outros módulos devem acrescentar seus exports. Novo TOTP necessário em cada página sensível.',
     adminCreate: 'Cria contas de clientes e contas internas com CPF e e-mail únicos. O cadastro administrativo não registra aceite dos termos nem verificação de idade em nome do cliente. Novo ADMIN/SUPERVISOR passa por enrollment obrigatório. Primeiro ADMIN via CLI seguro bootstrap:admin.',
-    adminPatch: 'Atualiza nome ou telefone da conta. Alterações de perfil de acesso e status usam a rota /access.',
+    adminPatch: 'Atualiza nome ou telefone. Para FORNECEDOR, o ADMIN também pode alterar o e-mail, invalidando sessões e desafios em aberto. Alterações de perfil e status usam /access.',
     adminAccess: 'Somente ADMIN com 2FA. Revoga sessões/desafios/resets ao alterar perfil/status. Preserva último ADMIN ativo. Reativação de conta inativa/bloqueada exige revisão, retorna 409.',
-    getSupervisorLocation: 'Somente ADMIN. Consulta o cinema atribuído a um supervisor ativo.',
-    setSupervisorLocation: 'Somente ADMIN. Atribui um cinema ativo por supervisor. Equipes ativas de outro cinema impedem transferência ou remoção do vínculo.',
+    getSupervisorLocation: 'Somente ADMIN. Consulta o cinema atribuído a um supervisor.',
+    setSupervisorLocation: 'Somente ADMIN. Um supervisor ativo pode ser vinculado a um cinema ativo. São permitidos até três supervisores por cinema. Equipes vigentes em outro cinema impedem transferência ou remoção do vínculo.',
     authorizeMinor: 'Somente responsável com vínculo legal comprovado e ativo. Controle parental deve permitir finalidade; prova de idade vigente. Autorização por operação, prazo de até 24 horas e UNIQUE. Checkout/assinaturas futuros devem consultar requireAge na sua transação.'
 };
 const params = [{ name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: { type: 'string', pattern: '^[1-9][0-9]{0,19}$' }, description: 'Último ID da página anterior, ordenação crescente estável.' }];

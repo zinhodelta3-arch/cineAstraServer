@@ -72,6 +72,7 @@ test('assinatura cancelada e pagamento ausente impedem ativação e benefício',
 test('validação de plano e SQL preservam dinheiro e IDs grandes',async()=>{
   assert.equal(planCreate.safeParse({name:'Médio',maxMembers:2,freeComboId:'5',freeCombosPerMonth:1}).success,true);
   assert.equal(planPatch.safeParse({active:true}).success,true);
+  assert.deepEqual(planPatch.parse({discounts:{SESSION:1250}}),{discounts:{SESSION:1250}});
   assert.equal(subscriptionCreate.safeParse({planId:'2',period:'MENSAL'}).success,true);
   assert.equal(subscriptionCreate.safeParse({planId:'4294967296',period:'MENSAL'}).success,false);
   const statements=[];const c={execute:async(sql,args)=>{statements.push({sql,args});return [{insertId:'9007199254740993'}];}};

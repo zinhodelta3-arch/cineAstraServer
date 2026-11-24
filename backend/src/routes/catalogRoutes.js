@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { allowRoles } from '../middlewares/authMiddleware.js';
 import { validateBody } from '../validators/identityValidators.js';
 import { catalogSchemas, catalogQuery, catalogParams } from '../validators/catalogValidators.js';
+import { catalogReference } from '../utils/catalogSlug.js';
+import { ApiError } from '../utils/ApiError.js';
 
 export const catalogOperations = [
     ...['films', 'genres'].flatMap(kind => [
@@ -24,7 +26,10 @@ export function catalogRoutes(controller, { auth }) {
     for (const r of catalogOperations) {
         const middlewares = [(req, res, next) => { res.set('Cache-Control', 'no-store'); next(); }];
         if (r.admin) middlewares.push(auth, allowRoles('ADMIN'));
-        middlewares.push(catalogParams);
+        middlewares.push(r.operationId === 'get_films' ? (req, res, next) => {
+            if (!catalogReference(req.params.id)) throw ApiError.validacao('Link do filme inválido');
+            next();
+        } : catalogParams);
         if (r.schema) middlewares.push(validateBody(catalogSchemas[r.schema]));
         if (r.query) middlewares.push(catalogQuery(catalogSchemas[r.query]));
         const [operation, kind] = r.action;

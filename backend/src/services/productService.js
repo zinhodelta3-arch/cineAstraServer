@@ -54,7 +54,18 @@ export function createProductService({ model, identity, pricing }) {
             const u = role(context);
             let supplierId = null;
             if (u.tipo === 'FORNECEDOR') { if (q.supplierId) throw ApiError.acessoNegado(); supplierId = idString((await ownSupplier(undefined, u.id)).id_fornecedor); }
-            return page(await model.list(type, q, supplierId), q, row => productDto(type, row, u.tipo), key(type));
+            return page(await model.list(type, q, supplierId), q, row => ({
+                ...productDto(type, row, u.tipo),
+                nome_fornecedor:row.nome_fornecedor??null,
+                nome_local:row.nome_local??null,
+                ...(type === 'equipment' && {
+                    posicao:row.id_logistica != null ? 'EM_ENTREGA' : row.id_local == null ? 'FORNECEDOR' : 'UNIDADE',
+                    entrega:row.id_logistica == null ? null : {
+                        id_logistica:idString(row.id_logistica), id_local_destino:row.id_local_destino==null?null:idString(row.id_local_destino),
+                        nome_local_destino:row.nome_local_destino??null
+                    }
+                })
+            }), key(type));
         },
         async get(type, id, context) {
             const u = role(context), row = found(await model.product(type, id));
@@ -75,7 +86,7 @@ export function createProductService({ model, identity, pricing }) {
                 const { priceMode, ...data } = input;
                 if (type === 'inputs') {
                     checkCostsPermission(data, u);
-                    if (priceMode === 'RULE') data.preco = await pricing.catalogPriceForCreate(c, 'INPUT', data);
+                    if (priceMode === 'RULE') data.preco = await pricing.catalogPriceFromRule(c, 'INPUT', data);
                     validateRetailInput({ ...data, status: 'DISPONIVEL' });
                 }
                 const id = await model.create(type, c, { ...data, supplierId, localId: input.localId ?? null });
@@ -91,11 +102,18 @@ export function createProductService({ model, identity, pricing }) {
                 const row = found(await model.product(type, id, c, true));
                 if (idString(row.id_fornecedor) !== idString(initial.id_fornecedor) || localIdOf(row) !== localIdOf(initial)) throw conflict('Vínculo do item alterado');
                 if (u.tipo === 'FORNECEDOR') validateCategory(type, input, row);
+                const { priceMode, ...data } = input;
                 if (type === 'inputs') {
-                    checkCostsPermission(input, u);
-                    validateRetailInput({ ...row, ...input });
+                    checkCostsPermission(data, u);
+                    if (priceMode === 'RULE') {
+                        if (u.tipo !== 'ADMIN') throw ApiError.acessoNegado();
+                        const revised = { ...row, ...data };
+                        if (!revised.venda_avulsa) throw ApiError.validacao('Ative a venda avulsa para usar a regra de preço.');
+                        data.preco = await pricing.catalogPriceFromRule(c, 'INPUT', revised);
+                    }
+                    validateRetailInput({ ...row, ...data });
                 }
-                await model.update(type, c, id, input);
+                await model.update(type, c, id, data);
                 await identity.audit(c, `PRODUCT.${type.toUpperCase()}.CHANGED`, id, context);
                 return productDto(type, found(await model.product(type, id, c)), u.tipo);
             });

@@ -1,12 +1,15 @@
 import { idString } from '../utils/dto.js';
+import { bookableFilm } from './sessionModel.js';
+import { readableSlug } from '../utils/catalogSlug.js';
 
 export const filmFields = ['titulo', 'descricao', 'duracao', 'classificacao', 'data_lancamento', 'diretor', 'trailer', 'disponivel_cinema', 'disponivel_streaming', 'preco_aluguel', 'preco_compra', 'dias_acesso_aluguel', 'status'];
 const publicFields = ['id_filme', ...filmFields, 'imagem'];
 const writable = [...filmFields, 'url_reproducao'];
+const filmSlug = `COALESCE(f.slug,${readableSlug('f.titulo', 'f.id_filme', 'filme')})`;
 export function createCatalogModel(database) {
     const rows = async (c, sql, args) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args) => (await rows(c, sql, args))[0] ?? null;
-    const selection = admin => `${[...publicFields, ...(admin ? ['url_reproducao'] : [])].map(k => `f.${k}`).join(',')},
+    const selection = admin => `${[...publicFields, ...(admin ? ['url_reproducao'] : [])].map(k => `f.${k}`).join(',')},${filmSlug} AS slug,
         (SELECT fi.url FROM filmes_imagens fi WHERE fi.id_filme = f.id_filme AND fi.tipo = 'BANNER' AND fi.contexto_banner='GERAL' ORDER BY fi.principal DESC, fi.ordem, fi.id_imagem LIMIT 1) AS banner,
         (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT('id', g.id_genero, 'nome', g.nome)), JSON_ARRAY())
          FROM filme_generos fg JOIN generos g ON g.id_genero = fg.id_genero
@@ -16,9 +19,16 @@ export function createCatalogModel(database) {
     function filmFilters(q, admin) {
         const where = [], args = [];
         if (!admin || q.status) { where.push('f.status = ?'); args.push(admin ? q.status : 'ATIVO'); }
-        if (q.titulo) { where.push("f.titulo LIKE ? ESCAPE '!'"); args.push(`%${q.titulo.replace(/[!%_]/g, v => `!${v}`)}%`); }
+        if (q.titulo) for (const word of q.titulo.split(/\s+/).slice(0,12)) {
+            where.push(`(LOCATE(?,CONCAT_WS(' ',f.titulo,f.diretor))>0 OR EXISTS (
+                SELECT 1 FROM filme_generos fg JOIN generos g ON g.id_genero=fg.id_genero
+                WHERE fg.id_filme=f.id_filme AND g.status='ATIVO' AND LOCATE(?,g.nome)>0
+            ))`);
+            args.push(word,word);
+        }
         if (q.classificacao) { where.push('f.classificacao = ?'); args.push(q.classificacao); }
         if (q.upcoming !== undefined) where.push(q.upcoming ? 'f.data_lancamento > UTC_DATE()' : '(f.data_lancamento IS NULL OR f.data_lancamento <= UTC_DATE())');
+        if (q.sale !== undefined) where.push(q.sale === 'open' ? bookableFilm : `NOT (${bookableFilm})`);
         for (const [key, column] of [['cinema', 'disponivel_cinema'], ['streaming', 'disponivel_streaming']]) if (q[key] !== undefined) { where.push(`f.${column} = ?`); args.push(q[key]); }
         if (q.genreId) { where.push(`EXISTS (SELECT 1 FROM filme_generos fg JOIN generos g ON g.id_genero = fg.id_genero WHERE fg.id_filme = f.id_filme AND fg.id_genero = ?${admin ? '' : " AND g.status = 'ATIVO'"})`); args.push(q.genreId); }
         return { where, args };
@@ -30,11 +40,16 @@ export function createCatalogModel(database) {
             JOIN tickets t ON t.id_item = ip.id_item
             WHERE f.status = 'ATIVO' AND f.disponivel_cinema = 1 AND t.tipo = 'INGRESSO_SESSAO' AND t.status = 'UTILIZADO'
             GROUP BY f.id_filme ORDER BY views DESC, f.id_filme LIMIT ?`, [limit]),
-        film: (id, admin = false, c = database, lock = false) => one(c, `SELECT ${selection(admin)} FROM filmes f WHERE f.id_filme = ?${admin ? '' : " AND f.status = 'ATIVO'"}${lock ? ' FOR UPDATE' : ''}`, [id]),
+        film: (id, admin = false, c = database, lock = false) => one(c, `SELECT ${selection(admin)}${admin?'':`, ${bookableFilm} AS venda_disponivel`} FROM filmes f
+            WHERE ${!admin && !/^\d+$/.test(id) ? filmSlug : 'f.id_filme'} = ?${admin ? '' : " AND f.status = 'ATIVO'"}${lock ? ' FOR UPDATE' : ''}`, [id]),
         genre: (id, admin = false, c = database, lock = false) => one(c, `SELECT id_genero,nome,status FROM generos WHERE id_genero = ?${admin ? '' : " AND status = 'ATIVO'"}${lock ? ' FOR UPDATE' : ''}`, [id]),
         listFilms(q, admin = false) {
             const { where, args } = filmFilters(q, admin);
             return rows(database, `SELECT ${selection(admin)} FROM filmes f WHERE ${['f.id_filme > ?', ...where].join(' AND ')} ORDER BY f.id_filme LIMIT ${pageLimit(q.limit)}`, [q.cursor ?? '0', ...args]);
+        },
+        showcaseFilms(limit) {
+            return rows(database, `SELECT ${selection(false)},TRUE AS venda_disponivel FROM filmes f
+                WHERE ${bookableFilm} ORDER BY CRC32(CONCAT(UTC_DATE(),':',f.id_filme)),f.id_filme LIMIT ?`, [limit]);
         },
         listNumberedFilms(q, signal) {
             const limit = pageLimit(q.limit) - 1;
@@ -44,7 +59,9 @@ export function createCatalogModel(database) {
                 const total = Number((await one(c, `SELECT COUNT(*) AS total ${from}`, args)).total);
                 const totalPages = Math.max(1, Math.ceil(total / limit));
                 const page = Math.min(q.page, totalPages);
-                const items = total === 0 ? [] : await rows(c, `SELECT ${selection(false)} ${from} ORDER BY f.id_filme LIMIT ? OFFSET ?`, [...args, limit, (page - 1) * limit]);
+                const sale = q.sale ? (q.sale === 'open' ? 'TRUE' : 'FALSE') : bookableFilm;
+                const items = total === 0 ? [] : await rows(c, `SELECT ${selection(false)}, ${sale} AS venda_disponivel ${from}
+                    ORDER BY ${q.cinema?'venda_disponivel DESC, ':''}f.id_filme LIMIT ? OFFSET ?`, [...args, limit, (page - 1) * limit]);
                 return { items, pagination:{ limit, nextCursor:null, page, total, totalPages } };
             }, { signal });
         },
@@ -56,7 +73,11 @@ export function createCatalogModel(database) {
             return rows(c, `SELECT g.id_genero,g.nome,g.status FROM generos g WHERE ${where.join(' AND ')} ORDER BY g.id_genero LIMIT ${pageLimit(q.limit)}`, args);
         },
         async createFilm(c, input) { const keys = fields(input, writable); const [r] = await c.execute(`INSERT INTO filmes (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')})`, keys.map(k => input[k])); return idString(r.insertId); },
-        async patchFilm(c, id, input) { const keys = fields(input, writable); await c.execute(`UPDATE filmes SET ${keys.map(k => `${k} = ?`).join(',')} WHERE id_filme = ?`, [...keys.map(k => input[k]), id]); },
+        async patchFilm(c, id, input) {
+            const keys = fields(input, writable);
+            const freeze = keys.includes('titulo') ? `slug = ${filmSlug}, ` : '';
+            await c.execute(`UPDATE filmes f SET ${freeze}${keys.map(k => `${k} = ?`).join(',')} WHERE id_filme = ?`, [...keys.map(k => input[k]), id]);
+        },
         async createGenre(c, input) { const [r] = await c.execute('INSERT INTO generos (nome,status) VALUES (?,?)', [input.nome, input.status]); return idString(r.insertId); },
         async patchGenre(c, id, input) { const keys = fields(input, ['nome', 'status']); await c.execute(`UPDATE generos SET ${keys.map(k => `${k} = ?`).join(',')} WHERE id_genero = ?`, [...keys.map(k => input[k]), id]); },
         async link(c, filmId, genreId) { await c.execute('INSERT INTO filme_generos (id_filme,id_genero) VALUES (?,?) ON DUPLICATE KEY UPDATE id_filme = ?', [filmId, genreId, filmId]); },

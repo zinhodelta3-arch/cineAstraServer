@@ -3,7 +3,7 @@
 
 export default function VenueArt({ kind, className = "" }) {
   return (
-    <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" className={className} aria-hidden="true">
+    <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid meet" className={className} aria-hidden="true">
       <rect width="400" height="250" className="fill-card" />
 
       {kind === "marquee" && (

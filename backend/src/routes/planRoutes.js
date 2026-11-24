@@ -14,6 +14,7 @@ export const planOperations=[
     {method:'delete',path:'/api/admin/plans/{planId}',operationId:'archive_plan'},
     {method:'post',path:'/api/admin/streaming/subscriptions',operationId:'create_admin_subscription_draft'},
     {method:'patch',path:'/api/admin/streaming/subscriptions/{subscriptionId}',operationId:'update_admin_subscription'},
+    {method:'delete',path:'/api/admin/streaming/subscriptions/{subscriptionId}',operationId:'end_admin_subscription'},
     {method:'get',path:'/api/subscriptions/me',operationId:'list_my_subscriptions'},
     {method:'get',path:'/api/subscriptions/current',operationId:'get_current_subscription'},
     {method:'get',path:'/api/subscriptions/{subscriptionId}',operationId:'get_my_subscription'},
@@ -34,6 +35,7 @@ export function planRoutes(controller,{auth,limits}){
     router.delete('/api/admin/plans/:planId',...admin,...limits.checkout,planIdParam,controller.archive);
     router.post('/api/admin/streaming/subscriptions',...admin,...limits.checkout,validateBody(adminSubscriptionCreate),controller.adminCreateSubscription);
     router.patch('/api/admin/streaming/subscriptions/:subscriptionId',...admin,...limits.checkout,planIdParam,validateBody(adminSubscriptionPatch),controller.adminEditSubscription);
+    router.delete('/api/admin/streaming/subscriptions/:subscriptionId',...admin,...limits.checkout,planIdParam,controller.adminEndSubscription);
     router.get('/api/subscriptions/me',...client,planPage,controller.mine);
     router.get('/api/subscriptions/current',...client,controller.current);
     router.get('/api/subscriptions/:subscriptionId',...client,planIdParam,controller.own);

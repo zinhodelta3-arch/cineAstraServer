@@ -59,31 +59,49 @@ export function createInventoryModel(database) {
         },
         async changeEquipment(c, id, delta) { const [result] = await c.execute('UPDATE equipamentos SET quantidade = quantidade + ? WHERE id_equipamento = ? AND quantidade + ? BETWEEN 0 AND 2147483647', [delta,id,delta]); return result.affectedRows === 1; },
         async insertMovement(c, data) {
-            const [result] = await c.execute('INSERT INTO movimentacoes_estoque (id_insumo,id_equipamento,id_reserva,id_usuario,tipo,quantidade,motivo) VALUES (?,?,?,?,?,?,?)', [data.inputId ?? null,data.equipmentId ?? null,data.reservationId ?? null,data.actorId,data.tipo,data.quantidade,data.motivo ?? null]);
+            const [result] = await c.execute('INSERT INTO movimentacoes_estoque (id_insumo,id_equipamento,id_reserva,id_usuario,tipo,quantidade,motivo,id_local_movimentacao) VALUES (?,?,?,?,?,?,?,?)', [data.inputId ?? null,data.equipmentId ?? null,data.reservationId ?? null,data.actorId,data.tipo,data.quantidade,data.motivo ?? null,data.localId ?? null]);
             return idString(result.insertId);
         },
-        movement: (id, c = database) => one(c, 'SELECT id_movimentacao,id_insumo,id_equipamento,id_reserva,id_logistica,id_usuario,tipo,quantidade,motivo,data_movimentacao FROM movimentacoes_estoque WHERE id_movimentacao = ?', [id]),
+        async appendRevision(c, data) {
+            const [result]=await c.execute(`INSERT INTO movimentacoes_estoque
+                (id_insumo,id_equipamento,id_usuario,tipo,quantidade,motivo,id_local_movimentacao,estorno_de,correcao_de)
+                VALUES(?,?,?,?,?,?,?,?,?)`,
+                [data.inputId,data.equipmentId,data.actorId,data.tipo,data.quantidade,data.motivo,data.localId,data.reverses??null,data.replaces??null]);
+            return idString(result.insertId);
+        },
+        movement: (id,c=database,lock=false)=>one(c,`SELECT m.* FROM movimentacoes_estoque m WHERE id_movimentacao=?${lock?' FOR UPDATE':''}`,[id]),
+        reversalOf:(c,id)=>one(c,'SELECT id_movimentacao FROM movimentacoes_estoque WHERE estorno_de=? FOR UPDATE',[id]),
         listMovements(q, supplierId = null) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
-            const where = ['m.id_movimentacao > ?'], args = [q.cursor ?? '0'];
+            const recent = q.order === 'recent';
+            const movementFilter = recent ? 'm.id_movimentacao < ?' : 'm.id_movimentacao > ?';
+            const where = recent && !q.cursor ? [] : [movementFilter];
+            const args = where.length ? [q.cursor ?? '0'] : [];
             if (q.inputId) { where.push('m.id_insumo = ?'); args.push(q.inputId); }
             if (q.equipmentId) { where.push('m.id_equipamento = ?'); args.push(q.equipmentId); }
+            if (q.kind==='inputs') where.push('m.id_insumo IS NOT NULL');
+            const location = "COALESCE(m.id_local_movimentacao,CASE m.tipo WHEN 'ENTRADA' THEN l.id_local_destino WHEN 'SAIDA' THEN l.id_local_origem WHEN 'DEVOLUCAO' THEN l.id_local_origem END,i.id_local,e.id_local)";
             if (q.localId) {
-                where.push("COALESCE(CASE m.tipo WHEN 'ENTRADA' THEN l.id_local_destino WHEN 'SAIDA' THEN l.id_local_origem WHEN 'DEVOLUCAO' THEN l.id_local_origem END,i.id_local,e.id_local) = ?");
+                where.push(`${location} = ?`);
                 args.push(q.localId);
-            }
+            } else if (q.scope==='linked') where.push(`${location} IS NOT NULL`);
             if (supplierId) { where.push('COALESCE(l.id_fornecedor,i.id_fornecedor,e.id_fornecedor) = ?'); args.push(supplierId); }
+            if (q.q) { where.push("LOCATE(?,CONCAT_WS(' ',i.nome,e.nome,m.tipo,m.motivo))>0"); args.push(q.q); }
             return rows(database, `SELECT m.id_movimentacao,m.id_insumo,m.id_equipamento,m.id_reserva,m.id_logistica,l.id_solicitacao,
-                m.id_usuario,m.tipo,m.quantidade,m.motivo,m.data_movimentacao,i.nome AS nome_insumo,e.nome AS nome_equipamento
+                m.id_usuario,m.tipo,m.quantidade,m.motivo,m.data_movimentacao,m.estorno_de,m.correcao_de,
+                ${location} AS id_local_movimentacao,i.nome AS nome_insumo,e.nome AS nome_equipamento,
+                rev.id_movimentacao AS estornada_por
                 FROM movimentacoes_estoque m LEFT JOIN logistica l ON l.id_logistica = m.id_logistica
                 LEFT JOIN insumos i ON i.id_insumo = m.id_insumo LEFT JOIN equipamentos e ON e.id_equipamento = m.id_equipamento
-                WHERE ${where.join(' AND ')} ORDER BY m.id_movimentacao LIMIT ${q.limit + 1}`, args);
+                LEFT JOIN movimentacoes_estoque rev ON rev.estorno_de=m.id_movimentacao
+                ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY m.id_movimentacao ${recent ? 'DESC' : 'ASC'} LIMIT ${q.limit + 1}`, args);
         },
         alerts(q, supplierId = null) {
             if (!Number.isInteger(q.limit) || q.limit < 1 || q.limit > 100) throw new TypeError('Limite inválido');
             const args = [q.localId,q.cursor ?? '0'], supplier = supplierId ? ' AND i.id_fornecedor = ?' : '';
             if (supplierId) args.push(supplierId);
-            return rows(database, `SELECT i.id_insumo,i.id_fornecedor,i.id_local,i.nome,i.quantidade,i.quantidade_reservada,i.quantidade_minima FROM insumos i WHERE i.id_local = ? AND i.id_insumo > ? AND i.status = 'DISPONIVEL' AND i.quantidade - i.quantidade_reservada <= i.quantidade_minima${supplier} ORDER BY i.id_insumo LIMIT ${q.limit + 1}`, args);
+            if (q.q) args.push(q.q);
+            return rows(database, `SELECT i.id_insumo,i.id_fornecedor,i.id_local,i.nome,i.quantidade,i.quantidade_reservada,i.quantidade_minima FROM insumos i WHERE i.id_local = ? AND i.id_insumo > ? AND i.status = 'DISPONIVEL' AND i.quantidade - i.quantidade_reservada <= i.quantidade_minima${supplier}${q.q?" AND LOCATE(?,i.nome)>0":""} ORDER BY i.id_insumo LIMIT ${q.limit + 1}`, args);
         }
     };
 }

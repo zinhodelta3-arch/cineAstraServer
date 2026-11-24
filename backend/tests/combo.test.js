@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
 import { createComboService } from '../src/services/comboService.js';
+import { createPricingService } from '../src/services/pricingService.js';
 import { createComboController } from '../src/controllers/comboController.js';
 import { comboRoutes } from '../src/routes/comboRoutes.js';
 import { errorMiddleware } from '../src/middlewares/errorMiddleware.js';
@@ -11,7 +12,7 @@ import { createComboModel } from '../src/models/comboModel.js';
 
 function fixture() {
     let state = { locals: [{ id_local: '1', status: 'ATIVO' }, { id_local: '2', status: 'ATIVO' }], inputs: [
-        { id_insumo: '10', id_local: '1', id_fornecedor: '5', nome: 'Milho', status: 'DISPONIVEL', fornecedor_status: 'ATIVO', usuario_status: 'ATIVO', tipo_usuario: 'FORNECEDOR', vinculo_status: 'ATIVO' },
+        { id_insumo: '10', id_local: '1', id_fornecedor: '5', nome: 'Milho', custo_receita: '5.00', custo_parceria: '1.00', status: 'DISPONIVEL', fornecedor_status: 'ATIVO', usuario_status: 'ATIVO', tipo_usuario: 'FORNECEDOR', vinculo_status: 'ATIVO' },
         { id_insumo: '11', id_local: '2', id_fornecedor: '5', nome: 'Copo', status: 'DISPONIVEL', fornecedor_status: 'ATIVO', usuario_status: 'ATIVO', tipo_usuario: 'FORNECEDOR', vinculo_status: 'ATIVO' },
         { id_insumo: '12', id_local: '1', id_fornecedor: '5', nome: 'Sal', status: 'INDISPONIVEL', fornecedor_status: 'ATIVO', usuario_status: 'ATIVO', tipo_usuario: 'FORNECEDOR', vinculo_status: 'ATIVO' }
     ], combos: [], items: [], references: new Set(), audit: [] };
@@ -29,10 +30,25 @@ function fixture() {
     };
     const identity = { async activeActor(c, context) { return { tipo_usuario: context.actor.tipo }; }, async transaction(work) { const saved = structuredClone(state); try { return await work({}); } catch (e) { state = saved; throw e; } }, async audit(c, action, id) { state.audit.push({ action, id }); } };
     const app = express(); app.use(express.json()); app.use((req,res,next) => { res.locals.requestId = '00000000-0000-4000-8000-000000000001'; next(); });
-    app.use(comboRoutes(createComboController(createComboService({ model, identity })), { auth(req,res,next) { const role = req.headers['x-role']; if (!role) throw ApiError.naoAutorizado(); req.usuario = { id: '1', tipo: role }; next(); } })); app.use(errorMiddleware);
+    const pricing = createPricingService({ model: { parameter: async () => ({ markup_bps: 6000 }) }, identity });
+    app.use(comboRoutes(createComboController(createComboService({ model, identity, pricing })), { auth(req,res,next) { const role = req.headers['x-role']; if (!role) throw ApiError.naoAutorizado(); req.usuario = { id: '1', tipo: role }; next(); } })); app.use(errorMiddleware);
     const api = (method, path, role = 'ADMIN') => request(app)[method](path).set('X-Role', role);
     return { api, app, get state() { return state; } };
 }
+
+test('edição pela regra usa a composição cadastrada e o novo custo operacional', async () => {
+    const f = fixture();
+    const created = await f.api('post', '/api/admin/combos').send({
+        nome: 'Combo Pipoca', localId: '1', custo_operacional: '1.00', priceMode: 'RULE',
+        items: [{ inputId: '10', quantidade: 2 }]
+    }).expect(201);
+    assert.equal(created.body.data.preco, '20.80');
+    const revised = await f.api('patch', '/api/admin/combos/1').send({
+        custo_operacional: '3.00', priceMode: 'RULE'
+    }).expect(200);
+    assert.equal(revised.body.data.preco, '24.00');
+    assert.deepEqual(revised.body.data.items, created.body.data.items);
+});
 
 test('combo exige itens positivos, distintos e do mesmo local; público só vê composição disponível', async () => {
     const f = fixture(), base = { localId: '1', nome: 'Combo Pipoca', preco: '15.00', custo_operacional: '0.00' };

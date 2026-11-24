@@ -15,7 +15,7 @@ export default function PlansHero({ showPlans }) {
             <p className="mt-6 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">Escolha o plano do Clube CineAstra pelos benefícios que você quer usar.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" onClick={showPlans}>Comparar planos <ArrowRight className="size-4" /></Button>
-              <Link className={buttonVariants({ size:'lg', variant:'outline' })} href={subscriptionManagementPath}>Gerenciar minha assinatura</Link>
+              <Link className={buttonVariants({ size:'lg', variant:'outline' })} href={subscriptionManagementPath}>Gerenciar assinatura</Link>
             </div>
           </div>
           <div className="relative mx-auto w-full max-w-md">

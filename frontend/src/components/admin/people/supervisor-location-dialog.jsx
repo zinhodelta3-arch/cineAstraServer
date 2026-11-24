@@ -39,7 +39,7 @@ export default function SupervisorLocationDialog({ supervisor, onClose, onSaved 
 
   return <Dialog open={Boolean(supervisor)} onOpenChange={open => { if (!open && !pending) onClose(); }}><DialogContent className={styles.dialog}>
     <DialogTitle className={styles.dialogTitle}>Cinema do supervisor</DialogTitle>
-    <DialogDescription className={styles.dialogDescription}>{supervisor?.name} poderá administrar um cinema por vez. Equipes ativas precisam pertencer a esse local.</DialogDescription>
+    <DialogDescription className={styles.dialogDescription}>{supervisor?.name} pode ficar vinculado a um cinema por vez. Cada cinema aceita até três supervisores. Transfira as equipes ativas antes de mudar o vínculo.</DialogDescription>
     {loading && <p role="status">Carregando vínculo…</p>}
     {ready && <form className={styles.form} onSubmit={save}>
       <label className={styles.wide}>Cinema<select value={localId} onChange={event => setLocalId(event.target.value)} disabled={pending || locations.loading}>

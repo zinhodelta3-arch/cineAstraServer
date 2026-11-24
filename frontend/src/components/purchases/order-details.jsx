@@ -3,6 +3,7 @@ import {QRCodeSVG} from 'qrcode.react';
 import useOrderDetails from '@/hooks/cinema/minhascompras/use-order-details';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
+import {OperationFeedback} from '@/components/ui/list-feedback';
 import ListStatus from '@/components/cinema/home/list-status';
 import {orderStatuses,itemTypes,ticketStatuses,purchaseMoney,purchaseDate} from '@/lib/api/purchases.mjs';
 import OrderRefunds from './order-refunds';
@@ -157,17 +158,27 @@ function ResourceState({resource}){
 }
 export default function OrderDetails({order,onClose,onChanged}){
  const s=useOrderDetails(order,onChanged),data=s.detail.data,receipt=s.receipt.data;
- const qrTickets=s.tickets.items.filter(ticket=>ticket.code&&(ticket.status==='GERADO'||ticket.presence==='FORA'&&Date.parse(ticket.expiresAt)>Date.now()));
+ const summary=data??order;
+ const {items:tickets}=s.tickets;
+ const [now,setNow]=useState(Date.now);
+ useEffect(()=>{
+  const nextExpiry=Math.min(...tickets.filter(ticket=>ticket.presence==='FORA')
+   .map(ticket=>Date.parse(ticket.expiresAt)).filter(time=>time>now));
+  if(!Number.isFinite(nextExpiry))return;
+  const timer=setTimeout(()=>setNow(Date.now()),Math.min(2147483647,Math.max(0,nextExpiry-Date.now())));
+  return()=>clearTimeout(timer);
+ },[tickets,now]);
+ const qrTickets=tickets.filter(ticket=>ticket.code&&(ticket.status==='GERADO'||ticket.presence==='FORA'&&Date.parse(ticket.expiresAt)>now));
  return <Dialog open onOpenChange={open=>{if(!open&&!s.pending)onClose();}}><DialogContent className="cine-order-dialog max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
   <style>{orderStyles}</style>
   <DialogHeader>
    <div className="cine-order-header">
     <p className="cine-order-brand text-primary"><span aria-hidden="true">✦</span> CINEASTRA</p>
-    <DialogTitle className="cine-order-title">Detalhes da compra</DialogTitle>
-    <DialogDescription>{purchaseDate(order.createdAt)} (Brasília) · Total do pedido: {purchaseMoney(order.total)}</DialogDescription>
+    <DialogTitle className="cine-order-title">Pedido #{order.orderId}</DialogTitle>
+    <DialogDescription>{summary.createdAt ? `${purchaseDate(summary.createdAt)} (Brasília) · Total do pedido: ${purchaseMoney(summary.total)}` : 'Detalhes da compra'}</DialogDescription>
    </div>
   </DialogHeader>
-  {s.notice&&<p role="status" className="rounded-lg border border-primary/30 p-3 text-sm">{s.notice}</p>}
+  <OperationFeedback success={s.notice} pending={s.pending||s.downloading} toast/>
   {s.error&&<p role="alert" className="text-sm text-destructive">{s.error}</p>}
   <ResourceState resource={s.detail} />
   {data&&<>
@@ -176,7 +187,7 @@ export default function OrderDetails({order,onClose,onChanged}){
     {data.operationalStatus&&<span className="cine-order-pill">Operação: {data.operationalStatus.replaceAll('_',' ').toLowerCase()}</span>}
    </div>
    {qrTickets.length>0&&['PAGO','FINALIZADO'].includes(data.financialStatus)&&<OrderTicketPreview order={order} tickets={qrTickets} />}
-   <div className="cine-order-actions"><Button variant="outline" onClick={s.refresh} disabled={s.pending||s.detail.loading}>Atualizar pedido</Button><Button variant="outline" onClick={s.download} disabled={s.pending||s.detail.loading}>Baixar resumo</Button></div>
+   <div className="cine-order-actions"><Button variant="outline" onClick={s.refresh} disabled={s.pending||s.detail.loading}>Atualizar pedido</Button><Button onClick={s.download} disabled={s.pending||s.downloading} aria-busy={s.downloading}>{s.downloading?'Preparando PDF…':'Baixar comprovante em PDF'}</Button></div>
    {data.items?.length>0&&<section className="cine-order-panel"><h3 className="mb-3 text-lg font-bold">Andamento dos itens</h3><ul className="space-y-2">{data.items.map((item,index)=><li key={item.itemId+':'+index} className="rounded-lg border border-border p-3 text-sm">{itemTypes[item.type]||item.type} · item #{item.itemId}{item.status?' · '+item.status.replaceAll('_',' ').toLowerCase():''}</li>)}</ul></section>}
    {data.financialStatus==='AGUARDANDO_PAGAMENTO'&&!s.confirm&&<Button variant="outline" disabled={s.pending} onClick={()=>s.setConfirm(true)}>Cancelar pedido pendente</Button>}
    {s.confirm&&<section className="rounded-xl border border-destructive/30 p-4" aria-label="Confirmar cancelamento"><h3 className="font-bold">Cancelar este pedido?</h3><p className="my-3 text-sm">As reservas serão liberadas se o backend permitir o cancelamento. Isso não solicita reembolso de um pagamento.</p><div className="flex flex-wrap gap-3"><Button variant="outline" disabled={s.pending} onClick={()=>s.setConfirm(false)}>Manter pedido</Button><Button disabled={s.pending} onClick={s.cancel}>Confirmar cancelamento</Button></div></section>}

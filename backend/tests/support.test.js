@@ -89,7 +89,7 @@ test('SQL e migration guardam histórico, SLA e sessão única; reembolso usa ro
     const calls=[],c={execute:async(sql,args)=>{calls.push({sql,args});return [[{id_suporte:'7'}]];}};
     await createSupportModel().messages(c,'7',20,'0');
     assert.match(calls[0].sql,/id_suporte=\? AND id_mensagem>\?/);
-    assert.equal(supportOperations.length,11);
+    assert.equal(supportOperations.length,13);
     assert.equal(supportOperations.some(x=>x.path.includes('refund')),false);
     const migration=await readFile(new URL('../../database/migrations/20261011_27_support_history.sql',import.meta.url),'utf8');
     assert.match(migration,/INSERT INTO suporte_mensagens/);

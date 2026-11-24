@@ -6,7 +6,7 @@ import { useAdminSupport } from "@/hooks/admin/use-admin-support";
 import styles from "./admin-support.module.css";
 import TablePagination from '@/components/ui/table-pagination';
 
-const statusLabels = { ABERTO: "Aberto", EM_ATENDIMENTO: "Em atendimento", RESOLVIDO: "Resolvido", FECHADO: "Fechado" };
+const statusLabels = { ABERTO: "Aberto", EM_ATENDIMENTO: "Em atendimento", RESOLVIDO: "Resolvido", FECHADO: "Fechado", CANCELADO: "Cancelado" };
 
 function stamp(value) {
   if (!value) return null;
@@ -22,7 +22,7 @@ function TicketList({ support }) {
     </header>
     <div className={styles.filters}>
       <label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Buscar chamado</span><input type="search" value={support.query} onChange={(event) => support.setQuery(event.target.value)} placeholder="Buscar chamado" /></label>
-      <label className={styles.statusFilter}><span className="sr-only">Filtrar status</span><select value={support.status} onChange={(event) => support.setStatus(event.target.value)}><option value="Todos">Todos</option><option value="ABERTO">Abertos</option><option value="EM_ATENDIMENTO">Em atendimento</option><option value="RESOLVIDO">Resolvidos</option><option value="FECHADO">Fechados</option></select></label>
+      <label className={styles.statusFilter}><span className="sr-only">Filtrar status</span><select value={support.status} onChange={(event) => support.setStatus(event.target.value)}><option value="Todos">Todos</option><option value="ABERTO">Abertos</option><option value="EM_ATENDIMENTO">Em atendimento</option><option value="RESOLVIDO">Resolvidos</option><option value="FECHADO">Fechados</option><option value="CANCELADO">Cancelados</option></select></label>
     </div>
     <div className={styles.queueBody}>
       {support.queue.loading && !support.queue.items.length && <p className={styles.listState} role="status">Carregando chamados…</p>}
@@ -33,7 +33,7 @@ function TicketList({ support }) {
         <button type="button" className={styles.ticketRow} aria-pressed={support.selectedId === ticket.id} onClick={() => support.select(ticket.id)} disabled={support.pending}>
           <span className={styles.ticketTop}><span className={styles.ticketNumber}>#{ticket.id}</span><time>{stamp(ticket.lastInteractionAt ?? ticket.openedAt)}</time></span>
           <strong>{ticket.subject}</strong>
-          <span className={styles.ticketBottom}><span>Cliente #{ticket.clientId}</span><span className={`${styles.status} ${ticket.status === "EM_ATENDIMENTO" ? styles.inProgress : ""}`}>{statusLabels[ticket.status] ?? ticket.status}</span></span>
+          <span className={styles.ticketBottom}><span>{ticket.clientName ?? `Conta #${ticket.clientId}`}</span><span className={`${styles.status} ${ticket.status === "EM_ATENDIMENTO" ? styles.inProgress : ""}`}>{statusLabels[ticket.status] ?? ticket.status}</span></span>
         </button>
       </li>)}</ul>
       <TablePagination list={support.queue} noun="chamados" />
@@ -45,7 +45,7 @@ function Conversation({ support }) {
   const ticket = support.thread.id === support.selectedId ? support.thread.ticket : null;
   const mine = ticket?.attendantId === support.session.user?.id;
   const assignedOther = Boolean(ticket?.attendantId && !mine);
-  const canRespond = Boolean(mine && ticket && !["RESOLVIDO", "FECHADO"].includes(ticket.status));
+  const canRespond = Boolean(mine && ticket && !["RESOLVIDO", "FECHADO", "CANCELADO"].includes(ticket.status));
   const lastMessage = support.thread.messages.at(-1);
   const canResolve = canRespond && lastMessage?.role === "ADMIN";
   const historyRef = useRef(null);
@@ -63,7 +63,7 @@ function Conversation({ support }) {
       <div className={styles.conversationTitle}>
         <span className={styles.ticketNumber}>CHAMADO #{support.selectedId}</span>
         <h2 id="conversation-title">{ticket?.subject ?? "Conversa do chamado"}</h2>
-        {ticket && <p>Cliente #{ticket.clientId} · Aberto em {stamp(ticket.openedAt) ?? "data indisponível"}</p>}
+        {ticket && <p>{ticket.clientName ?? `Conta #${ticket.clientId}`} {ticket.clientRole && `· ${ticket.clientRole.toLocaleLowerCase("pt-BR")}`} · Aberto em {stamp(ticket.openedAt) ?? "data indisponível"}</p>}
       </div>
       <button type="button" className={styles.refresh} onClick={support.refresh} disabled={support.thread.loading || support.pending} aria-label="Atualizar conversa" title="Atualizar conversa"><RefreshCw size={17} aria-hidden="true" /></button>
     </header>
@@ -75,14 +75,14 @@ function Conversation({ support }) {
         {ticket.responseOverdue && <span className={styles.overdue}><Clock3 size={14} aria-hidden="true" />Prazo de resposta ultrapassado</span>}
         {assignedOther && <span className={styles.attendant}>Atribuído a outro atendente</span>}
         {mine && <span className={styles.attendant}>Em atendimento por você</span>}
-        {!ticket.attendantId && <button type="button" className={styles.assign} onClick={support.assign} disabled={support.pending || support.session.loading || !support.session.user}>Assumir chamado</button>}
+        {!ticket.attendantId && ['ABERTO','EM_ATENDIMENTO'].includes(ticket.status) && <button type="button" className={styles.assign} onClick={support.assign} disabled={support.pending || support.session.loading || !support.session.user}>Assumir chamado</button>}
         {canRespond && !canResolve && <span className={styles.resolveHint}>Responda ao cliente antes de resolver.</span>}
         {mine && <button type="button" className={styles.resolve} onClick={support.resolve} disabled={support.pending || !canResolve}><Check size={16} aria-hidden="true" />Resolver</button>}
       </div>
       {support.thread.nextCursor && <button type="button" className={styles.moreMessages} onClick={support.loadMoreMessages} disabled={support.thread.loadingMore || support.thread.loading || support.pending}>{support.thread.loadingMore ? "Carregando…" : "Carregar mensagens anteriores"}</button>}
       <ol ref={historyRef} className={styles.messages} aria-label="Histórico da conversa">
         {support.thread.messages.map((item) => <li key={item.id} className={`${styles.message} ${item.role === "ADMIN" ? styles.adminMessage : ""}`}>
-          <div className={styles.bubble}><span>{item.role === "ADMIN" ? "Atendimento" : item.role === "CLIENTE" ? "Cliente" : "Sistema"}</span><p>{item.message}</p><time>{stamp(item.createdAt)}</time></div>
+          <div className={styles.bubble}><span>{item.authorName ?? (item.role === "ADMIN" ? "Atendimento" : ticket.clientName ?? "Solicitante")}{item.origin === "EDICAO" ? " · Edição do chamado" : ""}</span><p>{item.message}</p><time>{stamp(item.createdAt)}</time></div>
         </li>)}
         {!support.thread.messages.length && !support.thread.loading && <li className={styles.noMessages}>Nenhuma mensagem disponível neste chamado.</li>}
       </ol>
@@ -95,10 +95,10 @@ function Conversation({ support }) {
   </section>;
 }
 
-export default function AdminSupport() {
-  const support = useAdminSupport();
+export default function AdminSupport({initialId}) {
+  const support = useAdminSupport(initialId);
   return <main id="admin-content" tabIndex={-1} className={styles.page}>
-    <header className={styles.heading}><div><h1>Suporte</h1><p>Acompanhe os chamados e responda às solicitações dos clientes.</p></div><button type="button" className={styles.refreshAll} onClick={support.refresh} disabled={support.queue.loading || support.pending}><RefreshCw size={16} aria-hidden="true" />Atualizar fila</button></header>
+    <header className={styles.heading}><div><h1>Suporte</h1><p>Acompanhe os chamados e responda a clientes, equipes de unidade e fornecedores.</p></div><button type="button" className={styles.refreshAll} onClick={support.refresh} disabled={support.queue.loading || support.pending}><RefreshCw size={16} aria-hidden="true" />Atualizar fila</button></header>
     {support.notice && <p className={styles.notice} role="status">{support.notice}</p>}
     {support.error && <p className={styles.error} role="alert">{support.error}</p>}
     <div className={`${styles.workspace} ${support.selectedId ? styles.hasSelection : ""}`}><TicketList support={support} /><Conversation support={support} /></div>

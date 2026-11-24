@@ -4,18 +4,28 @@ import { ApiError } from '../utils/ApiError.js';
 
 const note=z.string().trim().min(1).max(2000).optional();
 const paging={limit:z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20),cursor:catalogId.optional(),localId:catalogId.optional()};
+const q=z.string().trim().min(1).max(120).optional();
 const routeFields = {
     distancia_km: z.string().regex(/^\d{1,6}(?:\.\d{1,2})?$/).refine(value => Number(value) > 0),
     tempo_estimado_min: z.number().int().min(1).max(10080)
 };
 export const supplySchemas={
     request:z.object({localId:catalogId,sessionId:catalogId.optional(),inputId:catalogId.optional(),equipmentId:catalogId.optional(),quantity:z.number().int().min(1).max(2147483647),note}).strict().refine(v=>Boolean(v.inputId)!==Boolean(v.equipmentId)).refine(v=>!v.equipmentId||Boolean(v.sessionId)),
-    requestsQuery:z.object({...paging,sessionId:catalogId.optional(),status:z.enum(['PENDENTE','APROVADA','RECUSADA','FINALIZADA']).optional()}).strict(),
+    requestsQuery:z.object({...paging,q,sessionId:catalogId.optional(),requestId:catalogId.optional(),
+        supervision:z.literal('PENDENTE').optional(),withoutShipment:z.literal('true').optional(),
+        status:z.enum(['PENDENTE','APROVADA','RECUSADA','FINALIZADA','CANCELADA']).optional()}).strict(),
+    requestPatch:z.object({quantity:z.number().int().min(1).max(2147483647).optional(),note:note.unwrap().nullable().optional()})
+        .strict().refine(value=>Object.keys(value).length>0),
+    approval:z.object({prepareShipment:z.boolean().default(true)}).strict().default({prepareShipment:true}),
+    shipmentCreate:z.object({requestId:catalogId}).strict(),
+    shipmentPatch:z.object({transportId:catalogId.nullable().optional(),note:note.unwrap().nullable().optional()})
+        .strict().refine(value=>Object.keys(value).length>0),
+    dispatchOptions:z.object({limit:paging.limit,cursor:paging.cursor}).strict(),
     supervisorReview:z.object({decision:z.enum(['APROVADA','RECUSADA'])}).strict(),
     dispatch:z.object({transportId:catalogId}).strict(),
     incident:z.object({type:z.enum(['ACIDENTE','EXTRAVIO','PERDA']),description:z.string().trim().min(1).max(2000)}).strict(),
     shipmentHistory:z.object({limit:paging.limit,cursor:z.string().regex(/^[1-9]\d{0,19}$/).refine(v=>BigInt(v)<=18446744073709551615n).optional()}).strict(),
-    shipmentsQuery:z.object({...paging,sessionId:catalogId.optional()}).strict(),stockQuery:z.object({localId:catalogId,sessionId:catalogId.optional()}).strict(),
+    shipmentsQuery:z.object({...paging,q,sessionId:catalogId.optional(),supplierId:catalogId.optional(),requestId:catalogId.optional()}).strict(),stockQuery:z.object({localId:catalogId,sessionId:catalogId.optional()}).strict(),
     sourcesQuery:z.object({...paging,kind:z.enum(['input','equipment']).default('input')}).strict(),
     logisticsRoutesQuery:z.object({limit:paging.limit,cursor:paging.cursor}).strict(),
     inputLink:z.object({sourceId:catalogId,targetId:catalogId}).strict().refine(value => value.sourceId !== value.targetId),

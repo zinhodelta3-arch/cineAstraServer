@@ -5,7 +5,7 @@ import {Ticket} from 'lucide-react';
 import {usePublicList} from '@/hooks/cinema/home/use-public-list';
 import {useSession} from '@/hooks/auth/use-session';
 import { sessionFetch,readSessionResponse} from '@/lib/auth/session-response.mjs';
-import {planBenefits,planMoney} from '@/lib/api/plan-subscription.mjs';
+import {planBenefitRows,planMoney} from '@/lib/api/plan-subscription.mjs';
 import {STREAMING_ACCESS_CHANGE_EVENT} from '@/hooks/cinema/use-streaming-access';
 
 const emptyMine = { items:[], loading:true, error:null, cursor:null };
@@ -17,6 +17,7 @@ export default function useCinemaPlans({ management = false } = {}){
  const session=useSession(),userId=session.user?.id,client=session.user?.role==='CLIENTE';
  const list=usePublicList(!management||client?'/plans?limit=12':null);
  const [billing,setBilling]=useState('monthly'),[selected,setSelected]=useState(null),[autoRenew,setAutoRenew]=useState(false);
+ const [modality,setModality]=useState('INDIVIDUAL'),[divisionMode,setDivisionMode]=useState('TITULAR_PAGA');
  const [offer,setOffer]=useState(null),[accepted,setAccepted]=useState(false),[error,setError]=useState(''),[pending,setPending]=useState(false),[result,setResult]=useState(null);
  const [mineState,setMine]=useState(emptyMine),[revision,setRevision]=useState(0);
  const mine=mineState.owner===userId?mineState:emptyMine;
@@ -50,12 +51,20 @@ export default function useCinemaPlans({ management = false } = {}){
  };
  const reset=()=>{generation.current++;setOffer(null);setAccepted(false);setError('');setResult(null);};
  const changeBilling=value=>{if(lock.current)return;setBilling(value);reset();};
+ const changeModality=value=>{if(lock.current)return;setModality(value);if(value==='INDIVIDUAL'&&!change)setDivisionMode('TITULAR_PAGA');reset();};
  const choose=id=>{if(lock.current)return;setSelected(id);reset();};
- const chooseDraft=draft=>{if(lock.current)return;setBilling(draft.period==='ANUAL'?'annual':'monthly');setAutoRenew(false);choose(draft.planId);};
- const startChange=item=>{if(lock.current)return;setChange(item);setChangeResult(null);setBilling(item.period==='ANUAL'?'annual':'monthly');setAutoRenew(item.autoRenew);choose(item.planId);};
+ const chooseDraft=draft=>{if(lock.current)return;setBilling(draft.period==='ANUAL'?'annual':'monthly');setAutoRenew(false);setModality(draft.modality??'INDIVIDUAL');choose(draft.planId);};
+ const startChange=(item,proposal=null)=>{
+  if(lock.current)return;
+  const choice=proposal??item;
+  setChange(item);setChangeResult(null);setBilling(choice.period==='ANUAL'?'annual':'monthly');setAutoRenew(item.autoRenew);
+  setModality(choice.modality??(item.maxMembers>=4?'FAMILIA':item.maxMembers>=2?'DUPLA':'INDIVIDUAL'));
+  choose(choice.planId);
+ };
  const selectedPlan=list.items.find(plan=>plan.id===selected);
- const selectedPrice=selectedPlan?.[billing==='monthly'?'monthlyPrice':'annualPrice'];
- const input={planId:selected,period:billing==='monthly'?'MENSAL':'ANUAL',autoRenew,divisionMode:change?.divisionMode??'TITULAR_PAGA'};
+ const priceFor=plan=>plan?.modalities?.find(option=>option.modality===modality)?.[billing==='monthly'?'monthlyPrice':'annualPrice'];
+ const selectedPrice=priceFor(selectedPlan);
+ const input={planId:selected,period:billing==='monthly'?'MENSAL':'ANUAL',modality,autoRenew,divisionMode:change?.divisionMode??divisionMode};
  const review=async()=>{
   if(lock.current||!(Number(selectedPrice)>0)||!client)return;
   lock.current=true;setPending(true);reset();const version=generation.current;
@@ -94,9 +103,8 @@ export default function useCinemaPlans({ management = false } = {}){
   finally{lock.current=false;setPending(false);}
  };
  const plans=list.items.map(plan=>{
-  const price=billing==='monthly'?plan.monthlyPrice:plan.annualPrice;
-  const badge=plan.maxMembers===1?'Individual':plan.maxMembers===2?'Duo':'Família';
-  return {...plan,icon:Ticket,badge,tagline:plan.description,benefits:planBenefits(plan),available:Number(price)>0,priceLabel:planMoney(Number(price)>0?price:null)};
+  const price=priceFor(plan);
+  return {...plan,icon:Ticket,benefitRows:planBenefitRows(plan),available:Number(price)>0,priceLabel:planMoney(Number(price)>0?price:null)};
  });
  const cancel=async subscriptionId=>{
   if(lock.current||!client)return false;
@@ -116,8 +124,8 @@ export default function useCinemaPlans({ management = false } = {}){
  };
  return {
   hero:{showPlans:()=>document.getElementById('planos')?.scrollIntoView({behavior:'smooth'})},
-  catalog:{list,plans,billing,setBilling:changeBilling,periodFor:billing==='monthly'?'/mês':'/ano',startSubscription:choose,pending},
-  subscription:{selectedPlanAvailable:Number(selectedPrice)>0,selectedPlanName:selectedPlan?.name,planNames:Object.fromEntries(plans.map(plan=>[plan.id,plan.name])),selected,billing,autoRenew,changeAutoRenew:value=>{if(!lock.current){setAutoRenew(value);reset();}},offer,accepted,setAccepted,error,pending,result,review,subscribe,session,chooseDraft,
+  catalog:{list,plans,billing,setBilling:changeBilling,modality,setModality:changeModality,periodFor:billing==='monthly'?'/mês':'/ano',startSubscription:choose,pending},
+  subscription:{selectedPlanAvailable:Number(selectedPrice)>0,selectedPrice,selectedPlanName:selectedPlan?.name,planNames:Object.fromEntries(plans.map(plan=>[plan.id,plan.name])),selected,billing,modality,divisionMode,changeDivision:value=>{if(!lock.current){setDivisionMode(value);reset();}},autoRenew,changeAutoRenew:value=>{if(!lock.current){setAutoRenew(value);reset();}},offer,accepted,setAccepted,error,pending,result,review,subscribe,session,chooseDraft,
    cancel,cancelNotice,change,startChange,changeResult,editChoice:()=>{if(!lock.current)reset();},
    resetChange:()=>{if(!lock.current){setChange(null);setSelected(null);setChangeResult(null);reset();}},
    mine:management&&client?{...mine,loadMore,retry:()=>setRevision(v=>v+1)}:null}

@@ -2,16 +2,18 @@
 import {useEffect,useState} from 'react';
 import {publicGet} from '@/lib/api/public-api.mjs';
 import {cinemaMovie} from '@/lib/api/cinema-movies.mjs';
-import {usePublicList} from '@/hooks/cinema/home/use-public-list';
-export function useMovieDetails(id,{includeGallery=true}={}){
+export function useMovieDetails(id,{initialFilm=null}={}){
  const [revision,setRevision]=useState(0),[state,setState]=useState(null);
  const key=`${id}:${revision}`;
+ const initial=revision===0&&initialFilm?initialFilm:null;
  useEffect(()=>{
+  if(revision===0&&initialFilm)return;
   const abort=new AbortController();
-  publicGet(`/films/${id}`,{signal:abort.signal}).then(film=>{if(!abort.signal.aborted)setState({key,movie:cinemaMovie(film)});}).catch(error=>{if(!abort.signal.aborted)setState({key,error:error.message});});
+  publicGet(`/films/${id}`,{signal:abort.signal}).then(film=>{if(!abort.signal.aborted)setState({key,film});}).catch(error=>{if(!abort.signal.aborted)setState({key,error:error.message});});
   return()=>abort.abort();
- },[id,key]);
- const genres=usePublicList(`/films/${id}/genres?limit=100`);
- const gallery=usePublicList(includeGallery?`/films/${id}/images?limit=20`:null);
- return {movie:state?.key===key?state.movie:null,error:state?.key===key?state.error:null,loading:state?.key!==key,genres,gallery,retry:()=>setRevision(v=>v+1)};
+ },[id,key,initialFilm,revision]);
+ const record=initial??(state?.key===key?state.film:null);
+ return {movie:record?cinemaMovie(record):null,error:state?.key===key?state.error:null,loading:!initial&&state?.key!==key,
+  genres:{items:Array.isArray(record?.generos)?record.generos:[],loading:false,error:null,cursor:null},
+  retry:()=>setRevision(v=>v+1)};
 }

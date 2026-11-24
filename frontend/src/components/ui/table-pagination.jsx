@@ -7,7 +7,8 @@ export default function TablePagination({ list, noun = 'registros', pageSizes = 
   const busy = Boolean(list.loading || list.loadingMore);
   const start = list.items.length ? (list.page - 1) * list.pageSize + 1 : 0;
   const totalPages = Number.isInteger(list.totalPages) ? list.totalPages
-    : Number.isInteger(list.total) ? Math.max(1, Math.ceil(list.total / list.pageSize)) : null;
+    : Number.isInteger(list.total) ? Math.max(1, Math.ceil(list.total / list.pageSize))
+    : !busy && !list.error && !list.hasNext && list.items.length > 0 ? list.page : null;
   const last = totalPages ?? Math.max(list.page + Number(Boolean(list.hasNext)), list.visitedPages ?? 1);
   const pages = last <= 5 ? Array.from({ length:last }, (_, index) => index + 1)
     : [...new Set([1, list.page - 1, list.page, list.page + 1, last].filter(page => page > 0 && page <= last))].sort((a,b) => a-b);
@@ -21,7 +22,7 @@ export default function TablePagination({ list, noun = 'registros', pageSizes = 
       <button type="button" disabled={busy || list.page === 1} onClick={list.previousPage} aria-label="Página anterior"><ChevronLeft size={16} aria-hidden="true" /><span>Anterior</span></button>
       {pages.map((page, index) => <span className={styles.numberGroup} key={page}>
         {index > 0 && page - pages[index - 1] > 1 && <span className={styles.ellipsis} aria-hidden="true">…</span>}
-        <button type="button" aria-current={page === list.page ? 'page' : undefined} aria-label={`Página ${page}`} disabled={busy || page === list.page} onClick={() => list.goToPage(page)}>{page}</button>
+        <button type="button" aria-current={page === list.page ? 'page' : undefined} aria-label={`Página ${page}`} disabled={busy || page === list.page || typeof list.visitedPages==='number' && page>list.visitedPages && page!==list.page+1} onClick={() => list.goToPage(page)}>{page}</button>
       </span>)}
       <button type="button" disabled={busy || !list.hasNext} onClick={list.nextPage} aria-label="Próxima página"><span>Próxima</span><ChevronRight size={16} aria-hidden="true" /></button>
     </div>

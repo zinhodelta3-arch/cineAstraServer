@@ -13,7 +13,7 @@ export default function SupportAssistant({question,setQuestion,answer,asked,hand
   </form>
   {answer&&<div className="mt-5 space-y-3 rounded-xl border border-border bg-background p-4">
    <p className="break-words text-sm"><strong>Sua pergunta:</strong> {asked}</p>
-   <p className="font-semibold">{answer.available?'Resposta da IA':'Assistente indisponível'}</p>
+   <p className="font-semibold">{answer.available?'Resposta da assistente':'Orientação do suporte'}</p>
    <p className="whitespace-pre-wrap break-words text-sm leading-6">{answer.message}</p>
    <AssistantSessionLinks sessions={answer.sessions} />
    <Button variant="outline" onClick={handoff} disabled={pending||handedOff}>{handedOff?'Encaminhado ao suporte':'Encaminhar esta dúvida ao suporte humano'}</Button>

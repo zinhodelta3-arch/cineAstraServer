@@ -4,14 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import UserLookupFilter from '@/components/admin/people/user-lookup-filter';
 import { salesRequest } from '@/hooks/admin/use-admin-sales';
-import { dateTime, statusName } from './sales-layout';
+import { operationKey } from '@/lib/api/operation-key.mjs';
+import { dateTime, money, statusName } from './sales-layout';
 import styles from '../catalog/catalog.module.css';
 
 const kinds = { INPUT: 'Produto avulso', COMBO: 'Combo', SESSION: 'Ingresso', STREAMING: 'Aluguel de filme' };
 const emptyLine = { kind: 'INPUT', id: '', quantity: 1, key: 0 };
-const titles = { create: 'Nova proposta de pedido', edit: 'Editar proposta', cancel: 'Cancelar pedido', refund: 'Solicitar reembolso', reconcile: 'Consultar provedor', notes: 'Notas administrativas' };
+const titles = { create: 'Nova proposta de pedido', edit: 'Editar proposta', cancel: 'Cancelar pedido', refund: 'Solicitar reembolso', reconcile: 'Consultar provedor', notes: 'Notas administrativas', archive:'Arquivar registro', pix:'Registrar Pix simulado' };
 
-export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
+export default function SalesActionsDialog({ mode, row, onClose, onSaved, resource }) {
   const [userId, setUserId] = useState('');
   const [lines, setLines] = useState(() => row?.draft?.lines.map((line, key) => ({ ...line, key })) ?? [emptyLine]);
   const [notes, setNotes] = useState(null);
@@ -20,7 +21,7 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
   const [pending, setPending] = useState(false);
   const nextKey = useRef(lines.length);
   const lock = useRef(false);
-  const refundAttempt=useRef(null);
+  const requestAttempt=useRef(null);
   const id = row?.id;
   const draftMode = mode === 'create' || mode === 'edit';
 
@@ -45,11 +46,11 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
     let path = mode === 'cancel' ? `orders/${id}/cancel` : `payments/${id}/${mode}`;
     let body = mode === 'notes' ? { note: String(form.get('note') ?? '').trim() } : {};
     if(mode==='cancel')body={reason:String(form.get('reason')).trim()};
+    if(mode==='archive')path=`${resource}/${id}/archive`;
+    if(mode==='pix')path=`orders/${id}/simulated-pix`;
     if(mode==='refund'){
       path=`orders/${id}/refunds`;
-      body={reason:String(form.get('refundReason')),details:String(form.get('details')).trim()};
-      const fingerprint=JSON.stringify(body);
-      if(refundAttempt.current?.fingerprint!==fingerprint)refundAttempt.current={fingerprint,key:crypto.randomUUID()};
+      body={reason:String(form.get('refundReason')),details:String(form.get('details')).trim(),...(row.paymentId&&{paymentId:row.paymentId})};
     }
     if (draftMode) {
       const localId = String(form.get('localId') ?? '').trim();
@@ -67,8 +68,12 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
     setPending(true);
     setError('');
     try {
-      const result = await salesRequest(path, { method: mode === 'edit' ? 'PATCH' : 'POST', body, idempotencyKey:refundAttempt.current?.key });
-      const messages = { create: 'Proposta disponível em Minhas compras para o cliente.', edit: 'Proposta atualizada.', cancel: 'Pedido cancelado.', refund:'Solicitação disponível para análise em Reembolsos.', reconcile: `Consulta concluída. Estado atual do pagamento: ${statusName(result.status)}.`, notes: 'Nota adicionada ao histórico.' };
+      if(mode==='refund'||mode==='pix'){
+        const fingerprint=JSON.stringify(body);
+        if(requestAttempt.current?.fingerprint!==fingerprint)requestAttempt.current={fingerprint,key:operationKey()};
+      }
+      const result = await salesRequest(path, { method: mode === 'edit' ? 'PATCH' : 'POST', body, idempotencyKey:requestAttempt.current?.key });
+      const messages = { create: 'Proposta disponível em Minhas compras para o cliente.', edit: 'Proposta atualizada.', cancel: 'Pedido cancelado.', refund:'Solicitação disponível para análise em Reembolsos.', reconcile: `Consulta concluída. Estado atual do pagamento: ${statusName(result.status)}.`, notes: 'Nota adicionada ao histórico.', archive:'Registro movido para Arquivados.', pix:`Pix simulado confirmado. Pagamento #${result.paymentId}.` };
       onSaved(messages[mode]);
     } catch (cause) { setError(cause.message); }
     finally { lock.current = false; setPending(false); }
@@ -77,7 +82,7 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
   return <Dialog open onOpenChange={open => { if (!open && !lock.current) onClose(); }}>
     <DialogContent className={styles.dialog}>
       <DialogTitle className={styles.dialogTitle}>{titles[mode]}{id && ` #${id}`}</DialogTitle>
-      <DialogDescription className={styles.dialogDescription}>{draftMode ? 'O cliente selecionado revisará os itens e o preço antes de concluir a compra.' : mode === 'notes' ? 'As notas ficam no histórico administrativo do pagamento.' : mode === 'refund' ? 'A solicitação passa pela análise em Reembolsos. O pedido original fica no histórico.' : mode === 'cancel' ? 'As reservas de um pedido pendente serão liberadas quando o cancelamento for aceito.' : 'A consulta usa o provedor vinculado ao pagamento.'}</DialogDescription>
+      <DialogDescription className={styles.dialogDescription}>{draftMode ? 'O cliente selecionado revisará os itens e o preço antes de concluir a compra.' : mode === 'notes' ? 'As notas ficam no histórico administrativo do pagamento.' : mode === 'refund' ? 'A solicitação passa pela análise em Reembolsos. O pedido original fica no histórico.' : mode === 'cancel' ? 'As reservas de um pedido pendente serão liberadas quando o cancelamento for aceito.' : mode === 'archive' ? 'O registro continuará disponível em Arquivados, com seu histórico financeiro e vínculos.' : mode === 'pix' ? `O simulador vai confirmar o valor reservado de ${money(row.total)}. A confirmação emite os ingressos e conclui as reservas do pedido.` : 'A consulta usa o provedor vinculado ao pagamento.'}</DialogDescription>
       <form className={styles.form} onSubmit={submit}>
         {mode === 'create' && <div className={styles.wide}><UserLookupFilter activeOnly label="Cliente" role="CLIENTE" value={userId} onChange={setUserId} /></div>}
         {mode==='cancel'&&<label className={styles.wide}>Motivo do cancelamento<textarea name="reason" required minLength={3} maxLength={1000} /></label>}
@@ -105,7 +110,7 @@ export default function SalesActionsDialog({ mode, row, onClose, onSaved }) {
           <label>Nova nota<textarea name="note" required maxLength={1000} /></label>
         </div>}
         {error && <p role="alert" className={`${styles.error} ${styles.wide}`}>{error}</p>}
-        <div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} disabled={pending} onClick={onClose}>Voltar</button><button type="submit" className={mode === 'cancel' ? styles.danger : styles.primary} disabled={pending}>{pending ? 'Processando…' : 'Confirmar'}</button></div>
+        <div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} disabled={pending} onClick={onClose}>Voltar</button><button type="submit" className={mode === 'cancel' ? styles.danger : styles.primary} disabled={pending}>{pending ? 'Processando…' : mode==='archive' ? 'Arquivar' : mode==='pix' ? 'Confirmar Pix simulado' : 'Confirmar'}</button></div>
       </form>
     </DialogContent>
   </Dialog>;

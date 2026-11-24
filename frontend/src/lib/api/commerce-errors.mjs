@@ -10,6 +10,7 @@ export const commerceErrors = {
   GUARDIAN_AUTHORIZATION_REQUIRED: 'Esta compra exige autorização vigente do responsável.',
   CATALOG_PRICE_OUT_OF_SYNC: 'O preço publicado precisa ser atualizado pelo cinema. Tente novamente após a atualização.',
   INSUFFICIENT_STOCK: 'Não há estoque suficiente. Reduza a quantidade ou escolha outro produto.',
+  COUNTER_CUSTOMER_NOT_FOUND: 'A conta do cliente está indisponível. Busque o cliente novamente.',
   EVENT_COMBO_SESSION_REQUIRED: 'Confira se o evento está disponível e se o pedido contém um ingresso da sessão vinculada.',
   EVENT_COMBO_SOLD_OUT: 'O lote do combo temático não tem a quantidade solicitada.',
   EVENT_COMBO_CUSTOMER_LIMIT: 'O pedido ultrapassa o limite deste combo temático por cliente.',

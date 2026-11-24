@@ -65,7 +65,7 @@ a.detailsButton:focus-visible { outline: 2px solid var(--ring); outline-offset: 
 .secondaryActions { display: flex; gap: 12px; align-items: center; }
 .secondaryActions button { display: flex; align-items: center; gap: 8px; border: none; background: transparent; color: var(--muted-foreground); font-size: 14px; padding: 9px; border-radius: 4px; min-height: 44px; }
 .secondaryActions button:hover { background: var(--muted); color: var(--foreground); }
-.secondaryActions button:last-child:hover { color: var(--destructive); }
+.secondaryActions button:last-child:hover { color: var(--primary); }
 .sidebar { padding-top: 2px; }
 .summaryTicket { border-radius: 10px; background: color-mix(in srgb, var(--secondary) 15%, var(--card)); border: 1px solid var(--border); position: relative; overflow: hidden; }
 .ticketTop { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 28px 26px 0; color: var(--primary); }
@@ -159,7 +159,7 @@ a.detailsButton:focus-visible { outline: 2px solid var(--ring); outline-offset: 
   .cardBody > p { font-size: 15px; }
   .cardActions { display: grid; gap: 10px; margin-top: 22px; padding-top: 16px; }
   .secondaryActions { justify-content: space-between; gap: 12px; }
-  .secondaryActions button { padding: 9px 0; }
+  .secondaryActions button { padding: 9px 10px; }
   .secondaryActions button:last-child { min-width: 40px; justify-content: center; }
   .pageFooter { margin-top: 28px; font-size: 11px; line-height: 1.8; }
   .dialogBody { padding: 26px; }

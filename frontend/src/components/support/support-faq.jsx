@@ -94,11 +94,12 @@ function FaqItem({ item, open, onToggle }) {
   );
 }
 
-export default function SupportFaq({ query = '' }) {
+export default function SupportFaq({ query = '', items = [], area, loading, error, retry }) {
   const [openItems, setOpenItems] = useState(() => new Set());
 
   const term = normalize(query);
-  const filtered = term ? FAQ_ITEMS.filter(item => normalize(`${item.question} ${item.answer}`).includes(term)) : FAQ_ITEMS;
+  const questions = items.length ? items : area === 'streaming' ? [] : FAQ_ITEMS;
+  const filtered = term ? questions.filter(item => normalize(`${item.question} ${item.answer}`).includes(term)) : questions;
 
   const toggle = (question) =>
     setOpenItems((prev) => {
@@ -112,7 +113,11 @@ export default function SupportFaq({ query = '' }) {
     <section id="support-faq" aria-labelledby="support-faq-title" className="mx-auto w-full max-w-[1120px]">
       <h2 id="support-faq-title" className="text-xl font-bold sm:text-2xl">Principais dúvidas</h2>
 
-      {filtered.length === 0 ? (
+      {area === 'streaming' && loading ? (
+        <p role="status" className="mt-4 text-sm text-muted-foreground">Carregando dúvidas do Streaming…</p>
+      ) : area === 'streaming' && error ? (
+        <div className="mt-4 text-sm" role="alert">Não foi possível carregar as dúvidas. <button type="button" className="min-h-10 font-semibold text-primary underline" onClick={retry}>Tentar novamente</button></div>
+      ) : filtered.length === 0 ? (
         <p role="status" className="mt-4 text-sm text-muted-foreground">
           Nenhuma dúvida encontrada para esta pesquisa.
         </p>

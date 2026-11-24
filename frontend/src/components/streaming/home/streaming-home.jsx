@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import ListDrawer from "./list-drawer";
 import CinemaStyles from "./cinema-styles";
 import { useStreamingDetails } from "./streaming-details-provider";
+import HomeContentSection from "@/components/cinema/home/home-content-section";
 
 export default function CineAstraStream() {
   const { ready, error, actionError, setActionError, retry, genreRows, popular, heroes, recent, continuing, premieres, soon, progress, myList, favoriteIds, toggleList, isListOpen, openList, closeList } = useStreamingHome();
@@ -43,6 +44,7 @@ export default function CineAstraStream() {
       />
 
       <div className={`relative z-30 ${heroes.length ? "-mt-28 sm:-mt-36" : "pt-12"} space-y-4 md:space-y-6 pb-12`}>
+        <HomeContentSection kind="banners" placement="streaming-home" />
         <Row title="Continuar assistindo" emptyMessage={!continuing.length ? "Os filmes com reprodução em andamento aparecerão aqui." : undefined}>{continuing.map((m) => thumb(m))}</Row>
         <Row title="Populares na CineAstra" emptyMessage={!popular.length ? "Os destaques de popularidade aparecerão aqui quando houver dados disponíveis." : undefined}>{popular.map((m) => thumb(m))}</Row>
         <Row title="Assistidos recentemente" emptyMessage={!recent.length ? "Seu histórico de filmes aparecerá aqui." : undefined}>{recent.map((m) => thumb(m))}</Row>

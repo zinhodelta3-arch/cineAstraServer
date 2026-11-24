@@ -6,6 +6,7 @@ import { Archive, Eye, Pencil, Plus, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { streamingAdminRequest, useAdminStreaming } from '@/hooks/admin/use-admin-streaming';
 import { snackRequest, useAdminSnacks } from '@/hooks/admin/use-admin-snacks';
+import { planBenefitRows, planDiscountLabels } from '@/lib/api/plan-subscription.mjs';
 import StreamingLayout, { StreamingState, money } from './streaming-layout';
 import styles from '../catalog/catalog.module.css';
 
@@ -18,6 +19,29 @@ function values(form) {
   if (!name || name.length > 100 || description.length > 5000 || !Number.isInteger(maxMembers) || maxMembers < 1 || maxMembers > 100) throw new Error('Confira o nome, a descrição e o limite de membros.');
   if (![0, 1].includes(freeCombosPerMonth) || (freeCombosPerMonth === 1 && (!/^[1-9]\d{0,9}$/.test(freeComboId) || BigInt(freeComboId) > 4294967295n))) throw new Error('Informe um combo válido quando houver benefício mensal.');
   return { name, description: description || null, maxMembers, catalogAccess: form.has('catalogAccess'), freeCombosPerMonth, freeComboId: freeCombosPerMonth ? freeComboId : null };
+}
+
+function changedDiscounts(form, item) {
+  return Object.fromEntries(Object.keys(planDiscountLabels).flatMap(category => {
+    const percent = String(form.get(category) ?? '').trim().replace(',', '.');
+    if (!/^\d{1,3}(?:\.\d{1,2})?$/.test(percent) || Number(percent) > 100) {
+      throw new Error('Informe descontos entre 0% e 100%, com até duas casas decimais.');
+    }
+    const bps = Math.round(Number(percent) * 100);
+    return bps === Number(item.discounts?.[category] ?? 0) ? [] : [[category, bps]];
+  }));
+}
+
+function DiscountFields({ discounts }) {
+  return <fieldset className={styles.wide}>
+    <legend className="mb-2 text-sm font-semibold">Descontos do plano</legend>
+    <div className={styles.form}>
+      {Object.entries(planDiscountLabels).map(([category, label]) => <label key={category}>
+        Desconto em {label} (%)
+        <input name={category} type="text" inputMode="decimal" maxLength={6} defaultValue={Number(discounts?.[category] ?? 0) / 100} required />
+      </label>)}
+    </div>
+  </fieldset>;
 }
 
 export default function PlansAdmin() {
@@ -53,11 +77,16 @@ export default function PlansAdmin() {
   }
   function save(event) {
     event.preventDefault();
-    let body;
-    try { body = values(new FormData(event.currentTarget)); }
+    let body, discounts;
+    const form = new FormData(event.currentTarget);
+    try {
+      body = values(form);
+      if (item) discounts = changedDiscounts(form, item);
+    }
     catch (cause) { setError(cause.message); return; }
     if (item) {
       body = Object.fromEntries(Object.entries(body).filter(([key, value]) => value !== item[key]));
+      if (Object.keys(discounts).length) body.discounts = discounts;
       if (!Object.keys(body).length) { setError('Nenhuma alteração para salvar.'); return; }
     }
     run(() => streamingAdminRequest(item ? `plans/${item.id}` : 'plans', { method: item ? 'PATCH' : 'POST', body }), item ? 'Plano atualizado.' : 'Plano cadastrado.');
@@ -75,8 +104,8 @@ export default function PlansAdmin() {
       <TablePagination list={list} />
     </section>
     <Dialog open={Boolean(dialog)} onOpenChange={value => { if (!value) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{dialog?.type === 'form' ? item ? 'Editar plano' : 'Novo plano' : dialog?.type === 'status' ? item?.active ? 'Arquivar plano' : 'Ativar plano' : item?.name}</DialogTitle><DialogDescription className={styles.dialogDescription}>{dialog?.type === 'status' ? item?.active ? 'O plano deixará de aparecer para novas contratações.' : 'A ativação exige preços e custos de benefícios válidos.' : 'Dados do plano de assinatura.'}</DialogDescription>
-      {dialog?.type === 'form' && <form key={item?.id ?? 'new'} className={styles.form} onSubmit={save}><label className={styles.wide}>Nome<input name="name" defaultValue={item?.name ?? ''} maxLength={100} required /></label><label>Limite de membros<input name="maxMembers" type="number" min={1} max={100} defaultValue={item?.maxMembers ?? 1} required /></label><label>Combos gratuitos por mês<select name="freeCombosPerMonth" value={benefitCount} onChange={event => { const next = Number(event.target.value); setBenefitCount(next); if (!next) setComboChoice(''); }}><option value="0">Nenhum</option><option value="1">Um</option></select></label>{benefitCount === 1 && <div className={`${styles.wide} ${styles.comboPicker}`}><label>Combo do benefício<select name="freeComboId" value={comboChoice} onChange={event => setComboChoice(event.target.value)} required><option value="">Selecione um combo ativo</option>{comboChoice && !combos.items.some(combo => combo.id_combo === comboChoice) && <option value={comboChoice}>{currentCombo?.id_combo === comboChoice ? `${currentCombo.nome} · #${comboChoice}` : `Combo #${comboChoice} (atual ou fora da busca)`}</option>}{combos.items.map(combo => <option key={combo.id_combo} value={combo.id_combo}>{combo.nome} · {combo.id_local ? `Cinema #${combo.id_local}` : 'Sem cinema'} · #{combo.id_combo}</option>)}</select></label><label>Buscar combo<input type="search" value={comboQuery} onChange={event => setComboQuery(event.target.value)} maxLength={150} placeholder="Nome do combo" /></label>{combos.loading && <p className={styles.hint} role="status">Carregando combos…</p>}{combos.error && <p className={styles.error} role="alert">{combos.error}</p>}{currentCombo?.id_combo === comboChoice && !currentCombo.ativo && <p className={styles.hint}>O combo atual está inativo. Selecione outro antes de ativar o plano.</p>}{combos.nextCursor && <button type="button" className={styles.secondary} onClick={combos.loadMore} disabled={combos.loadingMore}>{combos.loadingMore ? 'Carregando…' : 'Mais combos'}</button>}</div>}<div className={styles.checks}><label><input type="checkbox" name="catalogAccess" defaultChecked={item?.catalogAccess ?? false} />Acesso ao catálogo</label></div><label className={styles.wide}>Descrição<textarea name="description" defaultValue={item?.description ?? ''} maxLength={5000} /></label><div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Salvando…' : 'Salvar plano'}</button></div></form>}
-      {dialog?.type === 'view' && item && <dl className={styles.detailGrid}><div><dt>Nome</dt><dd>{item.name}</dd></div><div><dt>Status</dt><dd>{item.active ? 'Ativo' : 'Inativo'}</dd></div><div><dt>Mensal</dt><dd>{money(item.monthlyPrice)}</dd></div><div><dt>Anual</dt><dd>{money(item.annualPrice)}</dd></div><div><dt>Limite de membros</dt><dd>{item.maxMembers}</dd></div><div><dt>Catálogo</dt><dd>{item.catalogAccess ? 'Incluído' : 'Não incluído'}</dd></div><div><dt>Combo mensal</dt><dd>{item.freeComboId ? currentCombo?.id_combo === item.freeComboId ? `${currentCombo.nome} · #${item.freeComboId}` : `#${item.freeComboId}` : 'Nenhum'}</dd></div><div><dt>Custo mensal de benefícios</dt><dd>{money(item.monthlyBenefitCost)}</dd></div><div><dt>Custo anual de benefícios</dt><dd>{money(item.annualBenefitCost)}</dd></div><div><dt>Descrição</dt><dd>{item.description || '—'}</dd></div></dl>}
+      {dialog?.type === 'form' && <form key={item?.id ?? 'new'} className={styles.form} onSubmit={save}><label className={styles.wide}>Nome<input name="name" defaultValue={item?.name ?? ''} maxLength={100} required /></label><label>Limite de membros<input name="maxMembers" type="number" min={1} max={100} defaultValue={item?.maxMembers ?? 1} required /></label><label>Combos gratuitos por mês<select name="freeCombosPerMonth" value={benefitCount} onChange={event => { const next = Number(event.target.value); setBenefitCount(next); if (!next) setComboChoice(''); }}><option value="0">Nenhum</option><option value="1">Um</option></select></label>{benefitCount === 1 && <div className={`${styles.wide} ${styles.comboPicker}`}><label>Combo do benefício<select name="freeComboId" value={comboChoice} onChange={event => setComboChoice(event.target.value)} required><option value="">Selecione um combo ativo</option>{comboChoice && !combos.items.some(combo => combo.id_combo === comboChoice) && <option value={comboChoice}>{currentCombo?.id_combo === comboChoice ? `${currentCombo.nome} · #${comboChoice}` : `Combo #${comboChoice} (atual ou fora da busca)`}</option>}{combos.items.map(combo => <option key={combo.id_combo} value={combo.id_combo}>{combo.nome} · {combo.id_local ? `Cinema #${combo.id_local}` : 'Sem cinema'} · #{combo.id_combo}</option>)}</select></label><label>Buscar combo<input type="search" value={comboQuery} onChange={event => setComboQuery(event.target.value)} maxLength={150} placeholder="Nome do combo" /></label>{combos.loading && <p className={styles.hint} role="status">Carregando combos…</p>}{combos.error && <p className={styles.error} role="alert">{combos.error}</p>}{currentCombo?.id_combo === comboChoice && !currentCombo.ativo && <p className={styles.hint}>O combo atual está inativo. Selecione outro antes de ativar o plano.</p>}{combos.nextCursor && <button type="button" className={styles.secondary} onClick={combos.loadMore} disabled={combos.loadingMore}>{combos.loadingMore ? 'Carregando…' : 'Mais combos'}</button>}</div>}<div className={styles.checks}><label><input type="checkbox" name="catalogAccess" defaultChecked={item?.catalogAccess ?? false} />Acesso ao catálogo</label></div><label className={styles.wide}>Descrição<textarea name="description" defaultValue={item?.description ?? ''} maxLength={5000} /></label>{item && <DiscountFields discounts={item.discounts} />}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}>{pending ? 'Salvando…' : 'Salvar plano'}</button></div></form>}
+      {dialog?.type === 'view' && item && <dl className={styles.detailGrid}><div><dt>Nome</dt><dd>{item.name}</dd></div><div><dt>Status</dt><dd>{item.active ? 'Ativo' : 'Inativo'}</dd></div><div><dt>Mensal</dt><dd>{money(item.monthlyPrice)}</dd></div><div><dt>Anual</dt><dd>{money(item.annualPrice)}</dd></div><div><dt>Limite de membros</dt><dd>{item.maxMembers}</dd></div><div><dt>Catálogo</dt><dd>{item.catalogAccess ? 'Incluído' : 'Não incluído'}</dd></div><div><dt>Combo mensal</dt><dd>{item.freeComboId ? currentCombo?.id_combo === item.freeComboId ? `${currentCombo.nome} · #${item.freeComboId}` : `#${item.freeComboId}` : 'Nenhum'}</dd></div><div><dt>Custo mensal de benefícios</dt><dd>{money(item.monthlyBenefitCost)}</dd></div><div><dt>Custo anual de benefícios</dt><dd>{money(item.annualBenefitCost)}</dd></div><div><dt>Descrição</dt><dd>{item.description || '—'}</dd></div><div className={styles.wide}><dt>Benefícios incluídos</dt><dd>{planBenefitRows(item).filter(benefit => benefit.included).map(benefit => benefit.label).join(' · ') || 'Nenhum'}</dd></div></dl>}
       {dialog?.type === 'status' && <div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={close}>Cancelar</button><button type="button" className={item?.active ? styles.danger : styles.primary} disabled={pending} onClick={changeActive}>{pending ? 'Aguarde…' : item?.active ? 'Arquivar plano' : 'Ativar plano'}</button></div>}
       {error && <p className={styles.error} role="alert">{error}</p>}
     </DialogContent></Dialog>

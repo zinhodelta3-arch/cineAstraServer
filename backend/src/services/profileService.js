@@ -6,7 +6,16 @@ import { resources } from '../models/identityModel.js';
 import { schemas } from '../validators/identityValidators.js';
 import { userDto, sqlDate, instant } from './identityService.js';
 
-export function createProfileService({ identity, config, providers }) {
+export function createProfileService({ identity, config, providers, supplierModel }) {
+    async function linkCompany(c,userId,companyId,previous=null) {
+        if (companyId==null && previous?.id_empresa!=null) return;
+        const company=companyId?await supplierModel?.company(c,companyId,true):null;
+        if (!company) throw new ApiError('Selecione uma empresa cadastrada para o fornecedor.',422,null,'SUPPLIER_COMPANY_REQUIRED');
+        if (previous) await supplierModel.update(c,previous.id_fornecedor,{
+            id_empresa:company.id_empresa,razao_social:company.razao_social,nome_cine:company.nome_cine??null,cnpj:company.cnpj
+        });
+        else await supplierModel.create(c,userId,company);
+    }
     const { model, transaction, audit, activeUser, activeActor, passwordSnapshot, sameCredential, proveFactor } = identity;
     function page(query) {
         try {
@@ -127,6 +136,8 @@ export function createProfileService({ identity, config, providers }) {
                 await model.adminGuard(c);
                 if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
                 const id = await model.createUser(c, { ...input, hash, status: 'ATIVO' });
+                if (input.role==='FORNECEDOR') await linkCompany(c,id,input.companyId);
+                await identity.notifyAccountCreated?.(c,id);
                 await audit(c, input.role === 'CLIENTE' ? 'IDENTITY.CLIENT_CREATED_BY_ADMIN' : 'IDENTITY.STAFF_CREATED', id, context);
                 return userDto(await model.user(id, c));
             }, context);
@@ -136,11 +147,22 @@ export function createProfileService({ identity, config, providers }) {
                 await model.adminGuard(c);
                 for (const userId of [...new Set([id, context.actor.id])].sort((a, b) => BigInt(a) < BigInt(b) ? -1 : 1)) await model.user(userId, c, true);
                 if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
-                if (!await model.user(id, c, true)) throw ApiError.naoEncontrado();
+                const target=await model.user(id,c,true);
+                if (!target) throw ApiError.naoEncontrado();
                 const patch = {};
                 if (input.name !== undefined) patch.nome = input.name;
                 if (input.phone !== undefined) patch.telefone = input.phone;
+                if (input.email !== undefined) {
+                    if (target.tipo_usuario!=='FORNECEDOR') throw ApiError.acessoNegado();
+                    if (input.email!==target.email) patch.email=input.email;
+                }
+                if (!Object.keys(patch).length) return userDto(target);
                 await model.updateUser(c, id, patch);
+                if (patch.email) {
+                    await model.revoke(c,id);
+                    await model.invalidateChallenges(c,id);
+                    await model.invalidateRecovery(c,id);
+                }
                 await audit(c, 'IDENTITY.PROFILE_CHANGED_BY_ADMIN', id, context);
                 return userDto(await model.user(id, c));
             }, context);
@@ -150,15 +172,19 @@ export function createProfileService({ identity, config, providers }) {
         },
         async adminSupervisorLocation(id, input, context) {
             return transaction(async c => {
+                if (input !== null) await model.adminGuard(c);
                 if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
                 const supervisor = await model.user(id, c, input !== null);
                 if (!supervisor) throw ApiError.naoEncontrado();
-                if (supervisor.tipo_usuario !== 'SUPERVISOR' || supervisor.status !== 'ATIVO') throw new ApiError('Selecione um supervisor ativo', 409, null, 'IDENTITY_CONFLICT');
-                const current = await model.supervisorLocation(c, id);
+                if (supervisor.tipo_usuario !== 'SUPERVISOR' || input?.localId && supervisor.status !== 'ATIVO') throw new ApiError('Selecione um supervisor ativo para vincular ao cinema', 409, null, 'IDENTITY_CONFLICT');
+                const current = await model.supervisorLocation(c, id, input !== null);
                 if (input !== null && input.localId !== (current ? idString(current.id_local) : null)) {
                     if (input.localId !== null) {
                         const local = await model.location(c, input.localId);
                         if (!local || local.status !== 'ATIVO') throw new ApiError('Selecione um cinema ativo', 409, null, 'IDENTITY_CONFLICT');
+                        if ((await model.supervisorsAtLocation(c,input.localId)).length >= 3) {
+                            throw new ApiError('Este cinema já tem três supervisores vinculados. Libere um vínculo antes de adicionar outro.',409,null,'IDENTITY_CONFLICT');
+                        }
                     }
                     const activeTeams = await model.activeSupervisorTeamLocations(c, id);
                     if (activeTeams.some(team => input.localId === null || idString(team.id_local) !== input.localId)) throw new ApiError('Transfira ou finalize as equipes ativas deste supervisor antes de alterar o cinema', 409, null, 'IDENTITY_CONFLICT');
@@ -194,6 +220,7 @@ export function createProfileService({ identity, config, providers }) {
                 const patch = {};
                 if (input.role) patch.tipo_usuario = input.role;
                 if (input.status) patch.status = input.status;
+                if (input.role==='FORNECEDOR') await linkCompany(c,id,input.companyId,await supplierModel?.byUser(id,c));
                 await model.updateUser(c, id, patch);
                 if (u.tipo_usuario === 'SUPERVISOR' && input.role && input.role !== 'SUPERVISOR') await model.clearSupervisorLocation(c, id);
                 await model.revoke(c, id); await model.invalidateChallenges(c, id); await model.invalidateRecovery(c, id);

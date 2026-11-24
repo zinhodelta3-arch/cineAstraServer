@@ -60,7 +60,8 @@ test('valida URLs, campos por tipo, IDs e consultas; público não consulta rasc
 test('SQL filtra publicação/tipo e bloqueia edição; valores permanecem parametrizados',async()=>{
  const calls=[],db={execute:async(sql,args)=>{calls.push({sql,args});return [[]];}},m=createPromotionalModel(db);
  await m.list(null,'partners',{limit:2,cursor:'8'},false);await m.get(null,'experiences','2',false);await m.get(db,'banners','3',true,true);
- assert.match(calls[0].sql,/p\.tipo=\? AND p\.ativo=TRUE.*l\.status='ATIVO'.*p\.id_conteudo<\?/);assert.deepEqual(calls[0].args,['partners','8',3]);
+ assert.match(calls[0].sql,/p\.tipo=\? AND p\.ativo=TRUE.*l\.status='ATIVO'.*p\.id_conteudo<\?/s);assert.deepEqual(calls[0].args,['partners','8',3]);
+ assert.match(calls[0].sql,/m\.publico_geral=TRUE AND m\.inicio<=UTC_TIMESTAMP\(\) AND m\.fim>UTC_TIMESTAMP\(\)/);
  assert.match(calls[1].sql,/AND p\.ativo=TRUE/);assert.match(calls[2].sql,/FOR UPDATE$/);
 });
 

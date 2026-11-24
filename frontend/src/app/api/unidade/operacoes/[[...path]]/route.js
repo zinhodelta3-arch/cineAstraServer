@@ -21,11 +21,23 @@ function target(parts, method, search) {
   if (section === 'sessions') {
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/unit/sessions${method === 'GET' ? search : ''}`;
     if (parts.length === 2 && id(first) && ['GET', 'PATCH', 'DELETE'].includes(method)) return `/unit/sessions/${first}`;
-    if (parts.length === 3 && id(first) && ['attendance', 'pending-orders'].includes(second) && method === 'GET') return `/sessions/${first}/${second}${search}`;
+    if (parts.length === 3 && id(first) && second === 'archive' && method === 'POST') return `/unit/sessions/${first}/archive`;
+    if (parts.length === 3 && id(first) && ['attendance', 'pending-orders','tickets','seat-map'].includes(second) && method === 'GET') return `/sessions/${first}/${second}${search}`;
+    if (parts.length === 4 && id(first) && second==='details' && third==='orders' && method==='GET') return `/sessions/${first}/details/orders${search}`;
+    if (parts.length === 4 && id(first) && second==='attendance') {
+      if (third==='tickets'&&method==='GET') return `/sessions/${first}/attendance/tickets${search}`;
+      if (third==='passages'&&method==='POST') return `/sessions/${first}/attendance/passages`;
+    }
     if (id(first) && second === 'counter') {
       if (parts.length === 3 && method === 'GET') return `/unit/sessions/${first}/counter`;
+      if (parts.length === 4 && method === 'GET' && third === 'customers') return `/unit/sessions/${first}/counter/customers${search}`;
       if (parts.length === 4 && method === 'POST' && ['quote', 'orders'].includes(third)) return `/unit/sessions/${first}/counter/${third}`;
     }
+  }
+  if (section === 'film-offers') {
+    if (parts.length === 1 && method === 'GET') return `/unit/film-offers${search}`;
+    if (parts.length === 1 && method === 'POST') return '/unit/film-offers';
+    if (parts.length === 2 && id(first) && ['PATCH','DELETE'].includes(method)) return `/unit/film-offers/${first}`;
   }
   if (section === 'tickets' && parts.length === 2 && method === 'POST' && ticketActions.includes(first)) return `/tickets/${first}`;
   if (section === 'combos' && method === 'GET') {
@@ -37,13 +49,21 @@ function target(parts, method, search) {
     if (parts.length === 3 && ['GET', 'POST'].includes(method)) return `${base}${method === 'GET' ? search : ''}`;
     if (!id(third)) return null;
     if (parts.length === 4 && ['GET', 'PATCH', 'DELETE'].includes(method)) return `${base}/${third}`;
+    if (parts.length===5&&fourth==='seat-map'&&['GET','PATCH'].includes(method)) return `${base}/${third}/seat-map`;
+    if (parts.length===5&&fourth==='scene'&&method==='PATCH') return `${base}/${third}/scene`;
     if (fourth === 'seats') {
+      if(parts.length===6&&parts[5]==='batch'&&method==='POST') return `${base}/${third}/seats/batch`;
       if (parts.length === 5 && ['GET', 'POST'].includes(method)) return `${base}/${third}/seats${method === 'GET' ? search : ''}`;
       if (parts.length === 6 && id(parts[5]) && ['GET', 'PATCH', 'DELETE'].includes(method)) return `${base}/${third}/seats/${parts[5]}`;
     }
   }
   if (section === 'sources' && parts.length === 1 && method === 'GET') return `/unit/stock/sources${search}`;
+  if (section==='communications') {
+    if(parts.length===1&&method==='POST')return '/unit/communications';
+    if(parts.length===2&&['alerts','recipients'].includes(first)&&method==='GET')return `/unit/communications/${first}${search}`;
+  }
   if (section === 'requests') {
+    if(parts.length===2&&id(first)&&method==='GET')return `/stock/requests/${first}`;
     if (parts.length === 1 && ['GET', 'POST'].includes(method)) return `/stock/requests${method === 'GET' ? search : ''}`;
     if (parts.length === 3 && id(first) && second === 'alternatives' && method === 'GET') {
       return `/unit/stock/requests/${first}/alternatives`;
@@ -78,6 +98,7 @@ async function handle(request, { params }) {
     const role=(await currentUser())?.role;
     if (!['SUPERVISOR','COLABORADOR'].includes(role)) return json({ message: 'Acesso restrito à equipe da unidade.' }, 403);
     const parts = (await params).path ?? [];
+    if (parts[0]==='communications'&&role!=='SUPERVISOR')return json({message:'Acesso exclusivo da supervisão.'},403);
     if (parts[0] === 'snack-offers' && role !== 'SUPERVISOR') return json({ message: 'A oferta é administrada pelo supervisor da unidade.' }, 403);
     const path = target(parts, method, new URL(request.url).search);
     if (!path) return json({ message: 'Operação inválida.' }, 422);
@@ -87,7 +108,9 @@ async function handle(request, { params }) {
     let body;
     if (['POST', 'PATCH', 'PUT'].includes(method) && !/^\/logistics\/\d+\/(receive|return)$/.test(path)) {
       const raw = await request.text();
-      if (raw.length > 20000) return json({ message: 'Dados muito longos.' }, 413);
+      const tooLarge = path.endsWith('/scene') ? Buffer.byteLength(raw) > 384 * 1024
+        : raw.length > (/\/(?:seat-map|seats\/batch)$/.test(path) ? 64000 : 20000);
+      if (tooLarge) return json({ message: 'Dados muito longos.' }, 413);
       try { body = JSON.parse(raw); } catch { return json({ message: 'Dados inválidos.' }, 400); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ message: 'Dados inválidos.' }, 400);
       if (path.startsWith('/tickets/') && !id(body.sessionId)) return json({ message: 'Selecione a sessão do ingresso.' }, 422);
@@ -95,9 +118,11 @@ async function handle(request, { params }) {
     const counterOrder = counterPost && path.endsWith('/orders');
     const idempotencyKey = counterOrder ? request.headers.get('Idempotency-Key') ?? undefined : undefined;
     const data = await backendAuth(path, { token, method, body, idempotencyKey });
-    if (method === 'DELETE') return new NextResponse(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
+    if (method === 'DELETE' || method !== 'GET' && path.startsWith('/unit/film-offers') || path.endsWith('/archive')) {
+      return new NextResponse(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
+    }
     const created = counterOrder || method === 'POST' && (
-      ['/unit/sessions', '/stock/requests', '/inventory/movements'].includes(path) || /\/rooms(?:\/\d+\/seats)?$/.test(path)
+      ['/unit/sessions', '/stock/requests', '/inventory/movements','/unit/communications'].includes(path) || /\/rooms(?:\/\d+\/seats(?:\/batch)?)?$/.test(path)
     );
     return json(data, created ? 201 : 200);
   } catch (error) {

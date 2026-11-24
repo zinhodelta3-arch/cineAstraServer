@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { ArrowLeft, Check, Eye, EyeOff, LockKeyhole, Mail, Truck, UserRound } from "lucide-react";
+import { ArrowLeft, Check, Eye, EyeOff, LockKeyhole, Mail, Truck, UserRound, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRegisterForm } from "@/hooks/auth/use-register-form";
@@ -151,6 +151,8 @@ export function RegisterPage() {
 const LOGIN_PROFILES = {
   cliente: {
     label: "Cliente",
+    code: "CLIENTE",
+    submitText: "Entrar",
     icon: UserRound,
     eyebrow: "Bem-vindo de volta",
     title: "Entre na CineAstra",
@@ -161,6 +163,8 @@ const LOGIN_PROFILES = {
   },
   fornecedor: {
     label: "Fornecedor",
+    code: "FORNECEDOR",
+    submitText: "Entrar como fornecedor",
     icon: Truck,
     eyebrow: "Área do fornecedor",
     title: "Portal do fornecedor",
@@ -169,17 +173,31 @@ const LOGIN_PROFILES = {
     emailPlaceholder: "contato@suaempresa.com.br",
     resetText: "Informe o e-mail corporativo cadastrado e enviaremos as instruções para criar uma nova senha.",
   },
+  equipe: {
+    label: "Equipe",
+    code: "EQUIPE",
+    submitText: "Entrar como equipe",
+    icon: UsersRound,
+    eyebrow: "Acesso interno",
+    title: "Portal da equipe",
+    description: "Acesso para administradores, supervisores e colaboradores.",
+    emailLabel: "E-mail",
+    emailPlaceholder: "seuemail@exemplo.com",
+    resetText: "Informe o e-mail de acesso da equipe para receber as instruções de recuperação.",
+  },
 };
 
 function ProfileSwitch({ value, onChange, disabled }) {
   const keys = Object.keys(LOGIN_PROFILES);
 
   const handleKeyDown = (event) => {
-    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+    if (disabled || !["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
     const step = event.key === "ArrowRight" ? 1 : -1;
-    const next = keys[(keys.indexOf(value) + step + keys.length) % keys.length];
+    const index = event.key === "Home" ? 0 : event.key === "End" ? keys.length - 1 : (keys.indexOf(value) + step + keys.length) % keys.length;
+    const next = keys[index];
     onChange(next);
+    event.currentTarget.querySelector(`#login-tab-${next}`)?.focus();
   };
 
   return (
@@ -187,9 +205,9 @@ function ProfileSwitch({ value, onChange, disabled }) {
       role="tablist"
       aria-label="Tipo de acesso"
       onKeyDown={handleKeyDown}
-      className="mb-5 flex items-center gap-3 text-xs"
+      className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
     >
-      <span className="text-muted-foreground" aria-hidden="true">Acessar como</span>
+      <span className="basis-full text-muted-foreground sm:basis-auto" aria-hidden="true">Acessar como</span>
       {keys.map((key, index) => {
         const active = key === value;
         return (
@@ -204,7 +222,7 @@ function ProfileSwitch({ value, onChange, disabled }) {
               tabIndex={active ? 0 : -1}
               disabled={disabled}
               onClick={() => onChange(key)}
-              className={`rounded-sm border-b pb-0.5 font-bold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-60 ${
+              className={`inline-flex min-h-8 items-center rounded-sm border-b px-1 font-bold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-60 ${
                 active
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -219,10 +237,10 @@ function ProfileSwitch({ value, onChange, disabled }) {
   );
 }
 
-export function LoginPage({ next }) {
-  const [profile, setProfile] = useState("cliente");
-  const { form, update, resetOpen, setResetOpen, message, pending, user, handleSubmit } = useAuthForm({ next, profile: profile === "fornecedor" ? "FORNECEDOR" : "CLIENTE" });
+export function LoginPage({ next, initialProfile }) {
+  const [profile, setProfile] = useState(initialProfile);
   const current = LOGIN_PROFILES[profile];
+  const { form, update, resetOpen, setResetOpen, message, pending, user, handleSubmit } = useAuthForm({ next, profile: current.code });
 
   const changeProfile = (next) => {
     setProfile(next);
@@ -234,7 +252,7 @@ export function LoginPage({ next }) {
       eyebrow={current.eyebrow}
       title={current.title}
       description={current.description}
-      footer={
+      footer={profile !== "equipe" && (
         <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground [&_a]:rounded-sm [&_a]:font-extrabold [&_a]:text-primary [&_a:hover]:underline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-ring">
           {profile === "cliente" ? (
             <>Ainda não possui uma conta? <Link href="/auth/cadastro">Criar conta</Link></>
@@ -242,7 +260,7 @@ export function LoginPage({ next }) {
             <>Quer ser fornecedor da CineAstra? <Link href="/suporte">Fale com a gente</Link></>
           )}
         </p>
-      }
+      )}
     >
       <ProfileSwitch value={profile} onChange={changeProfile} disabled={pending} />
       {user && <SessionControls />}
@@ -250,7 +268,7 @@ export function LoginPage({ next }) {
       <div id="login-panel" role="tabpanel" aria-labelledby={`login-tab-${profile}`}>
         {!resetOpen ? (
           <form className="grid gap-[17px]" onSubmit={handleSubmit}>
-            <Field label={current.emailLabel} type="email" icon={profile === "cliente" ? UserRound : Truck} value={form.login} onChange={update("login")} placeholder={current.emailPlaceholder} autoComplete="username" />
+            <Field label={current.emailLabel} type="email" icon={current.icon} value={form.login} onChange={update("login")} placeholder={current.emailPlaceholder} autoComplete="username" />
             <Field label="Senha" icon={LockKeyhole} type="password" value={form.password} onChange={update("password")} placeholder="••••••••" autoComplete="current-password" />
 
             <Button type="button" variant="link" className="-mt-1 h-auto justify-self-end p-0 text-xs font-bold text-primary" disabled={pending} onClick={() => setResetOpen(true)}>
@@ -260,7 +278,7 @@ export function LoginPage({ next }) {
             {message && <p className="m-0 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground" role="status">{message}</p>}
 
             <Button className="h-12 w-full gap-2 rounded-lg text-sm font-bold shadow-none" type="submit" disabled={pending || Boolean(user)}>
-              {pending ? "Entrando…" : profile === "cliente" ? "Entrar" : "Entrar como fornecedor"}
+              {pending ? "Entrando…" : current.submitText}
             </Button>
           </form>
         ) : (

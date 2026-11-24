@@ -1,4 +1,4 @@
-import LoadingImage from "@/components/ui/loading-image";
+import ExperienceImage from "./experience-image";
 import { ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
@@ -19,13 +19,11 @@ export default function ExperienceCatalog({ experiences, list }) {
         {list.loading && <p role="status">Carregando experiências…</p>}
         {list.error && <div role="alert"><p>{list.error}</p><Button variant="outline" onClick={list.retry}>Tentar novamente</Button></div>}
         {!list.loading && !list.error && !experiences.length && <p>Nenhuma experiência publicada no momento.</p>}
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {experiences.map((experience) => {
             return (
               <article key={experience.id} id={`experiencia-${experience.id}`} tabIndex={-1} className={`${styles.ticket} group flex h-full scroll-mt-28 flex-col overflow-hidden motion-safe:transition-colors hover:border-primary/50 target:border-primary`}>
-                {experience.imageUrl && <div className="relative aspect-[5/3] overflow-hidden bg-muted">
-                  <LoadingImage src={experience.imageUrl} alt={experience.imageAlt ?? ""} loading="lazy" className="h-full w-full object-cover object-[center_65%] motion-safe:transition-transform motion-safe:duration-700 motion-safe:group-hover:scale-105" />
-                </div>}
+                <ExperienceImage key={experience.imageUrl} src={experience.imageUrl} alt={experience.imageAlt} className="aspect-[5/3] w-full object-[center_55%]" />
                 <div className="flex flex-1 flex-col p-5 md:p-6">
                   {experience.tag && <div className="text-xs font-bold text-primary">{experience.tag}</div>}
                   <h3 className={`${styles.title} mt-2 text-3xl font-black leading-none sm:text-4xl`}>{experience.title}</h3>

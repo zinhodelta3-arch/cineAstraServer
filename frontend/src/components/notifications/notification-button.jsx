@@ -1,5 +1,6 @@
 "use client";
 
+import { notificationHref } from '@/lib/api/notifications.mjs';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
@@ -13,10 +14,12 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit", month: "short", timeZone: "America/Sao_Paulo",
 });
 
-export function NotificationButton({ userId }) {
-  const { items, unreadCount, ready, markRead, error, actionError, pending, retry } = useNotifications(userId);
+export function NotificationButton({ userId, role }) {
+  const { items, unreadCount, ready, markRead, error, actionError, pending, retry } = useNotifications(userId,null,role);
   const pathname = usePathname();
-  const active = pathname === "/cinema/notificacao";
+  const href = notificationHref(role);
+  const active = pathname === href;
+  const lastRefresh = useRef(0);
   const [openPath, setOpenPath] = useState(null);
   const open = openPath === pathname;
   const [selected, setSelected] = useState(null);
@@ -63,13 +66,24 @@ export function NotificationButton({ userId }) {
     return () => { cancelAnimationFrame(frame); document.removeEventListener("pointerdown", outsideClick); document.removeEventListener("keydown", escape); };
   }, [open]);
 
+  useEffect(() => {
+    if(ready&&!error)lastRefresh.current=Date.now();
+  }, [ready,error]);
+
+  function toggle() {
+    if(!open && ready && Date.now()-lastRefresh.current>30000){
+      lastRefresh.current=Date.now(); retry();
+    }
+    setOpenPath(open?null:pathname);
+  }
+
   function openDetails(item) { close(); setSelected(item); }
 
   // O portal evita que o backdrop-filter do header corte o dropdown.
   return <>
     <button ref={triggerRef} type="button" aria-label={label} title={label}
       aria-expanded={open} aria-controls={open ? id : undefined} aria-haspopup="dialog"
-      onClick={() => setOpenPath((value) => value === pathname ? null : pathname)}
+      onClick={toggle}
       className={`relative inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring ${active || open ? "border-primary/40 bg-primary/10 text-primary" : "border-border/70 text-foreground hover:border-primary/40 hover:bg-muted/50 hover:text-primary"}`}>
       <Bell className="size-[19px]" strokeWidth={1.7} aria-hidden="true" />
       {ready && unreadCount > 0 && <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-extrabold leading-none text-primary-foreground ring-2 ring-background">{unreadCount > 99 ? "99+" : unreadCount}</span>}
@@ -104,7 +118,7 @@ export function NotificationButton({ userId }) {
             })}
           </ul> : <div className={styles.empty}><BellOff size={30} strokeWidth={1.5} aria-hidden="true" /><strong>Nenhuma notificação por aqui.</strong><p>Quando uma novidade chegar, a gente avisa.</p></div>}
         </div>
-        <footer className={styles.footer}><span className="text-xs text-muted-foreground">Contagem dos avisos carregados.</span><Link href="/cinema/notificacao" onClick={() => close(true)} className={styles.viewAll}>Ver todas as notificações <ArrowRight size={18} aria-hidden="true" /></Link></footer>
+        <footer className={styles.footer}><span className="text-xs text-muted-foreground">Contagem dos avisos carregados.</span><Link href={href} prefetch={false} onClick={() => close(true)} className={styles.viewAll}>Ver todas as notificações <ArrowRight size={18} aria-hidden="true" /></Link></footer>
       </section>, document.body
     )}
     {selected && <NotificationDialog item={items.find(item=>item.id===selected.id)||selected} onRead={()=>markRead(selected.id)} pending={pending} error={actionError} onClose={() => { setSelected(null); requestAnimationFrame(() => triggerRef.current?.focus()); }} />}

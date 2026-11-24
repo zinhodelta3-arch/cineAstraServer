@@ -24,13 +24,18 @@ const localFields = {
     bairro: limited(100).nullable().optional(), telefone: limited(20).nullable().optional()
 };
 const roomFields = { nome: limited(100), capacidade: z.number().int().min(1).max(2147483647) };
-const seatFields = { fileira: z.string().trim().regex(/^[A-Za-z0-9]{1,5}$/).transform(v => v.toUpperCase()), numero: z.number().int().min(1).max(2147483647) };
+const slot = z.number().int().min(1).max(2147483647);
+const seatFields = { fileira: z.string().trim().regex(/^[A-Za-z0-9]{1,5}$/).transform(v => v.toUpperCase()),
+    numero: slot, posicao_visual:slot.nullable().optional() };
 const local = z.object({ ...localFields, status: localStatus.default('ATIVO') }).strict();
 const room = z.object({ ...roomFields, tipo: roomType.default('2D'), status: roomStatus.default('INATIVA') }).strict();
 const seat = z.object({ ...seatFields, tipo: seatType.default('COMUM'), status: seatStatus.default('ATIVA') }).strict();
 const patch = shape => z.object(shape).partial().strict().refine(v => Object.keys(v).length > 0);
 const paging = { limit: z.string().regex(/^\d{1,3}$/).transform(Number).pipe(z.number().int().min(1).max(100)).default(20), cursor: catalogId.optional() };
 export const venueSchemas = {
+    seatBatch:z.object({seats:z.array(seat).min(1).max(400)}).strict(),
+    seatPositions:z.object({moves:z.array(z.object({seatId:catalogId,position:slot.nullable()}).strict()).min(1).max(400)
+        .refine(moves=>new Set(moves.map(move=>move.seatId)).size===moves.length)}).strict(),
     local, localPatch: patch({ ...localFields, status: localStatus }), room, roomPatch: patch({ ...roomFields, tipo: roomType, status: roomStatus }), seat, seatPatch: patch({ ...seatFields, tipo: seatType, status: seatStatus }),
     list: z.object(paging).strict(),
     publicLocals: z.object({ ...paging, q: limited(150).optional() }).strict(),

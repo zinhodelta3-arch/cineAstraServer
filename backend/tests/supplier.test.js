@@ -12,9 +12,9 @@ import { errorMiddleware } from '../src/middlewares/errorMiddleware.js';
 import { ApiError } from '../src/utils/ApiError.js';
 
 function fixture() {
-    let state = { suppliers: [], users: [
+    let state = { suppliers: [], companies: [], users: [
         { id_usuario: '1', tipo_usuario: 'ADMIN', status: 'ATIVO' },
-        { id_usuario: '2', tipo_usuario: 'FORNECEDOR', status: 'ATIVO' },
+        { id_usuario: '2', tipo_usuario: 'FORNECEDOR', status: 'ATIVO', email: 'helena@exemplo.invalid' },
         { id_usuario: '3', tipo_usuario: 'CLIENTE', status: 'ATIVO' },
         { id_usuario: '4', tipo_usuario: 'FORNECEDOR', status: 'ATIVO' },
         { id_usuario: '5', tipo_usuario: 'FORNECEDOR', status: 'INATIVO' }
@@ -25,9 +25,23 @@ function fixture() {
         async byUser(id) { return state.suppliers.find(s => s.id_usuario === String(id)) ?? null; },
         async user(id) { return state.users.find(u => u.id_usuario === String(id)) ?? null; },
         async list(q) { return state.suppliers.filter(s => BigInt(s.id_fornecedor) > BigInt(q.cursor ?? '0') && (!q.status || s.status === q.status)).slice(0, q.limit + 1); },
-        async create(c, input) {
-            if (state.suppliers.some(s => normalizeCnpj(s.cnpj) === input.cnpj)) throw Object.assign(new Error('duplicate'), { code: 'ER_DUP_ENTRY' });
-            const id = String(next++); state.suppliers.push({ id_fornecedor: id, id_usuario: input.userId, razao_social: input.razao_social, nome_cine: input.nome_cine ?? null, cnpj: input.cnpj, status: 'ATIVO', data_cadastro: '2026-10-08 00:00:00' }); return id;
+        async company(c, id) { return state.companies.find(row => row.id_empresa === id) ?? null; },
+        async companies(c, q) { return state.companies.filter(row => !q.q || row.razao_social.includes(q.q)); },
+        async createCompany(c, input) {
+            if (state.companies.some(row => row.cnpj === input.cnpj)) throw Object.assign(new Error('duplicate'), { code: 'ER_DUP_ENTRY' });
+            const id = String(state.companies.length + 1);
+            state.companies.push({ ...input, id_empresa: id });
+            return id;
+        },
+        async updateCompany(c, id, input) {
+            Object.assign(await model.company(c, id), input);
+            for (const row of state.suppliers.filter(row => row.id_empresa === id)) Object.assign(row, input);
+        },
+        async create(c, userId, company) {
+            const id = String(next++);
+            const user = await model.user(userId);
+            state.suppliers.push({ ...company, id_fornecedor: id, id_usuario: userId, email: user.email, status: 'ATIVO', data_cadastro: '2026-10-08 00:00:00' });
+            return id;
         },
         async update(c, id, data) { Object.assign(supplier(id), data); }
     };
@@ -50,24 +64,30 @@ test('CNPJ numérico e alfanumérico da Receita são normalizados e DVs inválid
     assert.equal(normalizeCnpj('00.000.000/E08G-12'), '00000000E08G12');
     assert.equal(normalizeCnpj('12.ABC.345/01DE-35'), '12ABC34501DE35');
     assert.equal(normalizeCnpj('12.ABC.345/01DE-36'), null);
-    assert.equal(supplierSchemas.create.safeParse({ userId: '2', razao_social: 'A', cnpj: '00.000.000/E08G-12' }).success, true);
-    assert.equal(supplierSchemas.create.safeParse({ userId: '2', razao_social: 'A', cnpj: '00.000.000/E08G-13' }).success, false);
+    assert.equal(supplierSchemas.companyCreate.safeParse({ razao_social: 'A', cnpj: '00.000.000/E08G-12' }).success, true);
+    assert.equal(supplierSchemas.companyCreate.safeParse({ razao_social: 'A', cnpj: '00.000.000/E08G-13' }).success, false);
 });
 
 test('CRUD ADMIN exige conta FORNECEDOR ativa, preserva vínculo e arquiva logicamente', async () => {
-    const f = fixture(), base = '/api/admin/suppliers';
-    await request(f.app).post(base).send({ userId: '2', razao_social: 'Empresa', cnpj: '04.252.011/0001-10' }).expect(401);
-    await f.api('post', base, '2').send({ userId: '2', razao_social: 'Empresa', cnpj: '04.252.011/0001-10' }).expect(403);
-    await f.api('post', base).send({ userId: '3', razao_social: 'Empresa', cnpj: '04.252.011/0001-10' }).expect(409);
-    await f.api('post', base).send({ userId: '5', razao_social: 'Empresa', cnpj: '04.252.011/0001-10' }).expect(409);
-    const created = await f.api('post', base).send({ userId: '2', razao_social: 'Empresa', nome_cine: 'Cinema', cnpj: '04.252.011/0001-10' }).expect(201);
+    const f = fixture(), base = '/api/admin/suppliers', companyBase = '/api/admin/supplier-companies';
+    await f.api('post', companyBase).send({ razao_social: 'Aurora Distribuidora', nome_cine: 'Aurora', cnpj: '04.252.011/0001-10' }).expect(201);
+    await f.api('post', companyBase).send({ razao_social: 'Outro cadastro', cnpj: '04252011000110' }).expect(409);
+    await f.api('get', companyBase, '2').expect(403);
+    await f.api('get', `${companyBase}?q=Aurora`).expect(200);
+    await request(f.app).post(base).send({ userId: '2', companyId: '1' }).expect(401);
+    await f.api('post', base, '2').send({ userId: '2', companyId: '1' }).expect(403);
+    await f.api('post', base).send({ userId: '3', companyId: '1' }).expect(409);
+    await f.api('post', base).send({ userId: '5', companyId: '1' }).expect(409);
+    const created = await f.api('post', base).send({ userId: '2', companyId: '1' }).expect(201);
     assert.equal(created.body.data.cnpj, '04252011000110');
     assert.equal(created.body.data.id_usuario, '2');
     assert.equal(created.headers.location, `${base}/1`);
-    await f.api('post', base).send({ userId: '2', razao_social: 'Outra', cnpj: '00.000.000/E08G-12' }).expect(409);
-    await f.api('post', base).send({ userId: '4', razao_social: 'Outra', cnpj: '04.252.011/0001-10' }).expect(409);
-    await f.api('post', base).send({ userId: '4', razao_social: 'Outra', cnpj: '00.000.000/E08G-12' }).expect(201);
-    await f.api('patch', `${base}/1`).send({ nome_cine: 'Novo Cinema' }).expect(200);
+    await f.api('post', base).send({ userId: '2', companyId: '1' }).expect(409);
+    await f.api('post', base).send({ userId: '4', companyId: '1' }).expect(201);
+    assert.equal(f.state.suppliers[0].id_empresa, f.state.suppliers[1].id_empresa);
+    await f.api('patch', `${companyBase}/1`).send({ razao_social: 'Aurora Distribuidora', nome_cine: 'Aurora Cinema' }).expect(200);
+    assert.equal(f.state.suppliers[1].nome_cine, 'Aurora Cinema');
+    assert.equal(created.body.data.email, 'helena@exemplo.invalid');
     await f.api('patch', `${base}/1`).send({ id_usuario: '4' }).expect(422);
     const page = await f.api('get', `${base}?limit=1&status=ATIVO`).expect(200);
     assert.equal(page.body.data.items.length, 1);
@@ -80,8 +100,9 @@ test('CRUD ADMIN exige conta FORNECEDOR ativa, preserva vínculo e arquiva logic
 
 test('FORNECEDOR vê apenas próprio DTO redigido; outro ID e ADMIN ficam fechados', async () => {
     const f = fixture(), base = '/api/admin/suppliers';
-    await f.api('post', base).send({ userId: '2', razao_social: 'Primeira', cnpj: '04.252.011/0001-10' }).expect(201);
-    await f.api('post', base).send({ userId: '4', razao_social: 'Segunda', cnpj: '00.000.000/E08G-12' }).expect(201);
+    await f.api('post', '/api/admin/supplier-companies').send({ razao_social: 'Aurora Distribuidora', cnpj: '04.252.011/0001-10' }).expect(201);
+    await f.api('post', base).send({ userId: '2', companyId: '1' }).expect(201);
+    await f.api('post', base).send({ userId: '4', companyId: '1' }).expect(201);
     f.state.suppliers[0].cnpj = '04.252.011/0001-10'; // linha legada conserva pontuação
     await f.api('get', `${base}/2`, '2').expect(403);
     const mine = await f.api('get', '/api/suppliers/me', '2').expect(200);
@@ -89,6 +110,7 @@ test('FORNECEDOR vê apenas próprio DTO redigido; outro ID e ADMIN ficam fechad
     assert.equal(mine.body.data.cnpj_ultimos4, '0110');
     assert.ok(!('cnpj' in mine.body.data));
     assert.ok(!('id_usuario' in mine.body.data));
+    assert.ok(!('email' in mine.body.data));
     await f.api('get', '/api/suppliers/me', '3').expect(403);
     await f.api('get', '/api/suppliers/me', '1').expect(403);
 });

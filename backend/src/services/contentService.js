@@ -1,6 +1,7 @@
 import {createHash,createHmac} from 'node:crypto';
 import {ApiError} from '../utils/ApiError.js';
 import {idString} from '../utils/dto.js';
+import {streamingFaq} from './streamingHelp.js';
 
 const unavailable=()=>new ApiError('Conteúdo contratual oficial ainda não publicado',503,null,'CONTENT_UNAVAILABLE');
 const parse=value=>typeof value==='string'?JSON.parse(value):value;
@@ -28,9 +29,18 @@ export function createContentService({model,identity,checkoutSigningKey,simulate
             .update(JSON.stringify(['cineastra:order-offer',owner,offer])).digest('hex');
         return wrap(c,{localId:input.localId??null,lines:input.lines,couponCode:input.couponCode??null},{lines:quote.lines,total:quote.total,fees:quote.fees??'0.00',currency:'BRL',paymentPath:'/api/payments',paymentMethodsPath:'/api/users/me/payment-methods',conditions:'Reserva por 15 minutos; confirmação depende da aprovação do pagamento.'},sign);
     }
-    async function planContract(c,input,plan,price){return wrap(c,{planId:input.planId,period:input.period,autoRenew:input.autoRenew,divisionMode:input.divisionMode??'TITULAR_PAGA'},{lines:[{kind:'PLAN',plan}],total:price,fees:'0.00',currency:'BRL',paymentPath:'/api/payments',paymentMethodsPath:'/api/users/me/payment-methods',conditions:'Assinatura pendente até aprovação do pagamento; renovações e rateio conforme condições do plano.'});}
+    async function planContract(c,input,plan,price){
+        const divisionMode=input.divisionMode??'TITULAR_PAGA';
+        const renewal=input.autoRenew?'Renovação automática selecionada.':'Renovação automática desativada.';
+        const payment=divisionMode==='DIVISAO_IGUAL'?'O titular paga a primeira cobrança. A divisão igual entre os participantes começa nas próximas cobranças.':'O titular paga o valor integral.';
+        return wrap(c,{planId:input.planId,period:input.period,modality:plan.modality,autoRenew:input.autoRenew,divisionMode},
+            {lines:[{kind:'PLAN',plan}],total:price,fees:'0.00',currency:'BRL',paymentPath:'/api/payments',paymentMethodsPath:'/api/users/me/payment-methods',conditions:`${payment} ${renewal} Os benefícios entram em vigor após a confirmação do pagamento.`});
+    }
     return {
-        get:slug=>identity.transaction(c=>get(c,slug)),
+        get:slug=>slug==='faq-streaming'?Promise.resolve({
+            slug,version:'1.0',title:'Ajuda do Streaming',body:{items:streamingFaq},
+            source:'urn:cineastra:streaming-support',publishedAt:'2026-11-23T00:00:00.000Z'
+        }):identity.transaction(c=>get(c,slug)),
         async publish(input,context){return identity.transaction(async c=>{const actor=await identity.activeActor(c,context);if(actor.tipo_usuario!=='ADMIN')throw ApiError.acessoNegado();let id;try{id=await model.publish(c,input,actor.id_usuario);}catch(error){if(error.code==='ER_DUP_ENTRY')throw new ApiError('Versão já publicada',409,null,'CONTENT_VERSION_EXISTS');throw error;}await identity.audit(c,'CONTENT.PUBLISHED',id,context);return {id,slug:input.slug,version:input.version};},context);},
         preview:(input,quote,context)=>identity.transaction(c=>contract(c,input,quote,context.actor.id),context),
         simulatedTermsVersion:simulated?simulatedDocuments.terms.version:null,

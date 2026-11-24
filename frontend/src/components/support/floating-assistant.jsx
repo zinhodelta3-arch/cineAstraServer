@@ -14,6 +14,12 @@ const SUGGESTIONS = [
   "Quais são os horários das sessões?",
   "Quais formas de pagamento são aceitas?",
 ];
+const STREAMING_SUGGESTIONS = [
+  "Como mudo o idioma ou ativo as legendas?",
+  "Onde acompanho cobranças e renovação?",
+  "Como compartilho uma assinatura?",
+  "Como assisto a um filme ou uso o miniplayer?",
+];
 
 const STAFF_SUGGESTIONS = {
   ADMIN: ["Onde acompanho os pedidos?", "Como encaminhar solicitações de experiências?"],
@@ -22,8 +28,9 @@ const STAFF_SUGGESTIONS = {
   FORNECEDOR: ["Onde vejo minhas entregas?", "Como consulto meu estoque?"],
 };
 
-export function FloatingAssistant({ signedIn, supportHref = "/cinema/suporte", role = "CLIENTE" }) {
-  const { question, setQuestion, messages, needsSignIn, pending, ask } = useFloatingAssistant(signedIn);
+export function FloatingAssistant({ signedIn, supportHref = "/cinema/suporte", role = "CLIENTE", area }) {
+  const { question, setQuestion, messages, needsSignIn, pending, ask } = useFloatingAssistant(signedIn, area);
+  const suggestions = area === "streaming" ? STREAMING_SUGGESTIONS : (STAFF_SUGGESTIONS[role] ?? SUGGESTIONS);
   const [open, setOpen] = useState(false);
   const conversation = useRef(null);
   const input = useRef(null);
@@ -39,6 +46,7 @@ export function FloatingAssistant({ signedIn, supportHref = "/cinema/suporte", r
         type="button"
         className={styles.badge}
         data-development={process.env.NODE_ENV === "development" ? "" : undefined}
+        data-staff={role!=="CLIENTE"?true:undefined}
         aria-label="Assistente virtual do CineAstra"
       >
         <Bot className="size-6 shrink-0" strokeWidth={1.8} aria-hidden="true" />
@@ -64,10 +72,10 @@ export function FloatingAssistant({ signedIn, supportHref = "/cinema/suporte", r
               </div>
 
               <div className={styles.conversation} ref={conversation} role="log" aria-label="Conversa com a assistente" tabIndex={0}>
-                <p className={styles.bubble}>Olá! Como posso ajudar você com o CineAstra?</p>
+                <p className={styles.bubble}>{area === "streaming" ? "Olá! Posso ajudar com sua assinatura ou com a reprodução no Streaming." : "Olá! Como posso ajudar você com o CineAstra?"}</p>
                 {messages.length === 0 && (
                   <ul className={styles.suggestions} aria-label="Sugestões de perguntas">
-                    {(STAFF_SUGGESTIONS[role] ?? SUGGESTIONS).map(suggestion => (
+                    {suggestions.map(suggestion => (
                       <li key={suggestion}>
                         <button
                           type="button"

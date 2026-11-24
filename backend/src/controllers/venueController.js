@@ -2,6 +2,11 @@ import { success } from '../utils/dto.js';
 const context = req => ({ actor: req.usuario, signal: req.signal, requestId: req.res.locals.requestId });
 export function createVenueController(service) {
     return {
+        publicRoomScene: async (req,res)=>success(res,await service.publicRoomScene(req.params)),
+        publishRoomScene: unit => async (req,res)=>success(res,await service.publishRoomScene(req.params,req.input,context(req),unit)),
+        layout: unit => async (req,res)=>success(res,await service.layout(req.params,context(req),unit)),
+        batchSeats: unit => async (req,res)=>success(res,await service.batchSeats(req.params,req.input,context(req),unit),201),
+        moveSeats: unit => async (req,res)=>success(res,await service.moveSeats(req.params,req.input,context(req),unit)),
         list: (kind, admin) => async (req, res) => success(res, await service.list(kind, req.params, req.venueQuery, admin)),
         get: (kind, admin) => async (req, res) => success(res, await service.get(kind, req.params, admin)),
         unitList: kind => async (req, res) => success(res, await service.unitList(kind, req.params, req.venueQuery, context(req))),

@@ -89,6 +89,8 @@ import { createNotificationModel } from './models/notificationModel.js';
 import { createNotificationService } from './services/notificationService.js';
 import { createNotificationController } from './controllers/notificationController.js';
 import { notificationRoutes } from './routes/notificationRoutes.js';
+import { unitCommunicationRoutes } from './routes/unitCommunicationRoutes.js';
+import { createUnitCommunicationService } from './services/unitCommunicationService.js';
 import { createSupplierModel } from './models/supplierModel.js';
 import { createSupplierService } from './services/supplierService.js';
 import { createSupplierController } from './controllers/supplierController.js';
@@ -137,6 +139,7 @@ import {createRefundController} from './controllers/refundController.js';
 import {refundRoutes} from './routes/refundRoutes.js';
 import {createOrderModel} from './models/orderModel.js';
 import {createOrderService} from './services/orderService.js';
+import {createPurchaseDocumentService} from './services/purchaseDocumentService.js';
 import {createOrderController} from './controllers/orderController.js';
 import {orderRoutes} from './routes/orderRoutes.js';
 import {createCheckoutService} from './services/checkoutService.js';
@@ -177,6 +180,8 @@ import {createSupportController} from './controllers/supportController.js';
 import {supportRoutes} from './routes/supportRoutes.js';
 import {createNewsletterCampaignModel} from './models/newsletterCampaignModel.js';
 import {createNewsletterCampaignService} from './services/newsletterCampaignService.js';
+import {createNewsService} from './services/newsService.js';
+import {newsRoutes} from './routes/newsRoutes.js';
 import {createNewsletterCampaignController} from './controllers/newsletterCampaignController.js';
 import {newsletterCampaignRoutes} from './routes/newsletterCampaignRoutes.js';
 import {createContentModel} from './models/contentModel.js';
@@ -212,8 +217,12 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     const limits = createLimits(config, storeFactory, registerCleanup);
     app.locals.close = () => limits.close();
     const tokens = createJwt(config.jwt);
-    const identity = createIdentityService({ database, model: identityModel ?? createIdentityModel(database), config, tokens, providers: identityProviders });
-    const profile = createProfileService({ identity, config, providers: identityProviders });
+    const identity = createIdentityService({ database, model: identityModel ?? createIdentityModel(database), config, tokens, providers: identityProviders, onAccountCreated:(connection,userId)=>notifications.emit(connection,{
+        recipientId:String(userId),type:'ACCOUNT_WELCOME',dedupeKey:'account-created',title:'Sua conta CineAstra está pronta',
+        message:'Esta central reúne avisos sobre sua conta e as atividades que você acompanha no CineAstra.'
+    }) });
+    const supplierModel=createSupplierModel(database);
+    const profile = createProfileService({ identity, config, providers: identityProviders, supplierModel });
     const auth = createAuthMiddleware(tokens, createAccessService(createUserAccessModel(database), sessionProvider ?? identity.sessionProvider, config.security));
     const dependencies = { auth, limits: limits.flows, captcha: captchaProvider, security: config.security };
     app.use(requestId);
@@ -232,19 +241,22 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     const agePolicy=createAgePolicy({allowSelfDeclaredAge:config.identity.allowSelfDeclaredAge});
     const socialProgram=createSocialProgramService({database,identity,simulated:paymentProvider.name==='simulado'});
     const orders=createOrderService({model:orderModel,identity,pricing,agePolicy,socialProgram});
+    const purchaseDocuments=createPurchaseDocumentService({model:orderModel,identity,secret:config.jwt.secret});
     const ticketModel=createTicketModel(database);
     const tickets=createTicketService({model:ticketModel,identity});
     const streaming=createStreamingService({model:createStreamingModel(),identity,provider:streamingProvider,agePolicy});
     const notifications = createNotificationService({ model: createNotificationModel(database), identity });
-    const billing=createSubscriptionBillingService({model:createSubscriptionBillingModel(database),identity,notifications,ipca:ipcaProvider});
+    const planModel=createPlanModel();
+    const participation=createParticipationService({model:createParticipationModel(),identity,notifications,agePolicy});
+    const billing=createSubscriptionBillingService({model:createSubscriptionBillingModel(database),plans:planModel,participation,identity,notifications,ipca:ipcaProvider});
     app.locals.billing=billing;
     const content=createContentService({model:createContentModel(),identity,checkoutSigningKey:config.jwt.secret,simulated:paymentProvider.name==='simulado'});
-    const plans=createPlanService({model:createPlanModel(),identity,billing,contracts:content,agePolicy});
-    const participation=createParticipationService({model:createParticipationModel(),identity,notifications,agePolicy});
+    const refunds=createRefundService({model:createRefundModel(database),identity,provider:paymentProvider,termsVersion:config.identity?.termsVersion??content.simulatedTermsVersion,socialProgram,notifications});
+    const plans=createPlanService({model:planModel,identity,billing,contracts:content,agePolicy,notifications});
     const checkout=createCheckoutService({model:orderModel,orders,identity,pricing,inventory,seats:createSeatOccupancyService(),tickets,streaming,contracts:content});
     app.locals.checkout=checkout;
     const paymentMethods=createPaymentMethodService({ model: createPaymentMethodModel(database), identity, provider: paymentProvider });
-    const paymentService=createPaymentService({ model: createPaymentModel(database), methods:paymentMethods, identity, provider:paymentProvider,checkout,subscriptions:plans,socialProgram });
+    const paymentService=createPaymentService({ model: createPaymentModel(database), methods:paymentMethods, identity, provider:paymentProvider,checkout,subscriptions:plans,socialProgram,refunds,notifications });
     const payments=createPaymentController(paymentService);
     const sessionModel=createSessionModel(database);
     const counter=createCounterOrderService({identity,ticketModel,orderModel,sessionModel,salesModel:createSalesModel(),orders,checkout,payment:paymentService});
@@ -253,6 +265,8 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.locals.newsletterDelivery=newsletterDelivery;
     app.locals.newsletterDeliveryEnabled=newsletterEmailProvider.available!==false;
     app.use('/api/newsletter/webhooks',express.raw({type:'application/json',limit:'64kb',inflate:false}),newsletterDeliveryWebhookRoutes(createNewsletterDeliveryController(newsletterDelivery)));
+    app.patch(['/api/admin/locations/:localId/rooms/:roomId/scene','/api/unit/locations/:localId/rooms/:roomId/scene'],
+        express.json({ limit: '384kb', strict: true, inflate: false }));
     app.use(express.json({ limit: config.bodyLimit, strict: true, inflate: false }));
     app.use(express.urlencoded({ limit: config.bodyLimit, extended: false, parameterLimit: 50, inflate: false }));
     app.use(infrastructureRoutes(createHealthController(createHealthService(database, retention, lifecycle))));
@@ -277,13 +291,14 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(streamingPhotoRoutes(createStreamingPhotoController(createStreamingPhotoService({model:createStreamingPhotoModel(),identity})),dependencies));
     app.use(streamingProfileRoutes(createStreamingProfileController(createStreamingProfileService({model:createStreamingProfileModel(),identity})),dependencies));
     app.use(newsletterRoutes(createNewsletterController(createNewsletterService({database,model:createNewsletterModel(),emailProvider:newsletterEmailProvider})),dependencies));
-    app.use(newsletterCampaignRoutes(createNewsletterCampaignController(createNewsletterCampaignService({model:createNewsletterCampaignModel(),identity})),dependencies));
+    app.use(newsletterCampaignRoutes(createNewsletterCampaignController(createNewsletterCampaignService({model:createNewsletterCampaignModel(),identity,deliveryEnabled:app.locals.newsletterDeliveryEnabled})),dependencies));
+    app.use(newsRoutes(createNewsService({database,identity}),dependencies));
     const support=createSupportService({model:createSupportModel(),identity,notifications});
     app.locals.support=support;
     app.use(supportRoutes(createSupportController(support),dependencies));
     const catalog = createCatalogService({ model: createCatalogModel(database), identity, mediaHosts: config.catalog?.mediaHosts ?? [] });
     const venues = createVenueService({ model: createVenueModel(database), identity });
-    const sessions = createSessionService({ model: sessionModel, identity });
+    const sessions = createSessionService({ model: sessionModel, identity, refunds });
     const assistant = assistantProvider ?? createOpenAiAssistantProvider({
         ...config.assistant,
         timeoutMs: Math.max(1, Math.min(6500, Math.floor(config.httpTimeout * 0.65))),
@@ -293,7 +308,7 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     });
     app.use(contentRoutes(createContentController(content,createAssistantService({identity,support,provider:assistant})),dependencies));
     app.use(reportRoutes(createReportController(createReportService({model:createReportModel(),identity,allowedRoutes:Object.keys(specification.paths).map(path=>path.replace(/\{(\w+)\}/g,':$1'))})),dependencies));
-    app.use(salesRoutes(createSalesController(createSalesService({model:createSalesModel(),identity,checkout,paymentService})),dependencies));
+    app.use(salesRoutes(createSalesController(createSalesService({model:createSalesModel(),identity,checkout,paymentService,simulatedPixEnabled:paymentProvider.name==='simulado'})),dependencies));
     app.use(adminStreamingRoutes(createAdminStreamingController(createAdminStreamingService({model:createAdminStreamingModel(),identity})),dependencies));
     app.use(catalogRoutes(createCatalogController(catalog), dependencies));
     const staging = createImageStorage({ ...config.imageUpload, enforceOwner: true });
@@ -309,10 +324,13 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     })), dependencies));
     app.use(venueRoutes(createVenueController(venues), dependencies));
     app.use(sessionRoutes(createSessionController(sessions), dependencies));
-    app.use(teamRoutes(createTeamController(createTeamService({ model: createTeamModel(database), identity, notifications })), dependencies));
+    const teams=createTeamService({model:createTeamModel(database),identity,notifications,bcryptCost:config.identity.bcryptCost});
+    app.locals.teams=teams;
+    app.use(teamRoutes(createTeamController(teams),dependencies));
     app.use(taskRoutes(createTaskController(createTaskService({ model: createTaskModel(database), identity })), dependencies));
     app.use(notificationRoutes(createNotificationController(notifications), dependencies));
-    app.use(supplierRoutes(createSupplierController(createSupplierService({ model: createSupplierModel(database), identity })), dependencies));
+    app.use(unitCommunicationRoutes(createUnitCommunicationService({identity,notifications}),dependencies));
+    app.use(supplierRoutes(createSupplierController(createSupplierService({ model: supplierModel, identity })), dependencies));
     app.use(productRoutes(createProductController(createProductService({ model: createProductModel(database), identity, pricing })), dependencies));
     app.use(commerceGalleryRoutes(createCommerceGalleryController(createCommerceGalleryService({
         model: createCommerceGalleryModel(database), identity,
@@ -326,14 +344,14 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(inventoryRoutes(createInventoryController(inventory), dependencies));
     app.use(supplyRoutes(createSupplyController(createSupplyService({ model: createSupplyModel(database), identity, notifications })), dependencies));
     app.use(pricingRoutes(createPricingController(pricing), dependencies));
-    app.use(orderRoutes(createOrderController(orders,checkout,content,counter),dependencies));
+    app.use(orderRoutes(createOrderController(orders,checkout,content,counter,purchaseDocuments),dependencies));
     app.use(ticketRoutes(createTicketController(tickets),dependencies));
     app.use(streamingRoutes(createStreamingController(streaming),dependencies));
     app.use(planRoutes(createPlanController(plans),dependencies));
     app.use(participationRoutes(createParticipationController(participation),dependencies));
     app.use(paymentMethodRoutes(createPaymentMethodController(paymentMethods), dependencies));
     app.use(paymentRoutes(payments,dependencies));
-    app.use(refundRoutes(createRefundController(createRefundService({model:createRefundModel(database),identity,provider:paymentProvider,termsVersion:config.identity?.termsVersion??content.simulatedTermsVersion,socialProgram})),dependencies));
+    app.use(refundRoutes(createRefundController(refunds),dependencies));
     app.use(socialProgramRoutes(socialProgram,dependencies));
     // Ponto de composição para módulos futuros e fixtures explícitas de testes.
     registerRoutes?.(app, dependencies);

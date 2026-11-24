@@ -11,7 +11,11 @@ function targetFor(method, parts, search) {
     if (parts.length === 1 && ["GET", "POST"].includes(method)) return `/admin/sessions${method === "GET" ? search : ""}`;
     if (!id(parts[1])) return null;
     if (parts.length === 2 && ["GET", "PATCH", "DELETE"].includes(method)) return `/admin/sessions/${parts[1]}`;
-    if (parts.length === 3 && method === "GET" && ["tickets", "attendance", "pending-orders"].includes(parts[2])) return `/sessions/${parts[1]}/${parts[2]}${search}`;
+    if (parts.length === 3 && method === "POST" && parts[2] === "archive") return `/admin/sessions/${parts[1]}/archive`;
+    if (parts.length === 3 && method === "GET" && ["tickets", "attendance", "pending-orders","seat-map"].includes(parts[2])) return `/sessions/${parts[1]}/${parts[2]}${search}`;
+    if (parts.length === 4 && method === "GET" && parts[2] === "details" && ["orders","staff","payments","refunds","audit"].includes(parts[3])) {
+      return `/sessions/${parts[1]}/details/${parts[3]}${search}`;
+    }
   }
   return null;
 }
@@ -34,7 +38,7 @@ async function handle(request, { params }) {
       if (!body || typeof body !== "object" || Array.isArray(body)) return json({ message: "Dados inválidos." }, 400);
     }
     const data = await backendAuth(target, { token, method, body });
-    return method === "DELETE" ? new NextResponse(null, { status: 204 }) : json(data);
+    return method === "DELETE" || target.endsWith("/archive") ? new NextResponse(null, { status: 204 }) : json(data);
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "Sua conta não pode administrar sessões ou ingressos.", 404: "Registro não encontrado.", 409: "A operação conflita com o estado atual, uma venda ou o horário de outra sessão.", 422: "Confira os dados informados e tente novamente." };

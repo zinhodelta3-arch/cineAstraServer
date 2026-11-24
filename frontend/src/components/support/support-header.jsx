@@ -5,22 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import styles from "@/components/cinema/ticket.module.css";
 
-export default function SupportHeader({ search, changeSearch, clearSearch, cinema }) {
+export default function SupportHeader({ search, changeSearch, clearSearch, cinema, area }) {
   const searchInput = useRef(null);
+  const streaming = area === "streaming";
   return (
       <header className="mx-auto w-full max-w-[1120px] pb-6 sm:pb-8">
         <div className={cinema ? `${styles.ticket} overflow-hidden` : undefined}>
           <div className={cinema ? "px-5 pt-2 pb-5 sm:px-8" : undefined}>
-            <Link href="/cinema/home" className="inline-flex min-h-10 items-center gap-2 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
+            <Link href={streaming ? "/streaming/home" : "/cinema/home"} className="inline-flex min-h-10 items-center gap-2 rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
               <ArrowLeft size={16} aria-hidden="true" />
-              Voltar para a Home
+              {streaming ? "Voltar ao Streaming" : "Voltar para a Home"}
             </Link>
 
             <h1 className={cinema
               ? `${styles.title} mt-3 text-[clamp(2.5rem,6vw,4.5rem)] leading-none font-black tracking-tight`
-              : "mt-3 text-[clamp(2rem,5vw,3rem)] leading-tight font-bold tracking-tight"}>Como podemos te ajudar?</h1>
+              : "mt-3 text-[clamp(2rem,5vw,3rem)] leading-tight font-bold tracking-tight"}>{streaming ? "Ajuda do Streaming" : "Como podemos te ajudar?"}</h1>
             <p className={`mt-2 max-w-[60ch] text-sm leading-6 text-muted-foreground ${cinema ? "" : "mb-5"}`}>
-              Consulte dúvidas sobre ingressos, sessões, sua conta e os serviços do CineAstra.
+              {streaming ? "Consulte dúvidas sobre assinatura, cobrança, perfis e reprodução." : "Consulte dúvidas sobre ingressos, sessões, sua conta e os serviços do CineAstra."}
             </p>
           </div>
           {cinema && <div className={styles.tear} aria-hidden="true" />}

@@ -1,10 +1,11 @@
 import { resolveApiBase } from './api-base.mjs';
 import { responseError, networkError } from './api-errors.mjs';
+import { cinemaProgram } from './cinema-program.mjs';
 const configured = resolveApiBase(process.env.NEXT_PUBLIC_API_URL);
 export function apiUrl(path) { return `${configured}${path}`; }
 export function publicAsset(value) {
   if (!value) return null;
-  if ((value.startsWith('/images/streaming/') || value.startsWith('/astrasnack/')) && !/[\\\u0000-\u0020]/.test(value) && !value.includes('..')) return value;
+  if ((value.startsWith('/images/streaming/') || value.startsWith('/astrasnack/') || value.startsWith('/experiencias/')) && !/[\\\u0000-\u0020]/.test(value) && !value.includes('..')) return value;
   try {
     const base = new URL(configured, typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
     const url = new URL(value, base.origin);
@@ -36,5 +37,5 @@ export async function publicGet(path, { signal } = {}) {
   } finally { clearTimeout(timer); }
 }
 export function filmCard(film) {
-  return { id: film.id_filme, title: film.titulo, synopsis: film.descricao || '', poster: publicAsset(film.imagem), image: publicAsset(film.imagem), duration: `${film.duracao} min`, rating: film.classificacao === 'L' ? 'Livre' : film.classificacao, age: film.classificacao === 'L' ? 'Livre' : film.classificacao, releaseDate: film.data_lancamento?.slice(0, 10) || null, release: film.data_lancamento ? new Date(`${film.data_lancamento.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR') : 'Data a confirmar', trailerUrl: safeLink(film.trailer), sessions: [] };
+  return { id: film.id_filme, slug:film.slug, ...cinemaProgram(film), title: film.titulo, synopsis: film.descricao || '', poster: publicAsset(film.imagem), image: publicAsset(film.imagem), duration: `${film.duracao} min`, rating: film.classificacao === 'L' ? 'Livre' : film.classificacao, age: film.classificacao === 'L' ? 'Livre' : film.classificacao, releaseDate: film.data_lancamento?.slice(0, 10) || null, release: film.data_lancamento ? new Date(`${film.data_lancamento.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR') : 'Data a confirmar', trailerUrl: safeLink(film.trailer), sessions: [] };
 }

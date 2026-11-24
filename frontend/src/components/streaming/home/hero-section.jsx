@@ -33,9 +33,6 @@ export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggle
 
       <div className="perf absolute top-0 inset-x-0 z-20" aria-hidden="true" />
 
-      <HeroArrow dir="prev" onClick={() => go(-1)} />
-      <HeroArrow dir="next" onClick={() => go(1)} />
-
       <div className="relative z-20 max-w-[1800px] mx-auto px-5 md:px-12 w-full">
         <div className="max-w-2xl" aria-live={autoplay ? "off" : "polite"}>
           <div className="f-display text-xl tracking-[0.2em] text-foreground/90 mb-1">
@@ -58,11 +55,13 @@ export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggle
               {inList ? "Na minha lista" : "Minha lista"}
             </Button>
             <Button size="lg" variant="ghost" onClick={() => onSelect(movie)}><Info className="size-5 mr-2" aria-hidden="true" /> Mais informações</Button>
-            {heroes.length > 1 && <Button size="icon" className="min-h-11 min-w-11" variant="outline" onClick={toggleAutoplay}
-              aria-label={rotationLabel} title={rotationLabel}>
-              {autoplay ? <Pause size={19} aria-hidden="true" /> : <Play size={19} aria-hidden="true" />}
-            </Button>}
           </div>
+          {heroes.length > 1&&<div className="mt-4 flex items-center gap-2" role="group" aria-label="Navegar pelos destaques">
+            <HeroArrow dir="prev" onClick={() => go(-1)} /><HeroArrow dir="next" onClick={() => go(1)} />
+            <Button size="icon" className="min-h-11 min-w-11" variant="outline" onClick={toggleAutoplay} aria-label={rotationLabel} title={rotationLabel}>
+              {autoplay ? <Pause size={19} aria-hidden="true" /> : <Play size={19} aria-hidden="true" />}
+            </Button>
+          </div>}
         </div>
       </div>
 
@@ -71,9 +70,6 @@ export default function HeroSection({ heroes, onPlay, onSelect, myList, onToggle
           {heroes.map((m, i) => (
             <button key={m.id} type="button" aria-label={`Ir para ${m.title}`} aria-current={i === cur} onClick={() => select(i)} className={`h-1.5 rounded-full transition-all outline-hidden focus-visible:ring-2 focus-visible:ring-primary ${i === cur ? "w-8 bg-primary" : "w-4 bg-foreground/30 hover:bg-foreground/60"}`} />
           ))}
-        </div>
-        <div className="bg-background/60 border-l-4 border-foreground/70 pl-3 pr-8 py-1.5 text-sm font-bold text-foreground">
-          {movie.age === "Livre" ? "Livre" : movie.age}
         </div>
       </div>
     </section>

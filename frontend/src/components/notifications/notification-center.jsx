@@ -11,8 +11,8 @@ import NotificationGroup from './notification-group';
 import NotificationSummary from './notification-summary';
 import ListStatus from '@/components/cinema/home/list-status';
 import {Button} from '@/components/ui/button';
-function Feed({userId}){
- const s=useNotificationCenter(userId),list=s.list;
+function Feed({userId,role}){
+ const s=useNotificationCenter(userId,role),list=s.list;
  return <>
   <div className={styles.contentGrid}>
    <div className={styles.feed}>
@@ -30,12 +30,12 @@ function Feed({userId}){
   {s.selected&&<NotificationDialog item={list.items.find(item=>item.id===s.selected.id)||s.selected} onClose={s.closeDetails} onRead={()=>s.markRead(s.selected)} pending={list.pending} error={list.actionError} />}
  </>;
 }
-export default function NotificationCenter(){
+export default function NotificationCenter({home='/cinema/home'}){
  const session=useSession();
  return <main className={styles.root}><Filmstrip /><div className={styles.stage}><ClapWatermark /><div className={styles.container}>
-  <nav className={styles.breadcrumb}><Link href="/cinema/home">Início</Link><span>/</span><span>Notificações</span></nav>
+  <nav className={styles.breadcrumb}><Link href={home}>Início</Link><span>/</span><span>Notificações</span></nav>
   <NotificationHeader />
-  {session.loading?<p role="status">Verificando sua conta…</p>:session.user?<Feed key={session.user.id} userId={session.user.id} />:<section className="rounded-xl border border-border bg-card p-6"><p>Entre para consultar os avisos da sua conta.</p><Link href="/auth/login" className="mt-4 inline-block text-primary underline">Entrar para ver notificações</Link></section>}
+  {session.loading?<p role="status">Verificando sua conta…</p>:session.user?<Feed key={session.user.id} userId={session.user.id} role={session.user.role} />:<section className="rounded-xl border border-border bg-card p-6"><p>Entre para consultar os avisos da sua conta.</p><Link href="/auth/login" className="mt-4 inline-block text-primary underline">Entrar para ver notificações</Link></section>}
   <footer className={styles.pageFooter}><span>CINEASTRA · CADA HISTÓRIA IMPORTA</span></footer>
  </div></div><Filmstrip /></main>;
 }

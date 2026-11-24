@@ -84,6 +84,31 @@ test('login/logout persistentes: sessão/JTI corretos, usuário bloqueado nega, 
     await assert.rejects(f.login(u), { statusCode: 401 });
 });
 
+test('login por perfil restringe a sessão ao portal correspondente com erro genérico', async t => {
+    const f = await identityFixture({ env: { TWO_FACTOR_ENABLED: 'false' } });
+    t.after(() => f.close());
+    const login = (email, profile) => request(f.app).post('/api/auth/login').send({ email, password: PASSWORD, profile, captchaToken: 'fixture' });
+    const missing = await login('missing@example.invalid', 'CLIENTE').expect(401);
+    const roles = { CLIENTE: 'CLIENTE', FORNECEDOR: 'FORNECEDOR', ADMIN: 'EQUIPE', SUPERVISOR: 'EQUIPE', COLABORADOR: 'EQUIPE' };
+
+    for (const [role, profile] of Object.entries(roles)) {
+        const user = await f.addUser(role);
+        const sessionCount = f.state.sessions.length;
+        for (const other of ['CLIENTE', 'FORNECEDOR', 'EQUIPE'].filter(value => value !== profile)) {
+            await assert.rejects(f.identity.login({ email: user.email, password: PASSWORD, profile: other }), {
+                statusCode: 401, code: missing.body.code, message: missing.body.message,
+            });
+        }
+        assert.equal(f.state.sessions.length, sessionCount);
+        assert.equal(f.state.challenges.length, 0);
+        const accepted = await login(user.email, profile).expect(200);
+        assert.equal(accepted.body.data.user.role, role);
+    }
+    const supplier = f.state.users.find(user => user.tipo_usuario === 'FORNECEDOR');
+    const denied = await login(supplier.email, 'CLIENTE').expect(401);
+    assert.equal(denied.body.message, missing.body.message);
+});
+
 test('ADMIN sem fator só recebe enrollment; prova emite sessão, replay e bypass negados', async t => {
     const f = await identityFixture(); t.after(() => f.close()); const u = await f.addUser('ADMIN');
     const auth = await enrollment(f, u);

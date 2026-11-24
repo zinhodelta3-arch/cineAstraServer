@@ -14,8 +14,6 @@ const messages = {
   DUPLICATE_RESOURCE: 'Já existe um registro com esses dados. Abra o cadastro existente ou altere os dados antes de salvar.',
   RESOURCE_IN_USE: 'O registro está vinculado a outros dados. Revise os vínculos antes de tentar removê-lo.',
   INVALID_REFERENCE: 'Um registro selecionado deixou de estar disponível. Atualize as opções e selecione novamente.',
-  LOGIN_SUPPLIER_PROFILE_REQUIRED: 'Selecione Fornecedor para entrar com esta conta.',
-  LOGIN_CUSTOMER_PROFILE_REQUIRED: 'Selecione Cliente para entrar com esta conta.',
   ROOM_CAPACITY_MISMATCH: 'Informe uma capacidade igual à quantidade de assentos ativos da sala.',
   ROOM_CAPACITY_REACHED: 'A sala atingiu o limite de assentos ativos. Revise o mapa de assentos antes de ativar mais um.',
   TASK_MEMBERSHIP_REQUIRED: 'Para acessar os chamados, entre na equipe e confirme com o supervisor que sua função foi atribuída.',

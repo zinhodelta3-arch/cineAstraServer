@@ -9,7 +9,7 @@ import { unitOperation } from '@/hooks/unit/use-unit-data';
 import { UnitFeedback, UnitListState, UnitMore, dateTime, label } from './unit-layout';
 import styles from './unit.module.css';
 
-export default function UnitDeliveries({ list, action }) {
+export default function UnitDeliveries({ list, action, requiresSession }) {
   const [returning, setReturning] = useState(null);
   const [tracking, setTracking] = useState(null);
 
@@ -32,7 +32,7 @@ export default function UnitDeliveries({ list, action }) {
     </div></header>
     <div className={styles.body}>
       <UnitFeedback error={!returning && action.error} notice={action.notice} />
-      <UnitListState list={list} empty="Nenhuma entrega cadastrada." />
+      <UnitListState list={list} empty={requiresSession ? 'Selecione uma sessão da equipe para consultar as entregas.' : 'Nenhuma entrega cadastrada.'} />
       {list.items.length > 0 && <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead><tr>

@@ -10,8 +10,10 @@ export const metadata = {
 
 export default async function Login({ searchParams }) {
   const user = await currentUser().catch(() => null);
-  const next = clientLoginDestination((await searchParams)?.next);
+  const { next: requestedNext, perfil } = await searchParams;
+  const next = clientLoginDestination(requestedNext);
+  const initialProfile = perfil === 'equipe' || perfil === 'fornecedor' ? perfil : 'cliente';
   const destination = loginDestination(user?.role);
   if (destination) redirect(user.role === 'CLIENTE' && next ? next : destination);
-  return <LoginPage next={next} />;
+  return <LoginPage key={initialProfile} next={next} initialProfile={initialProfile} />;
 }

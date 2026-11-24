@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Boxes, LayoutDashboard, Menu, Truck, UserRound, X } from 'lucide-react';
+import { Boxes, LayoutDashboard, Menu, MessageCircle, Truck, UserRound, X } from 'lucide-react';
+import { useTablePreference } from "@/hooks/use-table-preference";
 import { AppSidebar } from '@/components/app-sidebar';
 import SessionControls from '@/components/auth/session-controls';
+import { NotificationButton } from '@/components/notifications/notification-button';
 import { useSession } from '@/hooks/auth/use-session';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import styles from '../admin/admin.module.css';
@@ -19,21 +21,23 @@ const items = [
     { label: 'Solicitações', href: '/fornecedor/solicitacoes' },
     { label: 'Transportes', href: '/fornecedor/transportes' }
   ] },
+  { label: 'Suporte', href: '/fornecedor/suporte', icon: MessageCircle },
   { label: 'Perfil', href: '/fornecedor/perfil', icon: UserRound },
 ];
 
 export default function SupplierShell({ children }) {
   const session = useSession();
   const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useTablePreference('menu:fornecedor',false);
   const sidebar = props => <AppSidebar items={items} user={session.user} onLogout={session.logout} loggingOut={session.pending} homeHref="/fornecedor" areaLabel="Fornecedor" {...props} />;
   return <div className={styles.shell}>
     <a className={styles.skip} href="#supplier-content">Pular para o conteúdo</a>
-    <div className={styles.desktop}>{sidebar({ collapsed, onToggle: () => setCollapsed(value => !value) })}</div>
+    <div className={styles.desktop}>{sidebar({ collapsed, onToggle: () => setCollapsed(!collapsed) })}</div>
     <div className={styles.content}>
       <header className={portal.topbar}>
         <span className={portal.areaName}>Portal do fornecedor</span>
         <div className={portal.controls}>
+          {session.user && <NotificationButton userId={session.user.id} role={session.user.role} />}
           <SessionControls session={session} />
           <div className={portal.mobileNav}>
         <Sheet open={open} onOpenChange={setOpen}>
