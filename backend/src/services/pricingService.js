@@ -9,6 +9,9 @@ const fields={inputs:['custo_receita','custo_parceria'],sessions:['custo_local_d
 const periodMoney=(value)=>{if(value==null)throw conflict('Custo não cadastrado');return cents(value);};
 export const publicPricingQuote=({couponId,...quote})=>({...quote,lines:quote.lines.map(({cost,suggestedPrice,belowCost,belowMargin,projectedBelowMargin,parameters,planId,...line})=>line)});
 const catalogPriced=category=>category==='INPUT'||category==='COMBO';
+const weekdayInBrazil = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Sao_Paulo' });
+const isTuesday = date => weekdayInBrazil.format(date) === 'Tue';
+const isTuesdayCampaign = promotion => promotion.nome === 'Terça de Cinema';
 function catalogBase(row,cost){
     if(typeof row.published!=='string'||!/^(0|[1-9]\d{0,7})\.\d{2}$/.test(row.published))throw conflict('Preço cadastrado ausente ou inválido');
     const price=cents(row.published);
@@ -58,6 +61,7 @@ export function createPricingService({model,identity,simulated=false}){
         }
         const lines=[];let total=0n;
         const categoryRules=new Map();
+        const buyingOnTuesday = isTuesday(new Date());
         for(const line of input.lines){
             try {
                 if(line.category==='PURCHASE')throw new ApiError('Novas compras de filmes estão desativadas; consulte o aluguel',409,null,'STREAMING_PURCHASE_DISABLED');
@@ -78,7 +82,10 @@ export function createPricingService({model,identity,simulated=false}){
                     const planBps=plan&&line.category!=='PLAN'?(terms?Number(terms.discounts?.[line.category]??0):Number((await model.planBenefit(plan.id_plano,line.category,c))?.desconto_bps??cents(plan.desconto??'0.00'))):0;
                     categoryRules.set(line.category,{parameter,promotions,planBps});
                 }
-                const {parameter:p,promotions,planBps}=categoryRules.get(line.category);
+                const {parameter:p,promotions:activePromotions,planBps}=categoryRules.get(line.category);
+                const promotions = line.category !== 'SESSION' ? activePromotions : activePromotions.filter(promotion =>
+                    !isTuesdayCampaign(promotion) || (buyingOnTuesday && isTuesday(new Date(`${row.data}T${row.horario_inicio}Z`)))
+                );
                 const publishedSessionFallback=simulated&&line.category==='SESSION'&&(row.custo_local_dia==null||row.custo_exibicao==null)&&row.published!=null;
                 const cost=publishedSessionFallback?0n:costFor(line.category,row,parts,p,line.period);
                 const suggested=publishedSessionFallback?cents(String(row.published)):basePrice(cost,p.markup_bps);
@@ -87,12 +94,21 @@ export function createPricingService({model,identity,simulated=false}){
                 const privatePromoBps=promotions.filter(x=>!x.publico_geral).reduce((n,x)=>n+x.desconto_bps,0);
                 const comboBps=line.category==='COMBO'?Math.min(Math.max(parts.reduce((n,x)=>n+x.quantidade,0)-1,0)*p.combo_passo_bps,p.teto_desconto_bps):0;
                 const extraBps=privatePromoBps+planBps+couponBps+comboBps;
-                const quoted=line.category==='SESSION'?ticketQuote({cost,base,publicDiscountBps:publicBps,privateDiscountBps:extraBps,halfEligible:Boolean(line.halfPreview),capBps:p.teto_desconto_bps,minMarginBps:p.margem_alerta_bps,halfProjectionBps:p.meia_projecao_bps}):ordinaryQuote({cost,base,discountBps:publicBps+extraBps,capBps:p.teto_desconto_bps,minMarginBps:p.margem_alerta_bps});
+                const ticketOptions = {cost,base,publicDiscountBps:publicBps,privateDiscountBps:extraBps,halfEligible:Boolean(line.halfPreview),capBps:p.teto_desconto_bps,minMarginBps:p.margem_alerta_bps,halfProjectionBps:p.meia_projecao_bps};
+                const quoted=line.category==='SESSION'?ticketQuote(ticketOptions):ordinaryQuote({cost,base,discountBps:publicBps+extraBps,capBps:p.teto_desconto_bps,minMarginBps:p.margem_alerta_bps});
                 const subtotal=quoted.price*BigInt(line.quantity);total+=subtotal;
                 const published=line.category==='PLAN'?(line.period==='ANNUAL'?row.valor_anual:row.valor_mensal):row.published;
                 if(published==null)throw conflict('Preço público não configurado');
                 // Sugestão administrativa; não altera a base cadastrada nem é exposta na cotação pública.
                 const suggestion=catalogPriced(line.category)?{suggestedPrice:money(suggested)}:{};
+                if (line.category === 'SESSION' && promotions.some(isTuesdayCampaign)) {
+                    const withoutTuesday = {...ticketOptions};
+                    for (const promotion of promotions.filter(isTuesdayCampaign)) {
+                        if (promotion.publico_geral) withoutTuesday.publicDiscountBps -= promotion.desconto_bps;
+                        else withoutTuesday.privateDiscountBps -= promotion.desconto_bps;
+                    }
+                    if (quoted.price < ticketQuote(withoutTuesday).price) suggestion.discountSources = ['TUESDAY_PROMOTION'];
+                }
                 if(catalogPriced(line.category))suggestion.discountSources=quoted.price<base?[
                     ...(publicBps+privatePromoBps>0?['PROMOTION']:[]),...(planBps>0?['SUBSCRIPTION']:[]),
                     ...(couponBps>0?['COUPON']:[]),...(comboBps>0?['COMBO']:[])
@@ -106,6 +122,13 @@ export function createPricingService({model,identity,simulated=false}){
         return {lines,total:money(total),couponId:coupon?idString(coupon.id_cupom):null,couponCode:coupon?.codigo??null,couponDiscountBps:couponBps,finalizable:!lines.some(x=>x.issue||x.halfEligibilityUnverified||x.catalogOutOfSync),quotedAt:new Date().toISOString()};
     }
     return {
+        async publicTuesdayPromotion() {
+            if (!isTuesday(new Date())) return { discountBps: 0 };
+            const promotions = (await model.activePromotions('SESSION')).filter(p => p.publico_geral && isTuesdayCampaign(p));
+            if (!promotions.length) return { discountBps: 0 };
+            const parameter = await model.parameter('SESSION');
+            return { discountBps: Math.min(parameter.teto_desconto_bps, promotions.reduce((sum, p) => sum + p.desconto_bps, 0)) };
+        },
         async catalogPriceFromRule(c,category,row,parts=null){
             if(!catalogPriced(category))throw ApiError.validacao('Categoria sem precificação de cadastro.');
             const parameter=found(await model.parameter(category,c));

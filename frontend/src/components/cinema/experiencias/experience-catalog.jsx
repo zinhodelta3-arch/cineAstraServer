@@ -27,7 +27,7 @@ export default function ExperienceCatalog({ experiences, list }) {
                 <div className="flex flex-1 flex-col p-5 md:p-6">
                   {experience.tag && <div className="text-xs font-bold text-primary">{experience.tag}</div>}
                   <h3 className={`${styles.title} mt-2 text-3xl font-black leading-none sm:text-4xl`}>{experience.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{experience.summary}</p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{experience.summary?.trim() || experience.description}</p>
                   {experience.location && <p className="mt-3 text-sm text-muted-foreground">
                     {[experience.location.name,venueTypes[experience.location.type],
                       experience.location.eventCapacity && `Até ${experience.location.eventCapacity.toLocaleString("pt-BR")} pessoas`,

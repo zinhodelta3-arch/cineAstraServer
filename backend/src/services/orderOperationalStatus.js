@@ -14,8 +14,23 @@ export function operationalItem(row,now=Date.now()){
     }else status='EM_REALIZACAO';
     return {itemId:idString(row.id_item),ticketId:row.id_ticket?idString(row.id_ticket):null,type,status};
 }
-export function operationalOrder(rows,now=Date.now()){
-    const items=rows.map(row=>operationalItem(row,now));
+export function operationalOrder(rows,now=Date.now(),offerLines){
+    // O checkout insere um item por linha da oferta, na ordem aceita pelo cliente.
+    // Um item pode gerar vários tickets de retirada.
+    const purchasedItems=[...new Map(rows.map(row=>[row.id_item,row])).values()];
+    const matchesOffer=Array.isArray(offerLines)&&offerLines.length===purchasedItems.length&&purchasedItems.every((row,index)=>{
+        const line=offerLines[index];
+        return line && line.id===String(row.id_sessao??row.id_insumo??row.id_combo??row.id_filme)
+            && line.quantity===row.quantidade && line.subtotal===row.subtotal
+            && (row.id_sessao ? line.category==='SESSION' : row.id_insumo ? line.category==='INPUT' : row.id_combo ? line.category==='COMBO' : ['RENTAL','PURCHASE'].includes(line.category));
+    });
+    const declarations=new Map(purchasedItems.map((row,index)=>[row.id_item,matchesOffer?offerLines[index].halfDeclaration:null]));
+    const items=rows.map(row=>{
+        const item=operationalItem(row,now);
+        if(row.id_sessao)item.admission=declarations.get(row.id_item)||row.tipo_ingresso;
+        if(row.product_name)item.productName=row.product_name;
+        return item;
+    });
     const statuses=items.map(x=>x.status).filter(Boolean);
     return {operationalStatus:statuses.length?statuses.reduce((a,b)=>rank[a]>=rank[b]?a:b):null,items};
 }

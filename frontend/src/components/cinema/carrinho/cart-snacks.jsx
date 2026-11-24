@@ -7,7 +7,7 @@ import ProductPrice from '../astrasnack/product-price';
 import ProductImage from '../astrasnack/product-image';
 import ListStatus from '../home/list-status';
 
-export default function CartSnacks({ session, coupon, enabled }) {
+export default function CartSnacks({ session, coupon, enabled, ticketItems = [] }) {
   const { localId, products, catalog, add, snacks, combos, themed, tickets, selectedSession, setSelectedSession, pending, error, notice } = useCartSnacks(session, coupon, enabled);
   const [view,setView]=useState('suggestions');
   if (!localId) return null;
@@ -19,6 +19,8 @@ export default function CartSnacks({ session, coupon, enabled }) {
   return <section aria-labelledby="cart-snacks-title" className="mt-6 rounded-2xl border border-dashed border-border bg-card/40 p-4 sm:p-5">
     <h2 id="cart-snacks-title" className="f-display flex items-center gap-2 text-2xl font-bold"><Popcorn className="size-5 text-primary" aria-hidden="true" /> AstraSnack para sua sessão</h2>
     <p className="mt-1 text-sm text-muted-foreground">Escolha produtos da unidade do ingresso e pague tudo no mesmo pedido.</p>
+    {ticketItems.some(item => item.quoted && item.discountSources?.includes('TUESDAY_PROMOTION')) &&
+      <p className="mt-2 text-sm font-semibold text-primary">Terça de Cinema aplicada aos ingressos elegíveis. Os valores acima já incluem o desconto.</p>}
     {tickets.length > 1 && <label className="mt-3 grid gap-1 text-sm">
       Sessão dos combos temáticos
       <select className="min-w-0 rounded-md border border-border bg-background px-3 py-2" value={selectedSession} disabled={Boolean(pending)} onChange={event=>setSelectedSession(event.target.value)}>

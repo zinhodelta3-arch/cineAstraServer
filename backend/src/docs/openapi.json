@@ -57964,6 +57964,62 @@
           }
         }
       }
+    },
+    "/api/pricing/promotions/tuesday": {
+      "get": {
+        "operationId": "public_tuesday_ticket_promotion",
+        "tags": [
+          "Precificação"
+        ],
+        "summary": "public tuesday ticket promotion",
+        "description": "Percentual público de Terça de Cinema, em pontos-base. Zero fora da terça-feira ou sem campanha vigente.",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "discountBps": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        }
+                      },
+                      "required": [
+                        "discountBps"
+                      ]
+                    },
+                    "requestId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -63039,10 +63095,11 @@
                 "PROMOTION",
                 "SUBSCRIPTION",
                 "COUPON",
-                "COMBO"
+                "COMBO",
+                "TUESDAY_PROMOTION"
               ]
             },
-            "description": "Presente em INPUT e COMBO. Origens consideradas no desconto combinado; vazio quando não há redução efetiva. Tetos e piso de custo podem limitar o desconto. O valor efetivo é base menos unitPrice."
+            "description": "Origens do desconto em produtos e na campanha de terça-feira dos ingressos. O valor efetivo é base menos unitPrice."
           }
         },
         "required": [
@@ -63335,10 +63392,11 @@
                 "PROMOTION",
                 "SUBSCRIPTION",
                 "COUPON",
-                "COMBO"
+                "COMBO",
+                "TUESDAY_PROMOTION"
               ]
             },
-            "description": "Presente em INPUT e COMBO. Origens consideradas no desconto combinado; vazio quando não há redução efetiva. Tetos e piso de custo podem limitar o desconto. O valor efetivo é base menos unitPrice."
+            "description": "Origens do desconto em produtos e na campanha de terça-feira dos ingressos. O valor efetivo é base menos unitPrice."
           }
         },
         "required": [
@@ -64407,6 +64465,19 @@
                     "FINALIZADO"
                   ],
                   "nullable": true
+                },
+                "admission": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    "INTEIRA",
+                    "MEIA",
+                    "NUBANK_SIMULADA",
+                    "ISENTA"
+                  ]
+                },
+                "productName": {
+                  "type": "string"
                 }
               },
               "required": [

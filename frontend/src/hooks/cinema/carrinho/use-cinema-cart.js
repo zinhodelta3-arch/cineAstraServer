@@ -11,13 +11,13 @@ async function quoteCart(input, signal) {
  return readSessionResponse(response);
 }
 
-export default function useCinemaCart(){
+export default function useCinemaCart({enabled=true}={}){
  const router=useRouter(),cart=useCart(),session=useSession();
  const [coupon,setCouponValue]=useState(''),[state,setState]=useState({key:null,quote:null,pending:false,error:null});
  const [auto,setAuto]=useState(null),[revision,setRevision]=useState(0);
  const controller=useRef(null);
  let input=null,issue=null;try{input=cartOrder(cart.items);}catch(e){issue=e.message;}
- const baseInput=input&&session.user?.role==='CLIENTE'?JSON.stringify(input):null;
+ const baseInput=enabled&&input&&session.user?.role==='CLIENTE'?JSON.stringify(input):null;
  const baseKey=baseInput?JSON.stringify([session.user.id,baseInput,revision]):null;
  useEffect(()=>{
   if(!baseKey)return;

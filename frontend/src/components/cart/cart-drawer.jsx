@@ -9,8 +9,10 @@ import ProductPrice from "@/components/cinema/astrasnack/product-price"
 
 const money = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
-export function CartDrawer({ open, onOpenChange }) {
-  const { items, itemCount, total, updateQuantity, removeItem } = useCart()
+export function CartDrawer({ open, onOpenChange, preview }) {
+  const cart = useCart()
+  const { updateQuantity, removeItem } = cart
+  const { items, itemCount, total } = preview ?? cart
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -39,7 +41,8 @@ export function CartDrawer({ open, onOpenChange }) {
                   <div className="text-[9px] font-bold tracking-[.16em] text-primary uppercase">{item.category}</div>
                   <h3 className="mt-1 line-clamp-2 text-sm font-bold">{item.name}</h3>
                   {item.details && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.details}</p>}
-                  {item.purchaseKind !== 'SESSION' && <div className="mt-2 text-sm"><ProductPrice price={item.price} originalPrice={item.originalPrice} discountSources={item.discountSources} note="Por unidade · estimado" /></div>}
+                  {(item.purchaseKind !== 'SESSION' || (item.quoted && item.discountSources?.includes('TUESDAY_PROMOTION'))) &&
+                    <div className="mt-2 text-sm"><ProductPrice price={item.price} originalPrice={item.originalPrice} discountSources={item.discountSources} note={item.quoted ? "Por unidade · cotado" : "Por unidade · estimado"} /></div>}
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
                       <Button variant="ghost" size="icon-xs" aria-label="Diminuir quantidade" onClick={() => updateQuantity(item.id, item.type, item.details, item.quantity - 1)}><Minus /></Button>
@@ -56,7 +59,7 @@ export function CartDrawer({ open, onOpenChange }) {
 
           <div className="border-t border-border/70 bg-card/60 p-5">
             <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground"><span>Itens no carrinho</span><span>{itemCount}</span></div>
-            <div className="mb-4 flex items-center justify-between"><span className="font-semibold">Subtotal</span><strong className="text-xl font-black">{money(total)}</strong></div>
+            <div className="mb-4 flex items-center justify-between"><span className="font-semibold">{preview && !preview.summary.quote ? "Subtotal estimado" : "Subtotal"}</span><strong className="text-xl font-black">{money(total)}</strong></div>
             <Link href="/cinema/carrinho" prefetch={false} onClick={() => onOpenChange(false)} className={buttonVariants({ size: "lg", className: "mb-2 w-full" })}>Ver carrinho completo <ArrowRight className="size-4" /></Link>
             <p className="text-center text-[10px] text-muted-foreground">Você poderá revisar seu pedido antes de finalizar.</p>
           </div>

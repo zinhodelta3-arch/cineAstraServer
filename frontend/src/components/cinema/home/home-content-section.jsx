@@ -14,7 +14,7 @@ export default function HomeContentSection({ kind = 'experiences', placement }) 
    {banners
     ? item.imageUrl && <div className="aspect-video"><SmartImg src={item.imageUrl} alt={item.imageAlt || item.title} title={item.title} icon={Film} /></div>
     : <ExperienceImage key={item.imageUrl} src={item.imageUrl} alt={item.imageAlt} className="aspect-video w-full" />}
-   <div className="p-6 space-y-3">{item.tag && <span className="text-sm text-primary">{item.tag}</span>}<h3 className="f-display text-3xl font-bold">{item.title}</h3><p className="text-muted-foreground">{item.summary}</p>
+   <div className="p-6 space-y-3">{item.tag && <span className="text-sm text-primary">{item.tag}</span>}<h3 className="f-display text-3xl font-bold">{item.title}</h3><p className="text-muted-foreground">{banners ? item.summary : item.summary?.trim() || item.description}</p>
     {item.priceLabel && <p>{item.priceLabel} {item.unit}</p>}
     {!banners && <Link className="inline-flex min-h-11 items-center rounded-full border border-primary px-5 py-2 font-semibold text-primary after:absolute after:inset-0 focus-visible:ring-2"
       href={`/cinema/experiencias/${encodeURIComponent(item.id)}`} aria-label={`Ver detalhes de ${item.title}`}>Ver detalhes →</Link>}

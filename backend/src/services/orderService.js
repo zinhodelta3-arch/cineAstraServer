@@ -77,7 +77,8 @@ export function createOrderService({model,identity,pricing,socialProgram,selfDec
         if(actor.tipo_usuario!=='CLIENTE')throw ApiError.acessoNegado();
         const order=found(await model.ownStatus(c,id,actor.id_usuario));
         const financialStatus=order.status;
-        const state=['PAGO','FINALIZADO'].includes(financialStatus)?operationalOrder(await model.operationalRows(c,id)):{operationalStatus:null,items:[]};
+        const offerLines=typeof order.offer_lines==='string'?JSON.parse(order.offer_lines):order.offer_lines;
+        const state=['PAGO','FINALIZADO'].includes(financialStatus)?operationalOrder(await model.operationalRows(c,id),Date.now(),offerLines):{operationalStatus:null,items:[]};
         return {orderId:idString(order.id_pedido),financialStatus,...state,...(socialProgram && {socialDestination:await socialProgram.byOrder(c,id)})};
     },context);}
     async function list({limit=20,cursor},context){return identity.transaction(async c=>{

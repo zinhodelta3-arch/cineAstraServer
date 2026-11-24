@@ -12,7 +12,7 @@ const bps={type:'integer',minimum:0,maximum:10000},category={type:'string',enum:
 spec.components.schemas.PricingParameter=obj({category,markupBps:{type:'integer',minimum:0,maximum:30000},minMarginBps:bps,discountCapBps:bps,referenceOccupancy:{type:'integer',minimum:1},halfProjectionBps:bps,comboStepBps:bps,updatedAt:{type:'string'}});
 spec.components.schemas.PricingLine=obj({category,id,quantity:{type:'integer',minimum:1},period:{type:'string',nullable:true},cost:price,base:price,publishedPrice:{...price,nullable:true},catalogOutOfSync:{type:'boolean'},publicPrice:{...price,nullable:true},halfPrice:{...price,nullable:true},benefit:{type:'string'},unitPrice:price,subtotal:price,discountBps:bps,discountCapped:{type:'boolean'},belowCost:{type:'boolean'},belowMargin:{type:'boolean'},projectedBelowMargin:{type:'boolean'},referenceOccupancy:{type:'integer',nullable:true},halfEligibilityUnverified:{type:'boolean'},promotionIds:{type:'array',items:id},planId:{...id,nullable:true},parameters:ref('PricingParameter')});
 spec.components.schemas.PricingQuote=obj({lines:{type:'array',items:ref('PricingLine')},total:price,couponId:{...id,nullable:true},couponCode:{type:'string',nullable:true},couponDiscountBps:bps,finalizable:{type:'boolean'},quotedAt:{type:'string',format:'date-time'}});
-spec.components.schemas.PricingLine.properties.discountSources={type:'array',items:{type:'string',enum:['PROMOTION','SUBSCRIPTION','COUPON','COMBO']},description:'Presente em INPUT e COMBO. Origens consideradas no desconto combinado; vazio quando não há redução efetiva. Tetos e piso de custo podem limitar o desconto. O valor efetivo é base menos unitPrice.'};
+spec.components.schemas.PricingLine.properties.discountSources={type:'array',items:{type:'string',enum:['PROMOTION','SUBSCRIPTION','COUPON','COMBO','TUESDAY_PROMOTION']},description:'Origens do desconto em produtos e na campanha de terça-feira dos ingressos. O valor efetivo é base menos unitPrice.'};
 spec.components.schemas.PricingAdminLine=structuredClone(spec.components.schemas.PricingLine);
 spec.components.schemas.PricingAdminQuote=structuredClone(spec.components.schemas.PricingQuote);
 spec.components.schemas.PricingAdminQuote.properties.lines.items=ref('PricingAdminLine');
@@ -34,6 +34,13 @@ delete bodies.patchPromotion.properties.categoria;
 const errors={400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable'};
 for(const r of pricingOperations){
     const op={operationId:r.operationId,tags:['Precificação'],summary:r.operationId.replaceAll('_',' '),description:r.action==='quote'?'Cotação informativa com custos reais e centavos exatos. Meia é prévia sem comprovação; cupom é confirmado somente na transação do pedido. Catálogo divergente impede finalização.':'ADMIN autenticado com 2FA. Alterações de custos e benefícios não alteram pedidos já cotados.',security:[{bearerAuth:[]}],parameters:[],responses:{}};
+    if(r.action==='publicTuesdayPromotion'){
+        op.security=[];
+        op.description='Percentual público de Terça de Cinema, em pontos-base. Zero fora da terça-feira ou sem campanha vigente.';
+        op.responses['200']=response(obj({discountBps:bps}));
+        (spec.paths[r.path]??={})[r.method]=op;
+        continue;
+    }
     if(r.action==='guestSnackQuote'){
         op.security=[];
         op.description='Prévia pública do AstraSnack por cinema. Considera somente promoções públicas e regras de combo. Em caso de indisponibilidade, retorna o problema na linha sem invalidar as demais.';

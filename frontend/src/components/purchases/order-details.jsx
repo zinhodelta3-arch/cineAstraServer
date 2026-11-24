@@ -49,6 +49,13 @@ function TicketShape() {
  </svg>;
 }
 
+const admissions={INTEIRA:'Inteira',MEIA:'Meia-entrada',NUBANK_SIMULADA:'Meia Nubank',ISENTA:'Isenta'};
+function ticketLabel(item){
+ const type=itemTypes[item.type]||item.type;
+ const description=admissions[item.admission]||item.productName;
+ return description ? `${type} · ${description}` : type;
+}
+
 function OrderTicketPreview({order,tickets}) {
  const [index,setIndex]=useState(0);
  const [drag,setDrag]=useState(null);
@@ -133,7 +140,7 @@ function OrderTicketPreview({order,tickets}) {
      onTransitionEnd={slot===0?event=>{if(event.target===event.currentTarget&&event.propertyName==='transform')finishSlide();}:undefined}>
      <TicketShape />
      <span className="order-ticket-brand"><span aria-hidden="true">✦</span> CineAstra</span>
-     <h3 className="order-ticket-title">{ticket?(itemTypes[ticket.type]||ticket.type):'QR Code do pedido'}</h3>
+     <h3 className="order-ticket-title">{ticketLabel(ticket)}</h3>
      <div className="order-ticket-code">
       <QRCodeSVG value={ticket.code} size={160} marginSize={4} fgColor="#000" bgColor="#fff" title="QR Code do ingresso ou retirada" />
      </div>
@@ -147,7 +154,7 @@ function OrderTicketPreview({order,tickets}) {
   </div>
   {swipeable&&<div className="order-ticket-controls">
    <Button variant="outline" size="sm" aria-disabled={Boolean(slide)} onClick={()=>{if(!slide&&drag===null)move(-1);}}>‹ Anterior</Button>
-   <span className="text-xs text-muted-foreground" aria-live="polite">Ingresso {position+1} de {count}</span>
+   <span className="text-xs text-muted-foreground" aria-live="polite">Código {position+1} de {count}</span>
    <Button variant="outline" size="sm" aria-disabled={Boolean(slide)} onClick={()=>{if(!slide&&drag===null)move(1);}}>Próximo ›</Button>
   </div>}
  </section>;
@@ -159,7 +166,8 @@ function ResourceState({resource}){
 export default function OrderDetails({order,onClose,onChanged}){
  const s=useOrderDetails(order,onChanged),data=s.detail.data,receipt=s.receipt.data;
  const summary=data??order;
- const {items:tickets}=s.tickets;
+ const itemsById=new Map(data?.items?.map(item=>[item.itemId,item]));
+ const tickets=s.tickets.items.map(ticket=>({...itemsById.get(ticket.itemId),...ticket}));
  const [now,setNow]=useState(Date.now);
  useEffect(()=>{
   const nextExpiry=Math.min(...tickets.filter(ticket=>ticket.presence==='FORA')
@@ -188,13 +196,13 @@ export default function OrderDetails({order,onClose,onChanged}){
    </div>
    {qrTickets.length>0&&['PAGO','FINALIZADO'].includes(data.financialStatus)&&<OrderTicketPreview order={order} tickets={qrTickets} />}
    <div className="cine-order-actions"><Button variant="outline" onClick={s.refresh} disabled={s.pending||s.detail.loading}>Atualizar pedido</Button><Button onClick={s.download} disabled={s.pending||s.downloading} aria-busy={s.downloading}>{s.downloading?'Preparando PDF…':'Baixar comprovante em PDF'}</Button></div>
-   {data.items?.length>0&&<section className="cine-order-panel"><h3 className="mb-3 text-lg font-bold">Andamento dos itens</h3><ul className="space-y-2">{data.items.map((item,index)=><li key={item.itemId+':'+index} className="rounded-lg border border-border p-3 text-sm">{itemTypes[item.type]||item.type} · item #{item.itemId}{item.status?' · '+item.status.replaceAll('_',' ').toLowerCase():''}</li>)}</ul></section>}
+   {data.items?.length>0&&<section className="cine-order-panel"><h3 className="mb-3 text-lg font-bold">Andamento dos itens</h3><ul className="space-y-2">{data.items.map((item,index)=><li key={item.itemId+':'+index} className="rounded-lg border border-border p-3 text-sm">{ticketLabel(item)} · item #{item.itemId}{item.status?' · '+item.status.replaceAll('_',' ').toLowerCase():''}</li>)}</ul></section>}
    {data.financialStatus==='AGUARDANDO_PAGAMENTO'&&!s.confirm&&<Button variant="outline" disabled={s.pending} onClick={()=>s.setConfirm(true)}>Cancelar pedido pendente</Button>}
    {s.confirm&&<section className="rounded-xl border border-destructive/30 p-4" aria-label="Confirmar cancelamento"><h3 className="font-bold">Cancelar este pedido?</h3><p className="my-3 text-sm">As reservas serão liberadas se o backend permitir o cancelamento. Isso não solicita reembolso de um pagamento.</p><div className="flex flex-wrap gap-3"><Button variant="outline" disabled={s.pending} onClick={()=>s.setConfirm(false)}>Manter pedido</Button><Button disabled={s.pending} onClick={s.cancel}>Confirmar cancelamento</Button></div></section>}
   </>}
   <section className="cine-order-panel"><h3 className="text-lg font-bold">Ingressos e códigos de retirada</h3><p className="my-3 text-xs text-muted-foreground">Os códigos pertencem à sua compra. A validação de uso ocorre no atendimento; não compartilhe publicamente.</p>
-   <ul className="space-y-3">{s.tickets.items.map(ticket=><li key={ticket.id} className="rounded-xl border border-border p-4">
-    <p className="font-semibold">{itemTypes[ticket.type]||ticket.type} #{ticket.id}</p><p className="mt-1 text-sm">{ticketStatuses[ticket.status]||ticket.status}</p>
+   <ul className="space-y-3">{tickets.map(ticket=><li key={ticket.id} className="rounded-xl border border-border p-4">
+    <p className="font-semibold">{ticketLabel(ticket)} #{ticket.id}</p><p className="mt-1 text-sm">{ticketStatuses[ticket.status]||ticket.status}</p>
     {ticket.expiresAt&&<p className="mt-1 text-xs">Validade: {purchaseDate(ticket.expiresAt)} (Brasília)</p>}
     {ticket.code&&<div className="mt-3"><code className="block select-all break-all text-sm">{ticket.code}</code><Button variant="outline" size="sm" className="mt-2" onClick={()=>s.copy(ticket.code)}>Copiar código #{ticket.id}</Button></div>}
    </li>)}</ul>

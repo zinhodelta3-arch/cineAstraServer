@@ -44,7 +44,7 @@ function AccountCart() {
               {items.map((item) => (
 <CartItem key={item.type + item.id + item.details} item={item} decrease={decrease} increase={increase} remove={remove} />
               ))}
-              <CartSnacks session={summary.session} coupon={summary.coupon} enabled={!summary.issue} />
+              <CartSnacks session={summary.session} coupon={summary.coupon} enabled={!summary.issue} ticketItems={items} />
               <div className="pt-3"><Button variant="outline" onClick={goBack}><ArrowLeft className="size-4" /> Voltar</Button></div>
             </section>
 

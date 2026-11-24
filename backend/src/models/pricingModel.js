@@ -43,7 +43,7 @@ export function createPricingModel(database){
             const s=map[category];if(!s)throw new TypeError('Categoria inválida');
             return c.execute(`UPDATE ${s[0]} SET ${s[2]}=? WHERE ${s[1]}=?`,[price,id]);
         },
-        activePromotions:(category,c=database)=>rows(c,"SELECT id_promocao,desconto_bps,publico_geral FROM promocoes_precificacao WHERE categoria=? AND ativo=TRUE AND inicio<=UTC_TIMESTAMP() AND fim>UTC_TIMESTAMP() ORDER BY id_promocao",[category]),
+        activePromotions:(category,c=database)=>rows(c,"SELECT id_promocao,nome,desconto_bps,publico_geral FROM promocoes_precificacao WHERE categoria=? AND ativo=TRUE AND inicio<=UTC_TIMESTAMP() AND fim>UTC_TIMESTAMP() ORDER BY id_promocao",[category]),
         promotion:(id,c=database,lock=false)=>one(c,`SELECT id_promocao,nome,categoria,desconto_bps,publico_geral,inicio,fim,ativo FROM promocoes_precificacao WHERE id_promocao=?${lock?' FOR UPDATE':''}`,[id]),
         promotions:(c=database,q=null)=>rows(c,`SELECT id_promocao,nome,categoria,desconto_bps,publico_geral,inicio,fim,ativo FROM promocoes_precificacao ${q?.cursor?'WHERE id_promocao < ?':''} ORDER BY id_promocao DESC LIMIT ?`,[...(q?.cursor?[q.cursor]:[]),q?q.limit+1:100]),
         async createPromotion(c,d){const [r]=await c.execute('INSERT INTO promocoes_precificacao(nome,categoria,desconto_bps,publico_geral,inicio,fim,ativo) VALUES(?,?,?,?,?,?,?)',[d.nome,d.categoria,d.desconto_bps,d.publico_geral,d.inicio,d.fim,d.ativo]);return idString(r.insertId);},

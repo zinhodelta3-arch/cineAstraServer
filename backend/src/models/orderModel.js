@@ -11,7 +11,10 @@ export function createOrderModel(){return {
         return (await c.execute(`SELECT id_pedido,status,valor_total,data_pedido,proposta_admin IS NOT NULL AS proposta_admin FROM pedidos
             WHERE id_usuario=?${before} ORDER BY id_pedido DESC LIMIT ?`,args))[0];
     },
-    ownStatus:(c,id,userId)=>one(c,'SELECT id_pedido,status,valor_total FROM pedidos WHERE id_pedido=? AND id_usuario=?',[id,userId]),
+    ownStatus:(c,id,userId)=>one(c,`SELECT p.id_pedido,p.status,p.valor_total,
+        JSON_EXTRACT(pc.contrato_snapshot,'$.offer.lines') AS offer_lines
+        FROM pedidos p LEFT JOIN pedido_contratos pc ON pc.id_pedido=p.id_pedido
+        WHERE p.id_pedido=? AND p.id_usuario=?`,[id,userId]),
     ownPurchaseDocument:(c,id,userId)=>one(c,`SELECT p.id_pedido,p.status,p.valor_total,p.data_pedido,
         cp.codigo AS coupon,pp.snapshot,
         pg.status AS payment_status,pg.data_pagamento,intent.provider,pm.tipo AS payment_type
@@ -46,9 +49,12 @@ export function createOrderModel(){return {
         WHERE id_pedido=? AND id_usuario=? AND status='EM_ANDAMENTO' AND proposta_admin IS NOT NULL${lock?' FOR UPDATE':''}`,[id,userId]),
     claimDraft:(c,id,key,hash)=>c.execute('UPDATE pedidos SET checkout_key=?,checkout_hash=?,checkout_expira_em=DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 15 MINUTE) WHERE id_pedido=?',[key,hash,id]),
     operationalRows:async(c,id)=>(await c.execute(`SELECT ip.id_item,ip.id_insumo,ip.id_combo,ip.id_sessao,s.data,s.horario_inicio,s.horario_fim,
+        ip.tipo_ingresso,ip.id_filme,ip.quantidade,ip.subtotal,COALESCE(i.nome,co.nome) AS product_name,
         t.id_ticket,t.status AS ticket_status,
         (SELECT tp.tipo FROM ticket_passagens tp WHERE tp.id_ticket=t.id_ticket ORDER BY tp.id_passagem DESC LIMIT 1) AS ultima_passagem
         FROM itens_pedido ip LEFT JOIN tickets t ON t.id_item=ip.id_item
+        LEFT JOIN insumos i ON i.id_insumo=ip.id_insumo
+        LEFT JOIN combos co ON co.id_combo=ip.id_combo
         LEFT JOIN sessoes s ON s.id_sessao=COALESCE(ip.id_sessao,ip.id_sessao_retirada)
         WHERE ip.id_pedido=? ORDER BY ip.id_item,t.id_ticket`,[id]))[0],
     checkoutByKey:(c,userId,key)=>one(c,'SELECT id_pedido,checkout_hash,status,valor_total,checkout_expira_em FROM pedidos WHERE id_usuario=? AND checkout_key=? FOR UPDATE',[userId,key]),

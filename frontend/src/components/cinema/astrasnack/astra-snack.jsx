@@ -9,11 +9,13 @@ import SnackHeader from "./snack-header";
 import ProductFilters from "./product-filters";
 import ProductCatalog from "./product-catalog";
 import { useAstraSnack } from "@/hooks/cinema/astrasnack/use-astra-snack";
-import HomeContentSection from "@/components/cinema/home/home-content-section";
+import useCinemaCart from "@/hooks/cinema/carrinho/use-cinema-cart";
+import SnackCampaigns from "./snack-campaigns";
 
 export default function AstraSnackPage() {
   const snack = useAstraSnack();
   const {cartOpen,setCartOpen,cartCount}=snack;
+  const cartPreview = useCinemaCart({enabled: cartOpen});
   const canOpenCart = snack.guest || snack.session.user?.role === "CLIENTE";
 
   return (
@@ -21,18 +23,21 @@ export default function AstraSnackPage() {
       <CinemaStyles />
 
       <SnackHeader cartCount={cartCount} showCart={canOpenCart} />
-      <HomeContentSection kind="banners" placement="astrasnack" />
+      <nav aria-label="Seções do AstraSnack" className="mx-auto flex max-w-[1600px] gap-6 px-5 pt-4 text-sm font-semibold md:px-8">
+        <a href="#cardapio" className="py-2 text-primary underline-offset-4 hover:underline">Cardápio</a>
+        <a href="#campanhas" className="py-2 text-primary underline-offset-4 hover:underline">Campanhas</a>
+      </nav>
 
       <section id="cardapio" className="mx-auto max-w-[1600px] scroll-mt-24 bg-background px-5 py-6 md:px-8">
-        <div className="mb-4 grid gap-3 rounded-lg border border-border bg-card px-4 py-3 sm:grid-cols-[minmax(0,24rem)_1fr] sm:items-center sm:gap-6">
-          <label className="text-sm font-semibold">
+        <div className="mb-4 grid gap-y-2 rounded-lg border border-border bg-card px-4 py-3 sm:grid-cols-[minmax(0,24rem)_1fr] sm:items-center sm:gap-x-6">
+          <label htmlFor="snack-cinema" className="text-sm font-semibold">
             Cinema para retirada
-            <select aria-describedby="snack-pickup" value={snack.localId} onChange={event => snack.changeLocation(event.target.value)} className="mt-2 block min-h-11 w-full rounded-md border border-border bg-background px-3">
+          </label>
+            <select id="snack-cinema" aria-describedby="snack-pickup" value={snack.localId} onChange={event => snack.changeLocation(event.target.value)} className="block min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm font-semibold sm:col-start-1 sm:row-start-2">
               {!snack.localId && <option value="">Selecione um cinema</option>}
               {snack.locations.items.map(local => <option key={local.id_local} value={local.id_local}>{local.nome} — {local.cidade}</option>)}
             </select>
-          </label>
-          <p id="snack-pickup" className="flex items-start gap-2 text-sm text-muted-foreground">
+          <p id="snack-pickup" className="flex items-start gap-2 text-sm text-muted-foreground sm:col-start-2 sm:row-start-2">
             <MapPin className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <span>{snack.location ? <>Retire seu pedido no <strong className="text-foreground">{snack.location.nome}</strong>. Preços e estoque são desta unidade.</> : "A retirada é feita no cinema escolhido."}</span>
           </p>
@@ -44,6 +49,7 @@ export default function AstraSnackPage() {
 
         <ProductCatalog snack={snack} />
       </section>
+      <SnackCampaigns ticketPromotionBps={snack.ticketPromotionBps} />
 
       {canOpenCart && <button
         type="button"
@@ -59,7 +65,7 @@ export default function AstraSnackPage() {
         )}
       </button>}
 
-      {canOpenCart && <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />}
+      {canOpenCart && <CartDrawer open={cartOpen} onOpenChange={setCartOpen} preview={cartPreview} />}
 
       <ProductDrawer snack={snack} />
     </main>

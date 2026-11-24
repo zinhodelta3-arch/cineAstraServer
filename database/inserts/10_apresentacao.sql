@@ -41,8 +41,18 @@ WHERE EXISTS (SELECT 1 FROM assentos a WHERE a.id_sala=sa.id_sala AND a.status='
       AND s.horario_fim>'19:30:00');
 
 INSERT INTO sessoes (id_filme,id_sala,data,horario_inicio,horario_fim,idioma,preco_inteira,status,custo_local_dia,custo_exibicao)
-SELECT id_filme,id_sala,dia,inicio,fim,'DUBLADO',32.00,'AGENDADA',80.00,120.00
-FROM apresentacao_programacao;
+WITH custos AS (
+    SELECT pr.*, p.markup_bps,
+           ROUND((ROUND(8000 * MOD(TIME_TO_SEC(pr.fim) DIV 60 - TIME_TO_SEC(pr.inicio) DIV 60 + 1440, 1440)
+               / 1440, 0) + 12000) / LEAST(sa.capacidade, p.ocupacao_referencia), 0) AS custo_centavos
+    FROM apresentacao_programacao pr
+    JOIN salas sa ON sa.id_sala = pr.id_sala
+    JOIN precificacao_parametros p ON p.categoria = 'SESSION'
+)
+SELECT id_filme,id_sala,dia,inicio,fim,'DUBLADO',
+       (custo_centavos + ROUND(custo_centavos * markup_bps / 10000, 0)) / 100,
+       'AGENDADA',80.00,120.00
+FROM custos;
 
 INSERT INTO equipes (id_supervisor,id_sessao,nome,status)
 SELECT anterior.id_supervisor,s.id_sessao,CONCAT('Mostra CineAstra · ',DATE_FORMAT(s.data,'%d/%m')),'ATIVA'

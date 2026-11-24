@@ -9,6 +9,16 @@ import {snackProduct} from '@/lib/api/snack-products.mjs';
 import {cartOrder} from '@/lib/api/cart-order.mjs';
 export function useAstraSnack(){
  const session=useSession(),cart=useCart();
+ const [ticketPromotionBps,setTicketPromotionBps]=useState(0);
+ useEffect(()=>{
+  const abort=new AbortController();
+  const refresh=()=>publicGet('/pricing/promotions/tuesday',{signal:abort.signal})
+   .then(data=>{if(!abort.signal.aborted)setTicketPromotionBps(data.discountBps);})
+   .catch(()=>{if(!abort.signal.aborted)setTicketPromotionBps(0);});
+  refresh();
+  window.addEventListener('focus',refresh);
+  return ()=>{abort.abort();window.removeEventListener('focus',refresh);};
+ },[]);
  const customerId=!session.loading&&session.user?.role==='CLIENTE'?session.user.id:null;
  const guest=!session.loading&&!session.user;
  const quoteAudience=guest?'guest':customerId;
@@ -91,7 +101,7 @@ export function useAstraSnack(){
   }
  };
  const handleAddToCart=()=>{if(!canAdd)return;cart.addItem({...selectedProduct,price:currentQuote.unitPrice,originalPrice:currentQuote.originalPrice,discountSources:currentQuote.discountSources,details:`Cinema: ${location?.nome||selectedProduct.localId}`},quantity);setNotice(`${selectedProduct.name} adicionado ao carrinho. O checkout confirmará preço e estoque.`);close();};
- return {session,localId,location,changeLocation,locations,snacks,combos,category,setCategory,query,setQuery,filteredProducts,selectedProduct,selected,drawerOpen:Boolean(selected),setDrawerOpen:open=>{if(!open)close();},quantity,cartOpen,setCartOpen,cartCount:cart.itemCount,notice,pickupConflict,
+ return {session,ticketPromotionBps,localId,location,changeLocation,locations,snacks,combos,category,setCategory,query,setQuery,filteredProducts,selectedProduct,selected,drawerOpen:Boolean(selected),setDrawerOpen:open=>{if(!open)close();},quantity,cartOpen,setCartOpen,cartCount:cart.itemCount,notice,pickupConflict,
   openProduct:p=>{setDetail(null);setQuote(null);setSelected(p);setQuantity(1);setNotice('');},handleAddToCart,productTotal:Number(currentQuote?.total||0),decreaseQuantity:()=>setQuantity(v=>Math.max(1,v-1)),increaseQuantity:()=>setQuantity(v=>Math.min(100,v+1)),gallery,canAdd,currentQuote,guest,
  loadingDetail:Boolean(selected)&&detail?.key!==detailKey,detailError:detail?.key===detailKey?detail.error:null,retry:()=>setRevision(v=>v+1)};
 }

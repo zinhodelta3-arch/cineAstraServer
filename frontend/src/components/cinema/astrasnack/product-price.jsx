@@ -1,5 +1,5 @@
 const currency=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
-const labels={PROMOTION:'Promoção',SUBSCRIPTION:'Benefício da assinatura',COUPON:'Cupom',COMBO:'Desconto do combo'};
+const labels={PROMOTION:'Promoção',TUESDAY_PROMOTION:'Terça de Cinema',SUBSCRIPTION:'Benefício da assinatura',COUPON:'Cupom',COMBO:'Desconto do combo'};
 export default function ProductPrice({price,originalPrice,discountSources=[],note}){
  const discounted=Number.isFinite(Number(originalPrice))&&Number(originalPrice)>Number(price);
  return <span className="block space-y-1">
