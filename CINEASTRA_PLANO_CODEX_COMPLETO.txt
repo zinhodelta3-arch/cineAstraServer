@@ -1,0 +1,801 @@
+CINEASTRA — PLANO DE CORREÇÕES E IMPLEMENTAÇÕES PARA CODEX CLI
+Versão: 1.0 | Data-base: 12/11/2026 | Idioma obrigatório: português do Brasil
+Escopo: Front-end, Back-end, MySQL, integrações, operações, UX, segurança e testes
+
+===============================================================================
+0. INSTRUÇÃO INICIAL AO CODEX — LEIA ANTES DE QUALQUER AÇÃO
+===============================================================================
+
+Você é um engenheiro de software full-stack sênior trabalhando no projeto CineAstra.
+Seu trabalho é INVESTIGAR, CORRIGIR, IMPLEMENTAR E TESTAR os itens deste arquivo,
+por etapas, sem destruir funcionalidades existentes e sem inventar regras de negócio.
+
+O presente documento é a especificação de tarefas, NÃO é uma prova de como o
+código atual funciona. Antes de alterar arquivos, verifique o comportamento real,
+os componentes e serviços existentes, o esquema MySQL, as rotas, testes e a
+arquitetura do repositório. Pode haver um repositório para Front-end e outro
+para Back-end; identifique ambos. Se você tiver acesso a apenas um, não finja
+que corrigiu o outro: registre a dependência e peça orientação.
+
+OBJETIVO DA PRIMEIRA EXECUÇÃO:
+1. Inspecionar a estrutura do projeto (somente leitura inicialmente).
+2. Identificar repositórios, tecnologias, arquivos e testes pertinentes.
+3. Identificar alterações locais preexistentes sem sobrescrevê-las.
+4. Começar pela ETAPA 0.1 (estabilidade) apenas se o contexto estiver claro.
+5. Se houver dúvida relevante, abrir uma pergunta ANTES de tomar a decisão.
+6. Ao finalizar a etapa, relatar o que mudou, como foi testado e PARAR.
+7. NÃO avançar sozinho para uma nova etapa ou grupo sem meu comando.
+
+RESTRIÇÕES PERMANENTES:
+- NÃO editar arquivos Docker, Dockerfile, docker-compose, .yml ou .yaml.
+- Preservar .env, outros arquivos de ambiente, logins, senhas, tokens e segredos.
+- NÃO exibir, copiar para logs, commitar ou publicar credenciais.
+- NÃO executar git commit, git push, merge, rebase ou ações remotas sem autorização
+  expressa e específica para a operação.
+- NÃO apagar dados reais, truncar tabelas, recriar banco de produção ou executar
+  migrações destrutivas sem minha autorização explícita.
+- NÃO modificar configurações de produção nem chamar APIs externas que gerem
+  cobranças/reembolsos reais sem autorização específica.
+- Preferir migrações aditivas, reversíveis e compatíveis com dados existentes.
+- Respeitar arquitetura do projeto: Next.js App Router/React/Tailwind CSS v4,
+  Express/Node.js/MySQL quando confirmados no repositório; não presumir detalhes.
+- Não instalar dependências, trocar bibliotecas ou mudar arquitetura por impulso.
+- Não sacrificar autorização de acesso, consistência ou performance por aparência.
+- Não usar dados falsos como se fossem reais; fixtures e mocks somente em testes
+  ou quando explicitamente aprovados.
+- Seguir normas aplicáveis de privacidade, direitos do consumidor e segurança,
+  sinalizando pontos que exijam decisão jurídica/comercial.
+
+===============================================================================
+REGRA CRÍTICA — DÚVIDAS, DECISÕES E CAIXA DE PERGUNTAS
+===============================================================================
+
+SEMPRE que existir dúvida material sobre comportamento, regra de negócio,
+autorização, interface, compatibilidade, exclusão de dados, preço, percentuais,
+política de pagamento, fluxo operacional ou interpretação deste documento:
+
+1. PARE ANTES DA PARTE IRREVERSÍVEL OU AMBÍGUA DA IMPLEMENTAÇÃO.
+2. Explique brevemente qual é a situação real encontrada no código.
+3. Faça UMA pergunta clara por decisão; agrupe somente perguntas relacionadas.
+4. Quando a ferramenta interativa request_user_input estiver disponível e for
+   permitida pelo modo/sessão atual, USE-A para mostrar a caixa de perguntas.
+   Apresente alternativas objetivas e a consequência técnica de cada opção.
+5. Se a caixa não estiver disponível ou não puder ser usada, PERGUNTE NA
+   CONVERSA NORMAL DO CODEX E AGUARDE A RESPOSTA. Não afirme que abriu uma
+   caixa quando não abriu.
+6. Para aprovações de execução/permissão, use o fluxo nativo de autorização do
+   Codex; não trate request_user_input como substituto para aprovações.
+7. Não interprete silêncio, respostas vazias ou ausência da ferramenta como
+   autorização para decidir uma regra de negócio sensível.
+8. Registre a decisão em seu relatório da etapa e siga exatamente o acordado.
+
+MODELO DE PERGUNTA (ADAPTAR AO CASO):
+"Encontrei [comportamento/limitação comprovado]. Para [objetivo], devo:
+A) [opção A e efeito]; B) [opção B e efeito]; C) manter como está?
+Minha recomendação é [opção], porque [motivo]. Qual decisão autoriza?"
+
+EXEMPLOS QUE EXIGEM PERGUNTA:
+- A divisão de equipes em subequipes deve existir ou apenas editar equipes?
+- Quais estados e transições são oficialmente permitidos aos veículos?
+- Para pedidos já pagos, adicionar produtos gera aditivo ou novo pedido?
+- Quanto custam planos Individual, Duo e Família? Quais benefícios e limites?
+- A destinação social é financiada pela empresa ou cobrada do cliente?
+- Qual a política de cancelamento/reembolso e quem pode aprovar?
+- Quais provedores de pagamentos, mapas/GPS e chatbot já estão autorizados?
+- O botão de link do streaming deve copiar URL, compartilhar ou navegar?
+
+DÚVIDA TÉCNICA QUE O CÓDIGO/TESTES RESOLVEM: primeiro investigue e documente.
+DÚVIDA DE INTENÇÃO/NEGÓCIO QUE O CÓDIGO NÃO RESOLVE: pergunte e aguarde.
+
+===============================================================================
+MÉTODO DE EXECUÇÃO OBRIGATÓRIO PARA CADA ETAPA
+===============================================================================
+
+A. DIAGNÓSTICO: localizar arquivos, endpoints, models, telas, rotas, esquema,
+   logs e testes; reproduzir o problema ou caracterizar o requisito novo.
+B. PLANO CURTO: explicar a causa provável ou a solução proposta e riscos.
+C. PERGUNTAR: pedir decisão quando houver ambiguidade material.
+D. IMPLEMENTAR: alterar somente o escopo necessário; reaproveitar código.
+E. VALIDAR: rodar lint, testes aplicáveis e verificações de API/UI/banco.
+F. DOCUMENTAR: registrar evidências, arquivos alterados, dúvidas e pendências.
+G. PARAR: solicitar ao usuário instrução antes da etapa seguinte.
+
+STATUS VÁLIDOS: NÃO INICIADA | EM ANÁLISE | BLOQUEADA | IMPLEMENTADA | TESTADA.
+Não marcar como TESTADA sem evidência. Não declarar conclusão do projeto após
+executar apenas uma etapa ou corrigir apenas o Front-end.
+
+CRITÉRIOS TRANSVERSAIS:
+- Validar input, permissões por papel, unidade e titularidade no Back-end.
+- Tratar erros previsivelmente (HTTP apropriado, mensagens sem segredos).
+- Usar transações para operações que afetem vários registros dependentes.
+- Proteger contra duplo envio/concorrência e efeitos duplicados.
+- Paginação: um único controle coerente por tabela, salvo UX justificada.
+- Responsividade, estados de loading/erro/vazio e acessibilidade.
+- Não duplicar componentes, endpoints ou tabelas quando já houver equivalentes.
+- Testar cenários positivos, negativos, concorrência e regressão conforme escopo.
+
+===============================================================================
+MAPA DE GRUPOS E PRIORIDADES
+===============================================================================
+
+G0  Diagnóstico, estabilidade, segurança e requisições HTTP    P0
+G1  Fornecedor, veículos e logística                           P1
+G2  Equipes, solicitações e chamados                           P1
+G3  Operações presenciais e atendimento                        P1
+G4  Salas, sessões e catálogo de filmes                        P1
+G5  Estoques, AstraSnack, imagens de produtos e locais         P1
+G6  Pedidos, pagamentos e reembolsos                           P0/P1
+G7  Planos, assinaturas e métodos de pagamento                 P0/P1
+G8  Streaming                                                  P1/P2
+G9  Experiências, suporte e chatbot                            P1/P2
+G10 Identidade, conta e preferências do cliente                P1/P2
+G11 Institucional e destinação social                          P1/P2
+G12 UI/UX, acessibilidade, testes integrados e documentação    P2/P3
+
+Ordem sugerida: G0 -> G1/G2/G3 -> G4/G5 -> G6/G7 -> G8/G9 -> G10/G11 -> G12.
+G12 deve ser aplicado incrementalmente em cada etapa e revisto ao final.
+Dependências podem exigir mudanças na ordem; JUSTIFIQUE e pergunte antes de mudar.
+
+===============================================================================
+GRUPO 0 — DIAGNÓSTICO, ESTABILIDADE, SEGURANÇA E REQUISIÇÕES
+===============================================================================
+
+ETAPA 0.1 — IDENTIFICAR E CORRIGIR QUEDAS/INDISPONIBILIDADE DO SERVIDOR [P0]
+Problemas relatados:
+- Ao fechar qualquer modal de Estoque do FORNECEDOR, o servidor aparentemente
+  cai temporariamente.
+- Há registro anterior de reinício relacionado a configuração CORS_ORIGINS
+  inválida. Investigar se persiste; não assumir que é a mesma causa.
+Ações:
+1. Reproduzir fechamento de modal e coletar rastros de rede e logs de servidor.
+2. Distinguir erro React, falha de requisição, encerramento do processo,
+   reinício do serviço, exaustão de conexão, CORS e indisponibilidade externa.
+3. Inspecionar efeitos de desmontagem, handlers de fechar, mutations, refetch,
+   WebSocket/event listeners e limpeza de recursos.
+4. Inspecionar leitura/validação da variável CORS_ORIGINS SEM expor segredos ou
+   alterar .env sem autorização.
+5. Corrigir causa raiz e adicionar proteção/tratamento de erro pertinente.
+Validação:
+- Abrir/fechar modais repetidamente sem reinício não planejado.
+- Testar usuário FORNECEDOR com permissões reais em ambiente seguro.
+- Verificar logs, conexões e funcionamento de rotas correlatas.
+
+ETAPA 0.2 — AUDITORIA DE ACESSO E AUTORIZAÇÃO [P0]
+Ações:
+1. Mapear privilégios de ADMIN, SUPERVISOR, COLABORADOR, FORNECEDOR e CLIENTE.
+2. Verificar controle por unidade, equipe, proprietário e titular do recurso.
+3. Testar endpoints com credenciais/perfis diferentes, inclusive acesso negado.
+4. Bloquear alterações sensíveis por manipulação do Front-end ou IDs de terceiros.
+5. Garantir política consistente para consulta, criação, edição e exclusão.
+Validação: testes negativos 401/403/404 conforme política existente; sem
+vazamento de dados entre perfis, unidades ou clientes.
+
+ETAPA 0.3 — TRATAMENTO DE ERROS, AUDITORIA E INTEGRIDADE [P0]
+Ações:
+1. Padronizar validação de entradas e respostas de falha.
+2. Tratar promessas rejeitadas e exceções sem derrubar a aplicação.
+3. Revisar transações em estoque, pedidos, ingressos, pagamento e reservas.
+4. Garantir idempotência onde uma operação repetida não pode duplicar efeitos.
+5. Registrar auditoria de alterações administrativas sensíveis.
+Validação: ausência de efeito parcial em falhas simuladas; sem duplicações.
+
+ETAPA 0.4 — BASE DE TESTES DE REGRESSÃO [P0]
+Ações:
+1. Inventariar testes e comandos disponíveis.
+2. Registrar fluxos críticos que já funcionam.
+3. Criar/ajustar testes focados nas causas de falha encontradas.
+4. Separar testes locais de cenários que dependem de serviços pagos/externos.
+Validação: executar suíte relevante; relatar falhas preexistentes separadamente.
+
+ETAPA 0.5 — AUDITORIA E OTIMIZAÇÃO DAS REQUISIÇÕES HTTP [P0]
+Evidências do painel fornecido pelo usuário (janela temporal desconhecida):
+- /api/users/me  : 1.490 requisições, 147 erros 4xx, 0 erros 5xx (~9,9%).
+- /api/films     :   456 requisições, 229 erros 4xx, 44 erros 5xx (~59,9%).
+- /cinema/home   :   515 requisições, 12 erros 4xx, 24 erros 5xx (~7%).
+- /cinema/filmes :   397 requisições, 2 erros 4xx, 0 erros 5xx (~0,5%).
+- /auth/cadastro      : 394 requisições, 17 erros 4xx, 0 erros 5xx (~4,3%).
+- /cinema/experiencias: 393 requisições, 5 erros 4xx, 0 erros 5xx (~1,3%).
+- /cinema/suporte     : 388 requisições, 5 erros 4xx, 0 erros 5xx (~1,3%).
+- /cinema/astrasnack  : 382 requisições, 4 erros 4xx, 0 erros 5xx (~1,0%).
+- /cinema/planos      : 377 requisições, 4 erros 4xx, 0 erros 5xx (~1,1%).
+- /cinema/localizacoes: 376 requisições, 1 erro 4xx, 0 erros 5xx (~0,3%).
+Números isolados NÃO provam requisições excessivas: levantar período de coleta,
+usuários ativos, origem do tráfego, padrões por sessão e por navegação.
+Ações:
+1. Instrumentar logs/Network para medir chamadas por tela, usuário e sessão.
+2. Investigar loops de useEffect, re-renderizações, providers duplicados,
+   polling, refetch-on-focus, SSR + cliente, retries, múltiplos listeners e
+   invalidações indevidas de cache.
+3. Separar erros 4xx legítimos de falhas evitáveis (ex.: 401 esperado vs.
+   token inválido/fluxo quebrado); investigar cada status e payload.
+4. Diagnosticar 5xx de /api/films e /cinema/home usando logs reais.
+5. Centralizar a obtenção de /api/users/me; compartilhar sessão/estado de auth.
+6. Usar deduplicação, cache com invalidação correta, debounce nas pesquisas,
+   cancelamento de requisições obsoletas e backoff em retries quando adequado.
+7. Evitar mascarar erros com cache infinito ou remover atualizações necessárias.
+8. Verificar origem de tráfego automatizado e proteção contra abuso sem
+   penalizar usuários legítimos.
+Validação:
+- Registrar linha de base (reqs por navegação e erros por status).
+- Comparar antes/depois com o MESMO cenário e janela comparável.
+- Demonstrar redução de requisições REDUNDANTES e correção de erros evitáveis.
+- Garantir que autenticação, atualização do catálogo e dados em tempo real
+  continuem corretos após otimização.
+
+===============================================================================
+GRUPO 1 — FORNECEDOR, VEÍCULOS E LOGÍSTICA
+===============================================================================
+
+ETAPA 1.1 — ESTADO DOS VEÍCULOS PRESO EM "EM USO" [P1]
+Ações:
+1. Reproduzir tentativa de edição e inspecionar fluxo UI -> API -> MySQL.
+2. Verificar enum/constraints, transições, validação, permissões e estado local.
+3. Corrigir atualização persistente e refletir sucesso/erro na interface.
+4. Definir estados/transições oficiais pelo código; se ambíguos, PERGUNTAR.
+5. Impedir concorrência incoerente e registrar histórico.
+Validação: modificar, recarregar e consultar em outra sessão; testes de bloqueio.
+
+ETAPA 1.2 — REGISTRO AUTOMÁTICO E ADMINISTRAÇÃO DE ROTAS [P1]
+Ações:
+1. Identificar eventos que devem gerar uma rota (ex.: entrega/transporte).
+2. Criar rota automaticamente com vínculo à operação, veículo e responsável.
+3. Registrar origem/destino, status, criação, início e finalização.
+4. Evitar rotas duplicadas e preservar histórico operacional.
+5. Permitir gerenciamento e exclusão por ADMIN com regra de auditoria.
+Perguntar: excluir fisicamente ou arquivar? Quais operações geram rotas?
+Validação: rota nasce com operação legítima, não duplica e respeita permissão.
+
+ETAPA 1.3 — GPS E ESTIMATIVA DE TEMPO [P1]
+Ações:
+1. Verificar provedor de mapas/GPS já contratado ou integrado.
+2. Implementar localização e ETA apenas com dados reais autorizados.
+3. Tratar dispositivo sem GPS, permissão negada, sinal indisponível e atraso.
+4. Proteger acesso à posição atual e histórico.
+5. Não fazer rastreamento oculto, constante ou sem finalidade/autorização.
+Perguntar: provedor, precisão desejada, frequência de atualização e retenção.
+Validação: localização/ETA coerentes, indicação de dados indisponíveis e
+controle de acesso por função.
+
+===============================================================================
+GRUPO 2 — EQUIPES, SOLICITAÇÕES E CHAMADOS
+===============================================================================
+
+ETAPA 2.1 — VISUALIZAÇÃO DE EQUIPES E ESPAÇAMENTOS [P1]
+Ações:
+1. Inspecionar UI de Equipes no perfil COLABORADOR.
+2. Corrigir DIVs coladas, sobreposição, padding, margin, grid e responsividade.
+3. Revisar o mesmo componente no perfil SUPERVISOR.
+4. Preservar hierarquia visual e acessibilidade.
+Validação: desktop, tablet, mobile, textos longos e estados vazios.
+
+ETAPA 2.2 — SOLICITAÇÕES COLABORADOR -> SUPERVISOR [P1]
+Ações:
+1. Corrigir abertura/envio de solicitações e identificação do destinatário.
+2. Permitir solicitar ingresso em equipe quando o colaborador estiver sem equipe.
+3. Encaminhar ao supervisor responsável pela equipe solicitada.
+4. Implementar estados e aprovação/rejeição seguras; evitar duplicações.
+5. Notificar/atualizar interface após decisão.
+Validação: criar solicitação, aprovar/rejeitar, negar aprovações por terceiros.
+
+ETAPA 2.3 — EDIÇÃO DE EQUIPES PELO SUPERVISOR [P1]
+Ações:
+1. Investigar por que edição/movimentação de membros funciona incorretamente.
+2. Corrigir regras de vínculo, escopo, pertencimento e movimentações.
+3. Verificar se a estrutura atual suporta subequipes com hierarquia coerente.
+4. NÃO criar subdivisões artificialmente; perguntar antes de modelar subequipes.
+Validação: operações válidas persistem; integrantes não ficam órfãos/duplicados.
+
+ETAPA 2.4 — REGISTRO DE CHAMADOS PELO COLABORADOR [P1]
+Ações:
+1. Reproduzir falha do formulário e examinar endpoint e permissões.
+2. Permitir criação, validação, vinculação de usuário/unidade e confirmação.
+3. Garantir acesso adequado ao histórico e ao status de atendimento.
+Validação: chamado criado aparece na fila adequada; tentativa inválida falha bem.
+
+ETAPA 2.5 — PAGINAÇÃO DUPLICADA DE CHAMADOS [P1]
+Ações:
+1. Localizar controles que renderizam duas paginações na mesma tabela.
+2. Manter um padrão único com filtros/ordenação/página sincronizados.
+3. Testar página vazia, mudanças de filtros e dados atualizados.
+Validação: um conjunto de controles e navegação sem saltos ou inconsistências.
+
+ETAPA 2.6 — ERROS COMPARTILHADOS ENTRE COLABORADOR E SUPERVISOR [P1]
+Ações:
+1. Comparar componentes e fluxos compartilhados.
+2. Corrigir no componente de origem quando seguro.
+3. Preservar diferença de funções e permissões entre papéis.
+Validação: matriz de testes para os dois perfis.
+
+===============================================================================
+GRUPO 3 — OPERAÇÕES PRESENCIAIS E ATENDIMENTO
+===============================================================================
+
+ETAPA 3.1 — REGISTRO DE ENTRADA/SAÍDA DE CLIENTES [P1]
+Ações:
+1. Investigar como ingressos, sessões e check-ins são representados.
+2. Permitir ao COLABORADOR registrar entrada e saída no local correto.
+3. Relacionar evento a cliente/ingresso/sessão/pedido quando aplicável.
+4. Evitar uso duplicado de ingresso e manipulação por outra unidade.
+5. Registrar horário, operador e motivo de correção, quando permitido.
+Validação: entrada, saída, tentativa repetida, ingresso inválido e sessão errada.
+
+ETAPA 3.2 — PEDIDOS FEITOS NA HORA DA SESSÃO [P1]
+Ações:
+1. Permitir ao COLABORADOR criar pedido presencial para cliente.
+2. Aplicar catálogo, preço e estoque da unidade, sem inventar valores.
+3. Integrar reserva de estoque, pagamento e status operacional existentes.
+4. Exibir confirmação e evitar duplo envio.
+Perguntar: pagamento no balcão, no app, ou ambos? Pedido anônimo é aceito?
+Validação: compra presencial válida, indisponibilidade de estoque e falhas.
+
+ETAPA 3.3 — PAINEL DE UNIDADE: ACESSOS + PEDIDOS PENDENTES [P1]
+Ações:
+1. Reunir entradas/saídas, pedidos pendentes e sessões relevantes.
+2. Exibir informações pertinentes para ADMIN, SUPERVISOR e COLABORADOR.
+3. Restringir cada usuário a suas unidades autorizadas.
+4. Permitir filtros e atualização coerente sem requisições em loop.
+Validação: números compatíveis com registros reais, diferentes perfis e unidades.
+
+ETAPA 3.4 — SINCRONIZAÇÃO E CONCORRÊNCIA [P1]
+Ações:
+1. Evitar duplicação de check-ins e processamento do mesmo pedido.
+2. Garantir consistência quando dois operadores agem simultaneamente.
+3. Atualizar o painel por estratégia proporcional (eventos, refetch controlado).
+Validação: testes concorrentes e interrupção de rede.
+
+===============================================================================
+GRUPO 4 — SALAS, SESSÕES E FILMES
+===============================================================================
+
+ETAPA 4.1 — VISUALIZAÇÃO DE SALAS PARA SUPERVISOR E ADMIN [P1]
+Ações:
+1. Apresentar listagem, detalhes, capacidade, ocupação e sessões da sala.
+2. Aprimorar representação visual conforme tipo de local existente.
+3. Respeitar modelos de assentos existentes; não renderizar assentos invertidos.
+4. Integrar dados reais do banco e estados de loading/erro/vazio.
+Validação: dados e ocupação coerentes; bom uso em desktop/mobile.
+
+ETAPA 4.2 — EDIÇÃO DE SALAS [P1]
+Ações:
+1. Permitir edição por ADMIN e SUPERVISOR autorizado.
+2. Validar capacidade, disponibilidade, configuração, assentos e unidade.
+3. Não modificar ou excluir assentos já vendidos sem regra de remanejamento.
+4. Registrar alterações e proteger sessões vinculadas.
+Perguntar quando a alteração afetar vendas já efetuadas.
+Validação: criação/edição compatível com ingressos e sessões existentes.
+
+ETAPA 4.3 — CRUD DE SESSÕES PELO ADMIN [P1]
+Ações:
+1. Permitir criação, edição e exclusão/cancelamento conforme ciclo de vida.
+2. Validar filme, sala, unidade, horário e conflitos de agendamento.
+3. Proteger pedidos/ingressos existentes de exclusão destrutiva.
+4. Aplicar cancelamento lógico ou fluxo apropriado de reembolso/remanejamento.
+Validação: testes de colisão de horário, edição e sessão com ingressos vendidos.
+
+ETAPA 4.4 — DESTAQUE DE SESSÕES DISPONÍVEIS AO CLIENTE [P1]
+Ações:
+1. Mostrar apenas sessões elegíveis para compra nos componentes de compra.
+2. Indicar pouca disponibilidade e sessão prestes a começar.
+3. Definir limiares e ordenação com base nas regras existentes; PERGUNTAR se
+   os critérios comerciais/tempo para destaque não estiverem especificados.
+4. Atualizar disponibilidade de maneira eficiente.
+Validação: sessão lotada/expirada não ofertada como comprável; alertas corretos.
+
+ETAPA 4.5 — MELHORAR CONSULTA E PÁGINA DE FILMES [P2]
+Ações:
+1. Aperfeiçoar layout, informações, datas, locais, seleção de horário e CTA.
+2. Melhorar pesquisa, filtros e navegação entre detalhes e sessões.
+3. Tratar filmes sem sessão ou com sessão futura.
+Validação: jornada completa de seleção de filme até checkout.
+
+ETAPA 4.6 — BANNERS/IMAGENS ALTERNATIVAS POR RESOLUÇÃO [P1]
+Ações:
+1. Inspecionar campos do banco para capa, banner e variantes responsivas.
+2. Adicionar esquema/migração compatível caso necessário, mediante avaliação.
+3. Escolher imagem adequada para card, página, desktop/mobile e outras exibições.
+4. Implementar fallback para capa e otimizar dimensionamento/carregamento.
+Validação: imagens não esticadas, comportamento responsivo e fallback funcional.
+
+===============================================================================
+GRUPO 5 — ESTOQUE, ASTRASNACK E MÍDIA DE PRODUTOS/LOCAIS
+===============================================================================
+
+ETAPA 5.1 — ADMIN EDITAR ESTOQUE DE INSUMOS [P1]
+Ações:
+1. Localizar modelo atual de estoque por unidade e operações permitidas.
+2. Permitir ajuste autorizado de quantidade com justificativa e histórico.
+3. Sincronizar insumos, receitas/combos e reservas se houver dependência.
+4. Usar transação e controles contra saldo negativo ou atualização perdida.
+Validação: ajustes refletem disponibilidade; logs e acesso por unidade corretos.
+
+ETAPA 5.2 — PAGINAÇÃO TRIPLICADA EM ASTRASNACK DO SUPERVISOR [P1]
+Ações:
+1. Localizar por que a paginação aparece três vezes.
+2. Remover controles duplicados sem quebrar tabelas compartilhadas.
+3. Corrigir estado de filtros, página atual, busca e loading.
+Validação: uma navegação coerente e dados corretos em todas as páginas.
+
+ETAPA 5.3 — CATÁLOGO COMPLETO ASTRASNACK NO CHECKOUT [P1]
+Ações:
+1. Permitir acesso ao AstraSnack durante a confirmação da compra.
+2. Apresentar sugestões sem limitar o catálogo completo.
+3. Permitir adicionar itens, recalcular total, disponibilidade e preço.
+4. Distinguir carrinho aberto de pedido já confirmado/pago.
+Perguntar: se a compra principal já estiver concluída, deve nascer novo pedido
+ou existe uma operação aprovada de adição ao pedido original?
+Validação: sugestões opcionais, carrinho consistente e cobrança sem duplicação.
+
+ETAPA 5.4 — IMAGENS DE PRODUTOS E LOCAIS [P1]
+Ações:
+1. Verificar sistema de upload e campos já existentes.
+2. Exibir imagens reais disponíveis; prever placeholders coerentes.
+3. Criar suporte de cadastro apenas se necessário; não inventar imagens de
+   unidades reais nem publicar conteúdo sem autorização.
+4. Otimizar dimensões, peso, lazy loading e acessibilidade.
+Validação: todos os cards/cadastros pertinentes exibem imagem ou fallback.
+
+===============================================================================
+GRUPO 6 — PEDIDOS, PAGAMENTOS E REEMBOLSOS
+===============================================================================
+
+ETAPA 6.1 — SELEÇÃO DE CLIENTES PELO ADMIN [P1]
+Ações:
+1. Corrigir consulta/busca/seleção de clientes em compra e assinatura.
+2. Aplicar limite de acesso, paginação e pesquisa segura.
+3. Vincular apenas a conta selecionada, com confirmação quando sensível.
+Validação: cliente correto selecionado, sem exposição de dados desnecessários.
+
+ETAPA 6.2 — EDITAR/EXCLUIR PEDIDOS COMO ADMIN [P1]
+Ações:
+1. Identificar estados e dependências de ingressos, estoque e cobranças.
+2. Definir operações administrativas seguras por estado.
+3. Preferir cancelamento lógico a apagar compras auditáveis.
+4. Reverter/liberar recursos conforme regra vigente, em transação.
+5. Registrar operador, motivo e histórico.
+Perguntar sobre operações não previstas para pedidos pagos/concluídos.
+Validação: pedidos editados/cancelados sem inconsistência financeira ou estoque.
+
+ETAPA 6.3 — CRIAR/EDITAR/EXCLUIR PAGAMENTOS COMO ADMIN [P0/P1]
+Ações:
+1. Distinguir registro administrativo, tentativa de pagamento e cobrança real.
+2. Usar APIs e eventos do provedor para ações financeiras legítimas.
+3. Impedir marcação arbitrária de cobrança não liquidada como "paga".
+4. Não apagar histórico de pagamentos concluídos; usar estados e auditoria.
+5. Garantir idempotência e reconciliação com retorno do provedor.
+Perguntar sobre provedor, políticas e escopo permitido ao ADMIN.
+Validação: sem lançamento/charge duplicado; históricos reconciliáveis.
+
+ETAPA 6.4 — CRIAR/GERENCIAR/EXCLUIR REEMBOLSOS COMO ADMIN [P0/P1]
+Ações:
+1. Criar e consultar solicitações de reembolso vinculadas a transações reais.
+2. Implementar estados, aprovação e integração ao provedor autorizado.
+3. Bloquear reembolso repetido ou acima do valor elegível.
+4. Preservar trilha contábil; cancelar/arquivar pedido de reembolso quando
+   permitido, sem apagar transação executada.
+Perguntar se há regras de parcialidade, prazo e autorização.
+Validação: pedido, aprovação, recusa, falha e duplicação.
+
+ETAPA 6.5 — SOLICITAÇÃO DE REEMBOLSO PELO CLIENTE [P1]
+Ações:
+1. Criar acesso pelo histórico/detalhes do pedido, sem destaque excessivo.
+2. Apresentar regras, prazo, motivo e estado de acompanhamento.
+3. Não criar barreiras indevidas a direitos legais do consumidor.
+4. Conectar ao fluxo do ADMIN/SUPORTE com titularidade verificada.
+Validação: pedido elegível, inelegível e acompanhamento sem vazamentos.
+
+ETAPA 6.6 — NÃO MOSTRAR ID TÉCNICO EM "MINHAS COMPRAS" [P2]
+Ações:
+1. Retirar identificador interno da visualização principal.
+2. Se necessário, exibir referência amigável e útil ao atendimento.
+3. Manter IDs internos nas operações seguras de Back-end.
+Validação: cliente entende qual compra é qual sem exposição do ID técnico.
+
+===============================================================================
+GRUPO 7 — PLANOS, ASSINATURAS E MÉTODOS DE PAGAMENTO
+===============================================================================
+
+ETAPA 7.1 — MODELAGEM DE MODALIDADES E PERIODICIDADE [P0/P1]
+Ações:
+1. Inspecionar esquema atual de planos, benefícios, membros e assinaturas.
+2. Permitir escolhas comerciais válidas de mensal/anual + individual/duo/família.
+3. Modelar limites de usuários/dependentes e regras de vinculação.
+4. Compatibilizar preços e benefícios SEM INVENTAR VALORES.
+5. Preservar assinaturas legadas durante migração.
+Perguntar: preços, limite de usuários, elegibilidade, troca de planos e descontos.
+Validação: combinações permitidas corretas; limites aplicados no servidor.
+
+ETAPA 7.2 — FLUXO FINANCEIRO COMPLETO DE ASSINATURA [P0/P1]
+Ações:
+1. Selecionar plano, modalidade e período; calcular cobrança correta.
+2. Criar pagamento usando provedor existente/autorizado.
+3. Processar webhook/eventos de forma idempotente e autenticada.
+4. Ativar assinatura SOMENTE após confirmação válida.
+5. Implementar renovação, falha, expiração e cancelamento conforme negócio.
+6. Tratar recuperação de cobrança sem duplicação.
+Validação: jornadas de sucesso, pendência, falha, cancelamento e renovação.
+
+ETAPA 7.3 — STATUS DE PAGAMENTO CLARO AO CLIENTE [P1]
+Ações:
+1. Substituir feedback genérico "Aguardando Pagamento" por estados reais.
+2. Exibir pendente, processando, confirmado, recusado ou expirado conforme API.
+3. Atualizar com eventos/refetch controlado e orientar próxima ação.
+4. Não declarar sucesso só porque o usuário retornou da página de pagamento.
+Validação: UI corresponde ao estado confirmado no servidor/provedor.
+
+ETAPA 7.4 — REUTILIZAÇÃO DE MÉTODOS DE PAGAMENTO SALVOS [P1]
+Ações:
+1. Verificar armazenamento/tokenização e integração ao provedor.
+2. Permitir selecionar método existente, cadastrar e excluir quando suportado.
+3. Nunca armazenar CVV nem dados brutos desnecessários de cartão.
+4. Garantir titularidade e autorização para reutilização.
+Validação: métodos aparecem apenas para dono; pagamento sem redigitar dados.
+
+ETAPA 7.5 — MOSTRAR PLANO ATUAL CONSTANTEMENTE [P2]
+Ações:
+1. Destacar plano atual e estado em menus/páginas pertinentes.
+2. Usar indicador simples, consistente e acessível (sem poluição visual).
+3. Vincular a gerenciar assinatura e benefícios.
+Validação: plano exibido corresponde ao ativo; usuário sem plano tem fallback.
+
+ETAPA 7.6 — ALTERAÇÃO DE PLANO, LIMITES E CICLO DE VIDA [P1]
+Ações:
+1. Aplicar regras de mudança mensal/anual e individual/duo/família.
+2. Aplicar limites e eventuais rateios somente com regra aprovada.
+3. Definir acesso de membros após cancelamento ou falha de cobrança.
+4. Testar assinaturas existentes e concorrência entre pagamentos/atualizações.
+Perguntar sobre prorrata, grace period, limites e transferência de membros.
+Validação: nenhum acesso indevido e cobrança coerente em toda transição.
+
+===============================================================================
+GRUPO 8 — STREAMING
+===============================================================================
+
+ETAPA 8.1 — BUSCA DE FILMES, FILTROS E ANIMAÇÃO [P2]
+Ações:
+1. Aperfeiçoar pesquisa com sugestões e filtros suportados pelo catálogo.
+2. Adicionar feedback de carregamento, vazio, erro e teclado.
+3. Refinar animação de abrir/focar barra de busca sem prejudicar acessibilidade.
+4. Usar debounce e evitar requisições repetidas.
+Validação: buscas, filtro combinado, navegação por teclado e performance.
+
+ETAPA 8.2 — PÁGINA DE DETALHES ANTES DA REPRODUÇÃO [P1]
+Ações:
+1. Ao clicar no título/card, abrir página do filme no Streaming.
+2. Exibir sinopse, classificação, elenco/metadados disponíveis e ações.
+3. Iniciar reprodução somente em ação explícita de assistir.
+4. Respeitar disponibilidade e acesso segundo assinatura.
+Validação: fluxo catálogo -> detalhes -> player sem reprodução automática indevida.
+
+ETAPA 8.3 — MINIPLAYER VS PICTURE-IN-PICTURE [P2]
+Ações:
+1. Verificar funcionalidades atuais e redundância.
+2. Caso mantenha miniplayer, fazê-lo persistir em rotas internas apropriadas.
+3. Diferenciar miniplayer do site do PiP nativo do navegador.
+4. Se inviável/inadequado, perguntar se a remoção do miniplayer é desejada.
+Validação: sem duplicação/confusão de controles nem reprodução invisível.
+
+ETAPA 8.4 — BOTÃO "LINK" DO STREAMING [P2]
+Ações:
+1. Identificar finalidade pretendida e código existente.
+2. Se a finalidade não estiver definida, perguntar: copiar, compartilhar
+   ou abrir link? Não escolher no escuro.
+3. Implementar ação, feedback de sucesso e de erro.
+Validação: botão exerce a função acordada.
+
+ETAPA 8.5 — DOIS MODOS DE TELA CHEIA [P1]
+Ações:
+1. Player fullscreen: expandir vídeo sem molduras/bordas decorativas.
+2. Experiência/site fullscreen: expandir a área apropriada da aplicação.
+3. Tratar ESC, controles, mudança de orientação e navegadores compatíveis.
+4. Respeitar restrições da Fullscreen API e suas permissões.
+Validação: entrada/saída de cada modo, desktop/mobile, sem interface quebrada.
+
+ETAPA 8.6 — NAVEGAÇÃO SUAVE STREAMING/CINEMA [P2]
+Ações:
+1. Corrigir link de suporte no Header do Streaming que leva ao Cinema.
+2. Manter o contexto ao acessar suporte/perfil, quando apropriado.
+3. Tornar transições consistentes com rotas e layout existentes.
+Validação: links em ambos os ambientes e histórico de navegação corretos.
+
+ETAPA 8.7 — PERFIL DO STREAMING COMO PRIORIDADE [P2]
+Ações:
+1. Quando usuário está no Streaming, abrir primeiro o perfil de Streaming.
+2. Preservar acesso ao perfil geral e dados compartilhados.
+Validação: menus/URLs conduzem ao perfil adequado em cada ambiente.
+
+===============================================================================
+GRUPO 9 — EXPERIÊNCIAS, SUPORTE E CHATBOT
+===============================================================================
+
+ETAPA 9.1 — DESTACAR EXPERIÊNCIAS DE SUPORTE [P2]
+Ações:
+1. Criar área/canal próprio ou separação clara de Experiências.
+2. Corrigir rótulos, caminhos e arquitetura da informação.
+3. Evitar que o serviço pareça apenas um pedido de suporte.
+Perguntar se a separação deve ocorrer em rota própria ou módulo interno.
+Validação: navegação clara e função reconhecível.
+
+ETAPA 9.2 — SOLICITAÇÃO E ACOMPANHAMENTO DE EXPERIÊNCIAS [P1]
+Ações:
+1. Permitir registrar mais informações (tipo, data, pessoas, preferências etc.,
+   apenas as informações realmente necessárias).
+2. Criar protocolo, status e histórico consultável pelo cliente.
+3. Permitir contato com a equipe responsável com acesso controlado.
+4. Evitar coleta excessiva de dados pessoais.
+Perguntar se houver tipos de Experiências e formulários não definidos.
+Validação: criar, consultar, atualizar status e comunicação sem perda de dados.
+
+ETAPA 9.3 — SUPERVISOR ADMINISTRAR EXPERIÊNCIAS [P1]
+Ações:
+1. Tratar Experiência como operação vinculável a unidade/local quando cabível.
+2. Permitir atribuição, acompanhamento e gerenciamento pelo supervisor correto.
+3. Restringir informações por unidade e responsabilidade.
+Validação: supervisor legítimo gerencia; outro perfil/unidade não acessa.
+
+ETAPA 9.4 — SEÇÃO DE EXPERIÊNCIAS NA HOME [P2]
+Ações:
+1. Corrigir blocos clicáveis inertes e links errados.
+2. Apresentar cards, detalhes e disponibilidade reais quando existente.
+3. Aplicar estados responsivos e animações coerentes.
+Validação: cliques levam ao destino correto e informações são reais.
+
+ETAPA 9.5 — INTEGRAÇÃO FUNCIONAL DO CHATBOT [P1]
+Ações:
+1. Verificar o serviço/modelo e a integração já previstos no projeto.
+2. Implementar comunicação segura e tratamento de indisponibilidade.
+3. Criar respostas específicas por perfil, evitando divulgar dados de outros.
+4. Basear orientações em documentação/funcionalidades reais, com fallback
+   para atendimento humano quando não houver conhecimento confiável.
+5. Não inserir segredos/PII de outros usuários em prompts ou logs.
+Perguntar sobre provedor, limites de custo, fontes autorizadas e retenção.
+Validação: casos por CLIENTE, FORNECEDOR, COLABORADOR, SUPERVISOR e ADMIN.
+
+===============================================================================
+GRUPO 10 — CONTA, IDENTIDADE E PREFERÊNCIAS DO CLIENTE
+===============================================================================
+
+ETAPA 10.1 — CLIENTE EXCLUIR A PRÓPRIA CONTA [P1]
+Ações:
+1. Adicionar fluxo autenticado de solicitação e confirmação.
+2. Verificar assinaturas, pedidos e obrigações de retenção aplicáveis.
+3. Excluir ou anonimizar informações elegíveis; preservar registros legais.
+4. Revogar sessões/tokens e impedir acesso após conclusão.
+Perguntar sobre política de retenção e pendências comerciais, se indefinidas.
+Validação: somente titular pode solicitar; dados protegidos corretamente.
+
+ETAPA 10.2 — AVATARES TEMÁTICOS CINEASTRA [P2]
+Ações:
+1. Preservar identidade visual do placeholder atual.
+2. Produzir biblioteca coerente de variações originais, como avatares de
+   serviço de streaming, sem copiar personagens de terceiros.
+3. Permitir escolha e persistência da foto de perfil.
+4. Usar imagens otimizadas e fallback.
+Perguntar quando for necessária escolha de estilo, quantidade ou aprovação
+visual antes de produzir uma biblioteca definitiva.
+Validação: avatar selecionado persiste e aparece nos locais adequados.
+
+ETAPA 10.3 — SALVAR PREFERÊNCIAS DO CLIENTE [P2]
+Ações:
+1. Levantar preferências existentes: tema, acessibilidade, busca, interface etc.
+2. Salvar configurações permitidas na conta, recuperando após login.
+3. Distinguir preferências globais, cinema e streaming.
+4. Evitar sobrescrever preferências entre dispositivos sem política consistente.
+Validação: reiniciar sessão/dispositivo e recuperar preferências corretamente.
+
+===============================================================================
+GRUPO 11 — INSTITUCIONAL E DESTINAÇÃO SOCIAL
+===============================================================================
+
+ETAPA 11.1 — FOOTER FUNCIONAL [P1]
+Ações:
+1. Inventariar cada link do rodapé em Cinema e Streaming.
+2. Corrigir rotas inválidas, links que levam à página errada ou duplicações.
+3. Fazer links externos e internos se comportarem corretamente.
+4. Garantir foco, mobile e semântica de navegação.
+Validação: cada item do rodapé abre o destino prometido.
+
+ETAPA 11.2 — PÁGINAS SOBRE NÓS, PARCERIAS E DESTINAÇÕES [P2]
+Ações:
+1. Verificar páginas existentes e criar somente as que faltam.
+2. Organizar rotas, conteúdo institucional e CTA, sem inventar parceiros.
+3. Integrar navegação do Header/Footer e responsividade.
+Perguntar sobre texto/conteúdo oficial ausente antes de publicá-lo.
+Validação: rotas acessíveis, URLs corretas e dados institucionais verídicos.
+
+ETAPA 11.3 — PROGRAMA MENSAL DE DESTINAÇÃO SOCIAL [P1]
+Ações:
+1. Modelar iniciativas, período, status, beneficiário e regra financeira.
+2. Permitir pelo menos uma iniciativa ativa por mês (regra de negócio).
+3. Definir tratamento quando não houver iniciativa válida cadastrada.
+4. Associar valores auditáveis às compras elegíveis.
+Perguntar: percentuais/valores, iniciativa simultânea, fonte financeira,
+retroatividade, ajustes e publicação das comprovações.
+Validação: nenhuma compra gera destinação falsa ou duplicada.
+
+ETAPA 11.4 — INTEGRAR CONTRIBUIÇÃO SOCIAL AO CHECKOUT [P1]
+Ações:
+1. Calcular destinação pela regra comercial formalizada.
+2. Garantir transparência: se é parcela financiada pela empresa ou acréscimo
+   pago pelo cliente, explicar no checkout e total.
+3. Persistir referência da iniciativa e valores no pedido/transação.
+4. Não apresentar contribuição como imposto/taxa legal sem base específica.
+Validação: valor em pedido, pagamento, estorno e relatório consistente.
+
+ETAPA 11.5 — INDICADOR VERDE DE IMPACTO SOCIAL [P2]
+Ações:
+1. Exibir indicação verde positiva, com contraste e texto acessível.
+2. Informar a iniciativa do mês e efeito verificável da compra.
+3. Evitar afirmações genéricas ou enganosas sobre destino do dinheiro.
+4. Tratar a ausência de iniciativa com mensagem honesta, sem simular impacto.
+Validação: aparência responsiva, informação correta e acessível.
+
+===============================================================================
+GRUPO 12 — REFINAMENTO, ACESSIBILIDADE E QUALIDADE FINAL
+===============================================================================
+
+ETAPA 12.1 — PADRONIZAR UI E COMPONENTES [P2]
+Ações:
+1. Revisar tabelas, modais, inputs, botões, estados e layout entre perfis.
+2. Remover paginações duplicadas e inconsistências de DIVs/espacamentos.
+3. Reaproveitar componentes e tokens CSS/Tailwind existentes.
+4. Preservar identidade do CineAstra, evitando redesenho genérico.
+Validação: testes visuais e navegação em todas as áreas alteradas.
+
+ETAPA 12.2 — RESPONSIVIDADE E ACESSIBILIDADE [P2]
+Ações:
+1. Verificar desktops, tablets, smartphones e larguras intermediárias.
+2. Garantir teclado, foco, rótulos, contraste, feedback e áreas de toque.
+3. Tratar motion reduction, loading, erro, vazio e permissões insuficientes.
+Validação: navegação utilizável sem mouse e sem sobreposições críticas.
+
+ETAPA 12.3 — TESTES INTEGRADOS/REGRESSÃO [P1]
+Ações:
+1. Executar jornadas fim a fim por perfil e por unidade.
+2. Conferir autenticação, catálogo, salas, sessões, check-in, pedidos,
+   estoque, cobrança, assinatura, reembolso e suporte.
+3. Testar fluxos negativos e concorrência, evitando operações financeiras reais.
+4. Reavaliar métricas de requisição, uso de recursos e estabilidade.
+Validação: relatar resultado de cada suíte e limitações do ambiente.
+
+ETAPA 12.4 — DOCUMENTAR ENTREGA E PENDÊNCIAS [P2]
+Ações:
+1. Registrar arquivos modificados, endpoints, migrações e regras adotadas.
+2. Incluir evidências de testes e comparativos de performance quando houver.
+3. Listar decisões do usuário, dúvidas pendentes e riscos remanescentes.
+4. Não marcar funcionalidade como concluída sem validação.
+
+===============================================================================
+DEPENDÊNCIAS, RISCOS E REGRAS ESPECÍFICAS IMPORTANTES
+===============================================================================
+
+- G0.1 e G0.5 precisam acontecer antes de adicionar novas requisições massivas.
+- G6 deve estruturar corretamente pagamentos antes do fluxo completo de G7.
+- G4 e G5 influenciam diretamente G3 (check-ins, sessões e pedidos presenciais).
+- G5.3 depende das regras de estado dos pedidos em G6.
+- G11.3/G11.4 dependem de decisão comercial e integração com G6/G7.
+- Não há autorização implícita para decidir preços, descontos, benefício de plano,
+  cobrança de destinação social, retenção de dados ou política de reembolso.
+- Não apagar registros financeiros executados; preservar auditoria exigida.
+- Não considerar todo 4xx como bug: determinar se é resultado legítimo antes.
+- Não atribuir a alta contagem de requisições a um loop sem medir o cenário.
+- Não inventar screenshot, teste executado, conectividade ou resultado de API.
+
+===============================================================================
+FORMATO DO RELATÓRIO OBRIGATÓRIO AO TERMINAR CADA ETAPA
+===============================================================================
+
+ETAPA: [ex.: 0.1 — Estabilidade do servidor]
+STATUS: [TESTADA / IMPLEMENTADA / BLOQUEADA]
+DIAGNÓSTICO: [causa comprovada ou hipótese ainda não confirmada]
+ALTERAÇÕES: [arquivos, funções, endpoints, migrações]
+REGRAS DE NEGÓCIO: [decisões aprovadas pelo usuário; nenhuma se não houve]
+TESTES: [comandos, cenários, resultado; dizer quando não executados]
+SEGURANÇA E COMPATIBILIDADE: [efeitos e verificações]
+PENDÊNCIAS: [riscos e perguntas abertas]
+PRÓXIMO PASSO SUGERIDO: [etapa, sem executá-la automaticamente]
+
+Pare após emitir esse relatório e aguarde o usuário autorizar a próxima etapa.
+Se surgir dúvida relevante no meio da etapa, peça esclarecimento imediatamente
+pelo método interativo disponível e pause apenas a parte ambígua.
+
+FIM DO PLANO.

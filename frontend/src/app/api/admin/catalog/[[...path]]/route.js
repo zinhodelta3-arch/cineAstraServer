@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { authErrorPayload, AuthError, backendAuth, currentUser, SESSION_COOKIE } from "@/lib/auth/server";
-import { resolveApiBase } from "@/lib/api/api-base.mjs";
+import { authErrorPayload, AuthError, backendAuth, currentUser, resolveServerApiBase, SESSION_COOKIE } from "@/lib/auth/server";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
 
 const json = (body, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -45,7 +44,7 @@ async function uploadImage(request, token) {
   }
   const body = new FormData();
   body.set("image", file, file.name);
-  const base = resolveApiBase(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL);
+  const base = resolveServerApiBase();
   let response;
   try {
     response = await fetch(`${base}/admin/uploads/images`, { method: "POST", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30000), headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, body });

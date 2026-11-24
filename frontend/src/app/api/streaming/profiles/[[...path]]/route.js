@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { authErrorPayload, AuthError, backendAuth, SESSION_COOKIE } from "@/lib/auth/server";
+import { authErrorPayload, AuthError, backendAuth, resolveServerApiBase, SESSION_COOKIE } from "@/lib/auth/server";
 import { isAllowedAuthOrigin } from "@/lib/auth/request-origin.mjs";
-import { resolveApiBase } from "@/lib/api/api-base.mjs";
 
 const json = (body, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
 const validId = (value) => typeof value === "string" && /^[1-9]\d{0,9}$/.test(value) && BigInt(value) <= 4294967295n;
@@ -20,7 +19,7 @@ function targetFor(method, parts, search) {
 }
 
 async function photoRequest(request, target, token) {
-  const base = resolveApiBase(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL);
+  const base = resolveServerApiBase();
   let response;
   try {
     response = await fetch(`${base}${target}`, { method: request.method, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30000), headers: { Authorization: `Bearer ${token}`, Accept: request.method === "GET" ? "image/webp" : "application/json" } });

@@ -1,0 +1,129 @@
+CineAstra · Contas de acesso
+As contas abaixo correspondem exclusivamente aos usuários de 01_inserts.sql.
+As contas passam a existir após a importação do arquivo SQL.
+
+================================================================
+ADMINISTRADORES
+================================================================
+Nome: Ana Martins
+E-mail: ana.martins@cineastra.com.br
+Senha: Ca!a_sA9lyj0G1KoCOH73Cu7a
+CPF: 73145200119
+
+Nome: Rafael Duarte
+E-mail: rafael.duarte@cineastra.com.br
+Senha: Ca!siZCNoML2jc_bxEGZSKO7a
+CPF: 73145200208
+
+================================================================
+SUPERVISORES
+================================================================
+Nome: Mariana Lopes
+E-mail: mariana.lopes@cineastra.com.br
+Senha: Ca!_aHW9EqdNR_A8MSCTCgA7a
+CPF: 73145200380
+Acesso: Unidade: Paulista.
+
+Nome: Gustavo Ribeiro
+E-mail: gustavo.ribeiro@cineastra.com.br
+Senha: Ca!MH_w9fdOvX2hl1MLc2tq7a
+CPF: 73145200461
+Acesso: Unidade: Shopping ABC.
+
+Nome: Renata Carvalho
+E-mail: renata.carvalho@cineastra.com.br
+Senha: Ca!PaVMrCSp-KkmeKaTxS9K7a
+CPF: 73145201948
+Acesso: Unidade: Campinas.
+
+================================================================
+COLABORADORES
+================================================================
+Nome: Clara Nunes
+E-mail: clara.nunes@cineastra.com.br
+Senha: Ca!-iplRhD-PkmF_A0v3Dvy7a
+CPF: 73145200542
+Acesso: Equipe Paulista.
+
+Nome: Felipe Rocha
+E-mail: felipe.rocha@cineastra.com.br
+Senha: Ca!aDe1uQbsq_d3urB_qnj77a
+CPF: 73145200623
+Acesso: Equipe Paulista; convite pendente para Campinas.
+
+Nome: Beatriz Torres
+E-mail: beatriz.torres@cineastra.com.br
+Senha: Ca!iUnK8IQ49D3N-I9S6Lzq7a
+CPF: 73145200704
+Acesso: Equipe Shopping ABC.
+
+Nome: Lucas Moreira
+E-mail: lucas.moreira@cineastra.com.br
+Senha: Ca!mjl-vgufkj6x0ueeI28O7a
+CPF: 73145200895
+Acesso: Equipe Shopping ABC.
+
+================================================================
+FORNECEDORES
+================================================================
+Nome: Carla Mendes
+E-mail: carla.mendes@cineastra.com.br
+Senha: Ca!XDxKnd_GlOvXZMXTc6Rg7a
+CPF: 73145200976
+Acesso: Aurora Alimentos e Bebidas Ltda.
+
+Nome: Henrique Azevedo
+E-mail: henrique.azevedo@cineastra.com.br
+Senha: Ca!QhtQATvk2Xs_7Iyve7Hj7a
+CPF: 73145201000
+Acesso: Horizonte Equipamentos Audiovisuais Ltda.
+
+================================================================
+CLIENTES
+================================================================
+Nome: Sofia Almeida
+E-mail: sofia.almeida@cineastra.com.br
+Senha: Ca!0THRDCskOjeHSnN8y-Yq7a
+CPF: 73145201190
+Acesso: Plano Plus; perfil Sofia.
+
+Nome: Daniel Costa
+E-mail: daniel.costa@cineastra.com.br
+Senha: Ca!IIKcd43q3JFu_VdThfqA7a
+CPF: 73145201271
+Acesso: Plano Família; participante Alice.
+
+Nome: Laura Pereira
+E-mail: laura.pereira@cineastra.com.br
+Senha: Ca!AQy52T2VuqO0SQT8dW5D7a
+CPF: 73145201352
+Acesso: Plano Básico.
+
+Nome: Bruno Santos
+E-mail: bruno.santos@cineastra.com.br
+Senha: Ca!1EYirpp2ZIgmokXNnS4V7a
+CPF: 73145201433
+Acesso: Plano Plus; perfil Bruno.
+
+Nome: Alice Barbosa
+E-mail: alice.barbosa@cineastra.com.br
+Senha: Ca!qzHo9Nt2cotgswCUWMvc7a
+CPF: 73145201514
+Acesso: Participante do plano Família de Daniel.
+
+Nome: Miguel Fernandes
+E-mail: miguel.fernandes@cineastra.com.br
+Senha: Ca!Ytx7-1GhDl4Dp5553PSr7a
+CPF: 73145201603
+Acesso: Menor vinculado à responsável Sofia; compras e assinaturas bloqueadas.
+
+Nome: Helena Oliveira
+E-mail: helena.oliveira@cineastra.com.br
+Senha: Ca!8j9ZlZ7wVK3CtlhR9rnU7a
+CPF: 73145201786
+Acesso: Compra individual de Batman: O Cavaleiro das Trevas.
+
+Nome: Pedro Carvalho
+E-mail: pedro.carvalho@cineastra.com.br
+Senha: Ca!vof_SICDeXVsJVeCW8Lx7a
+CPF: 73145201867

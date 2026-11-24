@@ -108,6 +108,32 @@
 .layoutFields { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(165px,100%),1fr)); gap: .75rem; }
 .layoutFields label, .specialField { display: grid; gap: .3rem; font-size: .875rem; }
 .layoutFields :is(input,select), .specialField select { width: 100%; min-height: 2.5rem; border: 1px solid var(--input); border-radius: .4rem; background: var(--background); padding: .35rem .6rem; }
+.builderShell { display: grid; gap: .9rem; min-width: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--card); padding: .95rem; }
+.builderTopbar { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: .75rem; padding-bottom: .75rem; border-bottom: 1px dashed var(--border); }
+.builderTopbarGroup { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem; }
+.builderField { display: grid; gap: .28rem; font-size: .78rem; font-weight: 600; color: var(--foreground); min-width: 0; }
+.builderField :is(input, select) { width: 100%; min-width: 0; min-height: 36px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--background); color: var(--foreground); padding: .3rem .55rem; font-size: .82rem; font-weight: 500; }
+.builderWorkspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(270px, 340px); gap: .9rem; align-items: start; min-width: 0; }
+.builderViewport { display: grid; gap: .65rem; min-width: 0; }
+.builderCanvas { display: block; width: 100%; height: clamp(300px, 46vh, 480px); border: 1px solid var(--border); border-radius: var(--radius); background: var(--background); touch-action: none; cursor: grab; }
+.builderCanvas:active { cursor: grabbing; }
+.builderStatusBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding-top: .55rem; border-top: 1px dashed var(--border); font-size: .78rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.builderInspector { display: grid; gap: .75rem; min-width: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--background); padding: .8rem; max-height: 560px; overflow-y: auto; }
+.builderSection { display: grid; gap: .55rem; padding-bottom: .7rem; border-bottom: 1px dashed var(--border); }
+.builderSection:last-child { padding-bottom: 0; border-bottom: 0; }
+.builderSection h4 { margin: 0; font-size: .8rem; font-weight: 700; color: var(--foreground); }
+.builderTriple { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; }
+.builderSwatches { display: flex; flex-wrap: wrap; align-items: center; gap: .38rem; }
+.builderSwatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: transform .12s ease-out, border-color .12s ease-out; }
+.builderSwatch[aria-pressed="true"] { border-color: var(--primary); transform: scale(1.12); }
+.builderActionRow { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; }
+.builderFileLabel { position: relative; display: inline-flex; align-items: center; gap: .4rem; min-height: 36px; padding: .35rem .7rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--background); color: var(--foreground); font-size: .8rem; font-weight: 600; cursor: pointer; }
+.builderFileLabel:hover { background: var(--muted); }
+.builderFileLabel input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+@media (max-width: 960px) {
+  .builderWorkspace { grid-template-columns: 1fr; }
+  .builderInspector { max-height: none; }
+}
 .types { margin-top: 28px; }
 .typeList { display: grid; grid-template-columns: 1fr 1fr; margin-top: 18px; border-block: 1px solid var(--border); }
 .typeList > div { display: flex; align-items: center; gap: 18px; padding: 22px 20px 22px 0; }

@@ -1,78 +1,398 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Armchair, Archive, Pencil, Plus, RotateCcw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { unitOperation, useUnitAction, useUnitContext, useUnitList } from '@/hooks/unit/use-unit-data';
+import { publicGet } from '@/lib/api/public-api.mjs';
 import UnitLayout, { UnitFeedback, UnitListState, UnitMore, label } from './unit-layout';
 import styles from './unit.module.css';
 import RoomSchedule from './room-schedule';
+import UnitRoomCreateForm from './unit-room-create-form';
 import RoomSeatWorkspace from '@/components/cinema/assentos/room-seat-workspace';
 
 const roomTypes = ['2D', '3D', '4DX', 'VIP', 'IMAX'];
 const seatTypes = ['COMUM', 'PCD', 'OBESO', 'IDOSO', 'CASAL'];
 const roomScheduleRequest = (path, options) => unitOperation(`/${path}`, options);
 
-export default function UnitRooms({canManage=false}) {
+export default function UnitRooms({ canManage = false }) {
   const context = useUnitContext();
   const localId = context.locations[0]?.id_local;
+  const [spaceType, setSpaceType] = useState('CINEMA');
   const [room, setRoom] = useState(null);
   const [dialog, setDialog] = useState(null);
-  const [layoutRevision,setLayoutRevision]=useState(0);
+  const [layoutRevision, setLayoutRevision] = useState(0);
   const [status, setStatus] = useState('');
+  const [createNotice, setCreateNotice] = useState('');
   const base = localId ? `/locations/${localId}/rooms` : null;
   const rooms = useUnitList(base ? `${base}?limit=20${status ? `&status=${status}` : ''}` : null, unitOperation);
-  const reloadLayout=()=>setLayoutRevision(value=>value+1);
+  const reloadLayout = () => setLayoutRevision(value => value + 1);
   const roomAction = useUnitAction(rooms.reload, unitOperation);
   const seatAction = useUnitAction(reloadLayout, unitOperation);
   const selected = rooms.items.find(value => value.id_sala === room?.id_sala) ?? room;
   const item = dialog?.item;
+  const isCreatingRoom = dialog?.type === 'roomForm' && !item;
+
+  useEffect(() => {
+    if (!localId) return;
+    const abort = new AbortController();
+    publicGet(`/locations/${localId}`, { signal: abort.signal })
+      .then(place => {
+        if (!abort.signal.aborted && place?.tipo_local) setSpaceType(place.tipo_local);
+      })
+      .catch(() => {});
+    return () => abort.abort();
+  }, [localId]);
 
   async function saveRoom(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const capacity = Number(form.get('capacidade'));
-    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 2147483647) return roomAction.setError('Capacidade inválida.');
-    const body = { nome: String(form.get('nome')).trim(), capacidade: capacity, tipo: String(form.get('tipo')), status: String(form.get('status')) };
-    if (item) for (const key of Object.keys(body)) if (body[key] === item[key]) delete body[key];
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 2147483647) {
+      return roomAction.setError('Capacidade inválida.');
+    }
+    const body = {
+      nome: String(form.get('nome')).trim(),
+      capacidade: capacity,
+      tipo: String(form.get('tipo')),
+      status: String(form.get('status')),
+    };
+    if (item) {
+      for (const key of Object.keys(body)) if (body[key] === item[key]) delete body[key];
+    }
     if (item && !Object.keys(body).length) return roomAction.setError('Nenhuma alteração para salvar.');
-    if (await roomAction.run(item ? `${base}/${item.id_sala}` : base, { method: item ? 'PATCH' : 'POST', body }, 'Sala salva.')) setDialog(null);
+    if (await roomAction.run(item ? `${base}/${item.id_sala}` : base, { method: item ? 'PATCH' : 'POST', body }, 'Sala salva.')) {
+      setDialog(null);
+    }
   }
+
   async function saveSeat(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const number = Number(form.get('numero'));
-    if (!Number.isInteger(number) || number < 1 || number > 2147483647) return seatAction.setError('Número do assento inválido.');
-    const position=form.get('posicao_visual');
-    const body = { fileira: String(form.get('fileira')).trim().toUpperCase(), numero: number, tipo: String(form.get('tipo')), status: String(form.get('status')),
-      posicao_visual:position?Number(position):null };
-    if (item) for (const key of Object.keys(body)) if (body[key] === item[key]) delete body[key];
+    if (!Number.isInteger(number) || number < 1 || number > 2147483647) {
+      return seatAction.setError('Número do assento inválido.');
+    }
+    const position = form.get('posicao_visual');
+    const body = {
+      fileira: String(form.get('fileira')).trim().toUpperCase(),
+      numero: number,
+      tipo: String(form.get('tipo')),
+      status: String(form.get('status')),
+      posicao_visual: position ? Number(position) : null,
+    };
+    if (item) {
+      for (const key of Object.keys(body)) if (body[key] === item[key]) delete body[key];
+    }
     if (item && !Object.keys(body).length) return seatAction.setError('Nenhuma alteração para salvar.');
     const path = `${base}/${selected.id_sala}/seats${item ? `/${item.id_assento}` : ''}`;
     if (await seatAction.run(path, { method: item ? 'PATCH' : 'POST', body }, 'Assento salvo.')) setDialog(null);
   }
+
   async function archive() {
     const path = dialog.type === 'roomArchive' ? `${base}/${item.id_sala}` : `${base}/${selected.id_sala}/seats/${item.id_assento}`;
     const action = dialog.type === 'roomArchive' ? roomAction : seatAction;
-    if (await action.run(path, { method: 'DELETE' }, 'Registro arquivado.')) { setDialog(null); if (dialog.type === 'roomArchive' && selected?.id_sala === item.id_sala) setRoom(null); }
+    if (await action.run(path, { method: 'DELETE' }, 'Registro arquivado.')) {
+      setDialog(null);
+      if (dialog.type === 'roomArchive' && selected?.id_sala === item.id_sala) setRoom(null);
+    }
   }
 
-  return <UnitLayout title="Salas e assentos" description="Organize a estrutura física do seu cinema." location={context.locations[0]?.nome}>
-    <UnitFeedback error={context.error || roomAction.error || seatAction.error} notice={roomAction.notice || seatAction.notice} />
-    <div className={styles.toolbar}><label className={styles.field}>Estado<select value={status} onChange={event => setStatus(event.target.value)}><option value="">Todos</option>{['ATIVA', 'INATIVA', 'MANUTENCAO'].map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label>{canManage&&<button type="button" className={styles.button} disabled={!localId} onClick={() => setDialog({ type: 'roomForm' })}><Plus size={16} />Nova sala</button>}</div>
-    <section className={styles.panel}><div className={styles.panelHeader}><div><h2>Salas da unidade</h2><p>Selecione uma sala para consultar os assentos.</p></div></div><div className={styles.body}><UnitListState list={rooms} empty="Nenhuma sala cadastrada." />{rooms.items.length > 0 && <div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>Sala</th><th>Formato</th><th>Capacidade</th><th>Estado</th><th>Ações</th></tr></thead><tbody>{rooms.items.map(row => <tr key={row.id_sala}><th scope="row">{row.nome}</th><td>{row.tipo}</td><td>{row.capacidade}</td><td><span className={styles.badge}>{label(row.status)}</span></td><td><div className={styles.actionRow}><button type="button" className={styles.iconButton} title="Ver assentos" aria-label={`Assentos da sala ${row.nome}`} onClick={() => setRoom(row)}><Armchair size={16} /></button>{canManage&&<button type="button" className={styles.iconButton} title="Editar sala" aria-label={`Editar sala ${row.nome}`} onClick={() => setDialog({ type: 'roomForm', item: row })}><Pencil size={16} /></button>}{canManage&&<button type="button" className={styles.iconButton} title="Arquivar sala" aria-label={`Arquivar sala ${row.nome}`} onClick={() => setDialog({ type: 'roomArchive', item: row })}><Archive size={16} /></button>}</div></td></tr>)}</tbody></table></div>}<UnitMore list={rooms} /></div></section>
-    {selected&&<section className={`${styles.panel} ${styles.ticket}`} aria-label={`Assentos da sala ${selected.nome}`}>
-      <div className={styles.panelHeader}><div><h2>Assentos · {selected.nome}</h2><p>Ative a sala quando os lugares disponíveis corresponderem à capacidade.</p></div></div>
-      <div className={styles.body}><RoomSeatWorkspace key={selected.id_sala} path={`${base}/${selected.id_sala}`} request={unitOperation}
-        canManage={canManage} revision={layoutRevision} onAdd={()=>setDialog({type:'seatForm'})}
-        onEdit={row=>setDialog({type:'seatForm',item:row})} onArchive={row=>setDialog({type:'seatArchive',item:row})} /></div>
-    </section>}
-    {selected && <RoomSchedule key={selected.id_sala} room={selected} localId={localId} request={roomScheduleRequest} />}
-    <Dialog open={canManage&&Boolean(dialog)} onOpenChange={open => { if (!open && !roomAction.pending && !seatAction.pending) setDialog(null); }}><DialogContent className={styles.dialog}><DialogTitle>{dialog?.type?.includes('Archive') ? 'Arquivar registro' : dialog?.type === 'roomForm' ? item ? 'Editar sala' : 'Nova sala' : item ? 'Editar assento' : 'Novo assento'}</DialogTitle><DialogDescription>{dialog?.type?.includes('Archive') ? 'Confirme a alteração. Registros ligados a sessões podem não permitir arquivamento.' : context.locations[0]?.nome}</DialogDescription>
-      {dialog?.type === 'roomForm' && <form key={item?.id_sala ?? 'new-room'} className={styles.form} onSubmit={saveRoom}><label>Nome<input name="nome" required maxLength={100} defaultValue={item?.nome ?? ''} /></label><label>Capacidade<input name="capacidade" type="number" required min="1" defaultValue={item?.capacidade ?? ''} /></label><label>Formato<select name="tipo" defaultValue={item?.tipo ?? '2D'}>{roomTypes.map(value => <option key={value}>{value}</option>)}</select></label><label>Estado<select name="status" defaultValue={item?.status ?? 'INATIVA'}><option value="INATIVA">Inativa</option><option value="MANUTENCAO">Manutenção</option>{item && <option value="ATIVA">Ativa</option>}</select></label><div className={styles.row}><button type="button" className={styles.secondary} onClick={() => setDialog(null)}>Voltar</button><button type="submit" className={styles.button} disabled={roomAction.pending}>Salvar</button></div></form>}
-      {dialog?.type === 'seatForm' && <form key={item?.id_assento ?? 'new-seat'} className={styles.form} onSubmit={saveSeat}><label>Fileira<input name="fileira" required maxLength={5} defaultValue={item?.fileira ?? ''} /></label><label>Número<input name="numero" type="number" required min="1" defaultValue={item?.numero ?? ''} /></label><label>Posição no mapa<input name="posicao_visual" type="number" min="1" max="2147483647" placeholder="Usar o número do assento" defaultValue={item?.posicao_visual ?? ''} /></label><label>Tipo<select name="tipo" defaultValue={item?.tipo ?? 'COMUM'}>{seatTypes.map(value => <option key={value} value={value}>{label(value)}</option>)}</select></label><label>Estado<select name="status" defaultValue={item?.status ?? 'ATIVA'}><option value="ATIVA">Ativa</option><option value="INATIVA">Inativa</option></select></label><div className={styles.row}><button type="button" className={styles.secondary} onClick={() => setDialog(null)}>Voltar</button><button type="submit" className={styles.button} disabled={seatAction.pending}>Salvar</button></div></form>}
-      {dialog?.type?.includes('Archive') && <div className={styles.row}><button type="button" className={styles.secondary} onClick={() => setDialog(null)}>Voltar</button><button type="button" className={styles.button} onClick={archive} disabled={roomAction.pending || seatAction.pending}><RotateCcw size={16} />Confirmar</button></div>}
-      {(roomAction.error || seatAction.error) && <p className={`${styles.message} ${styles.error}`} role="alert">{roomAction.error || seatAction.error}</p>}
-    </DialogContent></Dialog>
-  </UnitLayout>;
+  return (
+    <UnitLayout
+      title="Salas e assentos"
+      description="Organize a estrutura física, os assentos e o modelo 3D do seu cinema."
+      location={context.locations[0]?.nome}
+    >
+      <UnitFeedback
+        error={context.error || roomAction.error || seatAction.error}
+        notice={createNotice || roomAction.notice || seatAction.notice}
+      />
+      <div className={styles.toolbar}>
+        <label className={styles.field}>
+          Estado
+          <select value={status} onChange={event => setStatus(event.target.value)}>
+            <option value="">Todos</option>
+            {['ATIVA', 'INATIVA', 'MANUTENCAO'].map(value => (
+              <option key={value} value={value}>
+                {label(value)}
+              </option>
+            ))}
+          </select>
+        </label>
+        {canManage && (
+          <button
+            type="button"
+            className={styles.button}
+            disabled={!localId}
+            onClick={() => {
+              setCreateNotice('');
+              setDialog({ type: 'roomForm' });
+            }}
+          >
+            <Plus size={16} />
+            Nova sala
+          </button>
+        )}
+      </div>
+
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div>
+            <h2>Salas da unidade</h2>
+            <p>Selecione uma sala para configurar os assentos e o construtor 3D.</p>
+          </div>
+        </div>
+        <div className={styles.body}>
+          <UnitListState list={rooms} empty="Nenhuma sala cadastrada." />
+          {rooms.items.length > 0 && (
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Sala</th>
+                    <th>Formato</th>
+                    <th>Capacidade</th>
+                    <th>Estado</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rooms.items.map(row => (
+                    <tr key={row.id_sala}>
+                      <th scope="row">{row.nome}</th>
+                      <td>{row.tipo}</td>
+                      <td>{row.capacidade}</td>
+                      <td>
+                        <span className={styles.badge}>{label(row.status)}</span>
+                      </td>
+                      <td>
+                        <div className={styles.actionRow}>
+                          <button
+                            type="button"
+                            className={styles.iconButton}
+                            title="Ver assentos e Construtor 3D"
+                            aria-label={`Assentos e modelo 3D da sala ${row.nome}`}
+                            onClick={() => setRoom(row)}
+                          >
+                            <Armchair size={16} />
+                          </button>
+                          {canManage && (
+                            <button
+                              type="button"
+                              className={styles.iconButton}
+                              title="Editar sala"
+                              aria-label={`Editar sala ${row.nome}`}
+                              onClick={() => setDialog({ type: 'roomForm', item: row })}
+                            >
+                              <Pencil size={16} />
+                            </button>
+                          )}
+                          {canManage && (
+                            <button
+                              type="button"
+                              className={styles.iconButton}
+                              title="Arquivar sala"
+                              aria-label={`Arquivar sala ${row.nome}`}
+                              onClick={() => setDialog({ type: 'roomArchive', item: row })}
+                            >
+                              <Archive size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <UnitMore list={rooms} />
+        </div>
+      </section>
+
+      {selected && (
+        <section className={`${styles.panel} ${styles.ticket}`} aria-label={`Assentos da sala ${selected.nome}`}>
+          <div className={styles.panelHeader}>
+            <div>
+              <h2>Assentos e Modelo 3D · {selected.nome}</h2>
+              <p>Monte os lugares no mapa 2D, personalize no Construtor 3D e ative a sala quando a capacidade estiver completa.</p>
+            </div>
+          </div>
+          <div className={styles.body}>
+            <RoomSeatWorkspace
+              key={selected.id_sala}
+              path={`${base}/${selected.id_sala}`}
+              request={unitOperation}
+              canManage={canManage}
+              revision={layoutRevision}
+              onAdd={() => setDialog({ type: 'seatForm' })}
+              onEdit={row => setDialog({ type: 'seatForm', item: row })}
+              onArchive={row => setDialog({ type: 'seatArchive', item: row })}
+            />
+          </div>
+        </section>
+      )}
+
+      {selected && <RoomSchedule key={selected.id_sala} room={selected} localId={localId} request={roomScheduleRequest} />}
+
+      <Dialog
+        open={canManage && Boolean(dialog)}
+        onOpenChange={open => {
+          if (!open && !roomAction.pending && !seatAction.pending) setDialog(null);
+        }}
+      >
+        <DialogContent className={`${styles.dialog} ${isCreatingRoom ? 'sm:max-w-5xl' : ''}`}>
+          <DialogTitle>
+            {dialog?.type?.includes('Archive')
+              ? 'Arquivar registro'
+              : dialog?.type === 'roomForm'
+                ? item
+                  ? 'Editar sala'
+                  : 'Nova sala com Construtor 3D'
+                : item
+                  ? 'Editar assento'
+                  : 'Novo assento'}
+          </DialogTitle>
+          <DialogDescription>
+            {dialog?.type?.includes('Archive')
+              ? 'Confirme a alteração. Registros ligados a sessões podem não permitir arquivamento.'
+              : isCreatingRoom
+                ? `${context.locations[0]?.nome ?? 'Minha unidade'} · Defina a sala, a distribuição de assentos e personalize o modelo 3D antes de criar.`
+                : context.locations[0]?.nome}
+          </DialogDescription>
+
+          {isCreatingRoom && (
+            <UnitRoomCreateForm
+              localId={localId}
+              locationName={context.locations[0]?.nome}
+              spaceType={spaceType}
+              onCancel={() => setDialog(null)}
+              onPartialCreated={created => {
+                rooms.reload();
+                setRoom(created);
+                reloadLayout();
+              }}
+              onCreated={(created, notice) => {
+                setCreateNotice(notice);
+                setDialog(null);
+                rooms.reload();
+                setRoom(created);
+                reloadLayout();
+              }}
+            />
+          )}
+
+          {dialog?.type === 'roomForm' && item && (
+            <form key={item.id_sala} className={styles.form} onSubmit={saveRoom}>
+              <label>
+                Nome
+                <input name="nome" required maxLength={100} defaultValue={item.nome ?? ''} />
+              </label>
+              <label>
+                Capacidade
+                <input name="capacidade" type="number" required min="1" defaultValue={item.capacidade ?? ''} />
+              </label>
+              <label>
+                Formato
+                <select name="tipo" defaultValue={item.tipo ?? '2D'}>
+                  {roomTypes.map(value => (
+                    <option key={value}>{value}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Estado
+                <select name="status" defaultValue={item.status ?? 'INATIVA'}>
+                  <option value="INATIVA">Inativa</option>
+                  <option value="MANUTENCAO">Manutenção</option>
+                  <option value="ATIVA">Ativa</option>
+                </select>
+              </label>
+              <div className={styles.row}>
+                <button type="button" className={styles.secondary} onClick={() => setDialog(null)}>
+                  Voltar
+                </button>
+                <button type="submit" className={styles.button} disabled={roomAction.pending}>
+                  Salvar
+                </button>
+              </div>
+            </form>
+          )}
+
+          {dialog?.type === 'seatForm' && (
+            <form key={item?.id_assento ?? 'new-seat'} className={styles.form} onSubmit={saveSeat}>
+              <label>
+                Fileira
+                <input name="fileira" required maxLength={5} defaultValue={item?.fileira ?? ''} />
+              </label>
+              <label>
+                Número
+                <input name="numero" type="number" required min="1" defaultValue={item?.numero ?? ''} />
+              </label>
+              <label>
+                Posição no mapa
+                <input
+                  name="posicao_visual"
+                  type="number"
+                  min="1"
+                  max="2147483647"
+                  placeholder="Usar o número do assento"
+                  defaultValue={item?.posicao_visual ?? ''}
+                />
+              </label>
+              <label>
+                Tipo
+                <select name="tipo" defaultValue={item?.tipo ?? 'COMUM'}>
+                  {seatTypes.map(value => (
+                    <option key={value} value={value}>
+                      {label(value)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Estado
+                <select name="status" defaultValue={item?.status ?? 'ATIVA'}>
+                  <option value="ATIVA">Ativa</option>
+                  <option value="INATIVA">Inativa</option>
+                </select>
+              </label>
+              <div className={styles.row}>
+                <button type="button" className={styles.secondary} onClick={() => setDialog(null)}>
+                  Voltar
+                </button>
+                <button type="submit" className={styles.button} disabled={seatAction.pending}>
+                  Salvar
+                </button>
+              </div>
+            </form>
+          )}
+
+          {dialog?.type?.includes('Archive') && (
+            <div className={styles.row}>
+              <button type="button" className={styles.secondary} onClick={() => setDialog(null)}>
+                Voltar
+              </button>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={archive}
+                disabled={roomAction.pending || seatAction.pending}
+              >
+                <RotateCcw size={16} />
+                Confirmar
+              </button>
+            </div>
+          )}
+
+          {(roomAction.error || seatAction.error) && (
+            <p className={`${styles.message} ${styles.error}`} role="alert">
+              {roomAction.error || seatAction.error}
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </UnitLayout>
+  );
 }

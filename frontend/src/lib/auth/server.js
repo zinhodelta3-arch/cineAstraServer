@@ -1,5 +1,6 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { cache } from 'react';
 import { commerceErrors } from '@/lib/api/commerce-errors.mjs';
 import { registrationErrorMessage } from './registration-errors.mjs';
@@ -21,8 +22,18 @@ export function authErrorPayload(error, fallback) {
  if (!(error instanceof AuthError)) console.error(JSON.stringify({ event: 'frontend_request_failed', timestamp: new Date().toISOString(), requestId: metadata.requestId, errorType: ['Error', 'TypeError', 'RangeError', 'SyntaxError', 'ReferenceError'].includes(error?.name) ? error.name : 'Error' }));
  return { success: false, ...metadata, message: errorMessage(status, metadata.code, fallback ?? (error instanceof AuthError ? error.message : null)) };
 }
+export function resolveServerApiBase() {
+ const explicit = process.env.BACKEND_API_URL?.trim();
+ const base = resolveApiBase(explicit || process.env.NEXT_PUBLIC_API_URL);
+ if (!explicit && /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::|\/|$)/i.test(base) && existsSync('/.dockerenv')) {
+  const parsed = new URL(base);
+  parsed.hostname = 'backend';
+  return parsed.toString().replace(/\/+$/, '');
+ }
+ return base;
+}
 export async function backendAuth(path, { token, body, idempotencyKey, method = 'GET' } = {}) {
- const base = resolveApiBase(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL);
+ const base = resolveServerApiBase();
  if (!base || !/^https?:\/\//.test(base)) throw new AuthError(503, 'Serviço temporariamente indisponível.');
  const signal = AbortSignal.timeout(15000);
  let response, payload;
