@@ -137,7 +137,7 @@ export default function FilmsAdmin() {
         <label>Data de lançamento<input name="data_lancamento" type="date" defaultValue={film?.data_lancamento?.slice(0, 10) ?? ""} /></label>
         <label>Direção<input name="diretor" maxLength={150} defaultValue={film?.diretor ?? ""} /></label>
         <label className={styles.wide}>Sinopse<textarea name="descricao" maxLength={10000} defaultValue={film?.descricao ?? ""} /></label>
-        <label className={styles.wide}>Trailer (URL HTTPS)<input name="trailer" type="url" maxLength={255} defaultValue={film?.trailer ?? ""} /></label>
+        <label className={styles.wide}>Trailer (URL HTTPS)<input name="trailer" type="url" maxLength={255} placeholder="https://www.youtube.com/watch?v=..." defaultValue={film?.trailer ?? ""} /></label>
         <div className={`${styles.checks} ${styles.wide}`}><label><input type="checkbox" name="disponivel_cinema" defaultChecked={film?.disponivel_cinema ?? true} /> Disponível no cinema</label><label><input type="checkbox" name="disponivel_streaming" checked={streaming} onChange={event => setStreaming(event.target.checked)} /> Disponível no streaming</label></div>
         {streaming && <>
           <label className={styles.wide}>Reprodução (URL HTTPS)<input name="url_reproducao" type="url" maxLength={2048} defaultValue={film?.url_reproducao ?? ""} /></label>

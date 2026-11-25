@@ -62,7 +62,9 @@ export async function backendAuth(path, { token, body, idempotencyKey, method = 
    const detail = payload?.details?.find(item => Object.hasOwn(fields, item.field));
    if (detail) throw failure(422, detail.code === 'MEDIA_HOST_DENIED'
     ? `O endereço informado em ${fields[detail.field]} não é de um serviço autorizado.`
-    : `Confira o campo ${fields[detail.field]}.`, payload.code);
+    : detail.code === 'INVALID_TRAILER_URL'
+     ? 'Informe um link de vídeo válido do YouTube em Trailer (ex.: youtube.com/watch?v=... ou youtu.be/...).'
+     : `Confira o campo ${fields[detail.field]}.`, payload.code);
   }
   if (response.status === 404 && path.startsWith('/teams/collaborator?')) throw failure(404, 'Colaborador ativo não encontrado com este e-mail.');
   if (response.status === 409 && /^(?:\/(?:admin\/sales\/)?orders\/\d+\/refunds|\/admin\/refunds\/\d+\/(?:decision|reconcile))$/.test(path) &&

@@ -80,6 +80,19 @@ test('regras cruzadas, hosts, recurso ausente, paginação e revogação no serv
     assert.equal(subscription.body.data.preco_aluguel, null);
     assert.equal(subscription.body.data.preco_compra, null);
     await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN').send({ ...film, trailer: 'https://evil.invalid/video' }).expect(422);
+    await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN').send({ ...film, trailer: 'https://www.youtube.com/@cineastra' }).expect(422);
+    await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN').send({ ...film, url_reproducao: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }).expect(422);
+    for (const trailer of [
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        'https://youtu.be/dQw4w9WgXcQ',
+        'https://m.youtube.com/watch?v=dQw4w9WgXcQ',
+        'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        'https://www.youtube.com/shorts/dQw4w9WgXcQ',
+        'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
+    ]) {
+        const res = await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN').send({ ...film, trailer }).expect(201);
+        assert.equal(res.body.data.trailer, trailer);
+    }
     await request(f.app).patch('/api/films/999').set('X-Fixture-Role', 'ADMIN').send({ titulo: 'X' }).expect(404);
     for (let i = 0; i < 2; i++) await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN').send(film).expect(201);
     const page = await request(f.app).get('/api/films?limit=1').expect(200); assert.equal(page.body.data.items.length, 1); assert.ok(page.body.data.pagination.nextCursor);

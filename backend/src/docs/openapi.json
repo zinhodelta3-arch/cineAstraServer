@@ -4544,7 +4544,7 @@
           "Catálogo"
         ],
         "summary": "save films (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS (trailers também aceitam YouTube), sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
         "security": [
           {
             "bearerAuth": []
@@ -4731,7 +4731,7 @@
           "Catálogo"
         ],
         "summary": "save films (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS (trailers também aceitam YouTube), sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
         "security": [
           {
             "bearerAuth": []
@@ -5316,7 +5316,7 @@
           "Catálogo"
         ],
         "summary": "save genres (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS (trailers também aceitam YouTube), sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
         "security": [
           {
             "bearerAuth": []
@@ -5503,7 +5503,7 @@
           "Catálogo"
         ],
         "summary": "save genres (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS (trailers também aceitam YouTube), sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
         "security": [
           {
             "bearerAuth": []

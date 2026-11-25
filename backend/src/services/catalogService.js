@@ -1,6 +1,7 @@
 import { ApiError } from '../utils/ApiError.js';
 import { idString, moneyString } from '../utils/dto.js';
 import { filmFields } from '../models/catalogModel.js';
+import { isYoutubeTrailerHost, youtubeTrailerId } from '../utils/youtubeTrailer.js';
 
 export function filmDto(row, admin = false) {
     const out = { id_filme: idString(row.id_filme) };
@@ -21,7 +22,14 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
     function validateFilm(row, input) {
         if (row.status === 'ATIVO' && (!Number.isInteger(row.duracao) || row.duracao <= 0)) throw ApiError.validacao('Filme ativo exige duração positiva');
         if (row.preco_aluguel != null && (!Number.isInteger(row.dias_acesso_aluguel) || row.dias_acesso_aluguel <= 0)) throw ApiError.validacao('Aluguel exige prazo positivo');
-        for (const key of ['trailer', 'url_reproducao']) if (input[key] != null && !mediaHosts.includes(new URL(input[key]).hostname.toLowerCase())) throw ApiError.validacao('Host de mídia não permitido', [{ field: key, code: 'MEDIA_HOST_DENIED' }]);
+        if (input.trailer != null) {
+            const hostname = new URL(input.trailer).hostname.toLowerCase();
+            if (!mediaHosts.includes(hostname)) {
+                if (!isYoutubeTrailerHost(hostname)) throw ApiError.validacao('Host de mídia não permitido', [{ field: 'trailer', code: 'MEDIA_HOST_DENIED' }]);
+                if (!youtubeTrailerId(input.trailer)) throw ApiError.validacao('Trailer do YouTube inválido', [{ field: 'trailer', code: 'INVALID_TRAILER_URL' }]);
+            }
+        }
+        if (input.url_reproducao != null && !mediaHosts.includes(new URL(input.url_reproducao).hostname.toLowerCase())) throw ApiError.validacao('Host de mídia não permitido', [{ field: 'url_reproducao', code: 'MEDIA_HOST_DENIED' }]);
     }
     function page(rows, q, dto, pk) { const limit = q.limit ?? 20; return { items: rows.slice(0, limit).map(dto), pagination: { limit, nextCursor: rows.length > limit ? idString(rows[limit - 1][pk]) : null } }; }
     return {

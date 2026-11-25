@@ -126,6 +126,10 @@ test('storage real: expiração, quota, chave segura, abort e admissão concorre
     await assert.rejects(storage.put(image, controller.signal), { statusCode: 408 });
     assert.deepEqual(await readdir(root), []);
     await assert.rejects(createImageStorage().put(image), { statusCode: 503 });
+    const concurrentRoot = await directory(t);
+    const concurrent = createImageStorage({ directory: concurrentRoot, enforceOwner: true });
+    const [firstUpload, secondUpload] = await Promise.all([concurrent.put(image, undefined, '1'), concurrent.put(image, undefined, '1')]);
+    assert.notEqual(firstUpload.key, secondUpload.key);
     const service = createImageUploadService({ storage, authorize: async () => { throw ApiError.naoAutorizado(); } });
     const a = service.acquire(), b = service.acquire(); assert.throws(() => service.acquire(), { statusCode: 503 }); a(); a(); const c = service.acquire(); b(); c();
     await assert.rejects(service.upload(file(await png()), {}), { statusCode: 401 });

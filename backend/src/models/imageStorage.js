@@ -9,7 +9,15 @@ export const STAGING_TTL_MS = 24 * 60 * 60 * 1000;
 // Staging privado por conta, nunca express.static; galerias promovem cópias.
 export function createImageStorage({ directory, maxFiles = 200, now = Date.now, expiresAfterMs = STAGING_TTL_MS, enforceOwner = false } = {}) {
     const root = directory ? resolve(directory) : null;
-    let writing = false;
+    let writeQueue = Promise.resolve();
+    function serialize(task, signal) {
+        const next = writeQueue.then(() => {
+            checkUploadSignal(signal);
+            return task();
+        });
+        writeQueue = next.catch(() => {});
+        return next;
+    }
     function path(key) {
         if (!root) throw ApiError.indisponivel();
         if (!IMAGE_KEY.test(key)) throw ApiError.naoEncontrado();
@@ -42,28 +50,30 @@ export function createImageStorage({ directory, maxFiles = 200, now = Date.now, 
     }
     return {
         async put(image, signal, ownerId) {
-            if (!root || writing) throw ApiError.indisponivel();
+            if (!root) throw ApiError.indisponivel();
             if (enforceOwner && !ownerId) throw ApiError.acessoNegado();
-            writing = true;
-            const key = `${randomUUID()}.webp`, target = path(key), temporary = `${target}.part`;
-            let published = false;
-            try {
-                checkUploadSignal(signal);
-                await mkdir(root, { recursive: true, mode: 0o700 });
-                if ((await lstat(root)).isSymbolicLink()) throw ApiError.indisponivel();
-                await prune();
-                await writeFile(temporary, image.buffer, { flag: 'wx', mode: 0o600, signal });
-                checkUploadSignal(signal);
-                await rename(temporary, target); published = true;
-                if (enforceOwner) await writeFile(`${target}.owner`, String(ownerId), { flag: 'wx', mode: 0o600 });
-                checkUploadSignal(signal);
-                return { key, expiresAt: expiresAfterMs === null ? null : new Date(now() + expiresAfterMs).toISOString() };
-            } catch (error) {
-                try { await unlink(published ? target : temporary); } catch (e) { if (e.code !== 'ENOENT') throw e; }
-                if (enforceOwner) try { await unlink(`${target}.owner`); } catch (e) { if (e.code !== 'ENOENT') throw e; }
-                checkUploadSignal(signal);
-                throw error;
-            } finally { writing = false; }
+            checkUploadSignal(signal);
+            return serialize(async () => {
+                const key = `${randomUUID()}.webp`, target = path(key), temporary = `${target}.part`;
+                let published = false;
+                try {
+                    checkUploadSignal(signal);
+                    await mkdir(root, { recursive: true, mode: 0o700 });
+                    if ((await lstat(root)).isSymbolicLink()) throw ApiError.indisponivel();
+                    await prune();
+                    await writeFile(temporary, image.buffer, { flag: 'wx', mode: 0o600, signal });
+                    checkUploadSignal(signal);
+                    await rename(temporary, target); published = true;
+                    if (enforceOwner) await writeFile(`${target}.owner`, String(ownerId), { flag: 'wx', mode: 0o600 });
+                    checkUploadSignal(signal);
+                    return { key, expiresAt: expiresAfterMs === null ? null : new Date(now() + expiresAfterMs).toISOString() };
+                } catch (error) {
+                    try { await unlink(published ? target : temporary); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+                    if (enforceOwner) try { await unlink(`${target}.owner`); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+                    checkUploadSignal(signal);
+                    throw error;
+                }
+            }, signal);
         },
         async read(key, ownerId) {
             try {

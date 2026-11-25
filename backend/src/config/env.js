@@ -70,8 +70,8 @@ export function validateEnv(env = process.env) {
     const mediaHosts = (env.CATALOG_MEDIA_HOSTS ?? '').split(',').map(v => v.trim().toLowerCase()).filter(Boolean);
     if (mediaHosts.some(v => !/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(v))) errors.add('CATALOG_MEDIA_HOSTS');
     const config = {
-        imageUpload: { directory: env.IMAGE_STAGING_DIR || (!production ? fileURLToPath(new URL('../../.storage/images', import.meta.url)) : null) },
-        gallery: { directory: env.IMAGE_GALLERY_DIR || (!production ? fileURLToPath(new URL('../../.storage/gallery', import.meta.url)) : null) },
+        imageUpload: { directory: env.IMAGE_STAGING_DIR || fileURLToPath(new URL('../../.storage/images', import.meta.url)) },
+        gallery: { directory: env.IMAGE_GALLERY_DIR || fileURLToPath(new URL('../../.storage/gallery', import.meta.url)) },
         catalog: { mediaHosts },
         security: { captchaEnabled: boolean('CAPTCHA_ENABLED', false), twoFactorEnabled: boolean('TWO_FACTOR_ENABLED', false) },
         mode, production, docsEnabled, origins, trustProxy, publicOrigin, instances, rateLimitStore,
