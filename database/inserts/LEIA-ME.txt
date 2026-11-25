@@ -38,6 +38,16 @@ e produtos ilustrativos. Use as cinco funções cadastradas pela carga operacion
 A newsletter mantém rascunhos e histórico no Admin. O envio por e-mail fica desativado.
 revisao_duplicidades_marketing.sql lista e ensaia a consolidação de cópias idênticas, com ROLLBACK.
 
+MOSTRA DE 250 FILMES
+Com o schema instalado e os arquivos 01, 04 e 08 aplicados, execute 11_mostra_pagina_1.sql até
+15_mostra_pagina_5.sql em ordem. Use uma base de apresentação e execute cada arquivo inteiro,
+em uma conexão, sem --force. A carga 05 de volume é opcional para este cenário.
+Cada arquivo cobre uma página de 50 filmes da aba Em cartaz sem filtros. Ele acrescenta uma sessão
+futura por filme e uma venda Pix simulada, sem cobrança externa. Os demais assentos ficam à venda.
+O primeiro arquivo instala os modelos 3D de demonstração nas salas Paulista, Shopping ABC e
+Campinas quando ainda não há cena publicada. Todos os assentos ativos dessas salas precisam
+estar ligados ao modelo antes de a programação ser incluída.
+
 REVISÃO
 Foram conferidos estaticamente os nomes de colunas, campos obrigatórios, enums, limites de texto, referências internas e ordem das dependências.
 A carga foi importada no banco local. Consulte IMPORTACAO.txt e 03_importacao.csv. Não reaplique neste banco.

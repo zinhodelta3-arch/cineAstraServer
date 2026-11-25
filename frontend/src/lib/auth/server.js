@@ -55,6 +55,15 @@ export async function backendAuth(path, { token, body, idempotencyKey, method = 
   if (response.status >= 400 && response.status < 500 && Object.hasOwn(commerceErrors, payload?.code)) throw failure(response.status, commerceErrors[payload.code], payload.code);
   if (/^\/streaming\/(?:films\/\d+|\d+)\/play$/.test(path) && response.status === 403 && ['STREAMING_ACCESS_REQUIRED', 'AGE_VERIFICATION_REQUIRED', 'AGE_RESTRICTION'].includes(payload?.code)) throw failure(403, 'Reprodução não permitida.', payload.code);
   if (response.status === 422 && path === '/auth/register') throw failure(422, registrationErrorMessage(payload));
+  if (response.status === 422 && /^\/films(?:\/\d+)?$/.test(path) && ['POST', 'PATCH'].includes(method)) {
+   const fields = {titulo:'Título', descricao:'Sinopse', duracao:'Duração', classificacao:'Classificação',
+    data_lancamento:'Data de lançamento', diretor:'Direção', trailer:'Trailer', url_reproducao:'Reprodução',
+    preco_aluguel:'Preço de aluguel', dias_acesso_aluguel:'Prazo de aluguel'};
+   const detail = payload?.details?.find(item => Object.hasOwn(fields, item.field));
+   if (detail) throw failure(422, detail.code === 'MEDIA_HOST_DENIED'
+    ? `O endereço informado em ${fields[detail.field]} não é de um serviço autorizado.`
+    : `Confira o campo ${fields[detail.field]}.`, payload.code);
+  }
   if (response.status === 404 && path.startsWith('/teams/collaborator?')) throw failure(404, 'Colaborador ativo não encontrado com este e-mail.');
   if (response.status === 409 && /^(?:\/(?:admin\/sales\/)?orders\/\d+\/refunds|\/admin\/refunds\/\d+\/(?:decision|reconcile))$/.test(path) &&
       payload?.code === 'REFUND_CONFLICT' && typeof payload.message === 'string' && payload.message.length <= 180) throw failure(409, payload.message, payload.code);

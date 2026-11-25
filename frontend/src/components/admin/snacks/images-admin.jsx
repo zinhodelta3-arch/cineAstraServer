@@ -21,6 +21,7 @@ const validId = value => /^[1-9]\d{0,9}$/.test(value ?? '') && BigInt(value) <= 
 export default function SnackImagesAdmin() {
   const [kind, setKind] = useState('inputs'), [query, setQuery] = useState(''), [selected, setSelected] = useState(null);
   const [dialog, setDialog] = useState(null), [preview, setPreview] = useState(null), [pending, setPending] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
+  const [imageType, setImageType] = useState('PRINCIPAL');
   const lock = useRef(false), search = useDeferredValue(query.trim());
   const params = new URLSearchParams({ limit: '20' });
   if (search) params.set('q', search);
@@ -49,12 +50,21 @@ export default function SnackImagesAdmin() {
     setKind(nextKind); setSelected(null); setQuery(''); setError(''); setNotice('');
     window.history.replaceState(null, '', '/admin/astrasnack/imagens');
   }
-  function open(type, row = null) { setError(''); setNotice(''); setPreview(null); setDialog({ type, image: row }); }
+  function open(type, row = null) {
+    setError(''); setNotice(''); setPreview(null);
+    setImageType(row?.tipo ?? 'PRINCIPAL');
+    setDialog({ type, image: row });
+  }
   function close() { if (!lock.current) { setDialog(null); setPreview(null); } }
   async function run(task, message) {
     if (lock.current) return;
     lock.current = true; setPending(true); setError('');
-    try { await task(); setDialog(null); setPreview(null); setNotice(message); images.reload(); }
+    try {
+      const result = await task();
+      setDialog(null); setPreview(null);
+      setNotice(typeof message === 'function' ? message(result) : message);
+      images.reload();
+    }
     catch (cause) { setError(cause.message); }
     finally { lock.current = false; setPending(false); }
   }
@@ -67,12 +77,13 @@ export default function SnackImagesAdmin() {
     if (image) return run(() => snackRequest(`${kind}/${itemId}/images/${image.id_imagem}`, { method: 'PATCH', body: fields }), 'Imagem atualizada.');
     const file = form.get('image');
     if (!(file instanceof File) || !file.size || file.size > 5_242_880 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setError('Selecione uma imagem JPG, PNG ou WebP de até 5 MB.'); return; }
+    const allUnits = tipo === 'PRINCIPAL' && form.has('allUnits');
     return run(async () => {
       const upload = new FormData(); upload.set('image', file);
       const staged = await catalogRequest('uploads', { method: 'POST', body: upload });
-      try { await snackRequest(`${kind}/${itemId}/images`, { method: 'POST', body: { stagingKey: staged.key, ...fields } }); }
+      try { return await snackRequest(`${kind}/${itemId}/images`, { method: 'POST', body: { stagingKey: staged.key, ...fields, ...(allUnits && { allUnits }) } }); }
       finally { await catalogRequest(`uploads/${staged.key}`, { method: 'DELETE' }).catch(() => {}); }
-    }, 'Imagem adicionada.');
+    }, result => allUnits ? `Imagem principal aplicada a ${result.appliedCount} ${result.appliedCount === 1 ? 'cadastro' : 'cadastros'}.` : 'Imagem adicionada.');
   }
 
   return <SnackLayout title="Imagens do AstraSnack" description="Gerencie as imagens dos insumos e combos cadastrados." action={<button type="button" className={styles.primary} onClick={() => open('form')} disabled={!selected || images.loading || Boolean(images.error)}><Plus size={16} aria-hidden="true" />Adicionar imagem</button>}>
@@ -88,7 +99,10 @@ export default function SnackImagesAdmin() {
         <TablePagination list={images} /></>}
     </section>
     <Dialog open={Boolean(dialog)} onOpenChange={value => { if (!value) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{dialog?.type === 'delete' ? 'Excluir imagem' : image ? 'Editar imagem' : 'Adicionar imagem'}</DialogTitle>
-      {dialog?.type === 'form' && <><DialogDescription className={styles.dialogDescription}>{image ? `Atualize a imagem de ${selected?.nome}.` : `Envie uma imagem JPG, PNG ou WebP de até 5 MB para ${selected?.nome}.`}</DialogDescription><form key={image?.id_imagem ?? 'new'} className={styles.form} onSubmit={save}>{!image && <label className={styles.wide}>Arquivo de imagem<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required onChange={event => { const file = event.target.files?.[0]; setPreview(file ? URL.createObjectURL(file) : null); }} /></label>}{preview && <div className={styles.wide}><LoadingImage className={local.preview} src={preview} alt="Prévia da imagem selecionada" /></div>}<label>Tipo<select name="tipo" defaultValue={image?.tipo ?? (images.items.length ? 'ALTERNATIVA' : 'PRINCIPAL')}><option value="PRINCIPAL">Principal</option><option value="ALTERNATIVA">Alternativa</option></select></label><label>Ordem<input name="ordem" type="number" min="0" max="4294967295" defaultValue={image?.ordem ?? 0} required /></label><label className={styles.wide}>Texto alternativo<input name="texto_alternativo" maxLength={255} defaultValue={image?.texto_alternativo ?? ''} placeholder="Descreva a imagem" /></label>{error && <p className={`${styles.error} ${styles.wide}`} role="alert">{error}</p>}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close} disabled={pending}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}><ImagePlus size={16} aria-hidden="true" />{pending ? 'Salvando…' : image ? 'Salvar alterações' : 'Adicionar imagem'}</button></div></form></>}
+      {dialog?.type === 'form' && <><DialogDescription className={styles.dialogDescription}>{image ? `Atualize a imagem de ${selected?.nome}.` : `Envie uma imagem JPG, PNG ou WebP de até 5 MB para ${selected?.nome}.`}</DialogDescription><form key={image?.id_imagem ?? 'new'} className={styles.form} onSubmit={save}>{!image && <label className={styles.wide}>Arquivo de imagem<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required onChange={event => { const file = event.target.files?.[0]; setPreview(file ? URL.createObjectURL(file) : null); }} /></label>}{preview && <div className={styles.wide}><LoadingImage className={local.preview} src={preview} alt="Prévia da imagem selecionada" /></div>}<label>Tipo<select name="tipo" value={imageType} onChange={event => setImageType(event.target.value)}><option value="PRINCIPAL">Principal</option><option value="ALTERNATIVA">Alternativa</option></select></label><label>Ordem<input name="ordem" type="number" min="0" max="4294967295" defaultValue={image?.ordem ?? 0} required /></label><label className={styles.wide}>Texto alternativo<input name="texto_alternativo" maxLength={255} defaultValue={image?.texto_alternativo ?? ''} placeholder="Descreva a imagem" /></label>{!image && imageType === 'PRINCIPAL' && <div className={styles.wide}>
+        <div className={styles.checks}><label><input type="checkbox" name="allUnits" /> Aplicar em todas as unidades</label></div>
+        <p className={styles.hint}>{kind === 'inputs' ? 'Atualiza a imagem principal dos insumos com o mesmo nome e categoria.' : 'Atualiza a imagem principal dos combos com o mesmo nome e vínculo de evento.'}</p>
+      </div>}{error && <p className={`${styles.error} ${styles.wide}`} role="alert">{error}</p>}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close} disabled={pending}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}><ImagePlus size={16} aria-hidden="true" />{pending ? 'Salvando…' : image ? 'Salvar alterações' : 'Adicionar imagem'}</button></div></form></>}
       {dialog?.type === 'delete' && <><DialogDescription className={styles.dialogDescription}>Excluir esta imagem de {selected?.nome}? Esta ação não pode ser desfeita.</DialogDescription>{error && <p className={styles.error} role="alert">{error}</p>}<div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={close}>Voltar</button><button type="button" className={styles.danger} disabled={pending} onClick={() => run(() => snackRequest(`${kind}/${itemId}/images/${image.id_imagem}`, { method: 'DELETE' }), 'Imagem excluída.')}>{pending ? 'Excluindo…' : 'Excluir imagem'}</button></div></>}
     </DialogContent></Dialog>
   </SnackLayout>;

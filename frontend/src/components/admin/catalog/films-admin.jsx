@@ -25,16 +25,19 @@ function payloadFrom(form, film) {
     return number.toFixed(2);
   };
   const duration = Number(value("duracao"));
-  const days = Number(value("dias_acesso_aluguel"));
-  if (!Number.isInteger(duration) || duration < 1 || !Number.isInteger(days) || days < 1) throw new Error("Confira a duração e o prazo de aluguel.");
+  const streaming = form.has("disponivel_streaming");
+  const rental = streaming ? price("preco_aluguel") : null;
+  const days = rental !== null ? Number(value("dias_acesso_aluguel")) : null;
+  if (!Number.isInteger(duration) || duration < 1 || duration > 2147483647) throw new Error("Informe uma duração válida em minutos.");
+  if (rental !== null && (!Number.isInteger(days) || days < 1 || days > 36500)) throw new Error("Informe o prazo de acesso para o aluguel.");
   const result = {
     titulo: value("titulo"), descricao: value("descricao") || null, duracao: duration,
     classificacao: value("classificacao"), data_lancamento: value("data_lancamento") || null,
     diretor: value("diretor") || null, trailer: value("trailer") || null,
-    url_reproducao: value("url_reproducao") || null,
-    disponivel_cinema: form.has("disponivel_cinema"), disponivel_streaming: form.has("disponivel_streaming"),
-    preco_aluguel: price("preco_aluguel"), preco_compra: price("preco_compra"),
-    dias_acesso_aluguel: days, status: value("status"),
+    disponivel_cinema: form.has("disponivel_cinema"), disponivel_streaming: streaming,
+    ...(streaming && { url_reproducao: value("url_reproducao") || null, preco_aluguel: rental }),
+    ...(days !== null && { dias_acesso_aluguel: days }),
+    status: value("status"),
   };
   if (!result.titulo || result.titulo.length > 200) throw new Error("Informe um título de até 200 caracteres.");
   const changed = film ? Object.fromEntries(Object.entries(result).filter(([key, entry]) => {
@@ -42,8 +45,6 @@ function payloadFrom(form, film) {
     return entry !== (previous ?? (key === "dias_acesso_aluguel" ? 3 : null));
   })) : result;
   if (!onlyHttps(changed.trailer) || !onlyHttps(changed.url_reproducao)) throw new Error("Os links de mídia devem usar HTTPS.");
-  if (["disponivel_streaming", "preco_aluguel", "preco_compra"].some(key => Object.hasOwn(changed, key))
-    && result.disponivel_streaming && result.preco_aluguel === null && result.preco_compra === null) throw new Error("Informe o preço de aluguel ou compra para disponibilizar o filme no streaming.");
   return changed;
 }
 
@@ -54,6 +55,8 @@ export default function FilmsAdmin() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [streaming, setStreaming] = useState(false);
+  const [hasRental, setHasRental] = useState(false);
   const lock = useRef(false);
   const search = useDeferredValue(query.trim());
   const params = new URLSearchParams({ limit: "20" });
@@ -63,7 +66,12 @@ export default function FilmsAdmin() {
   const genreList = useAdminCatalogList(dialog?.type === "genres" ? "genres?limit=100" : null);
   const filmGenres = useAdminCatalogList(dialog?.type === "genres" ? `films/${dialog.film.id_filme}/genres?limit=100` : null);
 
-  function open(type, film = null) { setError(""); setNotice(""); setDialog({ type, film }); }
+  function open(type, film = null) {
+    setError(""); setNotice("");
+    setStreaming(Boolean(film?.disponivel_streaming));
+    setHasRental(film?.preco_aluguel != null);
+    setDialog({ type, film });
+  }
   function close() { if (!pending) setDialog(null); }
 
   async function run(task, success, closeAfter = true) {
@@ -124,19 +132,20 @@ export default function FilmsAdmin() {
       <DialogTitle className={styles.dialogTitle}>{dialog?.type === "genres" ? `Gêneros de ${film?.titulo}` : dialog?.type === "status" ? `${film?.status === "ATIVO" ? "Arquivar" : "Reativar"} filme` : film ? "Editar filme" : "Novo filme"}</DialogTitle>
       {dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>Preencha os dados do filme. Gêneros e imagens podem ser organizados após o cadastro.</DialogDescription><form key={film?.id_filme ?? "new"} className={styles.form} onSubmit={save}>
         <label className={styles.wide}>Título<input name="titulo" required maxLength={200} defaultValue={film?.titulo ?? ""} /></label>
-        <label>Duração (minutos)<input name="duracao" type="number" min="1" required defaultValue={film?.duracao ?? ""} /></label>
+        <label>Duração (minutos)<input name="duracao" type="number" min="1" max="2147483647" required defaultValue={film?.duracao ?? ""} /></label>
         <label>Classificação indicativa<select name="classificacao" defaultValue={film?.classificacao ?? "L"}>{classifications.map((item) => <option key={item} value={item}>{item === "L" ? "Livre" : `${item} anos`}</option>)}</select></label>
         <label>Data de lançamento<input name="data_lancamento" type="date" defaultValue={film?.data_lancamento?.slice(0, 10) ?? ""} /></label>
         <label>Direção<input name="diretor" maxLength={150} defaultValue={film?.diretor ?? ""} /></label>
         <label className={styles.wide}>Sinopse<textarea name="descricao" maxLength={10000} defaultValue={film?.descricao ?? ""} /></label>
-        <label className={styles.wide}>Trailer (URL HTTPS)<input name="trailer" type="url" defaultValue={film?.trailer ?? ""} /></label>
-        <label className={styles.wide}>Reprodução (URL HTTPS)<input name="url_reproducao" type="url" defaultValue={film?.url_reproducao ?? ""} /></label>
-        <div className={`${styles.checks} ${styles.wide}`}><label><input type="checkbox" name="disponivel_cinema" defaultChecked={film?.disponivel_cinema ?? true} /> Disponível no cinema</label><label><input type="checkbox" name="disponivel_streaming" defaultChecked={film?.disponivel_streaming ?? false} /> Disponível no streaming</label></div>
-        <label>Aluguel (R$)<MoneyInput name="preco_aluguel" defaultValue={film?.preco_aluguel ?? ""} /></label>
-        <label>Compra (R$)<MoneyInput name="preco_compra" defaultValue={film?.preco_compra ?? ""} /></label>
-        <label>Dias de acesso no aluguel<input name="dias_acesso_aluguel" type="number" min="1" max="36500" required defaultValue={film?.dias_acesso_aluguel ?? 3} /></label>
+        <label className={styles.wide}>Trailer (URL HTTPS)<input name="trailer" type="url" maxLength={255} defaultValue={film?.trailer ?? ""} /></label>
+        <div className={`${styles.checks} ${styles.wide}`}><label><input type="checkbox" name="disponivel_cinema" defaultChecked={film?.disponivel_cinema ?? true} /> Disponível no cinema</label><label><input type="checkbox" name="disponivel_streaming" checked={streaming} onChange={event => setStreaming(event.target.checked)} /> Disponível no streaming</label></div>
+        {streaming && <>
+          <label className={styles.wide}>Reprodução (URL HTTPS)<input name="url_reproducao" type="url" maxLength={2048} defaultValue={film?.url_reproducao ?? ""} /></label>
+          <label>Aluguel opcional (R$)<MoneyInput name="preco_aluguel" defaultValue={film?.preco_aluguel ?? ""} onAmountChange={value => setHasRental(value !== null)} /></label>
+          {hasRental && <label>Dias de acesso no aluguel<input name="dias_acesso_aluguel" type="number" min="1" max="36500" required defaultValue={film?.dias_acesso_aluguel ?? 3} /></label>}
+          <p className={`${styles.hint} ${styles.wide}`}>Deixe o aluguel em branco para disponibilizar o filme pelo catálogo da assinatura.</p>
+        </>}
         <label>Status<select name="status" defaultValue={film?.status ?? "ATIVO"}><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select></label>
-        <p className={`${styles.hint} ${styles.wide}`}>Streaming exige preço de aluguel ou compra. Links de mídia precisam usar um host autorizado pelo sistema.</p>
         {error && <p className={`${styles.error} ${styles.wide}`} role="alert">{error}</p>}
         <div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={close} disabled={pending}>Cancelar</button><button type="submit" className={styles.primary} disabled={pending}>{pending ? "Salvando…" : film ? "Salvar alterações" : "Cadastrar filme"}</button></div>
       </form></>}

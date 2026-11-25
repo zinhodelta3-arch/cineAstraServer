@@ -55,7 +55,9 @@ test('programação por cinema e data inclui capa e classificação na mesma con
     await model.list(timetable);
     await model.list(timetable, true);
     await model.list({ limit: 20 });
-    assert.match(queries[0].sql, /f\.imagem AS imagem_filme,f\.classificacao AS classificacao_filme/);
+    assert.match(queries[0].sql, /COALESCE\(f\.imagem, \(/);
+    assert.match(queries[0].sql, /FROM filmes_imagens/);
+    assert.match(queries[0].sql, /AS imagem_filme,f\.classificacao AS classificacao_filme/);
     assert.deepEqual(queries[0].args, ['0', '1', '2026-10-10']);
     assert.doesNotMatch(queries[1].sql + queries[2].sql, /imagem_filme|classificacao_filme/);
 

@@ -3,7 +3,6 @@ import { commerceGalleryOperations } from '../src/routes/commerceGalleryRoutes.j
 
 const file = new URL('../src/docs/openapi.json', import.meta.url);
 const spec = JSON.parse(await readFile(file, 'utf8'));
-spec.info.version = '1.13.0';
 spec.tags = [...spec.tags.filter(t => t.name !== 'Galerias comerciais'), { name: 'Galerias comerciais', description: 'Imagens de insumos e combos; PRINCIPAL única e alternativas de apresentação.' }];
 const id = { type: 'string', pattern: '^[1-9][0-9]{0,19}$' };
 const productId = { type: 'string', pattern: '^[1-9][0-9]{0,9}$' };
@@ -18,7 +17,9 @@ for (const type of ['inputs','combos']) {
     const name = type === 'inputs' ? 'InputImage' : 'ComboImage', parent = type === 'inputs' ? 'id_insumo' : 'id_combo';
     spec.components.schemas[name] = obj({ id_imagem: id, [parent]: productId, tipo, url: { type: 'string', description: 'URL pública relativa de WebP promovido.' }, texto_alternativo: alt, ordem });
 }
-const create = obj({ stagingKey: key, tipo, texto_alternativo: alt, ordem }, ['stagingKey']);
+const create = obj({ stagingKey: key, tipo, texto_alternativo: alt, ordem,
+    allUnits: { type: 'boolean', default: false, description: 'Somente ADMIN e imagem PRINCIPAL. Usa nome e categoria para insumos, ou nome e vínculo de evento para combos. Aplica uma imagem às unidades correspondentes.' }
+}, ['stagingKey']);
 const patch = { ...obj({ tipo, texto_alternativo: alt, ordem }, []), minProperties: 1 };
 const errors = { 400:'BadRequest',401:'Unauthorized',403:'Forbidden',404:'NotFound',409:'Conflict',413:'PayloadTooLarge',422:'ValidationError',429:'RateLimited',500:'InternalError',503:'Unavailable' };
 for (const r of commerceGalleryOperations) {
@@ -29,7 +30,13 @@ for (const r of commerceGalleryOperations) {
     if (['list','adminList'].includes(r.action)) {
         op.parameters.push({ name: 'tipo', in: 'query', schema: tipo }, { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: { type: 'string', pattern: '^(0|[0-9]{1,10}:[1-9][0-9]{0,19})$' } });
         op.responses['200'] = response(obj({ items: { type: 'array', items: image }, pagination: ref('Pagination') }));
-    } else if (r.action === 'create') { op.requestBody = { required: true, content: { 'application/json': { schema: create } } }; op.responses['201'] = response(image); }
+    } else if (r.action === 'create') {
+        op.requestBody = { required: true, content: { 'application/json': { schema: create } } };
+        const schema = spec.components.schemas[r.type === 'inputs' ? 'InputImage' : 'ComboImage'];
+        op.responses['201'] = response(obj({ ...schema.properties,
+            appliedCount: { type: 'integer', minimum: 1, description: 'Cadastros atualizados quando allUnits é verdadeiro.' }
+        }, schema.required));
+    }
     else if (r.action === 'patch') { op.requestBody = { required: true, content: { 'application/json': { schema: patch } } }; op.responses['200'] = response(image); }
     else if (r.action === 'remove') op.responses['204'] = { description: 'Imagem desvinculada; arquivo removido ou marcado para conciliação.' };
     else if (r.action === 'reconcile') op.responses['200'] = response(obj({ examined: { type: 'integer' }, completed: { type: 'integer' }, pending: { type: 'integer' } }));

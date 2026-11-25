@@ -48,7 +48,7 @@ export function AppearanceSelector() {
 
   return (
     <Dialog onOpenChange={(open) => { if (!open) setQuery("") }}>
-      <DialogTrigger render={<Button variant="outline" size="sm" aria-label="Abrir configurações de aparência" />}>
+      <DialogTrigger render={<Button variant="outline" size="icon-lg" aria-label="Abrir configurações de aparência" />}>
         <Palette aria-hidden="true" />
       </DialogTrigger>
       <DialogContent showCloseButton={false} className="z-[80] grid max-h-[min(90dvh,50rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-lg border border-border bg-popover p-0 sm:max-w-3xl motion-reduce:animate-none">

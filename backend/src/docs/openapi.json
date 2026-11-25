@@ -62,9 +62,6 @@
       "description": "Convites, participantes e concordância de rateio de assinaturas."
     },
     {
-      "name": "Catálogo"
-    },
-    {
       "name": "Suprimentos",
       "description": "Solicitações, envio, trânsito e recebimento de materiais."
     },
@@ -78,6 +75,13 @@
     {
       "name": "Locais",
       "description": "Locais, salas e assentos; estrutura de sessões presenciais."
+    },
+    {
+      "name": "Galerias comerciais",
+      "description": "Imagens de insumos e combos; PRINCIPAL única e alternativas de apresentação."
+    },
+    {
+      "name": "Catálogo"
     }
   ],
   "security": [
@@ -4540,7 +4544,7 @@
           "Catálogo"
         ],
         "summary": "save films (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Streaming exige preço de aluguel ou compra; aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
         "security": [
           {
             "bearerAuth": []
@@ -4727,7 +4731,7 @@
           "Catálogo"
         ],
         "summary": "save films (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Streaming exige preço de aluguel ou compra; aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
         "security": [
           {
             "bearerAuth": []
@@ -4893,7 +4897,7 @@
           "Catálogo"
         ],
         "summary": "list films (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.    Ordenação fixa por ID crescente; limit 1–100 (padrão20), cursor último ID. Título é busca literal parcial; gênero público ignora associações arquivadas. Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.    Ordenação fixa por ID crescente; limit 1–100 (padrão20), cursor último ID. Título é busca literal parcial; gênero público ignora associações arquivadas. Cache-Control no-store. Use order=newest para ordenar do maior ID para o menor. Use o cursor retornado com a mesma ordenação.",
         "security": [
           {
             "bearerAuth": []
@@ -5001,6 +5005,17 @@
               ]
             },
             "description": "status"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest"
+              ]
+            },
+            "description": "order"
           }
         ],
         "responses": {
@@ -5301,7 +5316,7 @@
           "Catálogo"
         ],
         "summary": "save genres (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Streaming exige preço de aluguel ou compra; aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
         "security": [
           {
             "bearerAuth": []
@@ -5488,7 +5503,7 @@
           "Catálogo"
         ],
         "summary": "save genres (ADMIN)",
-        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Streaming exige preço de aluguel ou compra; aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
+        "description": "ADMIN autenticado com 2FA; mutações revalidam sessão/perfil na transação.  Campos estritos. PATCH não aplica defaults aos campos omitidos. Valores monetários são strings decimais exatas. Preços opcionais no streaming. Aluguel exige prazo positivo. Filme ativo exige duração. URLs HTTPS limitadas a CATALOG_MEDIA_HOSTS, sem download no servidor. imagem legada é apenas leitura; galerias são tarefa16.   Cache-Control no-store.",
         "security": [
           {
             "bearerAuth": []
@@ -17771,7 +17786,52 @@
                       ]
                     },
                     "data": {
-                      "$ref": "#/components/schemas/InputImage"
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id_imagem": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,19}$"
+                        },
+                        "id_insumo": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$"
+                        },
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "PRINCIPAL",
+                            "ALTERNATIVA"
+                          ]
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "URL pública relativa de WebP promovido."
+                        },
+                        "texto_alternativo": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 255
+                        },
+                        "ordem": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 4294967295
+                        },
+                        "appliedCount": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "description": "Cadastros atualizados quando allUnits é verdadeiro."
+                        }
+                      },
+                      "required": [
+                        "id_imagem",
+                        "id_insumo",
+                        "tipo",
+                        "url",
+                        "texto_alternativo",
+                        "ordem"
+                      ]
                     },
                     "requestId": {
                       "type": "string",
@@ -17846,6 +17906,11 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 4294967295
+                  },
+                  "allUnits": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Somente ADMIN e imagem PRINCIPAL. Usa nome e categoria para insumos, ou nome e vínculo de evento para combos. Aplica uma imagem às unidades correspondentes."
                   }
                 },
                 "required": [
@@ -18661,7 +18726,52 @@
                       ]
                     },
                     "data": {
-                      "$ref": "#/components/schemas/ComboImage"
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id_imagem": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,19}$"
+                        },
+                        "id_combo": {
+                          "type": "string",
+                          "pattern": "^[1-9][0-9]{0,9}$"
+                        },
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "PRINCIPAL",
+                            "ALTERNATIVA"
+                          ]
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "URL pública relativa de WebP promovido."
+                        },
+                        "texto_alternativo": {
+                          "type": "string",
+                          "nullable": true,
+                          "maxLength": 255
+                        },
+                        "ordem": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 4294967295
+                        },
+                        "appliedCount": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "description": "Cadastros atualizados quando allUnits é verdadeiro."
+                        }
+                      },
+                      "required": [
+                        "id_imagem",
+                        "id_combo",
+                        "tipo",
+                        "url",
+                        "texto_alternativo",
+                        "ordem"
+                      ]
                     },
                     "requestId": {
                       "type": "string",
@@ -18736,6 +18846,11 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 4294967295
+                  },
+                  "allUnits": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Somente ADMIN e imagem PRINCIPAL. Usa nome e categoria para insumos, ou nome e vínculo de evento para combos. Aplica uma imagem às unidades correspondentes."
                   }
                 },
                 "required": [
@@ -59887,6 +60002,12 @@
             "enum": [
               "ATIVO",
               "INATIVO"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "enum": [
+              "newest"
             ]
           }
         },

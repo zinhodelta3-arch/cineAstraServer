@@ -3,7 +3,7 @@
 import LoadingImage from "@/components/ui/loading-image";
 
 import TablePagination from '@/components/ui/table-pagination';
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { publicAsset } from "@/lib/api/public-api.mjs";
@@ -29,7 +29,9 @@ function imageFields(form) {
 
 export default function ImagesAdmin() {
   const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
   const [film, setFilm] = useState(null);
+  const [draftFilm, setDraftFilm] = useState(null);
   const [savedImage, setSavedImage] = useState(null);
   const [dialog, setDialog] = useState(null);
   const [pending, setPending] = useState(false);
@@ -39,11 +41,15 @@ export default function ImagesAdmin() {
   const [type, setType] = useState("CAPA");
   const [bannerContext, setBannerContext] = useState("GERAL");
   const lock = useRef(false);
-  const search = useDeferredValue(query.trim());
-  const params = new URLSearchParams({ limit: "20" });
+  const params = new URLSearchParams({ limit: "20", order: "newest" });
   if (search) params.set("titulo", search);
   const films = useAdminCatalogList(`films?${params}`);
   const images = useAdminCatalogList(film ? `films/${film.id_filme}/images?limit=20` : null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(query.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   useEffect(() => {
     const filmId = new URLSearchParams(window.location.search).get("filme");
@@ -54,7 +60,7 @@ export default function ImagesAdmin() {
   }, []);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
-  function open(mode, image = null) { setError(""); setNotice(""); setPreview(null); setType(image?.tipo ?? "CAPA"); setBannerContext(image?.contexto_banner ?? "GERAL"); setDialog({ type: mode, image }); }
+  function open(mode, image = null) { setError(""); setNotice(""); setPreview(null); setDraftFilm(null); setType(image?.tipo ?? "CAPA"); setBannerContext(image?.contexto_banner ?? "GERAL"); setDialog({ type: mode, image }); }
   function close() { if (!pending) { setDialog(null); setPreview(null); } }
   function selectFilm(item) { if (pending) return; setFilm(item); setSavedImage(null); setDialog(null); setError(""); setNotice(""); window.history.replaceState(null, "", `/admin/filmes/imagens?filme=${item.id_filme}`); }
 
@@ -73,7 +79,7 @@ export default function ImagesAdmin() {
   function save(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const target = film ?? films.items.find(item => item.id_filme === form.get("filmId"));
+    const target = film ?? draftFilm;
     if (!target) { setError("Selecione o filme da imagem."); return; }
     let fields;
     try { fields = imageFields(form); }
@@ -98,15 +104,19 @@ export default function ImagesAdmin() {
   }
 
   const image = dialog?.image;
+  const searching = query.trim() !== search;
+  const filmList = searching ? { ...films, loading: true, items: [] } : films;
+  const modalFilms = draftFilm && !filmList.items.some(item => item.id_filme === draftFilm.id_filme)
+    ? [draftFilm, ...filmList.items] : filmList.items;
   const rows = savedImage && images.page === 1 && !images.loading && !images.items.some(item => item.id_imagem === savedImage.id_imagem)
     ? [savedImage, ...images.items] : images.items;
   return <CatalogLayout title="Imagens" description="Gerencie capas, banners e imagens adicionais de cada filme." action={<button type="button" className={styles.primary} onClick={() => open("form")}><Plus size={16} aria-hidden="true" />Adicionar nova imagem</button>}>
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     <section className={styles.filmPicker} aria-labelledby="picker-title"><h2 id="picker-title">Selecione um filme</h2><label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Buscar filme pelo título</span><input type="search" maxLength={200} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar filme" /></label>
       {film && <p className={styles.hint}>Selecionado: <strong>{film.titulo}</strong></p>}
-      <div className={styles.pickerList}>{films.items.map((item) => <button key={item.id_filme} type="button" aria-pressed={film?.id_filme === item.id_filme} onClick={() => selectFilm(item)}>{item.titulo}</button>)}</div>
-      <CatalogState list={films} empty="Nenhum filme encontrado." noun="filmes" />
-      {films.nextCursor && <button type="button" className={styles.secondary} onClick={films.loadMore} disabled={films.loadingMore}>{films.loadingMore ? "Carregando…" : "Carregar mais filmes"}</button>}
+      <div className={styles.pickerList}>{filmList.items.map((item) => <button key={item.id_filme} type="button" aria-pressed={film?.id_filme === item.id_filme} onClick={() => selectFilm(item)}>{item.titulo}</button>)}</div>
+      <CatalogState list={filmList} empty="Nenhum filme encontrado." noun="filmes" />
+      {(filmList.hasNext || filmList.page > 1) && <TablePagination list={filmList} noun="filmes" />}
     </section>
     <section className={styles.panel} aria-labelledby="images-title"><header className={styles.panelHeader}><div><h2 id="images-title">{film ? `Galeria · ${film.titulo}` : "Galeria de imagens"}</h2><p>{film ? "Capas, banners e alternativas cadastradas para este filme." : "Selecione um filme para visualizar e editar sua galeria."}</p></div>{film && <span className={styles.count}>{rows.length} carregadas</span>}</header>
       {!film && <p className={styles.state}>Selecione um filme acima para começar.</p>}
@@ -116,11 +126,12 @@ export default function ImagesAdmin() {
     <Dialog open={Boolean(dialog)} onOpenChange={(value) => { if (!value) close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{dialog?.type === "delete" ? "Excluir imagem" : image ? "Editar imagem" : "Adicionar imagem"}</DialogTitle>
       {dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>{image ? "Atualize a posição e a descrição da imagem." : "Envie uma imagem JPG, PNG ou WebP de até 5 MB."}</DialogDescription><form key={image?.id_imagem ?? "new"} className={styles.form} onSubmit={save}>
         {!film && <>
-          <label className={styles.wide}>Buscar filme no catálogo<input type="search" value={query} maxLength={200} onChange={event => setQuery(event.target.value)} /></label>
-          <label className={styles.wide}>Filme<select name="filmId" required defaultValue=""><option value="">{films.loading ? "Buscando filmes…" : "Selecione um filme"}</option>{films.items.map(item => <option key={item.id_filme} value={item.id_filme}>{item.titulo}</option>)}</select></label>
-          {films.error && <p role="alert" className={`${styles.error} ${styles.wide}`}>{films.error}</p>}
+          <label className={styles.wide}>Buscar filme no catálogo<input type="search" value={query} maxLength={200} onChange={event => { setQuery(event.target.value); setDraftFilm(null); }} /></label>
+          <label className={styles.wide}>Filme<select required value={draftFilm?.id_filme ?? ""} onChange={event => setDraftFilm(modalFilms.find(item => item.id_filme === event.target.value) ?? null)}><option value="">{filmList.loading ? "Buscando filmes…" : filmList.items.length ? "Selecione um filme" : "Nenhum filme encontrado"}</option>{modalFilms.map(item => <option key={item.id_filme} value={item.id_filme}>{item.titulo}</option>)}</select></label>
+          {filmList.error && <div className={styles.wide}><CatalogState list={filmList} noun="filmes" /></div>}
+          {(filmList.hasNext || filmList.page > 1) && <div className={styles.wide}><TablePagination list={filmList} noun="filmes" /></div>}
         </>}
-        {!image && <label className={styles.wide}>Arquivo de imagem<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required onChange={(event) => { const file = event.target.files?.[0]; setPreview(file ? URL.createObjectURL(file) : null); }} /></label>}
+        {!image && <label className={styles.wide}>Arquivo de imagem<input className={styles.imageFile} name="image" type="file" accept="image/jpeg,image/png,image/webp" required onChange={(event) => { const file = event.target.files?.[0]; setPreview(file ? URL.createObjectURL(file) : null); }} /></label>}
         {preview && <div className={styles.wide}><LoadingImage src={preview} alt="Prévia da imagem selecionada" style={{ maxWidth: "100%", maxHeight: 180, objectFit: "contain" }} /></div>}
         <label>Tipo<select name="tipo" value={type} onChange={event=>setType(event.target.value)}>{types.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
         <label>Ordem<input name="ordem" type="number" min="0" max="4294967295" required defaultValue={image?.ordem ?? 0} /></label>

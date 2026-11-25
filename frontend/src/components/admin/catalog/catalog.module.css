@@ -10,8 +10,9 @@
 .count { margin-top: 0; white-space: nowrap; }
 .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; padding: 6px 24px 20px; }
 .search { display: flex; width: min(100%, 300px); height: 40px; align-items: center; gap: 8px; padding: 0 11px; border: 1px solid var(--border); border-radius: 8px; color: var(--muted-foreground); }
-.search:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
+.search:focus-within { border-color: var(--ring); outline: 1px solid var(--ring); }
 .search input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--foreground); font-size: 12px; outline: none; }
+.search input:focus-visible { outline: none !important; }
 .search input::placeholder { color: var(--muted-foreground); }
 .filter { display: flex; min-height: 40px; align-items: center; gap: 10px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; }
 .filter select { height: 38px; border: 0; background: transparent; color: var(--foreground); font-size: 12px; cursor: pointer; }
@@ -63,6 +64,12 @@
 .form textarea { min-height: 88px; resize: vertical; }
 .form input::placeholder, .form textarea::placeholder { color: var(--muted-foreground); }
 .form input[type="checkbox"] { width: 16px; min-height: 16px; height: 16px; padding: 0; accent-color: var(--primary); }
+.form .imageFile { padding: 4px; text-overflow: ellipsis; }
+.imageFile::file-selector-button {
+  min-height: 32px; margin-inline-end: 10px; padding-inline: 10px;
+  border: 0; border-radius: calc(var(--radius) - 4px);
+  background: var(--muted); color: var(--foreground); font-weight: 600; cursor: pointer;
+}
 .wide { grid-column: 1 / -1; }
 .comboPicker { display: grid; gap: 12px; }
 .requestPicker { display: grid; gap: 10px; }
@@ -78,7 +85,7 @@
 .secondary:hover { background: var(--muted); }
 .primary:hover, .danger:hover { filter: brightness(.93); }
 .dialog :is(button, input, select, textarea):disabled, .panel button:disabled { cursor: not-allowed; opacity: .5; }
-.filmPicker { display: grid; gap: 10px; margin-bottom: 18px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+.filmPicker { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 18px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
 .filmPicker h2 { font-size: 15px; font-weight: 650; }
 .pickerControl { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; }
 .pickerControl label { display: grid; width: min(100%, 340px); gap: 7px; font-size: 12px; font-weight: 600; }
@@ -108,7 +115,7 @@
 .detailGrid dt { margin-bottom: 5px; color: var(--muted-foreground); font-size: 11px; }
 .detailGrid dd { margin: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
 .pickerList { display: flex; flex-wrap: wrap; gap: 7px; }
-.pickerList button { min-height: 34px; padding: 0 11px; border: 1px solid var(--border); border-radius: 7px; font-size: 11px; cursor: pointer; }
+.pickerList button { min-height: 34px; max-width: 100%; padding: 4px 11px; border: 1px solid var(--border); border-radius: 7px; font-size: 11px; overflow-wrap: anywhere; cursor: pointer; }
 .pickerList button[aria-pressed="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 13%, var(--card)); }
 .checkboxList { display: grid; gap: 8px; max-height: 300px; overflow: auto; margin: 0; padding: 0; list-style: none; }
 .checkboxList label { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 12px; cursor: pointer; }

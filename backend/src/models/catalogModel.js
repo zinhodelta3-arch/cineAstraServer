@@ -1,15 +1,16 @@
 import { idString } from '../utils/dto.js';
+import { filmCover } from './filmGalleryModel.js';
 import { bookableFilm } from './sessionModel.js';
 import { readableSlug } from '../utils/catalogSlug.js';
 
 export const filmFields = ['titulo', 'descricao', 'duracao', 'classificacao', 'data_lancamento', 'diretor', 'trailer', 'disponivel_cinema', 'disponivel_streaming', 'preco_aluguel', 'preco_compra', 'dias_acesso_aluguel', 'status'];
-const publicFields = ['id_filme', ...filmFields, 'imagem'];
+const publicFields = ['id_filme', ...filmFields];
 const writable = [...filmFields, 'url_reproducao'];
 const filmSlug = `COALESCE(f.slug,${readableSlug('f.titulo', 'f.id_filme', 'filme')})`;
 export function createCatalogModel(database) {
     const rows = async (c, sql, args) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args) => (await rows(c, sql, args))[0] ?? null;
-    const selection = admin => `${[...publicFields, ...(admin ? ['url_reproducao'] : [])].map(k => `f.${k}`).join(',')},${filmSlug} AS slug,
+    const selection = admin => `${[...publicFields, ...(admin ? ['url_reproducao'] : [])].map(k => `f.${k}`).join(',')},${filmCover} AS imagem,${filmSlug} AS slug,
         (SELECT fi.url FROM filmes_imagens fi WHERE fi.id_filme = f.id_filme AND fi.tipo = 'BANNER' AND fi.contexto_banner='GERAL' ORDER BY fi.principal DESC, fi.ordem, fi.id_imagem LIMIT 1) AS banner,
         (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT('id', g.id_genero, 'nome', g.nome)), JSON_ARRAY())
          FROM filme_generos fg JOIN generos g ON g.id_genero = fg.id_genero
@@ -45,11 +46,20 @@ export function createCatalogModel(database) {
         genre: (id, admin = false, c = database, lock = false) => one(c, `SELECT id_genero,nome,status FROM generos WHERE id_genero = ?${admin ? '' : " AND status = 'ATIVO'"}${lock ? ' FOR UPDATE' : ''}`, [id]),
         listFilms(q, admin = false) {
             const { where, args } = filmFilters(q, admin);
-            return rows(database, `SELECT ${selection(admin)} FROM filmes f WHERE ${['f.id_filme > ?', ...where].join(' AND ')} ORDER BY f.id_filme LIMIT ${pageLimit(q.limit)}`, [q.cursor ?? '0', ...args]);
+            const newest = admin && q.order === 'newest';
+            if (q.cursor || !newest) {
+                where.unshift(newest ? 'f.id_filme < ?' : 'f.id_filme > ?');
+                args.unshift(q.cursor ?? '0');
+            }
+            return rows(database, `SELECT ${selection(admin)} FROM filmes f WHERE ${where.length ? where.join(' AND ') : '1=1'}
+                ORDER BY f.id_filme ${newest ? 'DESC' : 'ASC'} LIMIT ${pageLimit(q.limit)}`, args);
         },
         showcaseFilms(limit) {
-            return rows(database, `SELECT ${selection(false)},TRUE AS venda_disponivel FROM filmes f
-                WHERE ${bookableFilm} ORDER BY CRC32(CONCAT(UTC_DATE(),':',f.id_filme)),f.id_filme LIMIT ?`, [limit]);
+            const pinnedTitle = 'A Viagem de Chihiro';
+            return rows(database, `SELECT ${selection(false)},${bookableFilm} AS venda_disponivel FROM filmes f
+                WHERE (f.titulo = ? AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE) OR ${bookableFilm}
+                ORDER BY (f.titulo = ?) DESC, CRC32(CONCAT(UTC_DATE(),':',f.id_filme)),f.id_filme LIMIT ?`,
+            [pinnedTitle, pinnedTitle, limit]);
         },
         listNumberedFilms(q, signal) {
             const limit = pageLimit(q.limit) - 1;

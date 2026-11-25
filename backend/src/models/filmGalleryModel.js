@@ -1,5 +1,11 @@
 import { idString } from '../utils/dto.js';
 const columns = 'i.id_imagem,i.id_filme,i.tipo,i.url,i.texto_alternativo,i.ordem,i.principal,i.contexto_banner,i.dispositivo_banner';
+
+export const filmCover = `COALESCE(f.imagem, (
+    SELECT i.url FROM filmes_imagens i WHERE i.id_filme = f.id_filme AND i.tipo = 'CAPA'
+    ORDER BY i.principal DESC, i.ordem, i.id_imagem LIMIT 1
+))`;
+
 export function createFilmGalleryModel(database) {
     const one = async (c, sql, args) => (await c.execute(sql, args))[0][0] ?? null;
     return {

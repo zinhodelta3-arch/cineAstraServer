@@ -74,7 +74,11 @@ test('CRUD HTTP ADMIN, público só ativos e sem URL privada, arquivamento prese
 });
 test('regras cruzadas, hosts, recurso ausente, paginação e revogação no service', async () => {
     const f = catalogFixture();
-    await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN').send({ ...film, preco_aluguel: null }).expect(422);
+    const subscription = await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN')
+        .send({ ...film, preco_aluguel: null, preco_compra: null }).expect(201);
+    assert.equal(subscription.body.data.disponivel_streaming, true);
+    assert.equal(subscription.body.data.preco_aluguel, null);
+    assert.equal(subscription.body.data.preco_compra, null);
     await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN').send({ ...film, trailer: 'https://evil.invalid/video' }).expect(422);
     await request(f.app).patch('/api/films/999').set('X-Fixture-Role', 'ADMIN').send({ titulo: 'X' }).expect(404);
     for (let i = 0; i < 2; i++) await request(f.app).post('/api/films').set('X-Fixture-Role', 'ADMIN').send(film).expect(201);

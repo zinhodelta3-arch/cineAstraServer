@@ -1,4 +1,5 @@
 import { idString } from '../utils/dto.js';
+import { filmCover } from './filmGalleryModel.js';
 
 const projection = 's.id_sessao,s.id_filme,s.id_sala,sa.id_local,f.titulo AS titulo_filme,f.duracao AS duracao_filme,sa.nome AS nome_sala,l.nome AS nome_local,s.data,s.horario_inicio,s.horario_fim,s.idioma,s.preco_inteira,s.status,s.arquivada_em';
 const joins = ' FROM sessoes s JOIN salas sa ON sa.id_sala = s.id_sala JOIN locais l ON l.id_local = sa.id_local JOIN filmes f ON f.id_filme = s.id_filme';
@@ -115,7 +116,7 @@ export function createSessionModel(database) {
                 if (q.visibility === 'programming') where.push('s.arquivada_em IS NULL');
             }
             else where.push(publicConditions);
-            const filmDetails = !admin && q.localId && q.date ? ',f.imagem AS imagem_filme,f.classificacao AS classificacao_filme' : '';
+            const filmDetails = !admin && q.localId && q.date ? `,${filmCover} AS imagem_filme,f.classificacao AS classificacao_filme` : '';
             const seatAvailability = (!admin && (q.filmId || q.date && q.localId) || admin && q.roomId) ? `,${availability}` : '';
             const consult = q.collaboratorId ? `,EXISTS(SELECT 1 FROM equipes e JOIN equipe_membros m USING(id_equipe)
                 WHERE e.id_sessao=s.id_sessao AND e.status='ATIVA' AND m.id_usuario=? AND m.status='ATIVO') AS can_consult` : '';

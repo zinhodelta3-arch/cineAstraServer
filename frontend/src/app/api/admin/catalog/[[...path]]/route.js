@@ -85,7 +85,8 @@ async function handle(request, { params }) {
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;
     const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "Sua conta não pode alterar o catálogo.", 404: "Registro não encontrado.", 409: "Há um conflito com os dados ou o estado atual do registro. Atualize a lista e confira as informações.", 422: "Confira os dados informados e tente novamente." };
-    return json(authErrorPayload(error, { message: messages[status] ?? "Não foi possível acessar o catálogo." }), status);
+    const message = status === 422 && error instanceof AuthError ? error.message : messages[status];
+    return json(authErrorPayload(error, { message: message ?? "Não foi possível acessar o catálogo." }), status);
   }
 }
 

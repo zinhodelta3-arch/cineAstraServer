@@ -5,8 +5,9 @@ import { report } from '../utils/telemetry.js';
 const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
 const dto = (type, row) => ({ id_imagem: idString(row.id_imagem), [type === 'inputs' ? 'id_insumo' : 'id_combo']: idString(row[type === 'inputs' ? 'id_insumo' : 'id_combo']), tipo: row.tipo, url: row.url, texto_alternativo: row.texto_alternativo ?? null, ordem: row.ordem });
 export function createCommerceGalleryService({ model, identity, storage }) {
-    async function lock(type, c, id, context) {
+    async function lock(type, c, id, context, adminOnly = false) {
         const actor = await identity.activeActor(c, context);
+        if (adminOnly && actor.tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
         const parent = found(await model.lockParent(type, c, id));
         if (actor.tipo_usuario === 'ADMIN') return parent;
         if (type !== 'inputs' || actor.tipo_usuario !== 'FORNECEDOR') throw ApiError.acessoNegado();
@@ -29,10 +30,19 @@ export function createCommerceGalleryService({ model, identity, storage }) {
             return { items: items.map(row => dto(type, row)), pagination: { limit: q.limit, nextCursor: rows.length > q.limit ? `${items.at(-1).ordem}:${idString(items.at(-1).id_imagem)}` : null } };
         },
         async create(type, id, input, context) {
-            await identity.transaction(c => lock(type, c, id, context), context);
+            await identity.transaction(c => lock(type, c, id, context, input.allUnits), context);
             const files = storage[type], saved = await files.promote(input.stagingKey, id, context.signal, context.actor.id);
             try {
                 return await identity.transaction(async c => {
+                    if (input.allUnits) {
+                        if ((await identity.activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado();
+                        const ids = await model.lockMatchingProducts(type, c, id);
+                        if (!ids.includes(id)) throw ApiError.naoEncontrado();
+                        await model.setSharedPrincipal(type, c, ids, { ...input, url: saved.url });
+                        await identity.audit(c, `GALLERY.${type.toUpperCase()}.SHARED`, id, context);
+                        const row = (await model.list(type, id, { tipo: 'PRINCIPAL', limit: 1 }, c))[0];
+                        return { ...dto(type, found(row)), appliedCount: ids.length };
+                    }
                     await lock(type, c, id, context);
                     if (input.tipo === 'PRINCIPAL') await model.clearPrincipal(type, c, id);
                     const imageId = await model.insert(type, c, id, { ...input, url: saved.url });

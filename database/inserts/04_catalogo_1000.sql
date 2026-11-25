@@ -1038,7 +1038,7 @@ START TRANSACTION;
 -- Eliminar do lote filmes já cadastrados por título e data ou pelo trailer associado.
 DELETE seed FROM seed_catalogo_1000 seed
 JOIN filmes f ON (f.titulo COLLATE utf8mb4_unicode_ci = seed.titulo AND f.data_lancamento = seed.lancamento)
-  OR (f.trailer = seed.trailer AND f.data_lancamento = seed.lancamento);
+  OR (f.trailer COLLATE utf8mb4_bin = seed.trailer COLLATE utf8mb4_bin AND f.data_lancamento = seed.lancamento);
 
 INSERT INTO filmes (titulo, descricao, duracao, classificacao, data_lancamento, diretor, imagem, trailer, disponivel_cinema, disponivel_streaming, status)
 SELECT titulo, descricao, duracao, '18', lancamento, diretor, poster, trailer, TRUE, TRUE, 'ATIVO'

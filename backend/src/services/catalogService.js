@@ -18,10 +18,8 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
     const { transaction, activeActor, audit } = identity;
     const found = row => { if (!row) throw ApiError.naoEncontrado(); return row; };
     async function admin(c, context) { if ((await activeActor(c, context)).tipo_usuario !== 'ADMIN') throw ApiError.acessoNegado(); }
-    function validateFilm(row, input, editing) {
+    function validateFilm(row, input) {
         if (row.status === 'ATIVO' && (!Number.isInteger(row.duracao) || row.duracao <= 0)) throw ApiError.validacao('Filme ativo exige duração positiva');
-        const streamingChanged = !editing || ['disponivel_streaming', 'preco_aluguel', 'preco_compra'].some(key => Object.hasOwn(input, key));
-        if (streamingChanged && row.disponivel_streaming && row.preco_aluguel == null && row.preco_compra == null) throw ApiError.validacao('Streaming exige preço de aluguel ou compra');
         if (row.preco_aluguel != null && (!Number.isInteger(row.dias_acesso_aluguel) || row.dias_acesso_aluguel <= 0)) throw ApiError.validacao('Aluguel exige prazo positivo');
         for (const key of ['trailer', 'url_reproducao']) if (input[key] != null && !mediaHosts.includes(new URL(input[key]).hostname.toLowerCase())) throw ApiError.validacao('Host de mídia não permitido', [{ field: key, code: 'MEDIA_HOST_DENIED' }]);
     }
@@ -49,7 +47,7 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
             return transaction(async c => {
                 await admin(c, context);
                 const previous = id ? found(await model.film(id, true, c, true)) : {};
-                validateFilm({ ...previous, ...input }, input, Boolean(id));
+                validateFilm({ dias_acesso_aluguel: 3, ...previous, ...input }, input);
                 if (id) await model.patchFilm(c, id, input); else id = await model.createFilm(c, input);
                 await audit(c, 'CATALOG.FILM_CHANGED', id, context);
                 return filmDto(await model.film(id, true, c), true);
