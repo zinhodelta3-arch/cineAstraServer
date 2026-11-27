@@ -141,7 +141,8 @@ export async function migrationPlan() {
         ['20261123_67_catalog_links.sql', () => true],
         ['20261123_68_news.sql', () => true],
         ['20261123_69_marketing_promotions.sql', () => true],
-        ['20261123_70_room_scene.sql', () => true]
+        ['20261123_70_room_scene.sql', () => true],
+        ['20261126_71_venue_types.sql', () => true]
     ];
     const plan = [];
     for (const [file, filter] of sources) {

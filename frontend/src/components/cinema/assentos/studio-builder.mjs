@@ -65,13 +65,19 @@ export function normalizeSeatCode(value) {
   return String(value ?? '').trim().toUpperCase().replace(/\s+/g, '');
 }
 
-export function inferEnvironment({ spaceType, roomType } = {}) {
+export function inferEnvironment({ spaceType } = {}) {
   if (spaceType === 'DRIVE_IN' || spaceType === 'ESTACIONAMENTO') return 'drivein';
   if (spaceType === 'ESTADIO') return 'stadium';
   if (spaceType === 'PRACA' || spaceType === 'ESPACO_PUBLICO') return 'park';
-  if (spaceType === 'SALAO_EVENTOS') return 'theater';
-  if (roomType === '4DX') return 'banker';
+  if (spaceType === 'TEATRO' || spaceType === 'SALAO_EVENTOS') return 'theater';
+  if (spaceType === 'BUNKER') return 'banker';
+  if (spaceType === 'CONTAINER') return 'container';
+  if (spaceType === 'OUTRO') return 'custom';
   return 'cinema';
+}
+
+export function projectionLandmark(environment, fallback = 'Tela') {
+  return { stadium: 'Campo', drivein: 'Telão', theater: 'Palco e telão', park: 'Telão' }[environment] ?? fallback;
 }
 
 export function nextSceneObjectId(objects) {
@@ -154,19 +160,23 @@ export function generateSceneFromSeats({
   const rowCount = Math.max(1, rowEntries.length);
 
   const isDriveIn = environment === 'drivein';
-  const isOutdoor = isDriveIn || environment === 'park' || environment === 'stadium';
-  const colStep = isDriveIn ? 4.8 : roomType === 'VIP' ? 2.85 : 2.35;
-  const rowStep = isDriveIn ? 7.4 : roomType === 'VIP' ? 3.55 : 2.95;
-  const riserStep = isOutdoor ? 0 : roomType === 'VIP' ? 0.34 : 0.28;
+  const isStadium = environment === 'stadium';
+  const isCompact = environment === 'banker' || environment === 'container';
+  const isOutdoor = isDriveIn || environment === 'park' || isStadium;
+  const colStep = isDriveIn ? 4.8 : isCompact ? 2.15 : roomType === 'VIP' ? 2.85 : 2.35;
+  const rowStep = isDriveIn ? 7.4 : isCompact ? 2.45 : roomType === 'VIP' ? 3.55 : 2.95;
+  const riserStep = isStadium ? 0.48 : isOutdoor ? 0 : roomType === 'VIP' ? 0.34 : 0.28;
 
   const audienceWidth = Math.max(12, colSpan * colStep + 4);
   const audienceDepth = Math.max(10, rowCount * rowStep + 4);
-  const screenDistance = isDriveIn ? 11 : 7.5;
+  const screenDistance = isDriveIn ? 11 : isCompact ? 4.5 : 7.5;
   const frontZ = -(audienceDepth / 2 + screenDistance);
   const backZ = audienceDepth / 2 + 4.5;
-  const roomWidth = Math.max(isDriveIn ? 26 : 19, audienceWidth + (isOutdoor ? 10 : 7));
-  const roomDepth = Math.max(isDriveIn ? 32 : 24, backZ - frontZ + 6);
+  const roomWidth = Math.max(isDriveIn ? 26 : isCompact ? 15 : 19, audienceWidth + (isOutdoor ? 10 : isCompact ? 3 : 7));
+  const roomDepth = Math.max(isDriveIn ? 32 : isCompact ? 18 : 24, backZ - frontZ + 6);
   const centerZ = (frontZ + backZ) / 2;
+  const fieldZ = frontZ - 17;
+  const projectionZ = isStadium ? fieldZ - 24 : frontZ + 0.8;
 
   const objects = [];
   let nextId = 1;
@@ -177,8 +187,12 @@ export function generateSceneFromSeats({
   };
 
   // Base do espaço
-  if (environment === 'stadium') {
-    push('turf', { x: 0, y: 0, z: frontZ - 14, sx: 0.85, sy: 1, sz: 0.6, color: '#3e8a87', label: 'Campo central' });
+  if (isStadium) {
+    push('turf', { x: 0, y: 0, z: fieldZ, sx: 0.85, sy: 1, sz: 0.6, color: '#386343', label: 'Campo central' });
+    push('floor', { x: 0, y: -0.25, z: (fieldZ + 22 + backZ) / 2, sx: roomWidth, sy: 1, sz: backZ - fieldZ - 18, color: '#343743', label: 'Setor da arquibancada' });
+    for (const side of [-1, 1]) {
+      push('light', { x: side * Math.max(roomWidth / 2, 21), z: fieldZ, sy: 1.6, label: 'Refletor do estádio' });
+    }
   } else {
     const floorColor = isDriveIn ? '#2c303a' : environment === 'park' ? '#3e8a87' : environment === 'theater' ? '#493632' : '#343743';
     push('floor', { x: 0, y: -0.25, z: centerZ, sx: roomWidth, sy: 1, sz: roomDepth, color: floorColor, label: 'Piso da sala' });
@@ -187,13 +201,18 @@ export function generateSceneFromSeats({
   // Paredes / limites quando ambiente fechado
   if (!isOutdoor) {
     const wallColor = environment === 'theater' ? '#633c44' : environment === 'container' ? '#3e8a87' : '#494d59';
-    const wallHeight = Math.max(8, Math.round(rowCount * riserStep + 6.5));
+    const wallHeight = isCompact ? 5.5 : Math.max(8, Math.round(rowCount * riserStep + 6.5));
     push('wall', { x: 0, y: 0, z: frontZ - 2.2, sx: roomWidth, sy: wallHeight, sz: 0.7, color: wallColor, label: 'Parede frontal' });
     push('wall', { x: 0, y: 0, z: backZ, sx: roomWidth, sy: wallHeight, sz: 0.7, color: wallColor, label: 'Parede dos fundos' });
     push('wall', { x: -roomWidth / 2, y: 0, z: centerZ, sx: 0.7, sy: wallHeight, sz: roomDepth, color: wallColor, label: 'Parede esquerda' });
     push('wall', { x: roomWidth / 2, y: 0, z: centerZ, sx: 0.7, sy: wallHeight, sz: roomDepth, color: wallColor, label: 'Parede direita' });
     push('door', { x: -roomWidth / 2 + 0.45, y: 0, z: backZ - 4.5, rotation: Math.PI / 2, color: '#865c45', label: 'Entrada / Saída' });
     push('door', { x: roomWidth / 2 - 0.45, y: 0, z: frontZ + 5.2, rotation: -Math.PI / 2, color: '#865c45', label: 'Saída de emergência' });
+    if (isCompact) {
+      for (const side of [-1, 1]) {
+        push('rib', { x: side * (roomWidth / 2 - 0.8), z: centerZ, color: wallColor, label: environment === 'banker' ? 'Painel acústico' : 'Reforço do contêiner' });
+      }
+    }
   } else if (isDriveIn || environment === 'park') {
     for (const side of [-1, 1]) {
       push('tree', { x: side * (roomWidth / 2 - 1.5), y: 0, z: frontZ + 4, color: '#3e8a87', label: 'Paisagismo' });
@@ -207,21 +226,18 @@ export function generateSceneFromSeats({
     push('stage', { x: 0, y: 0, z: frontZ + 2.8, sx: Math.max(1, roomWidth / 16), sy: 1, sz: 1, color: '#865c45', label: 'Palco principal' });
     push('curtain', { x: -roomWidth * 0.28, y: 0, z: frontZ + 1.1, sx: 0.9, sy: 1, sz: 1, color: '#8d475a', label: 'Cortina esquerda' });
     push('curtain', { x: roomWidth * 0.28, y: 0, z: frontZ + 1.1, sx: 0.9, sy: 1, sz: 1, color: '#8d475a', label: 'Cortina direita' });
-    push('podium', { x: 0, y: 1.15, z: frontZ + 5, color: '#c6a06b', label: 'Púlpito' });
-  } else {
-    const screenScale = clamp(roomWidth / 15.5, 0.95, isDriveIn ? 2.1 : 1.7);
-    const screenColor = roomType === 'IMAX' ? '#3e8a87' : roomType === 'VIP' ? '#c6a06b' : '#506a89';
-    push('screen', {
-      x: 0,
-      y: isDriveIn ? 1.5 : 0.6,
-      z: frontZ + 0.8,
-      sx: screenScale,
-      sy: clamp(screenScale * 0.88, 0.9, 1.8),
-      sz: 1,
-      color: screenColor,
-      label: isDriveIn ? 'Telão Drive-in' : `Tela ${roomType || '2D'}`,
-    });
   }
+  const screenScale = clamp(roomWidth / 15.5, 0.95, isStadium ? 3 : isDriveIn ? 2.1 : 1.7);
+  const screenColor = roomType === 'IMAX' ? '#3e8a87' : roomType === 'VIP' ? '#c6a06b' : '#506a89';
+  push('screen', {
+    x: 0,
+    y: isStadium ? 4 : isDriveIn || environment === 'theater' ? 1.5 : 0.6,
+    z: projectionZ,
+    sx: screenScale,
+    sy: clamp(screenScale * 0.88, 0.9, 2.3),
+    color: screenColor,
+    label: isStadium ? 'Telão do estádio' : isDriveIn ? 'Telão Drive-in' : `Tela ${roomType || '2D'}`,
+  });
 
   // Caixas de som frontais
   const speakerX = clamp(roomWidth * 0.36, 6.5, roomWidth / 2 - 1.8);
@@ -236,8 +252,7 @@ export function generateSceneFromSeats({
       gaps.push((midPos - (minPos + maxPos) / 2) * colStep);
     }
   }
-  const aislePositions = gaps.length ? gaps : [0];
-  for (const ax of aislePositions.slice(0, 4)) {
+  for (const ax of gaps.slice(0, 4)) {
     push('aisle', {
       x: ax,
       y: 0.04,
@@ -270,16 +285,17 @@ export function generateSceneFromSeats({
     const rowZ = startZ + r * rowStep;
     const rowY = r * riserStep;
 
-    if (!isOutdoor && r > 0 && objects.length < 1150) {
-      push('riser', {
+    if ((isStadium || (!isOutdoor && r > 0)) && objects.length < 1150) {
+      const platformHeight = isStadium ? (rowY + 0.24) / 0.4425 : Math.max(1, (rowY + 0.2) / 0.35);
+      push(isStadium ? 'bleacher' : 'riser', {
         x: 0,
-        y: rowY - 0.17,
+        y: isStadium ? -0.24 : rowY - 0.17,
         z: rowZ,
         sx: Math.max(8, colSpan * colStep + 1.8),
-        sy: Math.max(1, (rowY + 0.2) / 0.35),
+        sy: platformHeight,
         sz: rowStep * 0.96,
         color: '#343743',
-        label: `Patamar ${row.label}`,
+        label: `${isStadium ? 'Arquibancada' : 'Patamar'} ${row.label}`,
       });
     }
 
@@ -306,7 +322,8 @@ export function generateSceneFromSeats({
     }
   }
 
-  const sceneSize = round2(clamp(Math.max(roomWidth, roomDepth) * 0.65, 10, 240));
+  const visibleDepth = isStadium ? backZ - projectionZ : roomDepth;
+  const sceneSize = round2(clamp(Math.max(roomWidth, visibleDepth) * 0.65, 10, 240));
 
   return {
     format: 'CineAstra-Studio-3D',

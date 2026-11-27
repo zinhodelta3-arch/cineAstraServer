@@ -1,11 +1,14 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
+import { MessagesSquare, Ticket } from 'lucide-react';
 import useSupportWorkspace from '@/hooks/cinema/suporte/use-support-workspace';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import ListStatus from '@/components/cinema/home/list-status';
 import SupportAssistant from './support-assistant';
+import ticketStyles from '@/components/cinema/ticket.module.css';
+import styles from './support-cinema.module.css';
 const statusLabels={ABERTO:'Aberto',EM_ATENDIMENTO:'Em atendimento',RESOLVIDO:'Resolvido',FECHADO:'Fechado',CANCELADO:'Cancelado'};
 const field='mt-2 w-full rounded-lg border border-input bg-background p-3 text-sm focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-60';
 function stamp(value){
@@ -14,7 +17,7 @@ function stamp(value){
  return Number.isNaN(date.getTime())?null:date.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'});
 }
 const roleNames={ADMIN:'Atendimento',CLIENTE:'Cliente',SUPERVISOR:'Supervisor',COLABORADOR:'Colaborador',FORNECEDOR:'Fornecedor'};
-export default function SupportWorkspace({initialId,staffRole,area}){
+export default function SupportWorkspace({initialId,staffRole,area,cinema=false}){
  const s=useSupportWorkspace(initialId,area),ticket=s.detail.data;
  const [action,setAction]=useState(null);
  const listRegion=useRef(null), sentinel=useRef(null), thread=useRef(null);
@@ -33,21 +36,23 @@ export default function SupportWorkspace({initialId,staffRole,area}){
   const complete=action==='edit'?await s.edit(form.get('subject'),form.get('message')):await s.cancel();
   if(complete)setAction(null);
  };
- return <div className="mx-auto mt-7 w-full max-w-[1120px] space-y-7">
+ const workspacePanel = 'min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6';
+ const heading = cinema ? `${ticketStyles.title} ${styles.workspaceHeading}` : 'text-xl font-bold';
+ return <div className={cinema ? styles.workspaceBody : 'mx-auto mt-7 w-full max-w-[1120px] space-y-7'}>
   {s.notice&&<p role="status" className="rounded-xl border border-primary/30 bg-primary/5 p-4">{s.notice}</p>}
   {s.error&&<p role="alert" className="rounded-xl border border-destructive/40 p-4">{s.error}</p>}
-  <div className="grid items-start gap-4 lg:grid-cols-2">
-   <section className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6">
-    <h2 className="text-xl font-bold">Abrir chamado</h2>
+  <div className={cinema ? styles.caseTicket : 'grid items-start gap-4 lg:grid-cols-2'}>
+   <section className={cinema ? styles.caseForm : workspacePanel} aria-label="Abrir chamado">
+    <h2 className={heading}>{cinema && <Ticket size={20} aria-hidden="true" />}Abrir chamado</h2>
     <p className="mt-2 text-sm text-muted-foreground">Descreva o que aconteceu. Não inclua senhas ou dados completos de pagamento.</p>
     <form className="mt-5 space-y-4" onSubmit={s.create}>
-     <label className="block text-sm font-semibold">Assunto<Input className="mt-2" value={s.subject} onChange={e=>s.setSubject(e.target.value)} maxLength={150} required disabled={s.pending} /></label>
-     <label className="block text-sm font-semibold">Mensagem inicial<textarea className={field} rows={5} value={s.message} onChange={e=>s.setMessage(e.target.value)} maxLength={10000} required disabled={s.pending} /></label>
-     <Button type="submit" disabled={s.pending||!s.subject.trim()||!s.message.trim()}>Abrir chamado</Button>
+     <label className="block text-sm font-semibold">Assunto<Input className={cinema ? styles.caseField : 'mt-2'} value={s.subject} onChange={e=>s.setSubject(e.target.value)} maxLength={150} required disabled={s.pending} /></label>
+     <label className="block text-sm font-semibold">Mensagem inicial<textarea className={cinema ? `${field} ${styles.caseField}` : field} rows={cinema ? 4 : 5} value={s.message} onChange={e=>s.setMessage(e.target.value)} maxLength={10000} required disabled={s.pending} /></label>
+     <Button className={cinema ? 'min-h-11' : undefined} type="submit" disabled={s.pending||!s.subject.trim()||!s.message.trim()}>Abrir chamado</Button>
     </form>
    </section>
-   <section className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6">
-    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Meus chamados</h2><Button variant="outline" onClick={s.list.retry} disabled={s.list.loading||s.pending}>Atualizar chamados</Button></div>
+   <section className={cinema ? styles.caseHistory : workspacePanel} aria-label="Meus chamados">
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className={heading}>{cinema && <MessagesSquare size={20} aria-hidden="true" />}Meus chamados</h2><Button variant="outline" onClick={s.list.retry} disabled={s.list.loading||s.pending}>Atualizar chamados</Button></div>
     <div ref={listRegion} className="mt-4 max-h-72 overflow-y-auto pr-1" tabIndex={0} role="region" aria-label="Lista de meus chamados"><ul className="space-y-1.5">{s.list.items.map(item=><li key={item.id}><button type="button" disabled={s.pending} aria-pressed={s.selected===item.id} onClick={()=>s.select(item.id)} className="w-full rounded-lg border border-border px-3 py-2 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-pressed:border-primary aria-pressed:bg-primary/5 disabled:opacity-60"><span className="block break-words font-semibold">#{item.id} · {item.subject}</span><span className="mt-1 block text-sm text-muted-foreground">{statusLabels[item.status]||item.status}</span></button></li>)}</ul>
     <div ref={sentinel} aria-hidden="true" className="h-px" /></div>
     {s.list.error&&<div className="mt-3" role="alert"><p>{s.list.error}</p><Button variant="outline" onClick={cursor?s.list.loadMore:s.list.retry}>Tentar novamente</Button></div>}
@@ -56,8 +61,8 @@ export default function SupportWorkspace({initialId,staffRole,area}){
     {cursor&&<button type="button" className="sr-only focus:not-sr-only" disabled={s.list.loading} onClick={s.list.loadMore}>Carregar próximos chamados</button>}
    </section>
   </div>
-  {s.selected&&<section ref={thread} className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-6" aria-labelledby="ticket-title">
-   <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="ticket-title" className="text-2xl font-bold">Conversa do chamado #{s.selected}</h2><Button variant="outline" onClick={s.refresh} disabled={s.pending||s.detail.loading||s.messages.loading}>Atualizar conversa</Button></div>
+  {s.selected&&<section ref={thread} className={cinema ? `${styles.workspaceCard} ${styles.thread}` : workspacePanel} aria-labelledby="ticket-title">
+   <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="ticket-title" className={cinema ? heading : 'text-2xl font-bold'}>Conversa do chamado #{s.selected}</h2><Button variant="outline" onClick={s.refresh} disabled={s.pending||s.detail.loading||s.messages.loading}>Atualizar conversa</Button></div>
    {s.detail.loading&&<p role="status" className="mt-4">Carregando chamado…</p>}
    {s.detail.error&&<div role="alert" className="mt-4"><p>{s.detail.error}</p><Button onClick={s.detail.retry} variant="outline">Tentar novamente</Button></div>}
    {ticket&&<>
@@ -75,7 +80,7 @@ export default function SupportWorkspace({initialId,staffRole,area}){
     {ticket.status==='RESOLVIDO'&&<Button className="mt-4" variant="outline" disabled={s.pending} onClick={()=>s.setConfirmClose(true)}>Encerrar chamado</Button>}
    </>}
   </section>}
-  {!staffRole&&<SupportAssistant {...s.assistant} />}
+  {!staffRole&&<SupportAssistant {...s.assistant} cinema={cinema} />}
   <Dialog open={Boolean(action)} onOpenChange={open=>{if(!open&&!s.pending)setAction(null);}}>
    <DialogContent>
     <DialogHeader><DialogTitle>{action==='edit'?'Editar chamado':'Cancelar chamado?'}</DialogTitle><DialogDescription>O histórico da conversa permanece disponível.</DialogDescription></DialogHeader>

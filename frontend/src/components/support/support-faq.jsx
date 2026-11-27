@@ -1,4 +1,7 @@
 import { useId, useState } from 'react';
+import { CreditCard, Film, HelpCircle, Ticket, UserRound } from 'lucide-react';
+import ticketStyles from '@/components/cinema/ticket.module.css';
+import styles from './support-cinema.module.css';
 
 const FAQ_ITEMS = [
   {
@@ -51,17 +54,31 @@ const normalize = (text = '') =>
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
 
-function FaqItem({ item, open, onToggle }) {
+const topics = [
+  { id: 'todos', label: 'Todos os assuntos', Icon: HelpCircle },
+  { id: 'ingressos', label: 'Ingressos e sessões', Icon: Ticket, pattern: /ingress|sessa|sesso|assento|meia.entrada|classifica/ },
+  { id: 'reembolso', label: 'Cancelamento e reembolso', Icon: CreditCard, pattern: /cancel|reembols|estorn|troc/ },
+  { id: 'conta', label: 'Conta e acesso', Icon: UserRound, pattern: /conta|senha|login|cadastro|suporte/ },
+  { id: 'streaming', label: 'Streaming e planos', Icon: Film, pattern: /streaming|assinatura|plano|alugar|aluguel|comprar um filme/ },
+];
+
+const topicPriority = [topics[2], topics[4], topics[1], topics[3]];
+function questionTopic(question) {
+  const text = normalize(question);
+  return topicPriority.find(topic => topic.pattern.test(text))?.id;
+}
+
+function FaqItem({ item, open, onToggle, cinema }) {
   const id = useId();
   return (
-    <div className={open ? 'bg-muted/35' : undefined}>
+    <div className={cinema ? styles.faqItem : open ? 'bg-muted/35' : undefined} data-open={open || undefined}>
       <button
         type="button"
         id={`${id}-button`}
         aria-expanded={open}
         aria-controls={`${id}-panel`}
         onClick={onToggle}
-        className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-4"
+        className={cinema ? styles.question : "flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-4"}
       >
         <span className="min-w-0 break-words text-sm font-semibold sm:text-base">{item.question}</span>
         <svg
@@ -94,12 +111,18 @@ function FaqItem({ item, open, onToggle }) {
   );
 }
 
-export default function SupportFaq({ query = '', items = [], area, loading, error, retry }) {
+export default function SupportFaq({ query = '', items = [], area, loading, error, retry, cinema = false }) {
   const [openItems, setOpenItems] = useState(() => new Set());
+  const [filter, setFilter] = useState(null);
 
   const term = normalize(query);
   const questions = items.length ? items : area === 'streaming' ? [] : FAQ_ITEMS;
-  const filtered = term ? questions.filter(item => normalize(`${item.question} ${item.answer}`).includes(term)) : questions;
+  const categorized = cinema ? questions.map(item => ({ ...item, topic: questionTopic(item.question) })) : questions;
+  const activeTopics = cinema ? new Set(categorized.map(item => item.topic)) : null;
+  const topic = cinema && filter?.query === query && activeTopics.has(filter.topic) ? filter.topic : 'todos';
+  const filtered = categorized.filter(item =>
+    (topic === 'todos' || item.topic === topic)
+    && (!term || normalize(`${item.question} ${item.answer}`).includes(term)));
 
   const toggle = (question) =>
     setOpenItems((prev) => {
@@ -108,6 +131,35 @@ export default function SupportFaq({ query = '', items = [], area, loading, erro
       else next.add(question);
       return next;
     });
+
+  if (cinema) return (
+    <section id="support-faq" aria-labelledby="support-faq-title" className={`${styles.wrap} ${styles.faq}`}>
+      <nav aria-label="Assuntos de suporte" className={styles.topics}>
+        <h2 className={ticketStyles.title}>Assuntos</h2>
+        <div className={styles.filters}>
+          {topics.filter(item => item.id === 'todos' || activeTopics.has(item.id)).map(({ id, label, Icon }) => (
+            <button type="button" key={id} className={styles.filter} aria-controls="support-faq-list"
+              aria-pressed={id === topic} onClick={() => setFilter({ query, topic: id })}>
+              <Icon size={16} aria-hidden="true" />{label}
+            </button>
+          ))}
+        </div>
+      </nav>
+      <div className={styles.answers}>
+        <div className={styles.faqHeading}>
+          <h2 id="support-faq-title" className={ticketStyles.title}>Perguntas frequentes</h2>
+          <p className="text-sm text-muted-foreground" role="status">{filtered.length} {filtered.length === 1 ? 'pergunta' : 'perguntas'}</p>
+        </div>
+        <div id="support-faq-list" className={styles.questions}>
+          {filtered.map(item => <FaqItem key={item.question} item={item} cinema
+            open={openItems.has(item.question)} onToggle={() => toggle(item.question)} />)}
+          {!filtered.length && <p className="py-4 text-sm text-muted-foreground">
+            Nenhuma pergunta encontrada. Tente outro termo ou selecione Todos os assuntos.
+          </p>}
+        </div>
+      </div>
+    </section>
+  );
 
   return (
     <section id="support-faq" aria-labelledby="support-faq-title" className="mx-auto w-full max-w-[1120px]">

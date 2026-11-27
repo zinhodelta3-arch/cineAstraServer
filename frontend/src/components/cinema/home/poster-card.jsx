@@ -45,7 +45,7 @@ export default function PosterCard({ movie, onSelectMovie, soon = false }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity flex items-end justify-center p-4">
           <span className="inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">
-            <Ticket className="w-4 h-4 mr-1.5" aria-hidden="true" /> {movie.onSale ? "Consultar sessões" : "Ver detalhes"}
+            <Ticket className="w-4 h-4 mr-1.5" aria-hidden="true" /> Ver detalhes
           </span>
         </div>
       </div>

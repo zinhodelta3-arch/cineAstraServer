@@ -59,7 +59,7 @@ export default function HeroSection({ movies, onSelectMovie }) {
               <span className="px-2 py-0.5 rounded border border-border text-[11px] font-bold">{movie.rating}</span>
             </div>
             <div className="flex items-center gap-4 flex-wrap">
-              <Button size="lg" onClick={() => onSelectMovie(movie)}><Ticket className="w-5 h-5 mr-2" aria-hidden="true" /> {movie.onSale ? "Consultar sessões" : "Ver detalhes"}</Button>
+              <Button size="lg" onClick={() => onSelectMovie(movie)}><Ticket className="w-5 h-5 mr-2" aria-hidden="true" /> Ver detalhes</Button>
               <TrailerButton key={movie.id} url={movie.trailerUrl} title={movie.title} onOpenChange={setTrailerOpen} ticketStyle
                 className="rounded-full border border-border px-8 py-4 font-bold focus-visible:ring-2 focus-visible:ring-primary" />
             </div>

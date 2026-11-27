@@ -9,19 +9,24 @@ import { useAdminVenues, useVenueActions, venueRequest } from "@/hooks/admin/use
 import VenueLayout, { VenuePicker, VenueState } from "./venue-layout";
 import styles from "../catalog/catalog.module.css";
 import RoomSchedule from "@/components/unit/room-schedule";
+import UnitRoomCreateForm from "@/components/unit/unit-room-create-form";
 import { scheduleRequest } from "@/hooks/admin/use-admin-schedule";
 
 const types = ["2D", "3D", "4DX", "VIP", "IMAX"];
 const statusName = { ATIVA: "Ativa", INATIVA: "Inativa", MANUTENCAO: "Manutenção" };
+const createRoomRequest = (path, options) => venueRequest(path.slice(1), options);
 
 export default function RoomsAdmin() {
   const [local, setLocal] = useState(null);
   const [status, setStatus] = useState("Todos");
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [createNotice, setCreateNotice] = useState("");
+  const [creatingRoom, setCreatingRoom] = useState(false);
   const locals = useAdminVenues("locations?limit=20", { itemKey: "id_local" });
   const rooms = useAdminVenues(local ? `locations/${local.id_local}/rooms?limit=20${status === "Todos" ? "" : `&status=${status}`}` : null);
   const actions = useVenueActions(rooms);
   const item = actions.dialog?.item;
+  const isCreatingRoom = actions.dialog?.type === "form" && !item;
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("local");
@@ -31,7 +36,7 @@ export default function RoomsAdmin() {
     return () => { active = false; };
   }, []);
   function selectLocal(value) {
-    setLocal(value); setStatus("Todos"); setSelectedRoom(null);
+    setLocal(value); setStatus("Todos"); setSelectedRoom(null); setCreateNotice("");
     window.history.replaceState(null, "", value ? `/admin/locais/salas?local=${value.id_local}` : "/admin/locais/salas");
   }
   function save(event) {
@@ -48,9 +53,10 @@ export default function RoomsAdmin() {
     actions.run(() => venueRequest(`locations/${local.id_local}/rooms${item ? `/${item.id_sala}` : ""}`, { method: item ? "PATCH" : "POST", body }), item ? "Sala atualizada." : "Sala cadastrada.");
   }
 
-  return <VenueLayout title="Salas" description="Organize as salas de cada cinema e controle sua capacidade." action={<button type="button" className={styles.primary} onClick={() => actions.open("form")} disabled={!local}><Plus size={16} aria-hidden="true" />Nova sala</button>}>
+  return <VenueLayout title="Salas" description="Configure os espaços de exibição, os assentos e a capacidade." action={<button type="button" className={styles.primary} onClick={() => { setCreateNotice(""); actions.open("form"); }} disabled={!local}><Plus size={16} aria-hidden="true" />Nova sala</button>}>
+    {createNotice && <p className={styles.notice} role="status">{createNotice}</p>}
     {actions.notice && <p className={styles.notice} role="status">{actions.notice}</p>}
-    <section className={styles.filmPicker} aria-label="Selecionar cinema"><VenuePicker label="Cinema" value={local?.id_local} selected={local} list={locals} idKey="id_local" onChange={selectLocal} placeholder="Selecione um cinema" /></section>
+    <section className={styles.filmPicker} aria-label="Selecionar local"><VenuePicker label="Local" value={local?.id_local} selected={local} list={locals} idKey="id_local" onChange={selectLocal} placeholder="Selecione um local" /></section>
     <section className={styles.panel} aria-labelledby="rooms-title"><header className={styles.panelHeader}><div><h2 id="rooms-title">{local ? `Salas · ${local.nome}` : "Salas do cinema"}</h2><p>{local ? "Cadastre os assentos antes de ativar uma sala." : "Selecione um cinema para visualizar suas salas."}</p></div>{local && <span className={styles.count}>{rooms.items.length} carregadas</span>}</header>
       {local && <div className={styles.toolbar}><label className={styles.filter}>Status<select value={status} onChange={(event) => setStatus(event.target.value)}><option>Todos</option><option value="ATIVA">Ativas</option><option value="INATIVA">Inativas</option><option value="MANUTENCAO">Manutenção</option></select></label></div>}
       {!local && <p className={styles.state}>Selecione um cinema acima para começar.</p>}
@@ -59,8 +65,25 @@ export default function RoomsAdmin() {
         <TablePagination list={rooms} /></>}
     </section>
     {local && selectedRoom && <RoomSchedule key={selectedRoom.id_sala} room={rooms.items.find(row => row.id_sala === selectedRoom.id_sala) ?? selectedRoom} localId={local.id_local} request={scheduleRequest} />}
-    <Dialog open={Boolean(actions.dialog)} onOpenChange={(value) => { if (!value) actions.close(); }}><DialogContent className={styles.dialog}><DialogTitle className={styles.dialogTitle}>{actions.dialog?.type === "status" ? `${item?.status === "INATIVA" ? "Ativar" : "Arquivar"} sala` : item ? "Editar sala" : "Nova sala"}</DialogTitle>
-      {actions.dialog?.type === "form" && <><DialogDescription className={styles.dialogDescription}>Sala do cinema {local?.nome}. A capacidade precisa corresponder aos assentos ativos para ativar.</DialogDescription><form key={item?.id_sala ?? "new"} className={styles.form} onSubmit={save}><label className={styles.wide}>Nome da sala<input name="nome" required maxLength={100} defaultValue={item?.nome ?? ""} /></label><label>Capacidade<input name="capacidade" type="number" required min="1" max="2147483647" defaultValue={item?.capacidade ?? ""} /></label><label>Tipo<select name="tipo" defaultValue={item?.tipo ?? "2D"}>{types.map((type) => <option key={type}>{type}</option>)}</select></label><label>Status<select name="status" defaultValue={item?.status ?? "INATIVA"}><option value="INATIVA">Inativa</option><option value="MANUTENCAO">Manutenção</option>{item && <option value="ATIVA">Ativa</option>}</select></label><p className={`${styles.hint} ${styles.wide}`}>Em salas com sessões vinculadas, apenas o nome pode ser alterado. Cadastre os assentos antes de ativar.</p>{actions.error && <p className={`${styles.error} ${styles.wide}`} role="alert">{actions.error}</p>}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="submit" className={styles.primary} disabled={actions.pending}>{actions.pending ? "Salvando…" : item ? "Salvar alterações" : "Cadastrar sala"}</button></div></form></>}
+    <Dialog open={Boolean(actions.dialog)} onOpenChange={(value) => { if (!value && !creatingRoom) actions.close(); }}><DialogContent className={styles.dialog} style={isCreatingRoom ? { width: "min(64rem, calc(100% - 32px))", maxWidth: "64rem" } : undefined} showCloseButton={!creatingRoom}><DialogTitle className={styles.dialogTitle}>{actions.dialog?.type === "status" ? `${item?.status === "INATIVA" ? "Ativar" : "Arquivar"} sala` : item ? "Editar sala" : "Nova sala com Construtor 3D"}</DialogTitle>
+      {isCreatingRoom && <>
+        <DialogDescription className={styles.dialogDescription}>Defina os lugares de {local.nome} e confira a planta em 2D e 3D antes de publicar.</DialogDescription>
+        <UnitRoomCreateForm
+          localId={local.id_local}
+          locationName={local.nome}
+          spaceType={local.tipo_local}
+          request={createRoomRequest}
+          onCancel={actions.close}
+          onPendingChange={setCreatingRoom}
+          onPartialCreated={() => rooms.reload()}
+          onCreated={(_, notice) => {
+            setCreateNotice(notice);
+            actions.close();
+            rooms.reload();
+          }}
+        />
+      </>}
+      {actions.dialog?.type === "form" && item && <><DialogDescription className={styles.dialogDescription}>Sala do cinema {local?.nome}. A capacidade precisa corresponder aos assentos ativos para ativar.</DialogDescription><form key={item?.id_sala ?? "new"} className={styles.form} onSubmit={save}><label className={styles.wide}>Nome da sala<input name="nome" required maxLength={100} defaultValue={item?.nome ?? ""} /></label><label>Capacidade<input name="capacidade" type="number" required min="1" max="2147483647" defaultValue={item?.capacidade ?? ""} /></label><label>Tipo<select name="tipo" defaultValue={item?.tipo ?? "2D"}>{types.map((type) => <option key={type}>{type}</option>)}</select></label><label>Status<select name="status" defaultValue={item?.status ?? "INATIVA"}><option value="INATIVA">Inativa</option><option value="MANUTENCAO">Manutenção</option>{item && <option value="ATIVA">Ativa</option>}</select></label><p className={`${styles.hint} ${styles.wide}`}>Em salas com sessões vinculadas, apenas o nome pode ser alterado. Cadastre os assentos antes de ativar.</p>{actions.error && <p className={`${styles.error} ${styles.wide}`} role="alert">{actions.error}</p>}<div className={`${styles.dialogActions} ${styles.wide}`}><button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="submit" className={styles.primary} disabled={actions.pending}>{actions.pending ? "Salvando…" : item ? "Salvar alterações" : "Cadastrar sala"}</button></div></form></>}
       {actions.dialog?.type === "status" && <><DialogDescription className={styles.dialogDescription}>{item?.status === "INATIVA" ? `Ativar ${item?.nome}? A capacidade deve corresponder aos assentos ativos.` : `Arquivar ${item?.nome}? Salas com sessões vinculadas não podem ser arquivadas.`}</DialogDescription>{actions.error && <p className={styles.error} role="alert">{actions.error}</p>}<div className={styles.dialogActions}><button type="button" className={styles.secondary} onClick={actions.close}>Cancelar</button><button type="button" className={item?.status === "INATIVA" ? styles.primary : styles.danger} disabled={actions.pending} onClick={() => actions.run(() => venueRequest(`locations/${local.id_local}/rooms/${item.id_sala}`, { method: item.status === "INATIVA" ? "PATCH" : "DELETE", body: item.status === "INATIVA" ? { status: "ATIVA" } : undefined }), item?.status === "INATIVA" ? "Sala ativada." : "Sala arquivada.")}>{actions.pending ? "Aguarde…" : item?.status === "INATIVA" ? "Ativar sala" : "Arquivar sala"}</button></div></>}
     </DialogContent></Dialog>
   </VenueLayout>;

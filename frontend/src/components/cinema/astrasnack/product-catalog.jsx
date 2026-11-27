@@ -1,11 +1,29 @@
-"use client";
-import ProductCard from './product-card';
-import ListStatus from '@/components/cinema/home/list-status';
-export default function ProductCatalog({snack}){
- if(!snack.localId)return <p className="py-12 text-center text-muted-foreground">Escolha um cinema para consultar produtos e combos.</p>;
- return <div><p className="mb-5 text-sm text-muted-foreground">{snack.session.user?.role==='CLIENTE'?'Os preços incluem os descontos disponíveis para sua conta. Cupons são aplicados no carrinho.':snack.guest?'Os preços incluem promoções públicas. Entre para consultar os descontos da sua conta.':null}</p>
-  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{snack.filteredProducts.map(p=><ProductCard key={p.id} product={p} onOpen={snack.openProduct}/>)}</div>
-  {!snack.filteredProducts.length&&!snack.snacks.loading&&!snack.combos.loading&&!snack.snacks.error&&!snack.combos.error&&<p className="py-10 text-center">Nenhum produto encontrado nesta parte do catálogo. {snack.snacks.cursor||snack.combos.cursor?'Carregue mais itens para ampliar a busca.':'Tente outro filtro ou cinema.'}</p>}
-  <section aria-label="Carregamento de produtos avulsos"><ListStatus list={snack.snacks} empty="" more="Carregar mais produtos"/></section><section aria-label="Carregamento de combos"><ListStatus list={snack.combos} empty="" more="Carregar mais combos"/></section>
- </div>;
+import ListStatus from "@/components/cinema/home/list-status";
+import ProductCard from "./product-card";
+import ticket from "../ticket.module.css";
+
+export default function ProductCatalog({ id, title, kind, more, snack }) {
+  const list = kind === "COMBO" ? snack.combos : snack.snacks;
+  const products = snack.filteredProducts.filter(product => product.purchaseKind === kind);
+  const hasSearch = Boolean(snack.query.trim());
+  const empty = hasSearch ? "Nenhum resultado nesta seção." : "Nenhum item disponível nesta seção para este cinema.";
+
+  return (
+    <section id={id} aria-labelledby={`${id}-title`} tabIndex={-1} className="scroll-mt-40 py-6 md:py-8">
+      <h2 id={`${id}-title`} className={`${ticket.title} mb-5 border-b border-dashed border-border pb-3 text-4xl leading-none font-black`}>
+        {title}
+      </h2>
+      {products.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {products.map(product => <ProductCard key={product.id} product={product} onOpen={snack.openProduct} />)}
+        </div>
+      )}
+      {!products.length && !list.loading && !list.error && (
+        <p className="py-6 text-sm text-muted-foreground">
+          {empty} {list.cursor && "Carregue mais itens para ampliar a busca."}
+        </p>
+      )}
+      <ListStatus list={list} empty="" more={more} />
+    </section>
+  );
 }

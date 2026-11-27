@@ -6,8 +6,11 @@ import { Film } from "lucide-react";
 import VenueArt from "./venue-art";
 import { useLocationImage } from "@/hooks/cinema/localizacoes/use-location-image";
 
-export function VenueImg({ src, kind, alt = "", className = "" }) {
+export function VenueImg({ src, kind, fallbackSrc, alt = "", className = "" }) {
   const { failed, onError } = useLocationImage(src);
+  if ((failed || !src) && fallbackSrc && fallbackSrc !== src) {
+    return <VenueImg src={fallbackSrc} kind={kind} className={className} />;
+  }
   if (failed || !src) return <VenueArt kind={kind} className={`w-full h-full bg-card ${className}`} />;
   return <LoadingImage src={src} alt={alt} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={onError} className={`w-full h-full object-cover ${className}`} />;
 }

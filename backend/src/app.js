@@ -229,12 +229,17 @@ export function createApp({ config, database, logQueue, retention, sessionProvid
     app.use(logMiddleware(logQueue, { sampleRate: config.logging.sampleRate }));
     app.use(helmet());
     app.use(deadline(config.httpTimeout));
-    app.use(limits.general);
+    const originAllowed = origin => !origin || config.origins.includes(origin);
     app.use(cors({ origin(origin, cb) {
-        if (!origin || config.origins.includes(origin)) cb(null, true);
-        else cb(new ApiError('Origem não permitida', 403, null, 'CORS_DENIED'));
+        cb(null, originAllowed(origin));
     }, methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'], exposedHeaders: ['X-Request-Id', 'Retry-After'], credentials: false, maxAge: 600 }));
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'], exposedHeaders: ['X-Request-Id', 'Retry-After'], credentials: false, maxAge: 600, preflightContinue: true }));
+    app.use(limits.general);
+    app.use((req, res, next) => {
+        if (!originAllowed(req.get('Origin'))) return next(new ApiError('Origem não permitida', 403, null, 'CORS_DENIED'));
+        if (req.method === 'OPTIONS') return res.status(204).end();
+        next();
+    });
     const inventory=createInventoryService({ model: createInventoryModel(database), identity });
     const pricing=createPricingService({ model: createPricingModel(database), identity, simulated: paymentProvider.name==='simulado' });
     const orderModel=createOrderModel();

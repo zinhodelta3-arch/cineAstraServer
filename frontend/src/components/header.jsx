@@ -11,9 +11,11 @@ import { useCart } from "@/components/cart/cart-provider"
 import { CartDrawer } from "@/components/cart/cart-drawer"
 import { AppearanceSelector } from "@/components/appearance-selector"
 import { useAppearance } from "@/components/providers/appearance-provider"
-import { DesktopNavigation, MobileNavigation } from "@/components/header-nav"
+import { DesktopNavigation, MobileNavigation, SupportLink } from "@/components/header-nav"
 import { NotificationButton } from "@/components/notifications/notification-button"
 import { FloatingAssistant } from "@/components/support/floating-assistant"
+import LocationSelector from "@/components/cinema/location-selector"
+import styles from "./header.module.css"
 
 const LOGO_CONFIG = [
   { keywords: ["catp", "catppuccin", "latte", "frappe", "macchiato"], src: "/Catp.png" },
@@ -33,40 +35,9 @@ function getLogoByTheme(theme) {
   return config?.src ?? DEFAULT_LOGO
 }
 
-function Perforation({ className = "" }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`pointer-events-none absolute inset-x-6 z-0 h-px bg-[repeating-linear-gradient(90deg,var(--border)_0_5px,transparent_5px_11px)] opacity-60 ${className}`}
-    />
-  )
-}
-
-function Notch({ side }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`pointer-events-none absolute top-1/2 z-20 size-4 -translate-y-1/2 rounded-full border border-border/70 bg-background ${
-        side === "left"
-          ? "-left-2 [clip-path:inset(0_0_0_50%)]"
-          : "-right-2 [clip-path:inset(0_50%_0_0)]"
-      }`}
-    />
-  )
-}
-
-function TicketSeparator({ className = "" }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`pointer-events-none absolute inset-y-3 left-0 w-px border-l border-dashed border-border/70 ${className}`}
-    />
-  )
-}
-
 export function Header({ showAssistant = false }) {
   const session = useSession()
-  const canAccessStreaming = useStreamingAccess(session.user)
+  const canAccessStreaming = useStreamingAccess()
   const { appearance } = useAppearance()
   const logoSrc = getLogoByTheme(appearance)
   const [cartOpen, setCartOpen] = useState(false)
@@ -77,44 +48,33 @@ export function Header({ showAssistant = false }) {
     <>
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95">
         <div className="mx-auto w-full max-w-[96rem] px-3 py-2 sm:px-5 lg:px-6">
-          <div data-slot="cinema-header-frame" className="relative flex h-16 w-full items-center rounded-lg border border-border/70 bg-card">
-            <Notch side="left" />
-            <Notch side="right" />
-            <Perforation className="top-1" />
-            <Perforation className="bottom-1" />
-
-            <Link
-              href="/cinema/home"
-              aria-label="CineAstra — Página inicial"
-              className="relative z-10 flex h-full shrink-0 items-center gap-2 rounded-l-lg px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:gap-2.5 sm:px-5"
-            >
-              <img
-                src={logoSrc}
-                alt="CineAstra"
-                className="h-9 w-10 shrink-0 object-contain sm:h-10 sm:w-11"
-              />
-              <span aria-hidden="true" className="whitespace-nowrap text-[20px] font-black leading-none tracking-[-0.06em] sm:text-[24px]">
-                <span className="text-black dark:text-white">cine</span><span className="text-primary">astra.</span>
-              </span>
-            </Link>
-
-            <div className="relative z-10 hidden h-full min-w-0 flex-1 items-center justify-center px-3 xl:flex 2xl:px-4">
-              <TicketSeparator />
-              <DesktopNavigation />
-            </div>
-
-            <div className="relative z-10 ml-auto flex h-full shrink-0 items-center gap-2 pl-2 pr-2 sm:gap-3 sm:pl-4 sm:pr-4">
-              <TicketSeparator className="hidden sm:block" />
-
-              {canAccessStreaming && <Link href="/streaming" className="hidden xl:inline-flex shrink-0 items-center gap-2 rounded-md border border-dashed border-primary/60 bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"><TvMinimalPlay className="size-4" aria-hidden="true" /> Streaming</Link>}
-
-              <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-                {session.user && <NotificationButton key={session.user.id} userId={session.user.id} role={session.user.role} />}
+          <div data-slot="cinema-header-frame" className={`w-full rounded-xl border border-border bg-card ${styles.frame}`}>
+            <div className="flex min-h-14 items-center justify-between gap-2 px-3 sm:min-h-16 sm:gap-4 sm:px-6 lg:px-9">
+              <div className="flex min-w-0 items-center gap-1.5 sm:gap-3 lg:gap-5">
+               <Link
+                href="/cinema/home"
+                aria-label="CineAstra — Página inicial"
+                className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:gap-2.5"
+              >
+                <img
+                  src={logoSrc}
+                  alt="CineAstra"
+                  className="h-9 w-10 shrink-0 object-contain sm:h-10 sm:w-11"
+                />
+                <span aria-hidden="true" className={`hidden whitespace-nowrap text-xl font-black leading-none tracking-tight text-foreground sm:text-2xl ${showAssistant && session.user ? "min-[420px]:inline" : "min-[360px]:inline"}`}>
+                  cine<span className="text-primary">astra.</span>
+                </span>
+               </Link>
+               <LocationSelector />
+              </div>
+              <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
+                {canAccessStreaming && <Link href="/streaming" className="hidden min-h-10 shrink-0 items-center gap-2 rounded-md border border-dashed border-primary/60 bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:inline-flex"><TvMinimalPlay className="size-4" aria-hidden="true" /> Streaming</Link>}
+                {session.user && <NotificationButton key={session.user.id} userId={session.user.id} role={session.user.role} className={styles.action} />}
                 {canOpenCart && <button
                   type="button"
                   onClick={() => setCartOpen(true)}
                   aria-label={`Abrir carrinho, ${visibleItemCount} ${visibleItemCount === 1 ? "item" : "itens"}`}
-                  className="relative grid size-10 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  className={`relative grid size-10 shrink-0 place-items-center rounded-md border text-foreground transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${styles.action}`}
                 >
                   <ShoppingCart className="size-4" aria-hidden="true" />
                   {visibleItemCount > 0 && (
@@ -123,12 +83,16 @@ export function Header({ showAssistant = false }) {
                     </span>
                   )}
                 </button>}
-                <div className="hidden shrink-0 sm:block">
-                  <AppearanceSelector />
+                <div className="hidden shrink-0 items-center gap-2 sm:flex">
+                  <AppearanceSelector triggerClassName={styles.action} />
+                  <SupportLink />
                 </div>
                 <MobileNavigation session={session} canAccessStreaming={canAccessStreaming} />
                 <div className={session.user ? "flex items-center" : "hidden items-center sm:flex"}><SessionControls session={session} /></div>
               </div>
+            </div>
+            <div className={styles.navigationBand}>
+              <DesktopNavigation />
             </div>
           </div>
         </div>

@@ -73,15 +73,15 @@
       "name": "Conteúdo promocional"
     },
     {
-      "name": "Locais",
-      "description": "Locais, salas e assentos; estrutura de sessões presenciais."
-    },
-    {
       "name": "Galerias comerciais",
       "description": "Imagens de insumos e combos; PRINCIPAL única e alternativas de apresentação."
     },
     {
       "name": "Catálogo"
+    },
+    {
+      "name": "Locais",
+      "description": "Locais, salas e assentos; estrutura de sessões presenciais."
     }
   ],
   "security": [
@@ -4452,6 +4452,15 @@
               ]
             },
             "description": "showcase"
+          },
+          {
+            "name": "localId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,9}$"
+            },
+            "description": "Somente filmes com sessão futura neste cinema."
           }
         ],
         "responses": {
@@ -7638,6 +7647,17 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 150
+            }
+          },
+          {
+            "name": "cinema",
+            "in": "query",
+            "description": "Restringe a locais com ao menos uma sala ativa de exibição.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true"
+              ]
             }
           }
         ],
@@ -55303,7 +55323,10 @@
                             "ESTADIO",
                             "PRACA",
                             "ESPACO_PUBLICO",
-                            "OUTRO"
+                            "OUTRO",
+                            "TEATRO",
+                            "BUNKER",
+                            "CONTAINER"
                           ],
                           "default": "CINEMA"
                         },
@@ -55436,7 +55459,10 @@
                             "ESTADIO",
                             "PRACA",
                             "ESPACO_PUBLICO",
-                            "OUTRO"
+                            "OUTRO",
+                            "TEATRO",
+                            "BUNKER",
+                            "CONTAINER"
                           ],
                           "default": "CINEMA"
                         },
@@ -55613,7 +55639,10 @@
                             "ESTADIO",
                             "PRACA",
                             "ESPACO_PUBLICO",
-                            "OUTRO"
+                            "OUTRO",
+                            "TEATRO",
+                            "BUNKER",
+                            "CONTAINER"
                           ],
                           "default": "CINEMA"
                         },
@@ -55772,7 +55801,10 @@
                             "ESTADIO",
                             "PRACA",
                             "ESPACO_PUBLICO",
-                            "OUTRO"
+                            "OUTRO",
+                            "TEATRO",
+                            "BUNKER",
+                            "CONTAINER"
                           ],
                           "default": "CINEMA"
                         },
@@ -55905,7 +55937,10 @@
                             "ESTADIO",
                             "PRACA",
                             "ESPACO_PUBLICO",
-                            "OUTRO"
+                            "OUTRO",
+                            "TEATRO",
+                            "BUNKER",
+                            "CONTAINER"
                           ],
                           "default": "CINEMA"
                         },
@@ -56082,7 +56117,10 @@
                             "ESTADIO",
                             "PRACA",
                             "ESPACO_PUBLICO",
-                            "OUTRO"
+                            "OUTRO",
+                            "TEATRO",
+                            "BUNKER",
+                            "CONTAINER"
                           ],
                           "default": "CINEMA"
                         },
@@ -59940,6 +59978,10 @@
             "enum": [
               "true"
             ]
+          },
+          "localId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,9}$"
           }
         },
         "additionalProperties": false
@@ -60586,7 +60628,10 @@
               "ESTADIO",
               "PRACA",
               "ESPACO_PUBLICO",
-              "OUTRO"
+              "OUTRO",
+              "TEATRO",
+              "BUNKER",
+              "CONTAINER"
             ],
             "default": "CINEMA"
           },
@@ -60696,7 +60741,10 @@
               "ESTADIO",
               "PRACA",
               "ESPACO_PUBLICO",
-              "OUTRO"
+              "OUTRO",
+              "TEATRO",
+              "BUNKER",
+              "CONTAINER"
             ],
             "default": "CINEMA"
           },
@@ -60803,7 +60851,10 @@
               "ESTADIO",
               "PRACA",
               "ESPACO_PUBLICO",
-              "OUTRO"
+              "OUTRO",
+              "TEATRO",
+              "BUNKER",
+              "CONTAINER"
             ],
             "default": "CINEMA"
           },
@@ -66975,7 +67026,10 @@
                   "ESTADIO",
                   "PRACA",
                   "ESPACO_PUBLICO",
-                  "OUTRO"
+                  "OUTRO",
+                  "TEATRO",
+                  "BUNKER",
+                  "CONTAINER"
                 ]
               },
               "eventCapacity": {

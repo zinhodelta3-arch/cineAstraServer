@@ -1,0 +1,216 @@
+.title {
+  font-size: clamp(2.5rem, 5.5vw, 4rem);
+  font-weight: 900;
+  line-height: 1.04;
+  letter-spacing: -.015em;
+}
+
+.ticket {
+  --stub-width: 9.75rem;
+  --seam: calc(100% - var(--stub-width));
+  --cutout: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--stub-width);
+  border: 1px solid var(--border);
+  border-radius: .625rem;
+  background: var(--card);
+  mask-image:
+    radial-gradient(circle at var(--seam) top, transparent var(--cutout), black calc(var(--cutout) + 1px)),
+    radial-gradient(circle at var(--seam) bottom, transparent var(--cutout), black calc(var(--cutout) + 1px));
+  mask-composite: intersect;
+}
+
+.ticketMain {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: .875rem;
+  padding: 1.25rem 1rem 1rem;
+}
+
+.ticketMain::before {
+  position: absolute;
+  inset: 6px 13px auto;
+  height: 4px;
+  background: repeating-linear-gradient(90deg, var(--primary) 0 10px, transparent 10px 22px);
+  opacity: .6;
+  content: "";
+}
+
+.poster {
+  width: 100%;
+  aspect-ratio: 12 / 17;
+  align-self: center;
+  border-radius: .375rem;
+}
+
+.film {
+  font-size: clamp(1.45rem, 2.45vw, 1.95rem);
+  font-weight: 800;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.stub {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: .25rem;
+  padding: .75rem .875rem;
+  border-inline-start: 1px dashed var(--border);
+  border-radius: 0 .625rem .625rem 0;
+  background: color-mix(in oklab, var(--card) 93%, var(--primary));
+}
+
+.ticketPrice strong {
+  color: var(--primary);
+  font-size: clamp(1.375rem, 2.2vw, 1.875rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.product,
+.snackRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content auto;
+  align-items: center;
+  gap: .75rem;
+}
+
+.product,
+.snacks {
+  border: 1px solid var(--border);
+  border-radius: .625rem;
+  background: var(--card);
+}
+
+.product {
+  padding: .75rem 1rem;
+}
+
+.snacksHead {
+  padding: .875rem 1rem;
+  border-bottom: 1px dashed var(--border);
+}
+
+.snacksTitle {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: 1.625rem;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.snacksBody {
+  padding: .75rem 1rem 1rem;
+  border-radius: 0 0 .625rem .625rem;
+  background: color-mix(in oklab, var(--card) 50%, var(--background));
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .375rem;
+  margin-block: .25rem;
+}
+
+.filters button {
+  min-height: 2.5rem;
+}
+
+.filters button[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--card) 87%, var(--primary));
+  color: var(--foreground);
+}
+
+.snackList {
+  margin-top: .5rem;
+}
+
+.snackRow {
+  padding-block: .625rem;
+}
+
+.snackRow + .snackRow {
+  border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+}
+
+.snackItem {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: .625rem;
+}
+
+.snackPrice {
+  font-size: .875rem;
+}
+
+.snackPrice strong {
+  white-space: nowrap;
+}
+
+@media (max-width: 36rem) {
+  .ticket {
+    grid-template-columns: minmax(0, 1fr);
+    mask-image: none;
+  }
+
+  .ticketMain {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+
+  .stub {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    border: 0;
+    border-top: 1px dashed var(--border);
+    border-radius: 0 0 .625rem .625rem;
+  }
+
+  .stub::before,
+  .stub::after {
+    position: absolute;
+    top: 0;
+    width: var(--cutout);
+    height: calc(2 * var(--cutout));
+    transform: translateY(-50%);
+    background: var(--background);
+    content: "";
+  }
+
+  .stub::before {
+    left: -1px;
+    border-radius: 0 var(--cutout) var(--cutout) 0;
+  }
+
+  .stub::after {
+    right: -1px;
+    border-radius: var(--cutout) 0 0 var(--cutout);
+  }
+
+  .product,
+  .snackRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .375rem .625rem;
+  }
+
+  .product > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .snackPrice {
+    grid-column: 1;
+    padding-inline-start: 3.625rem;
+  }
+
+  .snackRow > button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    min-height: 2.5rem;
+  }
+}

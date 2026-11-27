@@ -15,13 +15,22 @@ const seats = `(SELECT COUNT(*) FROM assentos a WHERE ${activeSeat})`;
 const occupied = `(SELECT COUNT(*) FROM assento_ocupacoes o JOIN assentos a ON a.id_assento=o.id_assento
     WHERE o.id_sessao=s.id_sessao AND ${activeSeat} AND ${liveOccupancy})`;
 const availability = `${seats} AS assentos_ativos,${seats}-${occupied} AS assentos_disponiveis`;
-export const bookableFilm = `EXISTS (
-    SELECT 1 FROM sessoes s JOIN salas sa ON sa.id_sala=s.id_sala JOIN locais l ON l.id_local=sa.id_local
-    WHERE s.id_filme=f.id_filme AND s.data>=UTC_DATE() AND ${publicConditions} AND ${future}
+const futureFilmSession = `s.id_filme=f.id_filme AND s.data>=UTC_DATE() AND ${publicConditions} AND ${future}`;
+const futureFilmFrom = 'FROM sessoes s JOIN salas sa ON sa.id_sala=s.id_sala JOIN locais l ON l.id_local=sa.id_local';
+export const scheduledFilmAtLocation = `EXISTS (
+    SELECT 1 ${futureFilmFrom} WHERE ${futureFilmSession} AND sa.id_local = ?
+)`;
+function bookableFilmCondition(locationFilter = '') {
+    return `EXISTS (
+    SELECT 1 ${futureFilmFrom}
+    WHERE ${futureFilmSession}${locationFilter}
     AND EXISTS (SELECT 1 FROM assentos a WHERE ${activeSeat} AND NOT EXISTS (
         SELECT 1 FROM assento_ocupacoes o WHERE o.id_sessao=s.id_sessao AND o.id_assento=a.id_assento AND ${liveOccupancy}
     ))
 )`;
+}
+export const bookableFilm = bookableFilmCondition();
+export const bookableFilmAtLocation = bookableFilmCondition(' AND sa.id_local = ?');
 export function createSessionModel(database) {
     const rows = async (c, sql, args = []) => (await c.execute(sql, args))[0];
     const one = async (c, sql, args = []) => (await rows(c, sql, args))[0] ?? null;

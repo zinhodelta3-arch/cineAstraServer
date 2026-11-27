@@ -44,13 +44,13 @@ html.dark[data-theme="cineastra"] {
   --foreground: #f3eebd;
   --card: #330606cc;
   --card-foreground: #ECE1DC;
-  --popover: #353323;
+  --popover: #2B171B;
   --popover-foreground: #ECE1DC;
   --primary: #FAD241;
   --primary-foreground: #353323;
   --secondary: #7C1029;
   --secondary-foreground: #ECE1DC;
-  --muted: #403D2E;
+  --muted: #3D2429;
   --muted-foreground: #C4B7AE;
   --accent: #7C1029;
   --accent-foreground: #ECE1DC;
@@ -64,7 +64,7 @@ html.dark[data-theme="cineastra"] {
   --chart-3: #D78298;
   --chart-4: #ECE1DC;
   --chart-5: #C4B7AE;
-  --sidebar: #2D2B1E;
+  --sidebar: #211417;
   --sidebar-foreground: #ECE1DC;
   --sidebar-primary: #FAD241;
   --sidebar-primary-foreground: #353323;

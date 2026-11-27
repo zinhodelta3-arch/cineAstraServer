@@ -10,7 +10,7 @@ export default function LocationItem({ loc, selected, onSelect }) {
       className={`ticket group w-full text-left grid grid-cols-[92px_1fr] min-h-[112px] rounded-xl border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer hover:shadow-md ${selected ? "bg-secondary/25 border-primary shadow-sm" : "bg-card border-border hover:border-primary/60"}`}
     >
       <div className="relative bg-muted overflow-hidden">
-        <VenueImg src={loc.image} kind="marquee" className="absolute inset-0" />
+        <VenueImg src={loc.image} kind="marquee" fallbackSrc="/parcerias/sala-cinema.jpg" className="absolute inset-0 object-[67%_center]" />
         <div className="absolute inset-y-0 right-0 w-3 perf-v" aria-hidden="true" />
       </div>
       <div className="p-3 min-w-0">

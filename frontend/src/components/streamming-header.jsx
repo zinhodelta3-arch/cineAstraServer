@@ -9,6 +9,7 @@ import { NotificationButton } from "@/components/notifications/notification-butt
 import useStreamingHeader from "@/hooks/streaming/use-streaming-header";
 import CineAstraLogo from "@/components/branding/cineastra-logo";
 import HeaderSearch from "@/components/streaming/search/header-search";
+import headerStyles from "@/components/header.module.css";
 import styles from "@/components/streaming/streaming-header.module.css";
 
 const navigation = [
@@ -61,7 +62,7 @@ function SiteFullscreen() {
   }
 
   return <>
-    <button type="button" onClick={toggle} className={styles.utilityButton} aria-label={label} title={label} aria-pressed={active}>
+    <button type="button" onClick={toggle} className={`${styles.utilityButton} ${headerStyles.action}`} aria-label={label} title={label} aria-pressed={active}>
       {active ? <Minimize size={17} aria-hidden="true" /> : <Maximize size={17} aria-hidden="true" />}
     </button>
     {error && <p role="status" className={styles.fullscreenError}>{error}</p>}
@@ -92,8 +93,8 @@ export default function StreammingHeader() {
         <div className={styles.actions}>
           <HeaderSearch />
           <SiteFullscreen />
-          {session.user && <NotificationButton key={session.user.id} userId={session.user.id} role={session.user.role} />}
-          <div className={styles.appearance}><AppearanceSelector /></div>
+          {session.user && <NotificationButton key={session.user.id} userId={session.user.id} role={session.user.role} className={headerStyles.action} />}
+          <div className={styles.appearance}><AppearanceSelector triggerClassName={headerStyles.action} /></div>
           <button ref={menuButtonRef} type="button" onClick={toggleMenu} className={styles.menuToggle}
             aria-label={menuOpen ? "Fechar menu do streaming" : "Abrir menu do streaming"}
             aria-expanded={menuOpen} aria-controls={menuOpen ? menuId : undefined}>
@@ -108,7 +109,7 @@ export default function StreammingHeader() {
 
       <div className={styles.mobileUtility}>
         <CinemaLink compact onClick={closeMenu} />
-        <AppearanceSelector />
+        <AppearanceSelector triggerClassName={headerStyles.action} />
       </div>
 
       {menuOpen && <nav id={menuId} aria-label="Navegação mobile do streaming" className={styles.mobileNav}>

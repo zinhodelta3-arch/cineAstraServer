@@ -52,7 +52,7 @@ for (const r of catalogOperations) {
         security: r.admin ? [{ bearerAuth: [] }] : [], parameters: [...r.path.matchAll(/\{(\w+)\}/g)].map(m => ({ name: m[1], in: 'path', required: true, schema: { type: 'string', pattern: '^[1-9][0-9]{0,9}$', description: 'INT unsigned decimal string, máximo4294967295.' } })), responses: {} };
     if (r.query) {
         const props = spec.components.schemas[`CatalogInput_${r.query}`].properties;
-        for (const [name, schema] of Object.entries(props)) operation.parameters.push({ name, in: 'query', schema, description: name === 'limit' ? '1–100' : name });
+        for (const [name, schema] of Object.entries(props)) operation.parameters.push({ name, in: 'query', schema, description: name === 'limit' ? '1–100' : name === 'localId' ? 'Somente filmes com sessão futura neste cinema.' : name });
     }
     if (r.operationId === 'get_films') operation.parameters[0].schema = { type:'string', maxLength:180, description:'Slug público ou identificador numérico legado.' };
     if (r.operationId === 'list_films') operation.description += ' Envie page sem cursor para obter page, total e totalPages dos filtros aplicados. Página acima do total retorna a última página; uma lista vazia retorna página 1.';

@@ -7,6 +7,7 @@ import { usePaginatedList } from '@/hooks/use-paginated-list';
 import { cinemaMovie, cinemaCatalogPath, moviePageSizes, readCinemaCatalogUrl, updateCinemaCatalogUrl } from '@/lib/api/cinema-movies.mjs';
 import { publicGet } from '@/lib/api/public-api.mjs';
 import { SECTIONS } from '@/components/cinema/filmes/movie-utils';
+import { useCinemaLocation } from '@/components/providers/cinema-location-provider';
 
 function navigate(patch, replace = false) {
  const url = new URL(window.location.href);
@@ -15,6 +16,7 @@ function navigate(patch, replace = false) {
 }
 
 export function useCinemaMovies() {
+ const { ready, location } = useCinemaLocation();
  const params = useSearchParams();
  const urlKey = params.toString();
  const { page, pageSize, search, genre, section } = readCinemaCatalogUrl(params);
@@ -23,7 +25,7 @@ export function useCinemaMovies() {
  const suggestionsId = useId();
  const query = draft?.urlKey === urlKey ? draft.value : search;
  const searching = query.trim() !== search;
- const path = cinemaCatalogPath(search, genre, section, {page, pageSize});
+ const path = ready ? cinemaCatalogPath(search, genre, section, {page, pageSize, localId:location?.id_local}) : null;
 
  useEffect(() => {
   if (!searching) return;
@@ -64,7 +66,7 @@ export function useCinemaMovies() {
   setDraft(null);
  }
  return {
-  section, genre, query, selectedMovie, sessionMovie, suggestionsId, films, genreList, searching, genres,
+  section, genre, query, location, selectedMovie, sessionMovie, suggestionsId, films, genreList, searching:searching || !ready, genres,
   visibleMovies:searching ? [] : movies, suggestions:movies,
   activeLabel:SECTIONS.find(item => item.value === section)?.label,
   setGenre:value => changeFilter({ genre:value }),

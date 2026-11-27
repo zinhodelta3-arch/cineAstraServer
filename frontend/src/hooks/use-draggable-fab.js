@@ -1,164 +1,170 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export const FAB_Z_MAX = 2147483647; // acima de qualquer elemento da página
+export const FAB_Z_MAX = 2147483647;
 
 const MARGEM = 8;
-const DRAG_LIMIAR = 5; // px de movimento para contar como arrasto
-
+const DRAG_LIMIAR = 5;
 const limitar = (v, min, max) => Math.min(Math.max(v, min), Math.max(min, max));
 
-/**
- * Botão flutuante arrastável (mouse, toque e setas do teclado), com posição salva.
- *
- * @param {object}   opts
- * @param {string}   opts.storageKey      chave do localStorage (use uma diferente por botão)
- * @param {number}   [opts.size=48]       tamanho do botão em px
- * @param {function} opts.defaultPosition (vw, vh) => ({ x, y }) posição inicial
- * @param {function} opts.onToggle        chamado em clique simples (não em arrasto)
- */
+function viewportAtual() {
+  const visual = window.visualViewport;
+  return {
+    left: visual?.offsetLeft ?? 0,
+    top: visual?.offsetTop ?? 0,
+    width: visual?.width ?? window.innerWidth,
+    height: visual?.height ?? window.innerHeight,
+    layoutHeight: window.innerHeight,
+  };
+}
+
+/** Botão arrastável com a posição salva como proporção da área visível. */
 export function useDraggableFab({ storageKey, size = 48, defaultPosition, onToggle }) {
-  const [pos, setPos] = useState(null); // null até montar no navegador
+  const [viewport, setViewport] = useState(null);
+  const [anchor, setAnchor] = useState(null);
   const [dragging, setDragging] = useState(false);
-  const drag = useRef({ ativo: false, moveu: false, dx: 0, dy: 0, sx: 0, sy: 0 });
+  const drag = useRef(null);
   const foiArrasto = useRef(false);
   const defaultRef = useRef(defaultPosition);
   defaultRef.current = defaultPosition;
 
-  const clampPos = useCallback(
-    (x, y) => ({
-      x: limitar(x, MARGEM, window.innerWidth - size - MARGEM),
-      y: limitar(y, MARGEM, window.innerHeight - size - MARGEM),
-    }),
-    [size],
-  );
-
-  const salvar = useCallback(
-    (p) => {
-      try {
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            rx: p.x / Math.max(1, window.innerWidth - size),
-            ry: p.y / Math.max(1, window.innerHeight - size),
-          }),
-        );
-      } catch {}
-    },
-    [storageKey, size],
-  );
-
   useEffect(() => {
-    const d = defaultRef.current(window.innerWidth, window.innerHeight);
-    let inicial = clampPos(d.x, d.y);
-    try {
-      const s = JSON.parse(localStorage.getItem(storageKey) || "null");
-      if (s && typeof s.rx === "number" && typeof s.ry === "number") {
-        inicial = clampPos(s.rx * (window.innerWidth - size), s.ry * (window.innerHeight - size));
+    const visual = window.visualViewport;
+    let frame = 0;
+    let inicial = true;
+    const refresh = () => {
+      frame = 0;
+      const current = viewportAtual();
+      if (inicial) {
+        inicial = false;
+        let salvo;
+        try { salvo = JSON.parse(localStorage.getItem(storageKey) || "null"); } catch {}
+        const defaultPos = defaultRef.current(current.width, current.height);
+        setAnchor(Number.isFinite(salvo?.rx) && Number.isFinite(salvo?.ry) ? salvo : {
+          rx: defaultPos.x / Math.max(1, current.width - size),
+          ry: defaultPos.y / Math.max(1, current.height - size),
+        });
       }
-    } catch {}
-    setPos(inicial);
-  }, [clampPos, storageKey, size]);
+      setViewport(current);
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(refresh); };
+    schedule();
+    window.addEventListener("resize", schedule);
+    visual?.addEventListener("resize", schedule);
+    visual?.addEventListener("scroll", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", schedule);
+      visual?.removeEventListener("resize", schedule);
+      visual?.removeEventListener("scroll", schedule);
+    };
+  }, [storageKey, size]);
 
-  useEffect(() => {
-    const onResize = () => setPos((p) => (p ? clampPos(p.x, p.y) : p));
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [clampPos]);
+  function clampLocal(x, y) {
+    return {
+      x: limitar(x, MARGEM, viewport.width - size - MARGEM),
+      y: limitar(y, MARGEM, viewport.height - size - MARGEM),
+    };
+  }
 
-  const onPointerDown = (e) => {
-    if (!pos || (e.pointerType === "mouse" && e.button !== 0)) return;
+  const travelX = Math.max(1, (viewport?.width ?? 0) - size);
+  const travelY = Math.max(1, (viewport?.height ?? 0) - size);
+  const local = viewport && anchor && clampLocal(anchor.rx * travelX, anchor.ry * travelY);
+  const pos = local && { x: local.x + viewport.left, y: local.y + viewport.top };
+
+  function anchorAt(x, y) {
+    const p = clampLocal(x - viewport.left, y - viewport.top);
+    return { rx: p.x / travelX, ry: p.y / travelY };
+  }
+
+  function salvar(next) {
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+  }
+
+  function onPointerDown(e) {
+    if (!pos || !e.isPrimary || e.button !== 0 || drag.current) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { ativo: true, moveu: false, dx: e.clientX - pos.x, dy: e.clientY - pos.y, sx: e.clientX, sy: e.clientY };
-  };
+    drag.current = {
+      id: e.pointerId, moveu: false, inicial: anchor,
+      dx: e.clientX - pos.x, dy: e.clientY - pos.y,
+      sx: e.clientX, sy: e.clientY,
+    };
+  }
 
-  const onPointerMove = (e) => {
+  function onPointerMove(e) {
     const d = drag.current;
-    if (!d.ativo) return;
+    if (d?.id !== e.pointerId) return;
     if (!d.moveu && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < DRAG_LIMIAR) return;
     if (!d.moveu) {
       d.moveu = true;
       setDragging(true);
     }
-    setPos(clampPos(e.clientX - d.dx, e.clientY - d.dy));
-  };
+    d.novo = anchorAt(e.clientX - d.dx, e.clientY - d.dy);
+    setAnchor(d.novo);
+  }
 
-  const posRef = useRef(pos);
-  posRef.current = pos;
-
-  const onPointerUp = (e) => {
+  function finalizarArrasto(e, cancelado = false) {
     const d = drag.current;
-    if (!d.ativo) return;
-    d.ativo = false;
+    if (d?.id !== e.pointerId) return;
+    drag.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    if (d.moveu) {
-      foiArrasto.current = true; // impede o clique que vem logo após soltar
-      setTimeout(() => (foiArrasto.current = false), 0); // o clique dispara antes disto
-      setDragging(false);
-      if (posRef.current) salvar(posRef.current);
-    }
-  };
+    if (!d.moveu) return;
+    foiArrasto.current = true;
+    setTimeout(() => { foiArrasto.current = false; }, 0);
+    setDragging(false);
+    if (cancelado) setAnchor(d.inicial);
+    else salvar(d.novo);
+  }
 
-  const onClick = () => {
-    if (foiArrasto.current) return;
-    onToggle?.();
-  };
-
-  /** true logo após soltar um arrasto (use para ignorar toggles gerados pelo clique de soltar). */
-  const wasDragged = () => foiArrasto.current;
-
-  const onKeyDown = (e) => {
+  function onKeyDown(e) {
     const passo = e.shiftKey ? 48 : 16;
     const mov = { ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo] }[e.key];
     if (!mov || !pos) return;
     e.preventDefault();
-    const novo = clampPos(pos.x + mov[0], pos.y + mov[1]);
-    setPos(novo);
-    salvar(novo);
-  };
+    const next = anchorAt(pos.x + mov[0], pos.y + mov[1]);
+    setAnchor(next);
+    salvar(next);
+  }
 
-  /** Estilo do painel: abre para o lado e o sentido com mais espaço. */
-  const painelStyle = (largura) => {
+  function painelStyle(largura) {
     if (!pos) return {};
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const w = Math.min(largura, vw * 0.92);
-    const left = limitar(pos.x + size / 2 > vw / 2 ? pos.x + size - w : pos.x, MARGEM, vw - w - MARGEM);
-    const abaixo = pos.y + size / 2 < vh / 2;
+    const { left: x, top: y, width, height, layoutHeight } = viewport;
+    const w = Math.min(largura, width * 0.92);
+    const left = limitar(local.x + size / 2 > width / 2 ? pos.x + size - w : pos.x, x + MARGEM, x + width - w - MARGEM);
+    const abaixo = local.y + size / 2 < height / 2;
     return abaixo
-      ? { left, top: pos.y + size + MARGEM, width: w, maxHeight: vh - (pos.y + size + MARGEM) - MARGEM, zIndex: FAB_Z_MAX }
-      : { left, bottom: vh - pos.y + MARGEM, width: w, maxHeight: pos.y - MARGEM * 2, zIndex: FAB_Z_MAX };
-  };
+      ? { left, top: pos.y + size + MARGEM, width: w, maxHeight: height - local.y - size - MARGEM * 2, zIndex: FAB_Z_MAX }
+      : { left, bottom: layoutHeight - pos.y + MARGEM, width: w, maxHeight: local.y - MARGEM * 2, zIndex: FAB_Z_MAX };
+  }
 
   return {
     pos,
-    dragging,
+    viewport,
     painelStyle,
-    wasDragged,
+    wasDragged: () => foiArrasto.current,
     buttonProps: {
-      onClick,
+      onClick: () => { if (!foiArrasto.current) onToggle?.(); },
       onPointerDown,
       onPointerMove,
-      onPointerUp,
-      onPointerCancel: onPointerUp,
+      onPointerUp: finalizarArrasto,
+      onPointerCancel: e => finalizarArrasto(e, true),
+      onLostPointerCapture: e => finalizarArrasto(e, true),
       onKeyDown,
-      style: pos
-        ? {
-            position: "fixed",
-            left: pos.x,
-            top: pos.y,
-            right: "auto",
-            bottom: "auto",
-            transform: "none",
-            width: size,
-            height: size,
-            zIndex: FAB_Z_MAX,
-            touchAction: "none",
-            userSelect: "none",
-            cursor: dragging ? "grabbing" : "grab",
-          }
-        : undefined,
+      style: pos ? {
+        position: "fixed",
+        left: pos.x,
+        top: pos.y,
+        right: "auto",
+        bottom: "auto",
+        transform: "none",
+        width: size,
+        height: size,
+        zIndex: FAB_Z_MAX,
+        touchAction: "none",
+        userSelect: "none",
+        cursor: dragging ? "grabbing" : "grab",
+      } : undefined,
     },
   };
 }

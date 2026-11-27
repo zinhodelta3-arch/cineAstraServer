@@ -1,6 +1,6 @@
 import { idString } from '../utils/dto.js';
 import { filmCover } from './filmGalleryModel.js';
-import { bookableFilm } from './sessionModel.js';
+import { bookableFilm, bookableFilmAtLocation, scheduledFilmAtLocation } from './sessionModel.js';
 import { readableSlug } from '../utils/catalogSlug.js';
 
 export const filmFields = ['titulo', 'descricao', 'duracao', 'classificacao', 'data_lancamento', 'diretor', 'trailer', 'disponivel_cinema', 'disponivel_streaming', 'preco_aluguel', 'preco_compra', 'dias_acesso_aluguel', 'status'];
@@ -29,7 +29,12 @@ export function createCatalogModel(database) {
         }
         if (q.classificacao) { where.push('f.classificacao = ?'); args.push(q.classificacao); }
         if (q.upcoming !== undefined) where.push(q.upcoming ? 'f.data_lancamento > UTC_DATE()' : '(f.data_lancamento IS NULL OR f.data_lancamento <= UTC_DATE())');
-        if (q.sale !== undefined) where.push(q.sale === 'open' ? bookableFilm : `NOT (${bookableFilm})`);
+        if (q.localId) { where.push(scheduledFilmAtLocation); args.push(q.localId); }
+        if (q.sale !== undefined) {
+            const available = q.localId ? bookableFilmAtLocation : bookableFilm;
+            where.push(q.sale === 'open' ? available : `NOT (${available})`);
+            if (q.localId) args.push(q.localId);
+        }
         for (const [key, column] of [['cinema', 'disponivel_cinema'], ['streaming', 'disponivel_streaming']]) if (q[key] !== undefined) { where.push(`f.${column} = ?`); args.push(q[key]); }
         if (q.genreId) { where.push(`EXISTS (SELECT 1 FROM filme_generos fg JOIN generos g ON g.id_genero = fg.id_genero WHERE fg.id_filme = f.id_filme AND fg.id_genero = ?${admin ? '' : " AND g.status = 'ATIVO'"})`); args.push(q.genreId); }
         return { where, args };
@@ -54,8 +59,12 @@ export function createCatalogModel(database) {
             return rows(database, `SELECT ${selection(admin)} FROM filmes f WHERE ${where.length ? where.join(' AND ') : '1=1'}
                 ORDER BY f.id_filme ${newest ? 'DESC' : 'ASC'} LIMIT ${pageLimit(q.limit)}`, args);
         },
-        showcaseFilms(limit) {
+        showcaseFilms(limit, localId) {
             const pinnedTitle = 'A Viagem de Chihiro';
+            if (localId) return rows(database, `SELECT ${selection(false)},${bookableFilmAtLocation} AS venda_disponivel
+                FROM filmes f WHERE ${scheduledFilmAtLocation}
+                ORDER BY (f.titulo = ?) DESC, venda_disponivel DESC, CRC32(CONCAT(UTC_DATE(),':',f.id_filme)),f.id_filme LIMIT ?`,
+            [localId, localId, pinnedTitle, limit]);
             return rows(database, `SELECT ${selection(false)},${bookableFilm} AS venda_disponivel FROM filmes f
                 WHERE (f.titulo = ? AND f.status = 'ATIVO' AND f.disponivel_cinema = TRUE) OR ${bookableFilm}
                 ORDER BY (f.titulo = ?) DESC, CRC32(CONCAT(UTC_DATE(),':',f.id_filme)),f.id_filme LIMIT ?`,
@@ -69,9 +78,10 @@ export function createCatalogModel(database) {
                 const total = Number((await one(c, `SELECT COUNT(*) AS total ${from}`, args)).total);
                 const totalPages = Math.max(1, Math.ceil(total / limit));
                 const page = Math.min(q.page, totalPages);
-                const sale = q.sale ? (q.sale === 'open' ? 'TRUE' : 'FALSE') : bookableFilm;
+                const sale = q.sale ? (q.sale === 'open' ? 'TRUE' : 'FALSE') : q.localId ? bookableFilmAtLocation : bookableFilm;
+                const saleArgs = q.localId && !q.sale ? [q.localId] : [];
                 const items = total === 0 ? [] : await rows(c, `SELECT ${selection(false)}, ${sale} AS venda_disponivel ${from}
-                    ORDER BY ${q.cinema?'venda_disponivel DESC, ':''}f.id_filme LIMIT ? OFFSET ?`, [...args, limit, (page - 1) * limit]);
+                    ORDER BY ${q.cinema?'venda_disponivel DESC, ':''}f.id_filme LIMIT ? OFFSET ?`, [...saleArgs, ...args, limit, (page - 1) * limit]);
                 return { items, pagination:{ limit, nextCursor:null, page, total, totalPages } };
             }, { signal });
         },

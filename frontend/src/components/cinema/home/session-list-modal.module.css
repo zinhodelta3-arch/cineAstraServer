@@ -1,0 +1,206 @@
+.dialog {
+  --session-surface: color-mix(in oklab, oklab(from var(--card) l a b / 1) 85%, var(--background));
+  --session-border: color-mix(in oklab, var(--border) 85%, var(--primary));
+  --session-notch: 9px;
+  width: min(760px, calc(100% - 24px));
+  max-width: none;
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+}
+
+.dialog::backdrop {
+  background: rgb(15 6 5 / 73%);
+  backdrop-filter: blur(5px);
+}
+
+.top,
+.stub {
+  --left-notch: radial-gradient(circle at left var(--notch-edge), transparent var(--session-notch), black calc(var(--session-notch) + 0.6px));
+  --right-notch: radial-gradient(circle at right var(--notch-edge), transparent var(--session-notch), black calc(var(--session-notch) + 0.6px));
+  position: relative;
+  padding-inline: 24px;
+  border: 1px solid var(--session-border);
+  mask: var(--left-notch), var(--right-notch);
+  mask-composite: intersect;
+}
+
+.top {
+  --notch-edge: bottom;
+  padding-block: 8px 24px;
+  border-radius: 12px 12px 0 0;
+  border-bottom: 0;
+  background: var(--session-surface);
+}
+
+.top::before {
+  display: block;
+  height: 4px;
+  margin-bottom: 18px;
+  background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--primary) 67%, transparent) 0 11px, transparent 11px 26px);
+  content: "";
+}
+
+.stub {
+  --notch-edge: top;
+  padding-block: 19px 22px;
+  border-top: 1px dashed var(--session-border);
+  border-radius: 0 0 12px 12px;
+  background: color-mix(in oklab, var(--session-surface) 65%, var(--background));
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+  margin-top: 22px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.control {
+  border-radius: 8px;
+}
+
+.control:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.close {
+  position: absolute;
+  top: 20px;
+  right: 19px;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+}
+
+.select,
+.day {
+  min-height: 44px;
+  border: 1px solid var(--session-border);
+  background: var(--background);
+}
+
+.select {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.day {
+  padding: 4px 2px;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.day span {
+  text-transform: capitalize;
+}
+
+.close:hover,
+.day:hover,
+.retry:hover {
+  background: var(--muted);
+}
+
+.day[aria-pressed="true"],
+.action {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(78px, max-content) minmax(0, 1fr) auto minmax(132px, max-content);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--session-border);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--session-surface) 95%, var(--primary));
+}
+
+.booking {
+  display: grid;
+  max-width: 12rem;
+  gap: 4px;
+  text-align: center;
+}
+
+.action {
+  display: grid;
+  min-height: 44px;
+  padding-inline: 10px;
+  place-items: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.action:hover {
+  background: color-mix(in oklab, var(--primary) 90%, var(--primary-foreground));
+}
+
+.retry {
+  min-height: 44px;
+  margin-top: 8px;
+  padding-inline: 9px;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.retry:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+@media (max-width: 580px) {
+  .top,
+  .stub {
+    padding-inline: 15px;
+  }
+
+  .close {
+    right: 12px;
+  }
+
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 13px;
+    margin-top: 16px;
+  }
+
+  .row {
+    grid-template-columns: minmax(58px, max-content) minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .booking {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
+}

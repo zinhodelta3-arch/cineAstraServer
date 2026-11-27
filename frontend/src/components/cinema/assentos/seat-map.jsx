@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Accessibility, Box, Check, Clock, Grid2X2, Heart, Minus, Plus, Ticket, X } from "lucide-react";
 import { arrangedSeats, seatStatus, seatType } from "./seat-layout.mjs";
+import { inferEnvironment, projectionLandmark } from "./studio-builder.mjs";
 import styles from "./seat-selection.module.css";
 
-const RoomSceneView = dynamic(() => import("./room-scene-view"), {
-  ssr: false,
-  loading: () => <p role="status" className={styles.sceneMessage}>Abrindo visualizador 3D…</p>,
-});
+const RoomSceneView = lazy(() => import("./room-scene-view"));
 
 export default function SeatMap({ selection, seats, selectedSeat, onSeatSelect, screenLabel = "Tela", spaceType, sceneUrl }) {
   const [zoom, setZoom] = useState(100);
@@ -20,10 +17,8 @@ export default function SeatMap({ selection, seats, selectedSeat, onSeatSelect, 
   const layout = useMemo(()=>arrangedSeats(seats),[seats]);
   const interactive = Boolean(selection || onSeatSelect);
   const is3d = Boolean(sceneUrl && view === "3d");
-  const scenery = spaceType === "ESTADIO" ? "field"
-    : ["DRIVE_IN", "ESTACIONAMENTO"].includes(spaceType) ? "drive"
-    : ["SALAO_EVENTOS", "PRACA", "ESPACO_PUBLICO", "OUTRO"].includes(spaceType) ? "stage" : "cinema";
-  const landmark = scenery === "field" ? "Campo" : scenery === "drive" ? "Telão" : scenery === "stage" ? "Palco" : screenLabel;
+  const environment = inferEnvironment({ spaceType });
+  const landmark = projectionLandmark(environment, screenLabel);
   const selected = seatId => selection ? selection.selected.includes(seatId) : selectedSeat===seatId;
   const disabled = seat => Boolean(selection && (seat.occupied || selection.continuing));
   const tabSeat = seats.find(seat=>seat.id===focused&&!disabled(seat))?.id
@@ -51,25 +46,35 @@ export default function SeatMap({ selection, seats, selectedSeat, onSeatSelect, 
     if(target)buttons.current.get(target.id)?.focus();
   }
 
-  return <section className={styles.mapSection} aria-label="Mapa de assentos" data-view={is3d ? "3d" : "2d"}>
-    <div className={styles.mapToolbar}>
-      {sceneUrl && seats.length > 0 ? <div className={styles.viewPicker} role="group" aria-label="Visualização do mapa">
+  const viewPicker = sceneUrl && seats.length > 0
+    ? <div className={styles.viewPicker} role="group" aria-label="Visualização do mapa">
         <button type="button" aria-pressed={!is3d} onClick={()=>setView("2d")}><Grid2X2 size={16} aria-hidden="true" />2D</button>
         <button type="button" aria-pressed={is3d} onClick={()=>setView("3d")}><Box size={16} aria-hidden="true" />3D</button>
-      </div> : <span>Mapa da sala</span>}
-      {!is3d && <div className={styles.zoom}>
+      </div>
+    : <span>Mapa da sala</span>;
+
+  return <section className={styles.mapSection} aria-label="Mapa de assentos" data-view={is3d ? "3d" : "2d"} data-environment={environment}>
+    <div className={styles.mapTicketBody}>
+    {is3d ? <Suspense fallback={<>
+      <div className={styles.mapToolbar}>{viewPicker}</div>
+      <p role="status" className={styles.sceneMessage}>Abrindo visualizador 3D…</p>
+    </>}>
+      <RoomSceneView url={sceneUrl} seats={seats} selection={selection} viewPicker={viewPicker} />
+    </Suspense> : <>
+    <div className={styles.mapToolbar}>
+      {viewPicker}
+      <div className={styles.zoom}>
         <button type="button" aria-label="Diminuir mapa" disabled={zoom<=80} onClick={()=>setZoom(value=>value-10)}><Minus size={16} /></button>
         <label><span className="sr-only">Zoom do mapa</span><input type="range" min="80" max="150" step="10" value={zoom} onChange={event=>setZoom(Number(event.target.value))} /></label>
         <button type="button" aria-label="Ampliar mapa" disabled={zoom>=150} onClick={()=>setZoom(value=>value+10)}><Plus size={16} /></button>
         <output>{zoom}%</output>
-      </div>}
+      </div>
     </div>
-    {is3d ? <RoomSceneView url={sceneUrl} seats={seats} selection={selection} /> : <>
     <p id={id} className={styles.mapHint}>{interactive?'Use as setas para navegar e Espaço para escolher um assento. ':''}Em telas pequenas, deslize o mapa para os lados.</p>
     {!seats.length ? <p className={styles.mapHint}>A sala ainda não tem assentos.</p> :
       <div className={styles.mapScroll} tabIndex={interactive?undefined:0} role="region" aria-label="Disposição dos assentos">
         <div className={styles.map} style={{"--columns":layout.count,"--seat-size":`${Math.round(30*zoom/100)}px`,"--seat-gap":`${6*zoom/100}px`}}>
-          <div className={styles.screen} aria-label={landmark}><span>{landmark}</span></div>
+          <div className={styles.screen} data-landmark={environment}><span>{landmark}</span></div>
           {layout.rows.map((row,rowIndex)=><div className={styles.seatRow} key={row.label} role="group" aria-label={`Fileira ${row.label}`}>
             <span className={styles.rowLabel} style={{gridColumn:1}} aria-hidden="true">{row.label}</span>
             {row.seats.map(seat=>{
@@ -97,6 +102,8 @@ export default function SeatMap({ selection, seats, selectedSeat, onSeatSelect, 
           </div>)}
         </div>
       </div>}
+    </>}
+    </div>
     <ul className={styles.legend} aria-label="Legenda do mapa">
       <li><span className={styles.legendAvailable} />Disponível</li>
       <li><span className={styles.legendOccupied}><X size={12} /></span>Indisponível</li>
@@ -107,6 +114,6 @@ export default function SeatMap({ selection, seats, selectedSeat, onSeatSelect, 
       {interactive&&<li><span className={styles.legendSelected}><Check size={12} /></span>Selecionado</li>}
       <li><span className={styles.legendAccessible}><Accessibility size={14} /></span>Acessível</li>
       {seats.some(seat=>seat.type==='CASAL')&&<li><span className={styles.legendAvailable}><Heart size={13} /></span>Casal</li>}
-    </ul></>}
+    </ul>
   </section>;
 }

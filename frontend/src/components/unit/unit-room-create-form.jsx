@@ -7,7 +7,6 @@ import SeatMap from '@/components/cinema/assentos/seat-map';
 import RoomSceneBuilder from '@/components/cinema/assentos/room-scene-builder';
 import { seatFromRoom, seatType } from '@/components/cinema/assentos/seat-layout.mjs';
 import {
-  EVENT_SPACES,
   MAX_SEAT_POSITION,
   SEAT_TEMPLATES,
   buildSeatBatchDraft,
@@ -31,9 +30,11 @@ export default function UnitRoomCreateForm({
   localId,
   locationName,
   spaceType = 'CINEMA',
+  request = unitOperation,
   onCancel,
   onCreated,
   onPartialCreated,
+  onPendingChange,
 }) {
   const initialTemplate = defaultTemplateForSpace({ spaceType, roomType: '2D' });
   const [nome, setNome] = useState('');
@@ -57,6 +58,7 @@ export default function UnitRoomCreateForm({
   const [pending, setPending] = useState(false);
   const [stepStatus, setStepStatus] = useState('');
   const [error, setError] = useState('');
+  const [partialRoom, setPartialRoom] = useState(null);
   const lockRef = useRef(false);
 
   const hasSeats = layoutMode !== 'empty';
@@ -88,7 +90,6 @@ export default function UnitRoomCreateForm({
   );
 
   const sceneValue = customScene ?? autoScene;
-  const screenLabel = EVENT_SPACES.has(spaceType) ? 'Palco' : 'Tela';
   const chosenSeat = draft.find(row => row.id_assento === selectedSeat);
 
   function updateConfig(name, value) {
@@ -113,7 +114,7 @@ export default function UnitRoomCreateForm({
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (pending || lockRef.current) return;
+    if (pending || partialRoom || lockRef.current) return;
     const trimmedName = nome.trim();
     if (!trimmedName || trimmedName.length > 100) {
       setError('Informe um nome válido para a sala.');
@@ -130,12 +131,13 @@ export default function UnitRoomCreateForm({
 
     lockRef.current = true;
     setPending(true);
+    onPendingChange?.(true);
     setError('');
     let createdRoom = null;
 
     try {
       setStepStatus('Criando sala…');
-      createdRoom = await unitOperation(`/locations/${localId}/rooms`, {
+      createdRoom = await request(`/locations/${localId}/rooms`, {
         method: 'POST',
         body: {
           nome: trimmedName,
@@ -147,7 +149,7 @@ export default function UnitRoomCreateForm({
 
       if (hasSeats && draft.length > 0) {
         setStepStatus(`Cadastrando ${draft.length} assentos…`);
-        await unitOperation(`/locations/${localId}/rooms/${createdRoom.id_sala}/seats/batch`, {
+        await request(`/locations/${localId}/rooms/${createdRoom.id_sala}/seats/batch`, {
           method: 'POST',
           body: {
             seats: draft.map(({ fileira, numero, posicao_visual, tipo: seatKind, status: seatStatus }) => ({
@@ -162,7 +164,7 @@ export default function UnitRoomCreateForm({
 
         if (publish3d) {
           setStepStatus('Vinculando e publicando modelo 3D…');
-          const persistedLayout = await unitOperation(`/locations/${localId}/rooms/${createdRoom.id_sala}/seat-map`);
+          const persistedLayout = await request(`/locations/${localId}/rooms/${createdRoom.id_sala}/seat-map`);
           const persistedSeats = persistedLayout?.seats ?? [];
           const activePersisted = persistedSeats.filter(row => row.status === 'ATIVA');
 
@@ -190,7 +192,7 @@ export default function UnitRoomCreateForm({
             });
           }
 
-          await unitOperation(`/locations/${localId}/rooms/${createdRoom.id_sala}/scene`, {
+          await request(`/locations/${localId}/rooms/${createdRoom.id_sala}/scene`, {
             method: 'PATCH',
             body: sanitizeSceneForPublish(sceneToPublish),
           });
@@ -198,7 +200,7 @@ export default function UnitRoomCreateForm({
 
         if (activateAfter && draft.length === capacity) {
           setStepStatus('Ativando sala…');
-          const activated = await unitOperation(`/locations/${localId}/rooms/${createdRoom.id_sala}`, {
+          const activated = await request(`/locations/${localId}/rooms/${createdRoom.id_sala}`, {
             method: 'PATCH',
             body: { status: 'ATIVA' },
           });
@@ -213,15 +215,19 @@ export default function UnitRoomCreateForm({
         : 'Sala cadastrada com sucesso.';
       onCreated(createdRoom, notice);
     } catch (cause) {
-      if (createdRoom) onPartialCreated?.(createdRoom);
+      if (createdRoom) {
+        setPartialRoom(createdRoom);
+        onPartialCreated?.(createdRoom);
+      }
       setError(
         createdRoom
-          ? `A sala "${createdRoom.nome}" foi criada, mas a etapa seguinte falhou: ${cause.message}`
+          ? `A sala "${createdRoom.nome}" foi criada. Continue pela sala cadastrada. ${cause.message}`
           : cause.message,
       );
     } finally {
       lockRef.current = false;
       setPending(false);
+      onPendingChange?.(false);
       setStepStatus('');
     }
   }
@@ -390,7 +396,7 @@ export default function UnitRoomCreateForm({
                   seats={draft.map(seatFromRoom)}
                   selectedSeat={selectedSeat}
                   onSeatSelect={id => setSelectedSeat(id)}
-                  screenLabel={screenLabel}
+                  spaceType={spaceType}
                 />
                 {chosenSeat && (
                   <label className={seatStyles.specialField}>
@@ -442,8 +448,8 @@ export default function UnitRoomCreateForm({
         <button type="button" className={styles.secondary} disabled={pending} onClick={onCancel}>
           Voltar
         </button>
-        <button type="submit" className={styles.button} disabled={pending || Boolean(batchError)}>
-          {pending ? stepStatus || 'Criando sala…' : hasSeats ? 'Criar sala com assentos e 3D' : 'Criar sala'}
+        <button type="submit" className={styles.button} disabled={pending || Boolean(batchError) || Boolean(partialRoom)}>
+          {pending ? stepStatus || 'Criando sala…' : hasSeats && publish3d ? 'Criar sala com assentos e 3D' : hasSeats ? 'Criar sala com assentos' : 'Criar sala'}
         </button>
       </div>
     </form>

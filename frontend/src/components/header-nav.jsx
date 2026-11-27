@@ -14,6 +14,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet"
 import { AppearanceSelector } from "@/components/appearance-selector"
+import styles from "./header.module.css"
 
 const navigation = [
   { label: "Início", href: "/cinema/home", icon: House },
@@ -24,7 +25,6 @@ const navigation = [
   { label: "Planos", href: "/cinema/planos", icon: Crown },
   { label: "Streaming", href: "/streaming", icon: TvMinimalPlay, mobileOnly: true },
   { label: "Sobre nós", href: "/cinema/sobre-nos", icon: Building2 },
-  { label: "Suporte", href: "/cinema/suporte", icon: CircleHelp },
 ]
 
 function TearLine() {
@@ -51,7 +51,7 @@ function NavigationItems({ mobile = false, onNavigate, canAccessStreaming = fals
   const pathname = usePathname()
 
   return (
-    <ul className={mobile ? "flex flex-col gap-1 py-3" : "flex items-center gap-0.5 2xl:gap-1"}>
+    <ul className={mobile ? "flex flex-col gap-1 py-3" : "flex w-max items-center gap-1 lg:gap-2"}>
       {navigation.filter((item) => !item.mobileOnly || (mobile && canAccessStreaming)).map(({ label, href, icon: Icon }) => {
         const active = Boolean(
           href && (pathname === href || pathname?.startsWith(`${href}/`))
@@ -64,16 +64,16 @@ function NavigationItems({ mobile = false, onNavigate, canAccessStreaming = fals
                 href={href}
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-                  mobile ? "px-3" : "px-2.5 2xl:px-3"
+                className={`flex min-h-11 items-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+                  mobile ? "px-3 text-sm" : "px-2.5 text-xs lg:px-3 lg:text-sm"
                 } ${
                   active
-                    ? "bg-primary/10 font-semibold text-primary"
+                    ? `bg-primary/10 font-semibold text-primary ${mobile ? "" : "relative after:absolute after:inset-x-2.5 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-primary"}`
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 } ${label === "Streaming" ? "my-2 border border-dashed border-primary/50 bg-primary/10 text-primary" : ""}`}
               >
                 <Icon
-                  className={`${mobile ? "block" : "hidden 2xl:block"} size-4 shrink-0`}
+                  className="size-4 shrink-0"
                   aria-hidden="true"
                 />
                 <span>{label}</span>
@@ -107,9 +107,29 @@ function NavigationItems({ mobile = false, onNavigate, canAccessStreaming = fals
 
 export function DesktopNavigation() {
   return (
-    <nav aria-label="Navegação principal" className="hidden min-w-0 xl:block">
+    <nav aria-label="Navegação principal" className="min-w-0 overflow-x-auto overscroll-x-contain px-3 py-1.5 sm:px-6 lg:px-9 [scrollbar-width:thin]">
       <NavigationItems />
     </nav>
+  )
+}
+
+export function SupportLink({ onNavigate }) {
+  const pathname = usePathname()
+  const href = "/cinema/suporte"
+  const active = pathname === href || pathname?.startsWith(`${href}/`)
+
+  return (
+    <Link
+      href={href}
+      prefetch={false}
+      onClick={onNavigate}
+      aria-label="Suporte"
+      title="Suporte"
+      aria-current={active ? "page" : undefined}
+      className={`grid size-10 shrink-0 place-items-center rounded-md border text-foreground transition-colors aria-[current=page]:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${styles.action}`}
+    >
+      <CircleHelp className="size-4" aria-hidden="true" />
+    </Link>
   )
 }
 
@@ -124,7 +144,7 @@ export function MobileNavigation({session, canAccessStreaming = false}) {
             type="button"
             variant="ghost"
             size="icon"
-            className="size-10 shrink-0 xl:hidden"
+            className="size-10 shrink-0 lg:hidden"
             aria-label="Abrir menu de navegação"
           />
         }
@@ -155,7 +175,10 @@ export function MobileNavigation({session, canAccessStreaming = false}) {
           <div className="space-y-5 p-5">
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs font-medium text-muted-foreground">Tema do aplicativo</span>
-              <AppearanceSelector />
+              <div className="flex items-center gap-1">
+                <AppearanceSelector triggerClassName={styles.action} />
+                <SupportLink onNavigate={() => setOpen(false)} />
+              </div>
             </div>
             <Barcode />
           </div>

@@ -37,7 +37,7 @@ export function createCatalogService({ model, identity, mediaHosts = [] }) {
         async listFilms(q, isAdmin, signal) {
             if (!isAdmin && q.showcase) {
                 const limit = Math.min(q.limit ?? 8, 12);
-                return { items: (await model.showcaseFilms(limit)).map(row => filmDto(row)), pagination: { limit, nextCursor: null } };
+                return { items: (await model.showcaseFilms(limit, q.localId)).map(row => filmDto(row)), pagination: { limit, nextCursor: null } };
             }
             if (!isAdmin && q.page) {
                 const {items, pagination} = await model.listNumberedFilms(q, signal);

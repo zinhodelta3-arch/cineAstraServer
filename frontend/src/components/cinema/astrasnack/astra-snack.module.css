@@ -1,0 +1,38 @@
+.headerArt {
+  position: relative;
+  block-size: clamp(124px, 27vw, 180px);
+  mask-image: linear-gradient(to bottom, transparent, #000 20%);
+}
+
+@media (min-width: 64rem) {
+  .headerIntro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .headerArt {
+    block-size: auto;
+    mask-image: linear-gradient(to right, transparent, #000 28%);
+  }
+}
+
+.comboBanner {
+  --edge: color-mix(in srgb, var(--border) 78%, var(--primary));
+  display: block;
+  block-size: 142px;
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  background: #2b0d0c;
+  mask:
+    radial-gradient(circle at 0 50%, transparent 8px, #000 9px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 8px, #000 9px) right / 51% 100% no-repeat;
+}
+
+.comboBanner:is(:hover, :focus-visible) { --edge: var(--primary); }
+
+.comboBanner:focus-visible { outline: 3px solid var(--ring); outline-offset: -5px; }
+
+@media (min-width: 40rem) {
+  .comboBanner { block-size: 146px; }
+}

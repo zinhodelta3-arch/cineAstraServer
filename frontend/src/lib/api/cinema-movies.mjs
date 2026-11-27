@@ -4,13 +4,14 @@ export function cinemaMovie(film, today) {
  const releaseDate=film.data_lancamento?.slice(0,10)||null;
  return {id:String(film.id_filme),slug:film.slug,title:film.titulo,synopsis:film.descricao||'Sinopse ainda não informada.',poster:publicAsset(film.imagem),banner:publicAsset(film.banner),duration:film.duracao,age:film.classificacao,releaseDate,...cinemaProgram(film,today),genres:Array.isArray(film.generos)?film.generos.map(g=>g.nome):[],sessions:[],formats:[],director:film.diretor,trailer:safeLink(film.trailer)};
 }
-export function cinemaCatalogPath(query, genre, section, { page, pageSize = 20 } = {}) {
+export function cinemaCatalogPath(query, genre, section, { page, pageSize = 20, localId } = {}) {
  const params=new URLSearchParams({cinema:'true',limit:String(pageSize)});
  if(query.trim())params.set('titulo',query.trim());
  if(genre!=='Todos')params.set('genreId',genre);
  if(section)params.set('upcoming',String(section!=='em-cartaz'));
  if(page&&section!=='em-cartaz'&&section)params.set('sale',section==='pre-venda'?'open':'closed');
  if(page)params.set('page',String(page));
+ if(localId)params.set('localId',localId);
  return `/films?${params}`;
 }
 

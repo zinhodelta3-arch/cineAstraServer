@@ -18,6 +18,7 @@
   background: var(--primary);
   color: var(--primary-foreground);
   box-shadow: 0 6px 18px color-mix(in oklab, var(--foreground) 15%, transparent);
+  transition-property: background-color, border-color, color, opacity, box-shadow;
   cursor: pointer;
   font-family: var(--font-sans, sans-serif);
 }

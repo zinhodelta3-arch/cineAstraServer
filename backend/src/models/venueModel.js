@@ -25,6 +25,9 @@ export function createVenueModel(database) {
             const filters = [`${pk[kind]} > ?`], args = [q.cursor ?? '0'];
             if (parentId) { filters.push(`${parent[kind]} = ?`); args.push(parentId); }
             if (!admin || q.status) { filters.push('status = ?'); args.push(q.status ?? (kind === 'local' ? 'ATIVO' : 'ATIVA')); }
+            if (kind === 'local' && q.cinema) {
+                filters.push("EXISTS (SELECT 1 FROM salas WHERE salas.id_local=locais.id_local AND salas.status='ATIVA')");
+            }
             if (kind === 'local' && q.name) { filters.push("nome LIKE ? ESCAPE '!'"); args.push(`%${q.name.replace(/[!%_]/g, value => `!${value}`)}%`); }
             if (kind === 'local' && q.q) for (const word of q.q.split(/\s+/).slice(0,12)) {
                 filters.push("LOCATE(?, CONCAT_WS(' ', nome, logradouro, bairro, cidade, estado, cep))>0"); args.push(word);

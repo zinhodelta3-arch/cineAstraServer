@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useState } from "react"
+import { useId, useState } from "react"
 import { createPortal } from "react-dom"
 import {
   Accessibility, Contrast, Type, MoveVertical, MoveHorizontal,
@@ -41,7 +41,6 @@ function Adjustment({ icon: Icon, label, value, level, count, onClick, disabled,
 
 export function AccessibilityMenu() {
   const [open, setOpen] = useState(false)
-  const [mobile, setMobile] = useState(false)
   const [announcement, setAnnouncement] = useState("")
   const id = useId()
   const titleId = `${id}-title`
@@ -52,19 +51,11 @@ export function AccessibilityMenu() {
   } = useAccessibility()
 
   // Botão arrastável (posição salva separadamente do botão de notícias)
-  const { pos, buttonProps, wasDragged } = useDraggableFab({
+  const { pos, viewport, buttonProps, wasDragged } = useDraggableFab({
     storageKey: "cineastra:a11y-pos",
     size: 48,
     defaultPosition: (vw, vh) => ({ x: vw - 48 - 16, y: vh / 2 - 24 }),
   })
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 640px)")
-    const sync = () => setMobile(media.matches)
-    sync()
-    media.addEventListener("change", sync)
-    return () => media.removeEventListener("change", sync)
-  }, [])
 
   const change = (key, label) => {
     const options = ACCESSIBILITY_OPTIONS[key]
@@ -81,6 +72,7 @@ export function AccessibilityMenu() {
   ]
 
   if (!pos) return null // aguarda a posição no navegador (evita piscar/hidratação)
+  const mobile = viewport.width <= 640
 
   // Portal no body: o botão fica fixo na tela mesmo dentro de header com transform/blur
   return createPortal(
@@ -107,8 +99,8 @@ export function AccessibilityMenu() {
       <PopoverContent
         side={
           mobile
-            ? pos.y > window.innerHeight / 2 ? "top" : "bottom"
-            : pos.x > window.innerWidth / 2 ? "left" : "right"
+            ? pos.y > viewport.top + viewport.height / 2 ? "top" : "bottom"
+            : pos.x > viewport.left + viewport.width / 2 ? "left" : "right"
         }
         sideOffset={12}
         align={mobile ? "end" : "center"}

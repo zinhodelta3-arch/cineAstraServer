@@ -29,7 +29,7 @@ export default function CinemasPage() {
         <div className="max-w-[1600px] mx-auto px-5 md:px-8 grid lg:grid-cols-[360px_1fr] gap-6 xl:gap-8 items-start">
           <LocationList locations={locations} />
 
-          <div ref={panelRef} className="scroll-mt-24 min-w-0" aria-live="polite">
+          <div ref={panelRef} className="scroll-mt-36 min-w-0" aria-live="polite">
             {selected ? <LocationPanel key={selected.id} loc={selected} /> : <EmptyPanel />}
           </div>
         </div>

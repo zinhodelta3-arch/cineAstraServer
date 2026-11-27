@@ -1,12 +1,16 @@
 // Utilitários compartilhados para geração e validação de lotes de assentos.
 
-export const EVENT_SPACES = new Set(['SALAO_EVENTOS', 'ESTADIO', 'PRACA', 'ESPACO_PUBLICO', 'OUTRO']);
+import { inferEnvironment } from './studio-builder.mjs';
 
 export const SEAT_TEMPLATES = {
   cinema: { label: 'Cinema com corredor central', rows: 4, blocks: 2, width: 5, gap: 1 },
   vip: { label: 'Sala VIP', rows: 3, blocks: 2, width: 3, gap: 2 },
   drive: { label: 'Drive-in em setores', rows: 3, blocks: 2, width: 4, gap: 2 },
   event: { label: 'Plateia de evento', rows: 4, blocks: 3, width: 4, gap: 1 },
+  stadium: { label: 'Arquibancada em setores', rows: 6, blocks: 3, width: 6, gap: 2 },
+  park: { label: 'Bancos ao ar livre', rows: 4, blocks: 2, width: 4, gap: 2 },
+  bunker: { label: 'Bunker privativo', rows: 2, blocks: 1, width: 4, gap: 0 },
+  container: { label: 'Contêiner com corredor', rows: 4, blocks: 2, width: 2, gap: 1 },
   row: { label: 'Fileiras inteiras', rows: 1, blocks: 1, width: 8, gap: 0 },
 };
 
@@ -41,8 +45,9 @@ export function findDuplicateSeat(records, field) {
 }
 
 export function defaultTemplateForSpace({ spaceType, roomType } = {}) {
-  if (spaceType === 'DRIVE_IN' || spaceType === 'ESTACIONAMENTO') return 'drive';
-  if (EVENT_SPACES.has(spaceType)) return 'event';
+  const environment = inferEnvironment({ spaceType });
+  const template = { drivein:'drive', theater:'event', stadium:'stadium', park:'park', banker:'bunker', container:'container', custom:'event' }[environment];
+  if (template) return template;
   if (roomType === 'VIP') return 'vip';
   return 'cinema';
 }

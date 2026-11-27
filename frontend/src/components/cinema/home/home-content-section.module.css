@@ -1,0 +1,33 @@
+.ticket {
+  --ticket-edge: color-mix(in srgb, var(--border) 88%, var(--primary));
+  --stub-height: 4rem;
+  --notch-center: calc(100% - var(--stub-height) - 1px);
+  border-color: var(--ticket-edge);
+  mask:
+    radial-gradient(circle at 0 var(--notch-center), transparent 8.5px, #000 9.5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% var(--notch-center), transparent 8.5px, #000 9.5px) right / 51% 100% no-repeat;
+}
+
+.ticket:focus-within {
+  --ticket-edge: var(--ring);
+}
+
+.film {
+  flex: none;
+  block-size: 7px;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--primary) 58%, var(--background)) 0 11px, transparent 11px 24px);
+}
+
+.stub {
+  flex: none;
+  block-size: var(--stub-height);
+  background:
+    repeating-linear-gradient(90deg, var(--ticket-edge) 0 4px, transparent 4px 7px) center top / calc(100% - 20px) 1px no-repeat,
+    color-mix(in srgb, var(--card) 91%, var(--primary));
+}
+
+.barcode {
+  inline-size: 54px;
+  block-size: 18px;
+  background: repeating-linear-gradient(90deg, var(--ticket-edge) 0 1px, transparent 1px 3px, var(--ticket-edge) 3px 5px, transparent 5px 7px, var(--ticket-edge) 7px 8px, transparent 8px 12px, var(--ticket-edge) 12px 15px, transparent 15px 17px, var(--ticket-edge) 17px 18px, transparent 18px 23px);
+}

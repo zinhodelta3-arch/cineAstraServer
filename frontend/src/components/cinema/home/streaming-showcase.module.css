@@ -1,0 +1,75 @@
+.ticket {
+  --divider: 41%;
+  --edge: color-mix(in srgb, var(--border) 80%, var(--primary));
+  display: grid;
+  grid-template-columns: minmax(0, 41fr) minmax(0, 59fr);
+  border: 1px solid var(--edge);
+  border-radius: 14px;
+  background: var(--card);
+  mask:
+    radial-gradient(circle at var(--divider) 0, transparent 9px, #000 10px) top / 100% 51% no-repeat,
+    radial-gradient(circle at var(--divider) 100%, transparent 9px, #000 10px) bottom / 100% 51% no-repeat;
+}
+
+.copy {
+  align-self: center;
+  min-width: 0;
+  padding: clamp(24px, 4.25vw, 65px);
+}
+
+.title {
+  font-size: clamp(3.2rem, 5.5vw, 5.4rem);
+  font-weight: 900;
+  line-height: .99;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+
+.title span {
+  display: block;
+  color: var(--primary);
+  text-wrap: wrap;
+}
+
+.copy p {
+  max-inline-size: 36ch;
+  margin-top: 23px;
+  line-height: 1.6;
+}
+
+.catalog {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: clamp(18px, 3.2vw, 45px);
+  border-inline-start: 1px dashed var(--edge);
+  border-radius: 0 13px 13px 0;
+  background: color-mix(in srgb, var(--card) 93%, var(--primary));
+}
+
+.screenTicket {
+  --notch: clamp(7px, 1vw, 13px);
+  padding: clamp(9px, 1.25vw, 17px);
+  border: 1px solid var(--edge);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--card) 86%, var(--primary));
+  mask:
+    radial-gradient(circle at 0 50%, transparent calc(var(--notch) - .5px), #000 calc(var(--notch) + .5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent calc(var(--notch) - .5px), #000 calc(var(--notch) + .5px)) right / 51% 100% no-repeat;
+}
+
+@media (max-width: 810px) {
+  .ticket {
+    grid-template-columns: minmax(0, 1fr);
+    mask: none;
+  }
+
+  .title { font-size: clamp(3.05rem, 9.2vw, 4.6rem); }
+  .copy p { margin-top: 17px; }
+
+  .catalog {
+    border-inline-start: 0;
+    border-block-start: 1px dashed var(--edge);
+    border-radius: 0 0 13px 13px;
+  }
+}

@@ -11,7 +11,7 @@ for(const kind of ['partners','experiences','banners']){
  spec.components.schemas[kind+'Create']=obj(properties,required);
  spec.components.schemas[kind+'Patch']={...obj({...properties,active:{type:'boolean'}},[]),minProperties:1};
  const location=obj({
-  name:text(150),type:{type:'string',enum:['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO']},
+  name:text(150),type:{type:'string',enum:['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO','TEATRO','BUNKER','CONTAINER']},
   eventCapacity:{type:'integer',minimum:1,maximum:100000,nullable:true},
   eventSeating:{type:'string',enum:['NUMERADO','LIVRE',null],nullable:true}
  });

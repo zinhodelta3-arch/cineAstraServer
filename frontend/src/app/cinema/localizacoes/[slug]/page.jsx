@@ -11,7 +11,7 @@ export default async function CinemaLocationPage({ params }) {
   const record = await catalogRecord('locations', slug);
   if (record.slug && slug !== record.slug) permanentRedirect(`/cinema/localizacoes/${encodeURIComponent(record.slug)}`);
   const loc = cinemaLocation(record);
-  return <main className="ca-root mx-auto max-w-5xl space-y-5 px-5 py-10 sm:px-8">
+  return <main className="ca-root mx-auto w-full max-w-5xl space-y-5 px-5 py-10 sm:px-8">
     <CinemaStyles />
     <Link href="/cinema/localizacoes" className="inline-flex min-h-10 items-center gap-2 font-semibold text-primary hover:underline">
       <ArrowLeft size={16} aria-hidden="true"/> Todos os cinemas

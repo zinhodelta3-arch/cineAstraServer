@@ -116,8 +116,7 @@
 @media (prefers-reduced-motion: reduce) {
   .navLink { transition: none; }
 }
-.utilityButton { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 6px; color: var(--foreground); cursor: pointer; }
-.utilityButton:hover { color: var(--primary); border-color: var(--primary); }
+.utilityButton { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-width: 1px; border-style: solid; border-radius: 6px; color: var(--foreground); cursor: pointer; }
 .fullscreenError { position: absolute; top: 100%; right: 12px; max-width: min(92vw, 320px); padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
 @media (max-width: 420px) {
   .utilityButton { width: 34px; }

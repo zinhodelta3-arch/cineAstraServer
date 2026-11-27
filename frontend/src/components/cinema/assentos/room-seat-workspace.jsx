@@ -5,12 +5,12 @@ import { Armchair, Box, Grid2X2, MoveHorizontal, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import useSeatLayout from '@/hooks/use-seat-layout';
+import { venueTypes } from '@/lib/api/cinema-locations.mjs';
 import SeatMap from './seat-map';
 import RoomScenePublisher from './room-scene-publisher';
 import RoomSceneBuilder from './room-scene-builder';
 import { seatFromRoom, seatType } from './seat-layout.mjs';
 import {
-  EVENT_SPACES,
   MAX_SEAT_POSITION,
   SEAT_TEMPLATES,
   buildSeatBatchDraft,
@@ -22,18 +22,7 @@ import {
 import { generateSceneFromSeats } from './studio-builder.mjs';
 import styles from './seat-selection.module.css';
 
-const placeNames = {
-  CINEMA: 'Cinema',
-  DRIVE_IN: 'Drive-in',
-  SALAO_EVENTOS: 'Salão de eventos',
-  ESTACIONAMENTO: 'Estacionamento',
-  ESTADIO: 'Estádio',
-  PRACA: 'Praça',
-  ESPACO_PUBLICO: 'Espaço público',
-  OUTRO: 'Outro espaço',
-};
-
-function SeatBatch({ layout, submit, pending, screenLabel }) {
+function SeatBatch({ layout, submit, pending }) {
   const firstTemplate = defaultTemplateForSpace({
     spaceType: layout.spaceType,
     roomType: layout.room.tipo,
@@ -163,7 +152,7 @@ function SeatBatch({ layout, submit, pending, screenLabel }) {
           seats={previewSeats}
           selectedSeat={selected}
           onSeatSelect={id => setSelected(draft.some(row => row.id_assento === id) ? id : null)}
-          screenLabel={screenLabel}
+          spaceType={layout.spaceType}
         />
       ) : (
         <RoomSceneBuilder
@@ -200,7 +189,7 @@ function SeatBatch({ layout, submit, pending, screenLabel }) {
   );
 }
 
-function PositionEditor({ layout, submit, pending, screenLabel }) {
+function PositionEditor({ layout, submit, pending }) {
   const [row, setRow] = useState('');
   const [start, setStart] = useState('1');
   const [shift, setShift] = useState('1');
@@ -265,7 +254,7 @@ function PositionEditor({ layout, submit, pending, screenLabel }) {
           {error}
         </p>
       )}
-      <SeatMap seats={(error ? layout.seats : model).map(seatFromRoom)} screenLabel={screenLabel} />
+      <SeatMap seats={(error ? layout.seats : model).map(seatFromRoom)} spaceType={layout.spaceType} />
       <div className="flex justify-end">
         <Button type="submit" disabled={pending || Boolean(error)}>
           {pending ? 'Salvando…' : 'Aplicar posições'}
@@ -297,7 +286,6 @@ export default function RoomSeatWorkspace({
   const layout = resource.data;
   const seats = useMemo(() => (layout?.seats ?? []).map(seatFromRoom), [layout]);
   const current = layout?.seats.find(row => row.id_assento === selected);
-  const screenLabel = EVENT_SPACES.has(layout?.spaceType) ? 'Palco' : 'Tela';
 
   async function submit(type, body) {
     if (lock.current) return;
@@ -359,7 +347,7 @@ export default function RoomSeatWorkspace({
             </div>
           )}
           <p className="text-sm text-muted-foreground">
-            {placeNames[layout.spaceType]} · {countActiveSeats(layout.seats)} de {layout.room.capacidade} lugares ativos
+            {venueTypes[layout.spaceType]} · {countActiveSeats(layout.seats)} de {layout.room.capacidade} lugares ativos
           </p>
         </div>
 
@@ -437,7 +425,6 @@ export default function RoomSeatWorkspace({
             seats={seats}
             onSeatSelect={setSelected}
             selectedSeat={selected}
-            screenLabel={screenLabel}
             sceneUrl={!canManage ? `/${String(path).replace(/^\/+/, '')}/scene` : undefined}
           />
         </>
@@ -479,10 +466,10 @@ export default function RoomSeatWorkspace({
             </p>
           )}
           {dialog === 'batch' && (
-            <SeatBatch layout={layout} submit={submit} pending={pending} screenLabel={screenLabel} />
+            <SeatBatch layout={layout} submit={submit} pending={pending} />
           )}
           {dialog === 'positions' && (
-            <PositionEditor layout={layout} submit={submit} pending={pending} screenLabel={screenLabel} />
+            <PositionEditor layout={layout} submit={submit} pending={pending} />
           )}
         </DialogContent>
       </Dialog>

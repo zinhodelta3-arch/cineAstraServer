@@ -20,7 +20,7 @@ const examples = {
     seat: { id_assento: '3', id_sala: '2', fileira: 'A', numero: 1, posicao_visual:null, tipo: 'PCD', status: 'ATIVA', acessivel: true }
 };
 Object.assign(properties.local, {
-    tipo_local: { type:'string', enum:['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO'], default:'CINEMA' },
+    tipo_local: { type:'string', enum:['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO','TEATRO','BUNKER','CONTAINER'], default:'CINEMA' },
     lotacao_eventos: { type:'integer', minimum:1, maximum:100000, nullable:true },
     acesso_eventos: { type:'string', enum:['NUMERADO','LIVRE',null], nullable:true },
     imagem_url: { type:'string', format:'uri', maxLength:2048, pattern:'^https://', nullable:true }
@@ -51,6 +51,7 @@ for (const r of venueOperations) {
         op.parameters.push({ name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } }, { name: 'cursor', in: 'query', schema: id });
         if (r.kind === 'seat') op.parameters.push({ name: 'accessible', in: 'query', schema: { type: 'boolean' } });
         if (r.kind === 'local') op.parameters.push({ name: 'q', in: 'query', description: 'Nome, cidade ou estado do local.', schema: { type: 'string', minLength: 1, maxLength: 150 } });
+        if (r.kind === 'local' && !r.admin) op.parameters.push({ name: 'cinema', in: 'query', description: 'Restringe a locais com ao menos uma sala ativa de exibição.', schema: { type: 'string', enum: ['true'] } });
         if (r.admin) op.parameters.push({ name: 'status', in: 'query', schema: { type: 'string', enum: status[r.kind] } });
         op.responses['200'] = response(object({ items: { type: 'array', items: ref(`Venue${title}`) }, pagination: ref('Pagination') }));
     } else if (r.action === 'get') op.responses['200'] = response(ref(`Venue${title}`));

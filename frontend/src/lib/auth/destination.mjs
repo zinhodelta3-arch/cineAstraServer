@@ -13,6 +13,7 @@ export function checkoutDestination(next) {
 }
 export const subscriptionManagementPath = '/cinema/perfil/assinatura';
 export function clientLoginDestination(next) {
+ if (next === '/cinema/suporte') return next;
  const receiptPrefix = `${purchaseVerificationPath}?referencia=`;
  if (typeof next === 'string' && next.startsWith(receiptPrefix) && validPurchaseReference(next.slice(receiptPrefix.length))) return next;
  if (typeof next === 'string' && /^\/cinema\/experiencias\/solicitar(?:\?experiencia=(?:personalizado|[1-9]\d{0,9}))?$/.test(next)) return next;

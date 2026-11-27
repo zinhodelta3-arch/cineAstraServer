@@ -50,7 +50,7 @@ export default function CinemaMoviesPage() {
         </div>
 
         <Tabs value={section} onValueChange={changeSection} className="flex w-full flex-col gap-0">
-          <CatalogNavigation />
+          <CatalogNavigation location={catalog.location} />
 
           <div className={styles.filmStrip} aria-hidden="true" />
 
@@ -74,7 +74,9 @@ export default function CinemaMoviesPage() {
                 <div className="flex min-h-72 flex-col items-center justify-center border-y border-dashed border-border px-6 text-center">
                   <Film className="mb-4 size-7 text-primary" aria-hidden="true" />
                   <h2 className={`${styles.display} text-3xl font-bold`}>Nenhum filme por aqui</h2>
-                  <p className="mt-2 max-w-sm text-sm text-muted-foreground">Tente outro título, gênero ou aba para encontrar seu filme.</p>
+                  <p className="mt-2 max-w-sm text-sm text-muted-foreground">{catalog.location
+                    ? "Tente outro filtro ou escolha outro cinema no cabeçalho."
+                    : "Tente outro título, gênero ou aba para encontrar seu filme."}</p>
                   {(genre !== "Todos" || query) && <Button variant="outline" onClick={clearFilters} className="mt-5 rounded-full">Ver todos nesta aba</Button>}
                 </div>
               ) : null}

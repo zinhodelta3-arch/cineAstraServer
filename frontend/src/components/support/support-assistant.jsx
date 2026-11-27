@@ -2,14 +2,20 @@ import {Bot} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {AssistantSessionLinks} from './assistant-session-links';
-export default function SupportAssistant({question,setQuestion,answer,asked,handedOff,ask,handoff,pending}){
- return <section className="rounded-2xl border border-border bg-card p-6 sm:p-8" aria-labelledby="ai-support-title">
-  <div className="flex items-center gap-3 text-primary"><Bot aria-hidden="true" /><span className="text-xs font-bold uppercase tracking-widest">Assistente virtual · IA</span></div>
-  <h2 id="ai-support-title" className="mt-3 text-2xl font-bold">Tire sua dúvida</h2>
+import ticketStyles from '@/components/cinema/ticket.module.css';
+import styles from './support-cinema.module.css';
+export default function SupportAssistant({question,setQuestion,answer,asked,handedOff,ask,handoff,pending,cinema=false}){
+ return <section className={cinema ? styles.workspaceCard : "rounded-2xl border border-border bg-card p-6 sm:p-8"} aria-labelledby="ai-support-title">
+  {cinema ? <h2 id="ai-support-title" className={`${ticketStyles.title} ${styles.workspaceHeading}`}>
+   <Bot size={20} aria-hidden="true" />Assistente virtual
+  </h2> : <>
+   <div className="flex items-center gap-3 text-primary"><Bot aria-hidden="true" /><span className="text-xs font-bold uppercase tracking-widest">Assistente virtual · IA</span></div>
+   <h2 id="ai-support-title" className="mt-3 text-2xl font-bold">Tire sua dúvida</h2>
+  </>}
   <p className="mt-2 text-sm text-muted-foreground">A assistente responde perguntas individuais. Não realiza compras nem altera sua conta. Evite enviar senhas e dados de cartão.</p>
   <form onSubmit={ask} className="mt-5 flex flex-wrap gap-3">
-   <Input aria-label="Pergunta para a assistente" value={question} onChange={e=>setQuestion(e.target.value)} maxLength={1000} required disabled={pending} placeholder="Como posso ajudar?" className="min-w-0 flex-1" />
-   <Button type="submit" disabled={pending||!question.trim()}>Perguntar à IA</Button>
+   <Input aria-label="Pergunta para a assistente" value={question} onChange={e=>setQuestion(e.target.value)} maxLength={1000} required disabled={pending} placeholder="Como posso ajudar?" className={cinema ? `min-w-0 flex-1 ${styles.assistantField}` : "min-w-0 flex-1"} />
+   <Button className={cinema ? 'min-h-11' : undefined} type="submit" disabled={pending||!question.trim()}>Perguntar à IA</Button>
   </form>
   {answer&&<div className="mt-5 space-y-3 rounded-xl border border-border bg-background p-4">
    <p className="break-words text-sm"><strong>Sua pergunta:</strong> {asked}</p>

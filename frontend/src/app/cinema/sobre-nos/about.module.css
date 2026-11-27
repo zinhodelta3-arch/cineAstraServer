@@ -1,0 +1,265 @@
+.page {
+  --about-rule: color-mix(in oklab, var(--border) 75%, var(--primary));
+  --about-hairline: color-mix(in oklab, var(--border) 52%, transparent);
+  --about-surface: color-mix(in oklab, var(--card) 85%, var(--background));
+  width: 100%;
+  min-width: 0;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.wrap {
+  width: min(1320px, calc(100% - 88px));
+  margin-inline: auto;
+}
+
+.feature {
+  --hero-shade: color-mix(in oklab, #240608 86%, var(--secondary));
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--hero-shade);
+  color: #fff0d6;
+}
+
+.feature::before,
+.feature::after {
+  position: absolute;
+  inset-inline: 0;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, color-mix(in oklab, #be9a50 80%, var(--primary)) 0 11px, transparent 11px 28px);
+  content: "";
+}
+
+.feature::before { inset-block-start: 0; }
+.feature::after { inset-block-end: 0; }
+
+.feature .wrap { padding-block: 46px 50px; }
+
+.feature .wrap::before,
+.feature .wrap::after {
+  position: absolute;
+  z-index: -1;
+  content: "";
+}
+
+.feature .wrap::before {
+  inset: 0 0 0 auto;
+  width: 66%;
+  background: url("/parcerias/sala-cinema.jpg") center 61% / cover no-repeat;
+}
+
+.feature .wrap::after {
+  inset: 0;
+  background: linear-gradient(90deg, var(--hero-shade) 29%, color-mix(in oklab, var(--hero-shade) 90%, transparent) 42%, transparent 80%);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: .8125rem;
+}
+
+.brand svg,
+.feature h1 span { color: #fad241; }
+
+.feature h1 {
+  font-size: clamp(3.5rem, 9vw, 6.3125rem);
+  font-weight: 850;
+  line-height: 1.03;
+  letter-spacing: -.018em;
+  text-transform: uppercase;
+}
+
+.featureDescription {
+  max-width: 38ch;
+  margin-top: 12px;
+  color: #f3dacc;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(195px, 230px) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 72px);
+  padding-block: 38px 62px;
+}
+
+.chapters {
+  position: sticky;
+  top: 9.5rem;
+  display: grid;
+  align-self: start;
+  gap: 7px;
+}
+
+.chapters a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--about-hairline);
+  border-radius: 5px;
+  background: var(--about-surface);
+  color: var(--muted-foreground);
+  font-size: .8125rem;
+  font-weight: 700;
+}
+
+.chapters svg { flex: none; color: var(--primary); }
+
+.chevron {
+  margin-inline-start: auto;
+  opacity: 0;
+}
+
+.chapters a:hover,
+.chapters a[aria-current] {
+  border-color: var(--about-rule);
+  color: var(--foreground);
+}
+
+.chapters a[aria-current] {
+  background: color-mix(in oklab, var(--about-surface) 88%, var(--primary));
+  box-shadow: inset 3px 0 var(--primary);
+}
+
+.chapters a[aria-current] .chevron { opacity: 1; }
+
+.chapters a:focus-visible,
+.block a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.chapter { min-width: 0; }
+
+.chapterTitle {
+  font-size: clamp(2.25rem, 5.4vw, 4.125rem);
+  font-weight: 850;
+  line-height: 1.03;
+  text-wrap: balance;
+}
+
+.subtitle {
+  margin-top: 9px;
+  color: var(--muted-foreground);
+}
+
+.ticket {
+  --stub-width: 92px;
+  --perforation: calc(100% - var(--stub-width));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--stub-width);
+  margin-block: 24px 29px;
+  border: 1px solid var(--about-rule);
+  border-radius: 8px;
+  background: var(--card);
+  mask: radial-gradient(circle at var(--perforation) top, transparent 7px, #000 7.8px),
+    radial-gradient(circle at var(--perforation) bottom, transparent 7px, #000 7.8px);
+  mask-composite: intersect;
+}
+
+.ticket p {
+  align-self: center;
+  padding: 20px 22px;
+  font-size: 1.0625rem;
+}
+
+.stub {
+  display: grid;
+  place-items: center;
+  border-inline-start: 1px dashed var(--about-rule);
+  background: color-mix(in oklab, var(--card) 88%, var(--primary));
+  color: var(--primary);
+}
+
+.stub svg { width: 26px; height: 26px; }
+
+.content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 30px;
+}
+
+.block {
+  min-width: 0;
+  padding-top: 15px;
+  border-top: 1px solid var(--about-hairline);
+  font-size: .9375rem;
+  line-height: 1.65;
+}
+
+.block[data-wide] { grid-column: 1 / -1; }
+
+.block h3 {
+  margin-bottom: 8px;
+  font-size: 1.0625rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.block :is(p, ul) { max-width: 72ch; color: var(--muted-foreground); }
+
+.block ul { padding-inline-start: 20px; list-style: disc; }
+.block li + li, .block p + p { margin-top: 6px; }
+.block li::marker { color: var(--primary); }
+.block strong { color: var(--foreground); }
+
+.block[data-values] ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
+  max-width: none;
+  gap: 8px 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.block[data-values] li {
+  margin: 0;
+  padding-inline-start: 10px;
+  border-inline-start: 1px dashed var(--about-rule);
+}
+
+.block[data-values] strong { display: block; }
+
+.closing {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--about-rule);
+  color: var(--muted-foreground);
+  font-size: .875rem;
+}
+
+@media (max-width: 760px) {
+  .wrap { width: calc(100% - 32px); }
+  .feature .wrap { padding-block: 31px 37px; }
+  .feature .wrap::before { width: 100%; background-position: 65% 61%; }
+
+  .feature .wrap::after {
+    background: linear-gradient(90deg, color-mix(in oklab, var(--hero-shade) 95%, transparent) 5%,
+      color-mix(in oklab, var(--hero-shade) 78%, transparent) 60%, color-mix(in oklab, var(--hero-shade) 45%, transparent));
+  }
+
+  .layout { display: block; padding-block: 20px 40px; }
+
+  .chapters {
+    position: static;
+    display: flex;
+    gap: 6px;
+    margin-bottom: 22px;
+    padding: 4px 3px 10px;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) var(--background);
+  }
+
+  .chapters a { flex: none; min-height: 44px; white-space: nowrap; }
+  .chevron { display: none; }
+  .content { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .ticket { --stub-width: 52px; margin-block: 19px 22px; }
+  .ticket p { padding: 15px; font-size: .9375rem; }
+  .stub svg { width: 20px; height: 20px; }
+}

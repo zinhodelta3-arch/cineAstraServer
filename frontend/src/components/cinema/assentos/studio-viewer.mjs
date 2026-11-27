@@ -1,4 +1,47 @@
 import { Mat, V, hexRgb, studioGraphics, studioParts } from './studio-geometry.mjs';
+import { STUDIO_PLACE_TYPES } from './studio-builder.mjs';
+
+const OVERVIEW_FOV = Math.PI / 4.2;
+const LANDMARK_TYPES = new Set(['screen', 'stage', 'stage360', 'turf']);
+
+function overviewFrame(objects) {
+  const front = [Infinity, Infinity, Infinity];
+  const back = [-Infinity, -Infinity, -Infinity];
+  let hasPlaces = false;
+  for (const object of objects) {
+    if (STUDIO_PLACE_TYPES.has(object.type)) hasPlaces = true;
+    else if (!LANDMARK_TYPES.has(object.type)) continue;
+    for (const part of object.parts) {
+      const [x, y, z] = part.scale;
+      const cos = Math.abs(Math.cos(part.rot));
+      const sin = Math.abs(Math.sin(part.rot));
+      const extents = [cos * x + sin * z, y, sin * x + cos * z];
+      for (let axis = 0; axis < 3; axis++) {
+        front[axis] = Math.min(front[axis], part.pos[axis] - extents[axis] / 2);
+        back[axis] = Math.max(back[axis], part.pos[axis] + extents[axis] / 2);
+      }
+    }
+  }
+  if (!hasPlaces) return null;
+  const center = V.scale(V.add(front, back), .5);
+  const corners = [];
+  for (const x of [front[0], back[0]]) {
+    for (const y of [front[1], back[1]]) {
+      for (const z of [front[2], back[2]]) corners.push(V.sub([x, y, z], center));
+    }
+  }
+  return { center, corners };
+}
+
+function fitDistance(corners, direction, aspect) {
+  const right = V.norm(V.cross([0, 1, 0], direction));
+  const up = V.cross(direction, right);
+  const vertical = Math.tan(OVERVIEW_FOV / 2) * .87;
+  return Math.max(...corners.map(point => V.dot(direction, point) + Math.max(
+    Math.abs(V.dot(up, point)) / vertical,
+    Math.abs(V.dot(right, point)) / (vertical * aspect),
+  )));
+}
 
 function mixColor(base, accent, weight = 0.55) {
   const rgb = typeof base === 'string' ? hexRgb(base) : base;
@@ -9,7 +52,7 @@ function mixColor(base, accent, weight = 0.55) {
   ];
 }
 
-export function openStudio(canvas, scene, onLost) {
+export function openStudio(canvas, scene, onLost, { seatSelection = false } = {}) {
   const gl = canvas.getContext('webgl2', { alpha: false, antialias: true });
   if (!gl) throw new Error('WebGL indisponível.');
   const { program, loc, draw, dispose } = studioGraphics(gl);
@@ -20,6 +63,8 @@ export function openStudio(canvas, scene, onLost) {
   let pickingSeats = new Map();
   let pickingObjects = new Map();
   let distance = 30;
+  let center = [0, 2, 0];
+  let frame = null;
 
   function loadSceneData(nextScene) {
     currentScene = nextScene;
@@ -28,6 +73,20 @@ export function openStudio(canvas, scene, onLost) {
     pickingSeats = new Map(Array.from(seats.values(), object => [object.id, object.seatId]));
     pickingObjects = new Map(objects.map(object => [object.id, object.id]));
     distance = nextScene.sceneSize * (nextScene.environment === 'stadium' ? 1.92 : 1.59);
+    center = [0, 2, 0];
+    frame = seatSelection && nextScene.environment !== 'cinema' ? overviewFrame(objects) : null;
+    if (frame) {
+      center = frame.center;
+      return;
+    }
+    const screen = nextScene.environment === 'stadium' && objects.find(object => object.type === 'screen');
+    if (screen) {
+      const rows = objects.filter(object => STUDIO_PLACE_TYPES.has(object.type));
+      if (rows.length) {
+        const rearRow = Math.max(...rows.map(object => object.z));
+        center = [0, 2, (screen.z + rearRow) / 2];
+      }
+    }
   }
   loadSceneData(scene);
 
@@ -40,8 +99,8 @@ export function openStudio(canvas, scene, onLost) {
   gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depth);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-  const center = [0, 2, 0];
-  let camera = { mode: 'overview', yaw: .38, pitch: .71, zoom: 1 };
+  const overviewCamera = zoom => ({ mode: 'overview', yaw: .38, pitch: frame ? 1.05 : .71, zoom });
+  let camera = overviewCamera(1);
   let pending = 0, width = 0, height = 0;
   let marks = { selected: new Set(), unavailable: new Set(), inspectedId: '', selectedObjectId: null };
   let palette = { bg: [.08,.05,.05], selected: [.93,.69,.25], inspected: [.96,.91,.87] };
@@ -54,7 +113,7 @@ export function openStudio(canvas, scene, onLost) {
     gl.bindTexture(gl.TEXTURE_2D, color);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     gl.bindRenderbuffer(gl.RENDERBUFFER, depth);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
+    gl.renderbufferStorage(gl.RENDERBUFFER, frame ? gl.DEPTH_COMPONENT24 : gl.DEPTH_COMPONENT16, w, h);
   }
 
   function render(pickMode = false) {
@@ -71,13 +130,19 @@ export function openStudio(canvas, scene, onLost) {
     const direction = [Math.sin(yaw)*Math.cos(pitch), Math.sin(pitch), Math.cos(yaw)*Math.cos(pitch)];
     const inside = camera.mode === 'inside';
     const zoomFactor = camera.zoom ?? 1;
-    const eye = inside ? position : V.add(center, V.scale(direction, distance * zoomFactor * Math.max(1, .9 * height / width)));
+    const aspect = width / height;
+    const overviewDistance = !inside && frame
+      ? fitDistance(frame.corners, direction, aspect)
+      : distance * Math.max(1, .9 / aspect);
+    const eye = inside ? position : V.add(center, V.scale(direction, overviewDistance * zoomFactor));
     const target = inside ? V.add(eye, direction) : center;
     gl.uniformMatrix4fv(loc.uView, false, Mat.lookAt(eye, target));
-    gl.uniformMatrix4fv(loc.uProj, false, Mat.perspective(inside ? Math.PI / 2.8 : Math.PI / 4.2, width / height, .12, 10000));
+    gl.uniformMatrix4fv(loc.uProj, false, Mat.perspective(inside ? Math.PI / 2.8 : OVERVIEW_FOV, aspect, .12, 10000));
     gl.uniform3fv(loc.uCamera, eye);
     gl.uniform3fv(loc.uBackdrop, palette.bg);
     for (const object of objects) {
+      // No mapa geral de compra, a estrutura não pode encobrir a área de clique dos lugares.
+      if (frame && !inside && pickMode === 'seat' && !object.seatId) continue;
       const inspected = object.seatId && object.seatId === marks.inspectedId;
       const selected = object.seatId && marks.selected.has(object.seatId);
       const unavailable = object.seatId && marks.unavailable.has(object.seatId);
@@ -138,7 +203,7 @@ export function openStudio(canvas, scene, onLost) {
       palette = { bg: hexRgb(bg), selected: hexRgb(selected), inspected: hexRgb(inspected) };
       repaint();
     },
-    overview() { camera = { mode: 'overview', yaw: .38, pitch: .71, zoom: camera.zoom ?? 1 }; repaint(); },
+    overview() { camera = overviewCamera(camera.zoom ?? 1); repaint(); },
     zoom(deltaFactor) {
       camera.zoom = Math.max(0.35, Math.min(2.4, (camera.zoom ?? 1) * deltaFactor));
       repaint();

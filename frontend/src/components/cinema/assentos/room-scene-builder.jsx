@@ -95,6 +95,7 @@ export default function RoomSceneBuilder({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [preset, setPreset] = useState(null);
 
   const activeSeats = useMemo(() => seats.filter(seat => !seat.status || seat.status === 'ATIVA'), [seats]);
   const hasPersistedSeats = useMemo(
@@ -271,7 +272,7 @@ export default function RoomSceneBuilder({
     setSelectedId(remaining[0]?.id ?? null);
   }
 
-  function regenerateFromSeats(nextEnvironment = scene.environment) {
+  function regenerateFromSeats(nextEnvironment) {
     const regenerated = generateSceneFromSeats({
       roomName,
       roomType,
@@ -280,6 +281,7 @@ export default function RoomSceneBuilder({
       seats,
     });
     commitScene(regenerated);
+    setPreset(null);
     setSelectedId(regenerated.objects[0]?.id ?? null);
     setCameraMode('overview');
     viewerRef.current?.overview();
@@ -397,10 +399,10 @@ export default function RoomSceneBuilder({
       <div className={styles.builderTopbar}>
         <div className={styles.builderTopbarGroup}>
           <label className={styles.builderField}>
-            Ambiente 3D
+            Modelo inicial 3D
             <select
-              value={scene.environment || fallbackEnvironment}
-              onChange={event => commitScene({ ...scene, environment: event.target.value })}
+              value={preset ?? scene.environment ?? fallbackEnvironment}
+              onChange={event => setPreset(event.target.value)}
             >
               {STUDIO_ENVIRONMENTS.map(env => (
                 <option key={env.id} value={env.id}>
@@ -432,7 +434,7 @@ export default function RoomSceneBuilder({
           </label>
         </div>
         <div className={styles.builderActionRow}>
-          <Button type="button" variant="outline" size="sm" onClick={() => regenerateFromSeats(scene.environment)}>
+          <Button type="button" variant="outline" size="sm" disabled={loadingExisting} onClick={() => regenerateFromSeats(preset ?? scene.environment ?? fallbackEnvironment)}>
             <Wand2 size={15} aria-hidden="true" />
             Gerar 3D dos assentos
           </Button>

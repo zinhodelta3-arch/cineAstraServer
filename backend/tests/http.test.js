@@ -70,8 +70,12 @@ test('JSON/urlencoded limitados; parser errors e 429 são registrados sem bodies
 });
 test('limite geral 429 Retry-After e erro registrado', async () => {
     const { app, logs, logQueue } = fixture({ config: { rate: { max: 1, windowMs: 60000 } } });
-    await request(app).get('/health').expect(200);
-    const limited = await request(app).get('/health').expect(429);
+    const origin = 'http://localhost:3000';
+    await request(app).get('/health').set('Origin', origin).expect(200);
+    const limited = await request(app).get('/health').set('Origin', origin).expect(429);
+    assert.equal(limited.headers['access-control-allow-origin'], origin);
+    assert.ok(limited.headers['access-control-expose-headers'].includes('Retry-After'));
+    assert.equal(limited.body.code, 'RATE_LIMITED');
     assert.ok(Number(limited.headers['retry-after']) > 0);
     await logQueue.drain();
     assert.equal(logs.at(-1).status, 429);

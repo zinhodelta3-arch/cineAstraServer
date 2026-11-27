@@ -2,7 +2,8 @@ import { publicAsset } from './public-api.mjs';
 
 export const venueTypes = {
  CINEMA:'Cinema', DRIVE_IN:'Drive-in', SALAO_EVENTOS:'Salão de eventos', ESTACIONAMENTO:'Estacionamento',
- ESTADIO:'Estádio', PRACA:'Praça', ESPACO_PUBLICO:'Espaço público', OUTRO:'Outro espaço'
+ ESTADIO:'Estádio', PRACA:'Praça', ESPACO_PUBLICO:'Espaço público', OUTRO:'Outro espaço',
+ TEATRO:'Teatro', BUNKER:'Bunker', CONTAINER:'Sala contêiner'
 };
 export const eventSeatingLabels = { NUMERADO:'Lugares numerados', LIVRE:'Lugares livres' };
 

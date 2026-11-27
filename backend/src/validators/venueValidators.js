@@ -8,7 +8,7 @@ const roomStatus = z.enum(['ATIVA', 'MANUTENCAO', 'INATIVA']);
 const seatStatus = z.enum(['ATIVA', 'INATIVA']);
 const roomType = z.enum(['2D', '3D', '4DX', 'VIP', 'IMAX']);
 const seatType = z.enum(['COMUM', 'PCD', 'OBESO', 'IDOSO', 'CASAL']);
-const venueType = z.enum(['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO']);
+const venueType = z.enum(['CINEMA','DRIVE_IN','SALAO_EVENTOS','ESTACIONAMENTO','ESTADIO','PRACA','ESPACO_PUBLICO','OUTRO','TEATRO','BUNKER','CONTAINER']);
 const imageUrl = z.string().trim().max(2048).url().refine(value => {
     if (!value.startsWith('https://') || /[\u0000-\u0020\\]/.test(value)) return false;
     const url = URL.parse(value);
@@ -38,7 +38,7 @@ export const venueSchemas = {
         .refine(moves=>new Set(moves.map(move=>move.seatId)).size===moves.length)}).strict(),
     local, localPatch: patch({ ...localFields, status: localStatus }), room, roomPatch: patch({ ...roomFields, tipo: roomType, status: roomStatus }), seat, seatPatch: patch({ ...seatFields, tipo: seatType, status: seatStatus }),
     list: z.object(paging).strict(),
-    publicLocals: z.object({ ...paging, q: limited(150).optional() }).strict(),
+    publicLocals: z.object({ ...paging, q: limited(150).optional(), cinema: z.literal('true').transform(() => true).optional() }).strict(),
     adminLocals: z.object({ ...paging, q: limited(150).optional(), status: z.enum(['ATIVO', 'INATIVO', 'MANUTENCAO']).optional() }).strict(),
     adminRooms: z.object({ ...paging, status: z.enum(['ATIVA', 'INATIVA', 'MANUTENCAO']).optional() }).strict(),
     seats: z.object({ ...paging, accessible: z.enum(['true', 'false']).transform(v => v === 'true').optional() }).strict(),

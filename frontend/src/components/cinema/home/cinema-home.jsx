@@ -5,18 +5,16 @@ import HeroSection from './hero-section';
 import MovieCarousel from './movie-carousel';
 import HomeContentSection from './home-content-section';
 import CombosSection from './combos-section';
+import StreamingShowcase from './streaming-showcase';
 import SessionListModal from './session-list-modal';
+import MovieDetailsDialog from '../filmes/movie-details-dialog';
 import ListStatus from './list-status';
 import { useCinemaHome } from '@/hooks/cinema/home/use-cinema-home';
 import { filmCard } from '@/lib/api/public-api.mjs';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 export default function CinemaHome() {
- const { catalog, upcoming, presale, highlights, movies, comingSoon, presales, bookingMovie, setBookingMovie } = useCinemaHome();
- const router=useRouter();
- function selectMovie(movie){
-  if(movie.onSale)setBookingMovie(movie);
-  else router.push(`/cinema/filmes/${encodeURIComponent(movie.slug??movie.id)}`);
- }
+ const { ready, location, catalog, upcoming, presale, highlights, movies, comingSoon, presales, bookingMovie, setBookingMovie } = useCinemaHome();
+ const [selectedMovie, selectMovie] = useState(null);
  const featuredMovies = highlights.items.map(filmCard);
  return <div className="ca-root min-h-screen bg-background text-foreground transition-colors duration-300">
   <CinemaStyles />
@@ -26,14 +24,20 @@ export default function CinemaHome() {
    {movies.length > 0 && <MovieCarousel id="em-cartaz" title="No catálogo" movies={movies} onSelectMovie={selectMovie} />}
    {presales.length > 0 && <MovieCarousel id="pre-venda" title="Pré-venda" movies={presales} soon onSelectMovie={selectMovie} />}
    {comingSoon.length > 0 && <MovieCarousel id="em-breve" title="Em breve" movies={comingSoon} soon onSelectMovie={selectMovie} />}
-   <div className="mx-auto max-w-[1600px] px-5 md:px-8"><ListStatus list={catalog} empty="Nenhum filme de cinema publicado no momento." showMore={false} /></div>
+   <div className="mx-auto max-w-[1600px] px-5 md:px-8"><ListStatus list={catalog} empty={ready && (location ? `Nenhum filme em cartaz com sessão futura em ${location.nome}.` : "Nenhum filme de cinema publicado no momento.")} showMore={false} /></div>
    {[upcoming,presale].map((list,index)=>(list.loading || list.error) && <div key={index} className="mx-auto max-w-[1600px] px-5 md:px-8"><ListStatus list={list} empty="" showMore={false}/></div>)}
   </div>
   {featuredMovies.length > 0 && <><SectionDivider/><MovieCarousel id="destaques" title="Destaques" movies={featuredMovies} onSelectMovie={selectMovie} /></>}
   {highlights.error && <div className="mx-auto max-w-[1600px] px-5 md:px-8"><ListStatus list={highlights} empty="" /></div>}
-  <HomeContentSection kind="banners" />
-  <SectionDivider /><HomeContentSection />
   <SectionDivider /><CombosSection />
+  <SectionDivider /><StreamingShowcase />
+  <SectionDivider /><HomeContentSection />
+  <HomeContentSection kind="banners" />
+  <MovieDetailsDialog
+   selectedMovie={selectedMovie}
+   onOpenChange={open => { if (!open) selectMovie(null); }}
+   onSessions={movie => { selectMovie(null); setBookingMovie(movie); }}
+  />
   {bookingMovie && <SessionListModal key={bookingMovie.id} movie={bookingMovie} onClose={() => setBookingMovie(null)} />}
  </div>;
 }

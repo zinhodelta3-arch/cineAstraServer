@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useSession } from "@/hooks/auth/use-session";
 import { SESSION_CHANGE_EVENT } from "@/lib/auth/session-events.mjs";
 
 export const STREAMING_ACCESS_CHANGE_EVENT = "cineastra-streaming-access-change";
 const RECHECK_MS = 30000;
+const StreamingAccessContext = createContext(false);
 
-export default function useStreamingAccess(user) {
+function useStreamingEntitlement(user) {
   const userId = user?.id;
   const client = user?.role === "CLIENTE";
   const [access, setAccess] = useState(null);
@@ -79,4 +81,14 @@ export default function useStreamingAccess(user) {
   }, [client, userId]);
 
   return Boolean(client && userId && access?.userId === userId && access.expiresAt > 0);
+}
+
+export function StreamingAccessProvider({ children }) {
+  const { user } = useSession();
+  const canAccessStreaming = useStreamingEntitlement(user);
+  return <StreamingAccessContext.Provider value={canAccessStreaming}>{children}</StreamingAccessContext.Provider>;
+}
+
+export default function useStreamingAccess() {
+  return useContext(StreamingAccessContext);
 }
